@@ -19,7 +19,7 @@ import {
 import { fromBodyToObject, HEADERS } from "../../config/utils";
 
 const handler: Handler = async (event: HandlerEvent) => {
-  const { httpMethod, path, } = event;
+  const { httpMethod, path } = event;
   const body = event.body ? fromBodyToObject(event.body) : {};
   const token = path.split("/").pop();
 
@@ -91,7 +91,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         headers: HEADERS.json,
       };
     return new ChangePassword()
-      .execute(token, changePasswordDto?.newPassword!)
+      .execute(token, changePasswordDto!.newPassword)
       .then((res) => res)
       .catch((error) => error);
   }

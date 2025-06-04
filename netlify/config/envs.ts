@@ -1,5 +1,8 @@
 import { get } from 'env-var';
 
+// import dotenv from "dotenv";
+
+// dotenv.config({ path: "../../.env" });
 
 export const envs = {
   DATABASE_URL: get("DATABASE_URL").required().asString(),

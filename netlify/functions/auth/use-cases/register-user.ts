@@ -80,7 +80,7 @@ export class RegisterUser implements RegisterUserUseCase {
         }),
         headers: HEADERS.json,
       };
-    } catch (error: any) {
+    } catch (error) {
       return {
         statusCode: 500,
         body: JSON.stringify({
