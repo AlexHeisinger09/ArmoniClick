@@ -1,5 +1,4 @@
-import React from 'react';
-import PatientGrid from './components/patient_grid_component';
+import PatientGrid from './components/PatientGrid';
 
 function App() {
   return (

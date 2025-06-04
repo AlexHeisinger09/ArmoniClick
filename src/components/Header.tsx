@@ -1,4 +1,3 @@
-import React from 'react';
 import { User } from 'lucide-react'; // Importamos el ícono de usuario de Lucide
 
 interface UserInfo {
