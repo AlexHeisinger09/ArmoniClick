@@ -1,90 +1,127 @@
 import { useState, useEffect } from 'react';
-import { Search, Edit, Eye, Trash2, Plus, X, Save, Calendar, Phone, Mail, MapPin, User } from 'lucide-react';
+import { 
+  Search, 
+  Edit, 
+  Eye, 
+  Trash2, 
+  Plus, 
+  X, 
+  Save, 
+  Calendar, 
+  Phone, 
+  Mail, 
+  MapPin, 
+  User, 
+  Heart, 
+  Shield 
+} from 'lucide-react';
 
-// Componente Header separado (puede moverse a otro archivo si lo prefieres)
-const Header = ({ logo, user }: { logo: string | React.ReactNode; user: { name: string; rut: string; avatar?: string } }) => {
-  return (
-    <header className="bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo de la aplicación */}
-          <div className="flex-shrink-0 flex items-center">
-            {typeof logo === 'string' ? (
-              <img className="h-8 w-auto" src={logo} alt="Logo de la aplicación" />
-            ) : (
-              logo
-            )}
-          </div>
+// Tipos e interfaces
+interface Patient {
+  id: number;
+  rut: string;
+  nombres: string;
+  apellidos: string;
+  fecha_nacimiento: string;
+  telefono: string;
+  email: string;
+  direccion: string;
+  id_doctor: number;
+}
 
-          {/* Información del usuario */}
-          <div className="flex items-center space-x-3">
-            <div className="text-right hidden md:block">
-              <p className="text-sm font-medium text-gray-900">{user.name}</p>
-              <p className="text-xs text-gray-500">{user.rut}</p>
-            </div>
+interface PatientFormData {
+  rut: string;
+  nombres: string;
+  apellidos: string;
+  fecha_nacimiento: string;
+  email: string;
+  direccion: string;
+  telefono: string;
+}
 
-            {/* Avatar del usuario */}
-            <div className="flex-shrink-0">
-              {user.avatar ? (
-                <img
-                  className="h-8 w-8 rounded-full"
-                  src={user.avatar}
-                  alt={`Avatar de ${user.name}`}
-                />
-              ) : (
-                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                  <User className="h-5 w-5 text-gray-500" />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
-  );
+interface PatientGridProps {
+  doctorId?: number;
+}
+
+// Datos iniciales para formularios
+const initialEditFormData: PatientFormData = {
+  rut: "",
+  nombres: "",
+  apellidos: "",
+  fecha_nacimiento: "",
+  email: "",
+  direccion: "",
+  telefono: "",
 };
 
-const Footer = () => {
+// Componente Footer
+const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-white border-t border-gray-200 py-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="md:flex md:items-center md:justify-between">
-          <div className="text-center md:text-left text-sm text-gray-500 mb-4 md:mb-0">
-            © {currentYear} ArmoniClick. Todos los derechos reservados.
+    <footer className="bg-white border-t border-gray-200 mt-8">
+      <div className="px-6 py-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+          {/* Logo y descripción */}
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <Heart className="w-5 h-5 text-white" />
+              </div>
+              <span className="font-bold text-gray-800 text-lg">ArmoniClick</span>
+            </div>
+            <div className="text-sm text-gray-500">
+              Sistema de Gestión Médica
+            </div>
           </div>
-          <div className="flex justify-center md:justify-end space-x-6">
-            <a href="#" className="text-gray-400 hover:text-gray-500">
-              <span className="sr-only">Términos</span>
-              <span className="text-sm">Términos y condiciones</span>
-            </a>
-            <a href="#" className="text-gray-400 hover:text-gray-500">
-              <span className="sr-only">Privacidad</span>
-              <span className="text-sm">Política de privacidad</span>
-            </a>
-            <a href="#" className="text-gray-400 hover:text-gray-500">
-              <span className="sr-only">Contacto</span>
-              <span className="text-sm">Contacto</span>
-            </a>
+
+          {/* Enlaces y información */}
+          <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-6 text-sm">
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Shield className="w-4 h-4" />
+              <span>Datos protegidos con SSL</span>
+            </div>
+            
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Phone className="w-4 h-4" />
+              <span>+56 2 2345 6789</span>
+            </div>
+            
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Mail className="w-4 h-4" />
+              <span>soporte@armoniclick.cl</span>
+            </div>
           </div>
         </div>
+
+        {/* Segunda fila con copyright y enlaces */}
+        {/* <div className="mt-6 pt-6 border-t border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
+          <div className="text-sm text-gray-500">
+            © {currentYear} ArmoniClick. Todos los derechos reservados.
+          </div>
+          
+          <div className="flex space-x-6 text-sm">
+            <a href="#" className="text-gray-500 hover:text-blue-600 transition-colors">
+              Términos y condiciones
+            </a>
+            <a href="#" className="text-gray-500 hover:text-blue-600 transition-colors">
+              Política de privacidad
+            </a>
+            <a href="#" className="text-gray-500 hover:text-blue-600 transition-colors">
+              Ayuda
+            </a>
+          </div>
+        </div> */}
       </div>
     </footer>
   );
 };
-const initialEditFormData={
-    rut:"",
-    nombres:"",
-    apellidos:"",
-    fecha_nacimiento:"",
-    email:"",
-    direccion:"",
-    telefono:"",
-  }
-const PatientGrid = ({ doctorId = 1 }) => {
-  const [patients, setPatients] = useState([]);
-  const [filteredPatients, setFilteredPatients] = useState([]);
+
+// Componente principal PatientGrid
+const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
+  // Estados principales
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
   const [searchRut, setSearchRut] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -92,18 +129,11 @@ const PatientGrid = ({ doctorId = 1 }) => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
-  const [selectedPatient, setSelectedPatient] = useState(null);
-  const [editFormData, setEditFormData] = useState(initialEditFormData);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [editFormData, setEditFormData] = useState<PatientFormData>(initialEditFormData);
 
-  // Datos del usuario logueado (simulado)
-  const [currentUser] = useState({
-    name: 'Dra. Camila Delgado',
-    rut: '12345678-9',
-    avatar: '' // Dejar vacío para usar el ícono por defecto
-  });
-
-  // Datos de ejemplo simulando la respuesta de la base de datos
-  const mockPatients = [
+  // Datos de ejemplo
+  const mockPatients: Patient[] = [
     {
       id: 1,
       rut: '12345678-9',
@@ -150,6 +180,7 @@ const PatientGrid = ({ doctorId = 1 }) => {
     }
   ];
 
+  // Efectos
   useEffect(() => {
     const fetchPatients = async () => {
       setLoading(true);
@@ -176,46 +207,69 @@ const PatientGrid = ({ doctorId = 1 }) => {
     }
   }, [searchRut, patients]);
 
-  const handleEdit = (patient) => {
+  // Funciones utilitarias
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('es-CL');
+  };
+
+  const calculateAge = (birthDate: string): number => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+
+    return age;
+  };
+
+  // Manejadores de eventos
+  const handleEdit = (patient: Patient) => {
     setSelectedPatient(patient);
     setEditFormData({ ...patient });
     setShowEditModal(true);
   };
 
-  const handleViewDetail = (patient) => {
+  const handleViewDetail = (patient: Patient) => {
     setSelectedPatient(patient);
     setShowDetailModal(true);
   };
 
-  const handleDelete = (patient) => {
+  const handleDelete = (patient: Patient) => {
     setSelectedPatient(patient);
     setShowDeleteAlert(true);
   };
 
   const confirmDelete = () => {
-    const updatedPatients = patients.filter(p => p.id !== selectedPatient.id);
-    setPatients(updatedPatients);
-    setFilteredPatients(updatedPatients.filter(patient =>
-      patient.rut.toLowerCase().includes(searchRut.toLowerCase()))
-    );
-    setShowDeleteAlert(false);
-    setSelectedPatient(null);
+    if (selectedPatient) {
+      const updatedPatients = patients.filter(p => p.id !== selectedPatient.id);
+      setPatients(updatedPatients);
+      setFilteredPatients(updatedPatients.filter(patient =>
+        patient.rut.toLowerCase().includes(searchRut.toLowerCase()))
+      );
+      setShowDeleteAlert(false);
+      setSelectedPatient(null);
+    }
   };
 
   const handleEditSubmit = () => {
-    const updatedPatients = patients.map(p =>
-      p.id === selectedPatient.id ? { ...editFormData } : p
-    );
-    setPatients(updatedPatients);
-    setFilteredPatients(updatedPatients.filter(patient =>
-      patient.rut.toLowerCase().includes(searchRut.toLowerCase())
-    ));
-    setShowEditModal(false);
-    setSelectedPatient(null);
-    setEditFormData(initialEditFormData);
+    if (selectedPatient) {
+      const updatedPatients = patients.map(p =>
+        p.id === selectedPatient.id ? { ...selectedPatient, ...editFormData } : p
+      );
+      setPatients(updatedPatients);
+      setFilteredPatients(updatedPatients.filter(patient =>
+        patient.rut.toLowerCase().includes(searchRut.toLowerCase())
+      ));
+      setShowEditModal(false);
+      setSelectedPatient(null);
+      setEditFormData(initialEditFormData);
+    }
   };
 
-  const handleEditInputChange = (e) => {
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setEditFormData(prev => ({
       ...prev,
@@ -231,23 +285,7 @@ const PatientGrid = ({ doctorId = 1 }) => {
     setEditFormData(initialEditFormData);
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('es-CL');
-  };
-
-  const calculateAge = (birthDate) => {
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-
-    return age;
-  };
-
+  // Render condicional para loading
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -257,407 +295,436 @@ const PatientGrid = ({ doctorId = 1 }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header con información del usuario */}
-      <Header
-        logo={
-          <div className="flex items-center">
-            <svg className="h-8 w-8 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2L1 12h3v9h6v-6h4v6h6v-9h3L12 2z" />
-            </svg>
-            <span className="ml-2 text-xl font-bold text-gray-800">ArmoniClick</span>
-          </div>
-        }
-        user={currentUser}
-      />
-
-      {/* Contenido principal */}
-      <main className="p-6 bg-white">
+    <div className="bg-gray-50 min-h-full flex flex-col">
+      <div className="flex-1 p-6">
+        {/* Breadcrumb */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Gestión de Pacientes</h2>
+          <nav className="flex" aria-label="Breadcrumb">
+            <ol className="flex items-center space-x-2">
+              <li>
+                <span className="text-gray-500 text-sm">Atenciones</span>
+              </li>
+              <li>
+                <span className="text-gray-400">/</span>
+              </li>
+              <li>
+                <span className="text-blue-600 text-sm font-medium">Pacientes</span>
+              </li>
+            </ol>
+          </nav>
+        </div>
 
-          {/* Barra de búsqueda */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
+        {/* Título y descripción */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Pacientes</h1>
+          <p className="text-gray-600">Administra la información de tus pacientes de manera eficiente</p>
+        </div>
+
+        {/* Barra de búsqueda y acciones */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
                 placeholder="Buscar por RUT del paciente..."
                 value={searchRut}
                 onChange={(e) => setSearchRut(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
             </div>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
-              <Plus className="w-4 h-4" />
+            <button className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2 whitespace-nowrap">
+              <Plus className="w-5 h-5" />
               Nuevo Paciente
             </button>
           </div>
 
           {/* Contador de resultados */}
-          <div className="text-sm text-gray-600 mb-4">
-            Mostrando {filteredPatients.length} de {patients.length} pacientes
+          <div className="mt-4 text-sm text-gray-600">
+            Mostrando <span className="font-medium">{filteredPatients.length}</span> de <span className="font-medium">{patients.length}</span> pacientes
           </div>
         </div>
 
         {/* Tabla de pacientes */}
-        <div className="overflow-x-auto bg-white rounded-lg shadow">
-          <table className="min-w-full table-auto">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  RUT
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Nombre Completo
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Edad
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Teléfono
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredPatients.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full table-auto">
+              <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <td colSpan= {6} className="px-6 py-8 text-center text-gray-500">
-                    {searchRut ? 'No se encontraron pacientes con ese RUT' : 'No hay pacientes registrados'}
-                  </td>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    RUT
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Nombre Completo
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Edad
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Teléfono
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Acciones
+                  </th>
                 </tr>
-              ) : (
-                filteredPatients.map((patient) => (
-                  <tr key={patient.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {patient.rut}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {patient.nombres} {patient.apellidos}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {calculateAge(patient.fecha_nacimiento)} años
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {patient.telefono}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {patient.email}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleViewDetail(patient)}
-                          className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors"
-                          title="Ver detalle"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(patient)}
-                          className="text-green-600 hover:text-green-900 p-1 rounded transition-colors"
-                          title="Editar"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(patient)}
-                          className="text-red-600 hover:text-red-900 p-1 rounded transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-100">
+                {filteredPatients.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <User className="w-12 h-12 text-gray-300 mb-4" />
+                        <p className="text-gray-500 text-lg mb-2">
+                          {searchRut ? 'No se encontraron pacientes con ese RUT' : 'No hay pacientes registrados'}
+                        </p>
+                        <p className="text-gray-400 text-sm">
+                          {searchRut ? 'Intenta con otro término de búsqueda' : 'Comienza agregando un nuevo paciente'}
+                        </p>
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  filteredPatients.map((patient) => (
+                    <tr key={patient.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm font-medium text-gray-900">{patient.rut}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                            <span className="text-white font-semibold text-sm">
+                              {patient.nombres.charAt(0)}{patient.apellidos.charAt(0)}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {patient.nombres} {patient.apellidos}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-gray-900">{calculateAge(patient.fecha_nacimiento)} años</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-gray-900">{patient.telefono}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-gray-900">{patient.email}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleViewDetail(patient)}
+                            className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Ver detalle"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(patient)}
+                            className="p-2 text-green-600 hover:text-green-900 hover:bg-green-50 rounded-lg transition-colors"
+                            title="Editar"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(patient)}
+                            className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Paginación */}
+          {filteredPatients.length > 0 && (
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-gray-600">
+                  Página 1 de 1
+                </div>
+                <div className="flex space-x-2">
+                  <button className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50" disabled>
+                    Anterior
+                  </button>
+                  <button className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50" disabled>
+                    Siguiente
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+      </div>
 
-        {/* Paginación (opcional) */}
-        {filteredPatients.length > 0 && (
-          <div className="mt-6 flex justify-between items-center">
-            <div className="text-sm text-gray-700">
-              Página 1 de 1
-            </div>
-            <div className="flex space-x-2">
-              <button className="px-3 py-1 text-sm bg-gray-200 text-gray-600 rounded hover:bg-gray-300 transition-colors disabled:opacity-50" disabled>
-                Anterior
+      {/* Footer */}
+      <Footer />
+
+      {/* Modal de Detalle */}
+      {showDetailModal && selectedPatient && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">Detalle del Paciente</h3>
+              <button
+                onClick={closeModals}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
               </button>
-              <button className="px-3 py-1 text-sm bg-gray-200 text-gray-600 rounded hover:bg-gray-300 transition-colors disabled:opacity-50" disabled>
-                Siguiente
-              </button>
             </div>
-          </div>
-        )}
 
-        {/* Modal de Detalle */}
-        {showDetailModal && selectedPatient && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-gray-800">Detalle del Paciente</h3>
-                <button
-                  onClick={closeModals}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="bg-blue-100 p-2 rounded-full">
-                      <Eye className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">RUT</p>
-                      <p className="font-medium text-gray-900">{selectedPatient.rut}</p>
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <Eye className="w-5 h-5 text-blue-600" />
                   </div>
-
-                  <div className="flex items-center space-x-3">
-                    <div className="bg-green-100 p-2 rounded-full">
-                      <Calendar className="w-5 h-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Fecha de Nacimiento</p>
-                      <p className="font-medium text-gray-900">{formatDate(selectedPatient.fecha_nacimiento)}</p>
-                      <p className="text-sm text-gray-500">{calculateAge(selectedPatient.fecha_nacimiento)} años</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <div className="bg-purple-100 p-2 rounded-full">
-                      <Phone className="w-5 h-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Teléfono</p>
-                      <p className="font-medium text-gray-900">{selectedPatient.telefono}</p>
-                    </div>
+                  <div>
+                    <p className="text-sm text-gray-500">RUT</p>
+                    <p className="font-medium text-gray-900">{selectedPatient.rut}</p>
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="bg-yellow-100 p-2 rounded-full">
-                      <Mail className="w-5 h-5 text-yellow-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Email</p>
-                      <p className="font-medium text-gray-900">{selectedPatient.email}</p>
-                    </div>
+                <div className="flex items-center space-x-3">
+                  <div className="bg-green-100 p-2 rounded-full">
+                    <Calendar className="w-5 h-5 text-green-600" />
                   </div>
-
-                  <div className="flex items-start space-x-3">
-                    <div className="bg-red-100 p-2 rounded-full">
-                      <MapPin className="w-5 h-5 text-red-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Dirección</p>
-                      <p className="font-medium text-gray-900">{selectedPatient.direccion}</p>
-                    </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Fecha de Nacimiento</p>
+                    <p className="font-medium text-gray-900">{formatDate(selectedPatient.fecha_nacimiento)}</p>
+                    <p className="text-sm text-gray-500">{calculateAge(selectedPatient.fecha_nacimiento)} años</p>
                   </div>
                 </div>
-              </div>
 
-              <div className="bg-gray-50 p-4 rounded-xl mt-6">
-                <h4 className="font-semibold text-gray-800 mb-2">Información Personal</h4>
-                <p className="text-lg font-medium text-gray-900">
-                  {selectedPatient.nombres} {selectedPatient.apellidos}
-                </p>
-              </div>
-
-              <div className="flex justify-end mt-6">
-                <button
-                  onClick={closeModals}
-                  className="bg-gray-500 text-white px-6 py-2 rounded-xl hover:bg-gray-600 transition-colors"
-                >
-                  Cerrar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Modal de Edición */}
-        {showEditModal && selectedPatient && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto shadow-2xl">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-gray-800">Editar Paciente</h3>
-                <button
-                  onClick={closeModals}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X className="w-6 h-6" />
-                </button>
+                <div className="flex items-center space-x-3">
+                  <div className="bg-purple-100 p-2 rounded-full">
+                    <Phone className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Teléfono</p>
+                    <p className="font-medium text-gray-900">{selectedPatient.telefono}</p>
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">RUT</label>
-                    <input
-                      type="text"
-                      name="rut"
-                      value={editFormData.rut || ''}
-                      onChange={handleEditInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
+                <div className="flex items-start space-x-3">
+                  <div className="bg-yellow-100 p-2 rounded-full">
+                    <Mail className="w-5 h-5 text-yellow-600" />
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombres</label>
-                    <input
-                      type="text"
-                      name="nombres"
-                      value={editFormData.nombres || ''}
-                      onChange={handleEditInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
-                    <input
-                      type="text"
-                      name="apellidos"
-                      value={editFormData.apellidos || ''}
-                      onChange={handleEditInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
-                    <input
-                      type="date"
-                      name="fecha_nacimiento"
-                      value={editFormData.fecha_nacimiento || ''}
-                      onChange={handleEditInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                    <input
-                      type="tel"
-                      name="telefono"
-                      value={editFormData.telefono || ''}
-                      onChange={handleEditInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={editFormData.email || ''}
-                      onChange={handleEditInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
+                    <p className="text-sm text-gray-500">Email</p>
+                    <p className="font-medium text-gray-900">{selectedPatient.email}</p>
                   </div>
                 </div>
 
+                <div className="flex items-start space-x-3">
+                  <div className="bg-red-100 p-2 rounded-full">
+                    <MapPin className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Dirección</p>
+                    <p className="font-medium text-gray-900">{selectedPatient.direccion}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-xl mt-6">
+              <h4 className="font-semibold text-gray-800 mb-2">Información Personal</h4>
+              <p className="text-lg font-medium text-gray-900">
+                {selectedPatient.nombres} {selectedPatient.apellidos}
+              </p>
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={closeModals}
+                className="bg-gray-500 text-white px-6 py-2 rounded-xl hover:bg-gray-600 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Edición */}
+      {showEditModal && selectedPatient && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">Editar Paciente</h3>
+              <button
+                onClick={closeModals}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
-                  <textarea
-                    name="direccion"
-                    value={editFormData.direccion || ''}
+                  <label className="block text-sm font-medium text-gray-700 mb-1">RUT</label>
+                  <input
+                    type="text"
+                    name="rut"
+                    value={editFormData.rut || ''}
                     onChange={handleEditInputChange}
-                    rows={2}
                     className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
                 </div>
 
-                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                  <button
-                    type="button"
-                    onClick={closeModals}
-                    className="bg-gray-500 text-white px-6 py-2 rounded-xl hover:bg-gray-600 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    onClick={handleEditSubmit}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2"
-                  >
-                    <Save className="w-4 h-4" />
-                    Guardar Cambios
-                  </button>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombres</label>
+                  <input
+                    type="text"
+                    name="nombres"
+                    value={editFormData.nombres || ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
+                  <input
+                    type="text"
+                    name="apellidos"
+                    value={editFormData.apellidos || ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
+                  <input
+                    type="date"
+                    name="fecha_nacimiento"
+                    value={editFormData.fecha_nacimiento || ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                  <input
+                    type="tel"
+                    name="telefono"
+                    value={editFormData.telefono || ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={editFormData.email || ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
                 </div>
               </div>
-            </div>
-          </div>
-        )}
 
-        {/* Alerta de Confirmación para Eliminar */}
-        {showDeleteAlert && selectedPatient && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="bg-red-100 p-2 rounded-full">
-                  <Trash2 className="w-6 h-6 text-red-600" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-800">Confirmar Eliminación</h3>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+                <textarea
+                  name="direccion"
+                  value={editFormData.direccion || ''}
+                  onChange={handleEditInputChange}
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
               </div>
 
-              <p className="text-gray-600 mb-6">
-                ¿Está seguro de que desea eliminar al paciente{' '}
-                <span className="font-semibold text-gray-800">
-                  {selectedPatient.nombres} {selectedPatient.apellidos}
-                </span>
-                ?
-              </p>
-
-              <p className="text-sm text-red-600 mb-6">
-                Esta acción no se puede deshacer.
-              </p>
-
-              <div className="flex justify-end space-x-3">
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
                 <button
+                  type="button"
                   onClick={closeModals}
                   className="bg-gray-500 text-white px-6 py-2 rounded-xl hover:bg-gray-600 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
-                  onClick={confirmDelete}
-                  className="bg-red-600 text-white px-6 py-2 rounded-xl hover:bg-red-700 transition-colors flex items-center gap-2"
+                  type="submit"
+                  onClick={handleEditSubmit}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2"
                 >
-                  <Trash2 className="w-4 h-4" />
-                  Eliminar
+                  <Save className="w-4 h-4" />
+                  Guardar Cambios
                 </button>
               </div>
             </div>
           </div>
-        )}
-      </main>
-      {/* Nuevo Footer */}
-      <Footer />
+        </div>
+      )}
+
+      {/* Alerta de Confirmación para Eliminar */}
+      {showDeleteAlert && selectedPatient && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="bg-red-100 p-2 rounded-full">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800">Confirmar Eliminación</h3>
+            </div>
+
+            <p className="text-gray-600 mb-6">
+              ¿Está seguro de que desea eliminar al paciente{' '}
+              <span className="font-semibold text-gray-800">
+                {selectedPatient.nombres} {selectedPatient.apellidos}
+              </span>
+              ?
+            </p>
+
+            <p className="text-sm text-red-600 mb-6">
+              Esta acción no se puede deshacer.
+            </p>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={closeModals}
+                className="bg-gray-500 text-white px-6 py-2 rounded-xl hover:bg-gray-600 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="bg-red-600 text-white px-6 py-2 rounded-xl hover:bg-red-700 transition-colors flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

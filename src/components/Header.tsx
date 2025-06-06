@@ -1,50 +1,54 @@
-import { User } from 'lucide-react'; // Importamos el ícono de usuario de Lucide
+import React from 'react';
+import { Bell, Search, Settings } from 'lucide-react';
 
-interface UserInfo {
-  name: string;
-  rut: string;
-  avatar?: string; // URL de la imagen de perfil (opcional)
-}
+const Header: React.FC = () => {
+  const currentUser = {
+    name: 'Dra. Camila Delgado',
+    rut: '12345678-9',
+    avatar: ''
+  };
 
-interface HeaderProps {
-  logo: string | React.ReactNode; // Puede ser una URL o un componente SVG
-  user: UserInfo;
-}
-
-const Header: React.FC<HeaderProps> = ({ logo, user }) => {
   return (
-    <header className="bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo de la aplicación */}
-          <div className="flex-shrink-0 flex items-center">
-            {typeof logo === 'string' ? (
-              <img className="h-8 w-auto" src={logo} alt="Logo de la aplicación" />
-            ) : (
-              logo
-            )}
+    <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="flex justify-between items-center">
+        {/* Título de la página actual */}
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Pacientes</h1>
+          <p className="text-sm text-gray-500">Gestiona la información de tus pacientes</p>
+        </div>
+        
+        {/* Acciones del header */}
+        <div className="flex items-center space-x-4">
+          {/* Buscador rápido */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Búsqueda rápida..."
+              className="pl-10 pr-4 py-2 w-64 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            />
           </div>
           
-          {/* Información del usuario */}
-          <div className="flex items-center space-x-3">
-            <div className="text-right hidden md:block">
-              <p className="text-sm font-medium text-gray-900">{user.name}</p>
-              <p className="text-xs text-gray-500">{user.rut}</p>
+          {/* Notificaciones */}
+          <button className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <Bell className="w-5 h-5" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          </button>
+          
+          {/* Configuración */}
+          <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <Settings className="w-5 h-5" />
+          </button>
+          
+          {/* Usuario */}
+          <div className="flex items-center space-x-3 pl-4 border-l border-gray-200">
+            <div className="text-right hidden sm:block">
+              <p className="text-sm font-medium text-gray-900">{currentUser.name}</p>
+              <p className="text-xs text-gray-500">{currentUser.rut}</p>
             </div>
             
-            {/* Avatar del usuario */}
-            <div className="flex-shrink-0">
-              {user.avatar ? (
-                <img
-                  className="h-8 w-8 rounded-full"
-                  src={user.avatar}
-                  alt={`Avatar de ${user.name}`}
-                />
-              ) : (
-                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                  <User className="h-5 w-5 text-gray-500" />
-                </div>
-              )}
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+              <span className="text-white font-semibold text-sm">CD</span>
             </div>
           </div>
         </div>
