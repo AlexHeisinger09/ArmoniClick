@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, Search, Settings } from 'lucide-react';
+import { Bell, Search, Settings , Stethoscope} from 'lucide-react';
 
 const Header: React.FC = () => {
   const currentUser = {
@@ -13,8 +13,12 @@ const Header: React.FC = () => {
       <div className="flex justify-between items-center">
         {/* Título de la página actual */}
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Pacientes</h1>
-          <p className="text-sm text-gray-500">Gestiona la información de tus pacientes</p>
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Stethoscope className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-bold text-gray-800 text-lg">ArmoniClick</span>
+          </div>
         </div>
         
         {/* Acciones del header */}

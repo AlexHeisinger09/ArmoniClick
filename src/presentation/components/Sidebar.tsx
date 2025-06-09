@@ -4,11 +4,9 @@ import {
   Users,
   Calendar,
   Settings,
-  Shield,
-  FileText,
-  Bell,
   Stethoscope,
   Home,
+  Bell ,
   ChevronDown,
   ChevronRight
 } from 'lucide-react';
@@ -40,14 +38,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
       href: '/'
     },
     {
-      id: 'atenciones',
-      label: 'Atenciones',
-      icon: Stethoscope,
-      children: [
-        { id: 'pacientes', label: 'Pacientes', icon: Users, active: true },
-        { id: 'citas', label: 'Citas', icon: Calendar },
-        { id: 'historial', label: 'Historial Médico', icon: FileText }
-      ]
+      id: 'pacientes',
+      label: 'Pacientes',
+      icon: Users,
+      href: '/calendario'
     },
     {
       id: 'calendario',
@@ -60,18 +54,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
       label: 'Configuración',
       icon: Settings,
       href: '/configuracion'
-    },
-    {
-      id: 'seguridad',
-      label: 'Seguridad',
-      icon: Shield,
-      href: '/seguridad'
-    },
-    {
-      id: 'notificaciones',
-      label: 'Notificaciones',
-      icon: Bell,
-      href: '/notificaciones'
     }
   ];
 
@@ -148,7 +130,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <Stethoscope className="w-5 h-5 text-white" />
             </div>
-            <span className="font-bold text-gray-800 text-lg">ArmoniClick</span>
+            {/* <span className="font-bold text-gray-800 text-lg">ArmoniClick</span> */}
           </div>
         )}
         
@@ -159,29 +141,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
           <Menu className="w-5 h-5 text-gray-600" />
         </button>
       </div>
-
-      {/* User Profile Section */}
-      {!isCollapsed && (
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <span className="text-white font-semibold text-sm">CD</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                Dra. Camila Delgado
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                CC 321112738
-              </p>
-              <div className="flex items-center space-x-1 mt-1">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-xs text-gray-500">Vivo</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Navigation Menu */}
       <nav className="flex-1 overflow-y-auto">

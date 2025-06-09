@@ -15,6 +15,7 @@ import {
   Heart,
   Shield,
 } from "lucide-react";
+import Header from "./Header";
 
 // Tipos e interfaces
 interface Patient {
@@ -95,25 +96,6 @@ const Footer: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Segunda fila con copyright y enlaces */}
-        {/* <div className="mt-6 pt-6 border-t border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
-          <div className="text-sm text-gray-500">
-            // © {currentYear} ArmoniClick. Todos los derechos reservados.
-          </div>
-          
-          <div className="flex space-x-6 text-sm">
-            <a href="#" className="text-gray-500 hover:text-blue-600 transition-colors">
-              Términos y condiciones
-            </a>
-            <a href="#" className="text-gray-500 hover:text-blue-600 transition-colors">
-              Política de privacidad
-            </a>
-            <a href="#" className="text-gray-500 hover:text-blue-600 transition-colors">
-              Ayuda
-            </a>
-          </div>
-        </div> */}
       </div>
     </footer>
   );
@@ -312,27 +294,9 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
 
   return (
     <div className="bg-gray-50 min-h-full flex flex-col">
+      <Header />
       <div className="flex-1 p-6">
-        {/* Breadcrumb */}
-        <div className="mb-6">
-          <nav className="flex" aria-label="Breadcrumb">
-            <ol className="flex items-center space-x-2">
-              <li>
-                <span className="text-gray-500 text-sm">Atenciones</span>
-              </li>
-              <li>
-                <span className="text-gray-400">/</span>
-              </li>
-              <li>
-                <span className="text-blue-600 text-sm font-medium">
-                  Pacientes
-                </span>
-              </li>
-            </ol>
-          </nav>
-        </div>
-
-        {/* Título y descripción */}
+        {/* Título y descripción
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Gestión de Pacientes
@@ -340,12 +304,28 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
           <p className="text-gray-600">
             Administra la información de tus pacientes de manera eficiente
           </p>
-        </div>
+        </div> */}
 
         {/* Barra de búsqueda y acciones */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-stretch gap-4 mb-4">
+            <img
+              alt=""
+              src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=2680&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+              className="w-20 rounded object-cover"
+            />
+            <div>
+              <h3 className="font-medium text-gray-900 sm:text-lg">Title goes here</h3>
+              <p className="mt-0.5 text-gray-700">
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Voluptates voluptas distinctio
+                nesciunt quas non animi.
+              </p>
+            </div>
+          </div>
           <div className="flex flex-col sm:flex-row gap-4">
+
             <div className="relative flex-1">
+
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
@@ -362,11 +342,11 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
           </div>
 
           {/* Contador de resultados */}
-          <div className="mt-4 text-sm text-gray-600">
+          {/* <div className="mt-4 text-sm text-gray-600">
             Mostrando{" "}
             <span className="font-medium">{filteredPatients.length}</span> de{" "}
             <span className="font-medium">{patients.length}</span> pacientes
-          </div>
+          </div> */}
         </div>
 
         {/* Tabla de pacientes */}
