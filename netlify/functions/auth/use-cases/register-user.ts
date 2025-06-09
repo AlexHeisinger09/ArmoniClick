@@ -30,7 +30,7 @@ export class RegisterUser implements RegisterUserUseCase {
 
     const link = `${envs.FRONTEND_URL}/auth/confirmar/${token}`;
     const htmlBody = /*html*/ `
-      <p>Hola: ${userName}, comprueba tu cuenta en Mercado de Creaciones</p>
+      <p>Hola: ${userName}, comprueba tu cuenta en ArmoniClick</p>
       <p>
         Tu cuenta ya está casi lista, solo debes comprobarla  en siguiente enlace:
         <a href="${link}">Comprobar Cuenta</a>
@@ -42,7 +42,7 @@ export class RegisterUser implements RegisterUserUseCase {
     const options = {
       from: envs.MAILER_EMAIL,
       to: email,
-      subject: "Mercado de Creaciones - Productos de mascotas",
+      subject: "ArmoniClick - Valida tu cuenta",
       htmlBody,
     };
 

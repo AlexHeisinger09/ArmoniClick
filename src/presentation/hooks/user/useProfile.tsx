@@ -7,7 +7,7 @@ export const useProfile = (token: string) => {
 
   const queryProfile = useQuery({
     queryKey: ["profile", token],
-    queryFn: () => UsesCases.profileUseCase(apiFetcher, token),
+    queryFn: () => UsesCases.profileUseCase(apiFetcher),
     enabled: !!token,
     retry: false,
   });
