@@ -1,5 +1,4 @@
 import { createBrowserRouter } from "react-router-dom";
-
 import { AuthLayout } from "../layouts/AuthLayout";
 import { Login } from "../pages/auth/Login";
 import { Register } from "../pages/auth/Register";
@@ -9,7 +8,9 @@ import { ConfirmAccount } from "../pages/auth/ConfirmAccount";
 
 import { HomeLayout } from "../layouts/HomeLayout";
 import { Home } from "../pages/home/Home";
-
+import { Calendar }  from "../pages/calendar/Calendar"; // Importa tu componente Calendar
+import { Patient }  from "../pages/patient/Patient";
+import { Configuration }  from "../pages/configuration/Configuration";
 
 const authRoutes = [
   {
@@ -34,12 +35,23 @@ const authRoutes = [
   },
 ];
 
-
 const homeRoutes = [
   {
     to: "/",
     component: <Home />,
   },
+  {
+    to: "/calendario", // Nueva ruta para el calendario
+    component: <Calendar />,
+  },
+  {
+     to: "/pacientes",
+     component: <Patient />,
+   },
+   {
+     to: "/configuracion",
+     component: <Configuration />,
+   },
 ];
 
 export const router = createBrowserRouter([

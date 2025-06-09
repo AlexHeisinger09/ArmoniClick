@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom'; // Importa Link y useLocation
 import { 
   Menu,
   Users,
@@ -6,7 +7,7 @@ import {
   Settings,
   Stethoscope,
   Home,
-  Bell ,
+  Bell,
   ChevronDown,
   ChevronRight
 } from 'lucide-react';
@@ -21,14 +22,13 @@ interface MenuItem {
   id: string;
   label: string;
   icon: React.ElementType;
-  href?: string;
-  active?: boolean;
+  href: string; // Ahora href es obligatorio
   children?: MenuItem[];
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, className = '' }) => {
-  const [expandedItems, setExpandedItems] = useState<string[]>(['atenciones']);
-  const [activeItem, setActiveItem] = useState('pacientes');
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const location = useLocation(); // Hook para obtener la ruta actual
 
   const menuItems: MenuItem[] = [
     {
@@ -41,19 +41,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
       id: 'pacientes',
       label: 'Pacientes',
       icon: Users,
-      href: '/calendario'
+      href: '/pacientes' // Cuando crees esta página
     },
     {
       id: 'calendario',
       label: 'Calendario',
       icon: Calendar,
-      href: '/calendario'
+      href: '/calendario' // Esta es la ruta que agregamos al router
     },
     {
       id: 'configuracion',
       label: 'Configuración',
       icon: Settings,
-      href: '/configuracion'
+      href: '/configuracion' // Cuando crees esta página
     }
   ];
 
@@ -65,40 +65,33 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
     );
   };
 
-  const handleItemClick = (itemId: string, hasChildren = false) => {
-    if (hasChildren) {
-      toggleExpanded(itemId);
-    } else {
-      setActiveItem(itemId);
-    }
-  };
-
   const renderMenuItem = (item: MenuItem, level = 0) => {
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedItems.includes(item.id);
-    const isActive = activeItem === item.id;
+    const isActive = location.pathname === item.href; // Verifica si la ruta actual coincide
     const Icon = item.icon;
 
-    return (
-      <div key={item.id}>
-        <button
-          onClick={() => handleItemClick(item.id, hasChildren)}
-          className={`
-            w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-200
-            ${level > 0 ? 'pl-12' : ''}
-            ${isActive 
-              ? 'bg-blue-50 text-blue-700 border-r-3 border-blue-600' 
-              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-            }
-            ${isCollapsed ? 'justify-center px-2' : ''}
-          `}
-        >
-          <Icon className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} flex-shrink-0`} />
-          
-          {!isCollapsed && (
-            <>
-              <span className="font-medium text-sm flex-1">{item.label}</span>
-              {hasChildren && (
+    if (hasChildren) {
+      // Para items con hijos (submenús)
+      return (
+        <div key={item.id}>
+          <button
+            onClick={() => toggleExpanded(item.id)}
+            className={`
+              w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-200
+              ${level > 0 ? 'pl-12' : ''}
+              ${isActive 
+                ? 'bg-blue-50 text-blue-700 border-r-3 border-blue-600' 
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }
+              ${isCollapsed ? 'justify-center px-2' : ''}
+            `}
+          >
+            <Icon className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} flex-shrink-0`} />
+            
+            {!isCollapsed && (
+              <>
+                <span className="font-medium text-sm flex-1">{item.label}</span>
                 <div className="flex-shrink-0">
                   {isExpanded ? (
                     <ChevronDown className="w-4 h-4" />
@@ -106,18 +99,41 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
                     <ChevronRight className="w-4 h-4" />
                   )}
                 </div>
-              )}
-            </>
-          )}
-        </button>
+              </>
+            )}
+          </button>
 
-        {/* Submenu */}
-        {hasChildren && isExpanded && !isCollapsed && (
-          <div className="bg-gray-50">
-            {item.children?.map(child => renderMenuItem(child, level + 1))}
-          </div>
+          {/* Submenu */}
+          {isExpanded && !isCollapsed && (
+            <div className="bg-gray-50">
+              {item.children?.map(child => renderMenuItem(child, level + 1))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Para items sin hijos (enlaces directos)
+    return (
+      <Link
+        key={item.id}
+        to={item.href}
+        className={`
+          w-full flex items-center gap-3 px-4 py-3 transition-all duration-200
+          ${level > 0 ? 'pl-12' : ''}
+          ${isActive 
+            ? 'bg-blue-50 text-blue-700 border-r-3 border-blue-600' 
+            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+          }
+          ${isCollapsed ? 'justify-center px-2' : ''}
+        `}
+      >
+        <Icon className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} flex-shrink-0`} />
+        
+        {!isCollapsed && (
+          <span className="font-medium text-sm flex-1">{item.label}</span>
         )}
-      </div>
+      </Link>
     );
   };
 
