@@ -1,20 +1,20 @@
-import { useState, useEffect } from 'react';
-import { 
-  Search, 
-  Edit, 
-  Eye, 
-  Trash2, 
-  Plus, 
-  X, 
-  Save, 
-  Calendar, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  User, 
-  Heart, 
-  Shield 
-} from 'lucide-react';
+import { useState, useEffect } from "react";
+import {
+  Search,
+  Edit,
+  Eye,
+  Trash2,
+  Plus,
+  X,
+  Save,
+  Calendar,
+  Phone,
+  Mail,
+  MapPin,
+  User,
+  Heart,
+  Shield,
+} from "lucide-react";
 
 // Tipos e interfaces
 interface Patient {
@@ -56,7 +56,7 @@ const initialEditFormData: PatientFormData = {
 
 // Componente Footer
 const Footer: React.FC = () => {
-  const currentYear = new Date().getFullYear();
+  // const currentYear = new Date().getFullYear();
 
   return (
     <footer className="bg-white border-t border-gray-200 mt-8">
@@ -68,7 +68,9 @@ const Footer: React.FC = () => {
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <Heart className="w-5 h-5 text-white" />
               </div>
-              <span className="font-bold text-gray-800 text-lg">ArmoniClick</span>
+              <span className="font-bold text-gray-800 text-lg">
+                ArmoniClick
+              </span>
             </div>
             <div className="text-sm text-gray-500">
               Sistema de Gestión Médica
@@ -81,12 +83,12 @@ const Footer: React.FC = () => {
               <Shield className="w-4 h-4" />
               <span>Datos protegidos con SSL</span>
             </div>
-            
+
             <div className="flex items-center space-x-2 text-gray-600">
               <Phone className="w-4 h-4" />
               <span>+56 2 2345 6789</span>
             </div>
-            
+
             <div className="flex items-center space-x-2 text-gray-600">
               <Mail className="w-4 h-4" />
               <span>soporte@armoniclick.cl</span>
@@ -97,7 +99,7 @@ const Footer: React.FC = () => {
         {/* Segunda fila con copyright y enlaces */}
         {/* <div className="mt-6 pt-6 border-t border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
           <div className="text-sm text-gray-500">
-            © {currentYear} ArmoniClick. Todos los derechos reservados.
+            // © {currentYear} ArmoniClick. Todos los derechos reservados.
           </div>
           
           <div className="flex space-x-6 text-sm">
@@ -122,7 +124,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
   // Estados principales
   const [patients, setPatients] = useState<Patient[]>([]);
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
-  const [searchRut, setSearchRut] = useState('');
+  const [searchRut, setSearchRut] = useState("");
   const [loading, setLoading] = useState(true);
 
   // Estados para modales
@@ -130,54 +132,55 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [editFormData, setEditFormData] = useState<PatientFormData>(initialEditFormData);
+  const [editFormData, setEditFormData] =
+    useState<PatientFormData>(initialEditFormData);
 
   // Datos de ejemplo
   const mockPatients: Patient[] = [
     {
       id: 1,
-      rut: '12345678-9',
-      nombres: 'Juan Carlos',
-      apellidos: 'Pérez González',
-      fecha_nacimiento: '1985-03-15',
-      telefono: '+56912345678',
-      email: 'juan.perez@email.com',
-      direccion: 'Av. Las Condes 1234, Santiago',
-      id_doctor: 1
+      rut: "12345678-9",
+      nombres: "Juan Carlos",
+      apellidos: "Pérez González",
+      fecha_nacimiento: "1985-03-15",
+      telefono: "+56912345678",
+      email: "juan.perez@email.com",
+      direccion: "Av. Las Condes 1234, Santiago",
+      id_doctor: 1,
     },
     {
       id: 2,
-      rut: '87654321-0',
-      nombres: 'María Fernanda',
-      apellidos: 'López Silva',
-      fecha_nacimiento: '1990-07-22',
-      telefono: '+56987654321',
-      email: 'maria.lopez@email.com',
-      direccion: 'Calle Principal 567, Providencia',
-      id_doctor: 1
+      rut: "87654321-0",
+      nombres: "María Fernanda",
+      apellidos: "López Silva",
+      fecha_nacimiento: "1990-07-22",
+      telefono: "+56987654321",
+      email: "maria.lopez@email.com",
+      direccion: "Calle Principal 567, Providencia",
+      id_doctor: 1,
     },
     {
       id: 3,
-      rut: '11223344-5',
-      nombres: 'Pedro Antonio',
-      apellidos: 'Martínez Rojas',
-      fecha_nacimiento: '1978-12-03',
-      telefono: '+56911223344',
-      email: 'pedro.martinez@email.com',
-      direccion: 'Pasaje Los Rosales 890, Las Condes',
-      id_doctor: 1
+      rut: "11223344-5",
+      nombres: "Pedro Antonio",
+      apellidos: "Martínez Rojas",
+      fecha_nacimiento: "1978-12-03",
+      telefono: "+56911223344",
+      email: "pedro.martinez@email.com",
+      direccion: "Pasaje Los Rosales 890, Las Condes",
+      id_doctor: 1,
     },
     {
       id: 4,
-      rut: '99887766-K',
-      nombres: 'Ana Sofía',
-      apellidos: 'García Muñoz',
-      fecha_nacimiento: '1992-05-18',
-      telefono: '+56999887766',
-      email: 'ana.garcia@email.com',
-      direccion: 'Av. Libertador 2345, Vitacura',
-      id_doctor: 1
-    }
+      rut: "99887766-K",
+      nombres: "Ana Sofía",
+      apellidos: "García Muñoz",
+      fecha_nacimiento: "1992-05-18",
+      telefono: "+56999887766",
+      email: "ana.garcia@email.com",
+      direccion: "Av. Libertador 2345, Vitacura",
+      id_doctor: 1,
+    },
   ];
 
   // Efectos
@@ -197,10 +200,10 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
 
   // Filtrar pacientes por RUT
   useEffect(() => {
-    if (searchRut.trim() === '') {
+    if (searchRut.trim() === "") {
       setFilteredPatients(patients);
     } else {
-      const filtered = patients.filter(patient =>
+      const filtered = patients.filter((patient) =>
         patient.rut.toLowerCase().includes(searchRut.toLowerCase())
       );
       setFilteredPatients(filtered);
@@ -209,7 +212,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
 
   // Funciones utilitarias
   const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('es-CL');
+    return new Date(dateString).toLocaleDateString("es-CL");
   };
 
   const calculateAge = (birthDate: string): number => {
@@ -218,7 +221,10 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
 
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birth.getDate())
+    ) {
       age--;
     }
 
@@ -244,10 +250,14 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
 
   const confirmDelete = () => {
     if (selectedPatient) {
-      const updatedPatients = patients.filter(p => p.id !== selectedPatient.id);
+      const updatedPatients = patients.filter(
+        (p) => p.id !== selectedPatient.id
+      );
       setPatients(updatedPatients);
-      setFilteredPatients(updatedPatients.filter(patient =>
-        patient.rut.toLowerCase().includes(searchRut.toLowerCase()))
+      setFilteredPatients(
+        updatedPatients.filter((patient) =>
+          patient.rut.toLowerCase().includes(searchRut.toLowerCase())
+        )
       );
       setShowDeleteAlert(false);
       setSelectedPatient(null);
@@ -256,24 +266,30 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
 
   const handleEditSubmit = () => {
     if (selectedPatient) {
-      const updatedPatients = patients.map(p =>
-        p.id === selectedPatient.id ? { ...selectedPatient, ...editFormData } : p
+      const updatedPatients = patients.map((p) =>
+        p.id === selectedPatient.id
+          ? { ...selectedPatient, ...editFormData }
+          : p
       );
       setPatients(updatedPatients);
-      setFilteredPatients(updatedPatients.filter(patient =>
-        patient.rut.toLowerCase().includes(searchRut.toLowerCase())
-      ));
+      setFilteredPatients(
+        updatedPatients.filter((patient) =>
+          patient.rut.toLowerCase().includes(searchRut.toLowerCase())
+        )
+      );
       setShowEditModal(false);
       setSelectedPatient(null);
       setEditFormData(initialEditFormData);
     }
   };
 
-  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleEditInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setEditFormData(prev => ({
+    setEditFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -308,7 +324,9 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                 <span className="text-gray-400">/</span>
               </li>
               <li>
-                <span className="text-blue-600 text-sm font-medium">Pacientes</span>
+                <span className="text-blue-600 text-sm font-medium">
+                  Pacientes
+                </span>
               </li>
             </ol>
           </nav>
@@ -316,8 +334,12 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
 
         {/* Título y descripción */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Pacientes</h1>
-          <p className="text-gray-600">Administra la información de tus pacientes de manera eficiente</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Gestión de Pacientes
+          </h1>
+          <p className="text-gray-600">
+            Administra la información de tus pacientes de manera eficiente
+          </p>
         </div>
 
         {/* Barra de búsqueda y acciones */}
@@ -341,7 +363,9 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
 
           {/* Contador de resultados */}
           <div className="mt-4 text-sm text-gray-600">
-            Mostrando <span className="font-medium">{filteredPatients.length}</span> de <span className="font-medium">{patients.length}</span> pacientes
+            Mostrando{" "}
+            <span className="font-medium">{filteredPatients.length}</span> de{" "}
+            <span className="font-medium">{patients.length}</span> pacientes
           </div>
         </div>
 
@@ -378,25 +402,35 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                       <div className="flex flex-col items-center justify-center">
                         <User className="w-12 h-12 text-gray-300 mb-4" />
                         <p className="text-gray-500 text-lg mb-2">
-                          {searchRut ? 'No se encontraron pacientes con ese RUT' : 'No hay pacientes registrados'}
+                          {searchRut
+                            ? "No se encontraron pacientes con ese RUT"
+                            : "No hay pacientes registrados"}
                         </p>
                         <p className="text-gray-400 text-sm">
-                          {searchRut ? 'Intenta con otro término de búsqueda' : 'Comienza agregando un nuevo paciente'}
+                          {searchRut
+                            ? "Intenta con otro término de búsqueda"
+                            : "Comienza agregando un nuevo paciente"}
                         </p>
                       </div>
                     </td>
                   </tr>
                 ) : (
                   filteredPatients.map((patient) => (
-                    <tr key={patient.id} className="hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={patient.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-medium text-gray-900">{patient.rut}</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {patient.rut}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center space-x-3">
                           <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                             <span className="text-white font-semibold text-sm">
-                              {patient.nombres.charAt(0)}{patient.apellidos.charAt(0)}
+                              {patient.nombres.charAt(0)}
+                              {patient.apellidos.charAt(0)}
                             </span>
                           </div>
                           <div>
@@ -407,13 +441,19 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900">{calculateAge(patient.fecha_nacimiento)} años</span>
+                        <span className="text-sm text-gray-900">
+                          {calculateAge(patient.fecha_nacimiento)} años
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900">{patient.telefono}</span>
+                        <span className="text-sm text-gray-900">
+                          {patient.telefono}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900">{patient.email}</span>
+                        <span className="text-sm text-gray-900">
+                          {patient.email}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex space-x-2">
@@ -451,14 +491,18 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
           {filteredPatients.length > 0 && (
             <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
               <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-600">
-                  Página 1 de 1
-                </div>
+                <div className="text-sm text-gray-600">Página 1 de 1</div>
                 <div className="flex space-x-2">
-                  <button className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50" disabled>
+                  <button
+                    className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    disabled
+                  >
                     Anterior
                   </button>
-                  <button className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50" disabled>
+                  <button
+                    className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    disabled
+                  >
                     Siguiente
                   </button>
                 </div>
@@ -476,7 +520,9 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-800">Detalle del Paciente</h3>
+              <h3 className="text-xl font-bold text-gray-800">
+                Detalle del Paciente
+              </h3>
               <button
                 onClick={closeModals}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -493,7 +539,9 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">RUT</p>
-                    <p className="font-medium text-gray-900">{selectedPatient.rut}</p>
+                    <p className="font-medium text-gray-900">
+                      {selectedPatient.rut}
+                    </p>
                   </div>
                 </div>
 
@@ -503,8 +551,12 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Fecha de Nacimiento</p>
-                    <p className="font-medium text-gray-900">{formatDate(selectedPatient.fecha_nacimiento)}</p>
-                    <p className="text-sm text-gray-500">{calculateAge(selectedPatient.fecha_nacimiento)} años</p>
+                    <p className="font-medium text-gray-900">
+                      {formatDate(selectedPatient.fecha_nacimiento)}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {calculateAge(selectedPatient.fecha_nacimiento)} años
+                    </p>
                   </div>
                 </div>
 
@@ -514,7 +566,9 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Teléfono</p>
-                    <p className="font-medium text-gray-900">{selectedPatient.telefono}</p>
+                    <p className="font-medium text-gray-900">
+                      {selectedPatient.telefono}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -526,7 +580,9 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium text-gray-900">{selectedPatient.email}</p>
+                    <p className="font-medium text-gray-900">
+                      {selectedPatient.email}
+                    </p>
                   </div>
                 </div>
 
@@ -536,14 +592,18 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Dirección</p>
-                    <p className="font-medium text-gray-900">{selectedPatient.direccion}</p>
+                    <p className="font-medium text-gray-900">
+                      {selectedPatient.direccion}
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-xl mt-6">
-              <h4 className="font-semibold text-gray-800 mb-2">Información Personal</h4>
+              <h4 className="font-semibold text-gray-800 mb-2">
+                Información Personal
+              </h4>
               <p className="text-lg font-medium text-gray-900">
                 {selectedPatient.nombres} {selectedPatient.apellidos}
               </p>
@@ -566,7 +626,9 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto shadow-2xl">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-800">Editar Paciente</h3>
+              <h3 className="text-xl font-bold text-gray-800">
+                Editar Paciente
+              </h3>
               <button
                 onClick={closeModals}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -578,11 +640,13 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">RUT</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    RUT
+                  </label>
                   <input
                     type="text"
                     name="rut"
-                    value={editFormData.rut || ''}
+                    value={editFormData.rut || ""}
                     onChange={handleEditInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
@@ -590,11 +654,13 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombres</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombres
+                  </label>
                   <input
                     type="text"
                     name="nombres"
-                    value={editFormData.nombres || ''}
+                    value={editFormData.nombres || ""}
                     onChange={handleEditInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
@@ -602,11 +668,13 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Apellidos
+                  </label>
                   <input
                     type="text"
                     name="apellidos"
-                    value={editFormData.apellidos || ''}
+                    value={editFormData.apellidos || ""}
                     onChange={handleEditInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
@@ -614,11 +682,13 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Fecha de Nacimiento
+                  </label>
                   <input
                     type="date"
                     name="fecha_nacimiento"
-                    value={editFormData.fecha_nacimiento || ''}
+                    value={editFormData.fecha_nacimiento || ""}
                     onChange={handleEditInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
@@ -626,11 +696,13 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Teléfono
+                  </label>
                   <input
                     type="tel"
                     name="telefono"
-                    value={editFormData.telefono || ''}
+                    value={editFormData.telefono || ""}
                     onChange={handleEditInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
@@ -638,11 +710,13 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
                   <input
                     type="email"
                     name="email"
-                    value={editFormData.email || ''}
+                    value={editFormData.email || ""}
                     onChange={handleEditInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
@@ -651,10 +725,12 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Dirección
+                </label>
                 <textarea
                   name="direccion"
-                  value={editFormData.direccion || ''}
+                  value={editFormData.direccion || ""}
                   onChange={handleEditInputChange}
                   rows={2}
                   className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -692,11 +768,13 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
               <div className="bg-red-100 p-2 rounded-full">
                 <Trash2 className="w-6 h-6 text-red-600" />
               </div>
-              <h3 className="text-lg font-bold text-gray-800">Confirmar Eliminación</h3>
+              <h3 className="text-lg font-bold text-gray-800">
+                Confirmar Eliminación
+              </h3>
             </div>
 
             <p className="text-gray-600 mb-6">
-              ¿Está seguro de que desea eliminar al paciente{' '}
+              ¿Está seguro de que desea eliminar al paciente{" "}
               <span className="font-semibold text-gray-800">
                 {selectedPatient.nombres} {selectedPatient.apellidos}
               </span>
