@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-
 import * as UseCases from "../../../core/use-cases";
 import { apiFetcher } from "@/config/adapters/api.adapter";
-
 import { useMutation } from "@tanstack/react-query";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -14,7 +12,7 @@ export const useLoginMutation = () => {
 
   const loginMutation = useMutation({
     mutationFn: (body: Record<string, string>) => {
-      return  UseCases.loginUserUseCase(apiFetcher, body)
+      return UseCases.loginUserUseCase(apiFetcher, body)
     },
     onMutate: () => {
       setisLoadingLogin(true);
@@ -28,24 +26,25 @@ export const useLoginMutation = () => {
   });
 
   const [token, saveToken] = useLocalStorage<string | null>("token", null);
-  
 
+  // CAMBIO 1: Redirigir a /dashboard después del login exitoso
   useEffect(() => {
     if (loginMutation.data) {
       saveToken(loginMutation.data as string);
-      navitation("/");
+      navitation("/dashboard"); // CAMBIO: era "/" ahora es "/dashboard"
     }
   }, [loginMutation.data, saveToken, navitation]);
 
-   useEffect(() => {
-     if (!token && !pathname.includes("/auth")) {
-       navitation("/");
-     }
-   }, [token, navitation, pathname]);
+  // CAMBIO 2: Redirigir a /auth/login si no hay token (en lugar de "/")
+  useEffect(() => {
+    if (!token && !pathname.includes("/auth")) {
+      navitation("/auth/login"); // CAMBIO: era "/" ahora es "/auth/login"
+    }
+  }, [token, navitation, pathname]);
 
   const logout = () => {
     saveToken(null);
-    navitation("/");
+    navitation("/auth/login"); // CAMBIO: era "/" ahora es "/auth/login"
   }
 
   return { loginMutation, token, logout, isLoadingLogin };

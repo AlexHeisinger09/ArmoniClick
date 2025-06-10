@@ -13,7 +13,7 @@ import { Patient }  from "../pages/patient/Patient";
 import { Configuration }  from "../pages/configuration/Configuration";
 
 export const router = createBrowserRouter([
-  // Ruta raíz - Login (sin AuthLayout específico)
+  // Ruta raíz - Redirige al login
   {
     path: "/",
     element: <AuthLayout />,
@@ -60,39 +60,18 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Home />,
+        element: <Home />, // PatientGrid
       },
-    ],
-  },
-  
-  {
-    path: "/calendario",
-    element: <HomeLayout />,
-    children: [
       {
-        index: true,
+        path: "calendario",
         element: <Calendar />,
       },
-    ],
-  },
-  
-  {
-    path: "/pacientes",
-    element: <HomeLayout />,
-    children: [
       {
-        index: true,
+        path: "pacientes",
         element: <Patient />,
       },
-    ],
-  },
-  
-  {
-    path: "/configuracion",
-    element: <HomeLayout />,
-    children: [
       {
-        index: true,
+        path: "configuracion",
         element: <Configuration />,
       },
     ],
