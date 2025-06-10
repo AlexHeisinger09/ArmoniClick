@@ -12,71 +12,89 @@ import { Calendar }  from "../pages/calendar/Calendar";
 import { Patient }  from "../pages/patient/Patient";
 import { Configuration }  from "../pages/configuration/Configuration";
 
-const authRoutes = [
-  {
-    to: "/",
-    component: <Login />,
-  },
-  {
-    to: "/registrar",
-    component: <Register />,
-  },
-  {
-    to: "/olvide-password",
-    component: <ResetPassword />,
-  },
-  {
-    to: "/olvide-password/:token",
-    component: <NewPassword />,
-  },
-  {
-    to: "/confirmar/:id",
-    component: <ConfirmAccount />,
-  },
-];
-
-const homeRoutes = [
-  {
-    to: "/dashboard",
-    component: <Home />,
-  },
-  {
-    to: "/calendario",
-    component: <Calendar />,
-  },
-  {
-     to: "/pacientes",
-     component: <Patient />,
-   },
-   {
-     to: "/configuracion",
-     component: <Configuration />,
-   },
-];
-
 export const router = createBrowserRouter([
-  // Rutas de autenticación con AuthLayout (incluye login en raíz)
+  // Ruta raíz - Login (sin AuthLayout específico)
   {
     path: "/",
     element: <AuthLayout />,
     children: [
-      ...authRoutes.map((route) => ({
-        path: route.to,
-        element: route.component,
-        ...(route.to === "/" && { index: true }) // Hace que Login sea la ruta index
-      })),
+      {
+        index: true,
+        element: <Login />,
+      },
+    ],
+  },
+  
+  // Rutas de autenticación con prefijo /auth y AuthLayout
+  {
+    path: "/auth",
+    element: <AuthLayout />,
+    children: [
+      {
+        path: "login",
+        element: <Login />,
+      },
+      {
+        path: "registrar",
+        element: <Register />,
+      },
+      {
+        path: "olvide-password",
+        element: <ResetPassword />,
+      },
+      {
+        path: "olvide-password/:token",
+        element: <NewPassword />,
+      },
+      {
+        path: "confirmar/:id",
+        element: <ConfirmAccount />,
+      },
     ],
   },
   
   // Rutas protegidas con HomeLayout
   {
-    path: "/",
+    path: "/dashboard",
     element: <HomeLayout />,
     children: [
-      ...homeRoutes.map((route) => ({
-        path: route.to,
-        element: route.component,
-      })),
+      {
+        index: true,
+        element: <Home />,
+      },
+    ],
+  },
+  
+  {
+    path: "/calendario",
+    element: <HomeLayout />,
+    children: [
+      {
+        index: true,
+        element: <Calendar />,
+      },
+    ],
+  },
+  
+  {
+    path: "/pacientes",
+    element: <HomeLayout />,
+    children: [
+      {
+        index: true,
+        element: <Patient />,
+      },
+    ],
+  },
+  
+  {
+    path: "/configuracion",
+    element: <HomeLayout />,
+    children: [
+      {
+        index: true,
+        element: <Configuration />,
+      },
     ],
   },
 ]);
