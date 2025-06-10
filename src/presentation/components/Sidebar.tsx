@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { 
+import { Link, useLocation, useNavigate} from 'react-router-dom';
+import {
   Menu,
   Users,
   Calendar,
   Settings,
   Stethoscope,
   Home,
-  Bell,
+  LogOut,
+  LucideLogOut,
   ChevronDown,
   ChevronRight
 } from 'lucide-react';
@@ -29,6 +30,7 @@ interface MenuItem {
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, className = '' }) => {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const menuItems: MenuItem[] = [
     {
@@ -56,10 +58,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
       href: '/dashboard/configuracion' // Correcto - ruta anidada
     }
   ];
+  const handleLogout = () => {
+    // Aquí puedes agregar tu lógica de logout
+    // Por ejemplo: limpiar localStorage, cookies, etc.
+    localStorage.removeItem('token'); // Ejemplo
+    localStorage.removeItem('user'); // Ejemplo
 
+    // Redirigir al login
+    navigate('/auth/login');
+  };
   const toggleExpanded = (itemId: string) => {
-    setExpandedItems(prev => 
-      prev.includes(itemId) 
+    setExpandedItems(prev =>
+      prev.includes(itemId)
         ? prev.filter(id => id !== itemId)
         : [...prev, itemId]
     );
@@ -79,15 +89,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
             className={`
               w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-200
               ${level > 0 ? 'pl-12' : ''}
-              ${isActive 
-                ? 'bg-gradient-to-r from-cyan-50 to-cyan-100 text-cyan-700 border-r-4 border-cyan-500' 
+              ${isActive
+                ? 'bg-gradient-to-r from-cyan-50 to-cyan-100 text-cyan-700 border-r-4 border-cyan-500'
                 : 'text-gray-600 hover:bg-gradient-to-r hover:from-cyan-50 hover:to-cyan-100 hover:text-cyan-600'
               }
               ${isCollapsed ? 'justify-center px-2' : ''}
             `}
           >
             <Icon className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} flex-shrink-0`} />
-            
+
             {!isCollapsed && (
               <>
                 <span className="font-medium text-sm flex-1">{item.label}</span>
@@ -118,15 +128,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
         className={`
           w-full flex items-center gap-3 px-4 py-3 transition-all duration-200
           ${level > 0 ? 'pl-12' : ''}
-          ${isActive 
-            ? 'bg-gradient-to-r from-cyan-50 to-cyan-100 text-cyan-700 border-r-4 border-cyan-500' 
+          ${isActive
+            ? 'bg-gradient-to-r from-cyan-50 to-cyan-100 text-cyan-700 border-r-4 border-cyan-500'
             : 'text-gray-600 hover:bg-gradient-to-r hover:from-cyan-50 hover:to-cyan-100 hover:text-cyan-600'
           }
           ${isCollapsed ? 'justify-center px-2' : ''}
         `}
       >
         <Icon className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} flex-shrink-0`} />
-        
+
         {!isCollapsed && (
           <span className="font-medium text-sm flex-1">{item.label}</span>
         )}
@@ -145,7 +155,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
             </div>
           </div>
         )}
-        
+
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="p-2 rounded-lg hover:bg-gradient-to-r hover:from-cyan-50 hover:to-cyan-100 hover:text-cyan-600 transition-all duration-200"
@@ -165,10 +175,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
       {!isCollapsed && (
         <div className="p-4 border-t border-gray-200">
           <div className="text-center">
-            <div className="w-12 h-12 bg-gradient-to-r from-cyan-100 to-cyan-200 rounded-full mx-auto mb-2 flex items-center justify-center">
-              <Bell className="w-6 h-6 text-cyan-500" />
-            </div>
-            <p className="text-xs text-gray-500">Sistema de Gestión Médica</p>
+            <button
+              onClick={handleLogout}
+              className="w-12 h-12 bg-gradient-to-r from-cyan-100 to-cyan-200 rounded-full mx-auto mb-2 flex items-center justify-center hover:bg-gradient-to-r hover:from-cyan-200 hover:to-cyan-300 transition-all duration-200 focus:ring-4 focus:ring-cyan-300 focus:outline-none"
+              title="Cerrar sesión"
+            >
+              <LucideLogOut className="w-6 h-6 text-cyan-500" />
+            </button>
+            <p className="text-xs text-gray-500">Cerrar sesión</p>
           </div>
         </div>
       )}

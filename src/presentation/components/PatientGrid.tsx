@@ -12,7 +12,8 @@ import {
   Mail,
   MapPin,
   User,
-  Heart,
+  ChevronRight,
+  ChevronLeft,
   Shield,
 } from "lucide-react";
 import Header from "./Header";
@@ -407,7 +408,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                          <div className="w-10 h-10 bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 rounded-full flex items-center justify-center">
                             <span className="text-white font-semibold text-sm">
                               {patient.nombres.charAt(0)}
                               {patient.apellidos.charAt(0)}
@@ -474,16 +475,16 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                 <div className="text-sm text-gray-600">Página 1 de 1</div>
                 <div className="flex space-x-2">
                   <button
-                    className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    className="px-4 py-2 text-sm bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     disabled
                   >
-                    Anterior
+                    <ChevronLeft className="w-4 h-4" />
                   </button>
                   <button
-                    className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    className="px-4 py-2 text-sm bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     disabled
                   >
-                    Siguiente
+                    <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -774,7 +775,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
               </button>
               <button
                 onClick={confirmDelete}
-                className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
+                className="flex items-center text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
               >
                 <Trash2 className="w-4 h-4" />
                 Eliminar
