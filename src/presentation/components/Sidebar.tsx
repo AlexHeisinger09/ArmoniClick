@@ -41,19 +41,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
     id: 'pacientes',
     label: 'Pacientes',
     icon: Users,
-    href: 'dashboard/pacientes' 
+    href: '/pacientes' 
   },
   {
     id: 'calendario',
     label: 'Calendario',
     icon: Calendar,
-    href: 'dashboard/calendario' 
+    href: '/calendario' 
   },
   {
     id: 'configuracion',
     label: 'Configuración',
     icon: Settings,
-    href: 'dashboard/configuracion' 
+    href: '/configuracion' // Sin /dashboard/
   }
 ];
 
