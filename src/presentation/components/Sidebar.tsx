@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom'; // Importa Link y useLocation
+import { Link, useLocation } from 'react-router-dom';
 import { 
   Menu,
   Users,
@@ -22,40 +22,40 @@ interface MenuItem {
   id: string;
   label: string;
   icon: React.ElementType;
-  href: string; // Ahora href es obligatorio
+  href: string;
   children?: MenuItem[];
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, className = '' }) => {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const location = useLocation(); // Hook para obtener la ruta actual
+  const location = useLocation();
 
   const menuItems: MenuItem[] = [
-  {
-    id: 'home',
-    label: 'Inicio',
-    icon: Home,
-    href: '/dashboard'
-  },
-  {
-    id: 'pacientes',
-    label: 'Pacientes',
-    icon: Users,
-    href: '/pacientes' 
-  },
-  {
-    id: 'calendario',
-    label: 'Calendario',
-    icon: Calendar,
-    href: '/calendario' 
-  },
-  {
-    id: 'configuracion',
-    label: 'Configuración',
-    icon: Settings,
-    href: '/configuracion' // Sin /dashboard/
-  }
-];
+    {
+      id: 'home',
+      label: 'Inicio',
+      icon: Home,
+      href: '/dashboard' // Correcto - coincide con la ruta index del dashboard
+    },
+    {
+      id: 'pacientes',
+      label: 'Pacientes',
+      icon: Users,
+      href: '/dashboard/pacientes' // Correcto - ruta anidada
+    },
+    {
+      id: 'calendario',
+      label: 'Calendario',
+      icon: Calendar,
+      href: '/dashboard/calendario' // Correcto - ruta anidada
+    },
+    {
+      id: 'configuracion',
+      label: 'Configuración',
+      icon: Settings,
+      href: '/dashboard/configuracion' // Correcto - ruta anidada
+    }
+  ];
 
   const toggleExpanded = (itemId: string) => {
     setExpandedItems(prev => 
@@ -68,11 +68,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
   const renderMenuItem = (item: MenuItem, level = 0) => {
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedItems.includes(item.id);
-    const isActive = location.pathname === item.href; // Verifica si la ruta actual coincide
+    const isActive = location.pathname === item.href;
     const Icon = item.icon;
 
     if (hasChildren) {
-      // Para items con hijos (submenús)
       return (
         <div key={item.id}>
           <button
@@ -103,7 +102,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
             )}
           </button>
 
-          {/* Submenu */}
           {isExpanded && !isCollapsed && (
             <div className="bg-gray-50">
               {item.children?.map(child => renderMenuItem(child, level + 1))}
@@ -113,7 +111,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
       );
     }
 
-    // Para items sin hijos (enlaces directos)
     return (
       <Link
         key={item.id}
@@ -146,7 +143,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
             <div className="w-8 h-8 bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center">
               <Stethoscope className="w-5 h-5 text-white" />
             </div>
-            {/* <span className="font-bold text-gray-800 text-lg">ArmoniClick</span> */}
           </div>
         )}
         
