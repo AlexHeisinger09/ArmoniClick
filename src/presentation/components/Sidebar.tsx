@@ -31,31 +31,31 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
   const location = useLocation(); // Hook para obtener la ruta actual
 
   const menuItems: MenuItem[] = [
-    {
-      id: 'home',
-      label: 'Inicio',
-      icon: Home,
-      href: '/'
-    },
-    {
-      id: 'pacientes',
-      label: 'Pacientes',
-      icon: Users,
-      href: '/pacientes' // Cuando crees esta página
-    },
-    {
-      id: 'calendario',
-      label: 'Calendario',
-      icon: Calendar,
-      href: '/calendario' // Esta es la ruta que agregamos al router
-    },
-    {
-      id: 'configuracion',
-      label: 'Configuración',
-      icon: Settings,
-      href: '/configuracion' // Cuando crees esta página
-    }
-  ];
+  {
+    id: 'home',
+    label: 'Inicio',
+    icon: Home,
+    href: '/dashboard'
+  },
+  {
+    id: 'pacientes',
+    label: 'Pacientes',
+    icon: Users,
+    href: '/pacientes' // Sin /dashboard/
+  },
+  {
+    id: 'calendario',
+    label: 'Calendario',
+    icon: Calendar,
+    href: '/calendario' // Sin /dashboard/
+  },
+  {
+    id: 'configuracion',
+    label: 'Configuración',
+    icon: Settings,
+    href: '/configuracion' // Sin /dashboard/
+  }
+];
 
   const toggleExpanded = (itemId: string) => {
     setExpandedItems(prev => 
