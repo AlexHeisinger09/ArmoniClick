@@ -81,8 +81,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
               w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-200
               ${level > 0 ? 'pl-12' : ''}
               ${isActive 
-                ? 'bg-blue-50 text-blue-700 border-r-3 border-blue-600' 
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-gradient-to-r from-cyan-50 to-cyan-100 text-cyan-700 border-r-4 border-cyan-500' 
+                : 'text-gray-600 hover:bg-gradient-to-r hover:from-cyan-50 hover:to-cyan-100 hover:text-cyan-600'
               }
               ${isCollapsed ? 'justify-center px-2' : ''}
             `}
@@ -122,8 +122,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
           w-full flex items-center gap-3 px-4 py-3 transition-all duration-200
           ${level > 0 ? 'pl-12' : ''}
           ${isActive 
-            ? 'bg-blue-50 text-blue-700 border-r-3 border-blue-600' 
-            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            ? 'bg-gradient-to-r from-cyan-50 to-cyan-100 text-cyan-700 border-r-4 border-cyan-500' 
+            : 'text-gray-600 hover:bg-gradient-to-r hover:from-cyan-50 hover:to-cyan-100 hover:text-cyan-600'
           }
           ${isCollapsed ? 'justify-center px-2' : ''}
         `}
@@ -143,7 +143,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         {!isCollapsed && (
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center">
               <Stethoscope className="w-5 h-5 text-white" />
             </div>
             {/* <span className="font-bold text-gray-800 text-lg">ArmoniClick</span> */}
@@ -152,9 +152,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
         
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          className="p-2 rounded-lg hover:bg-gradient-to-r hover:from-cyan-50 hover:to-cyan-100 hover:text-cyan-600 transition-all duration-200"
         >
-          <Menu className="w-5 h-5 text-gray-600" />
+          <Menu className="w-5 h-5 text-gray-600 hover:text-cyan-600 transition-colors" />
         </button>
       </div>
 
@@ -169,8 +169,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
       {!isCollapsed && (
         <div className="p-4 border-t border-gray-200">
           <div className="text-center">
-            <div className="w-12 h-12 bg-gray-100 rounded-full mx-auto mb-2 flex items-center justify-center">
-              <Bell className="w-6 h-6 text-gray-400" />
+            <div className="w-12 h-12 bg-gradient-to-r from-cyan-100 to-cyan-200 rounded-full mx-auto mb-2 flex items-center justify-center">
+              <Bell className="w-6 h-6 text-cyan-500" />
             </div>
             <p className="text-xs text-gray-500">Sistema de Gestión Médica</p>
           </div>

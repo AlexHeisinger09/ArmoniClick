@@ -66,12 +66,12 @@ const Footer: React.FC = () => {
           {/* Logo y descripción */}
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Heart className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-bold text-gray-800 text-lg">
-                ArmoniClick
-              </span>
+              <img
+                src="/logoSmalll.png"
+                alt="ArmonicClick Logo"
+                className="w-10 h-10 object-contain"
+              />
+
             </div>
             <div className="text-sm text-gray-500">
               Sistema de Gestión Médica
@@ -335,8 +335,8 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                 className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
             </div>
-            <button className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2 whitespace-nowrap">
-              <Plus className="w-5 h-5" />
+            <button className="flex items-center text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+              <Plus className="w-5 h-5 mr-2" />
               Nuevo Paciente
             </button>
           </div>
@@ -439,21 +439,21 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                         <div className="flex space-x-2">
                           <button
                             onClick={() => handleViewDetail(patient)}
-                            className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="flex items-center justify-center text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm p-2 me-2 mb-2"
                             title="Ver detalle"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleEdit(patient)}
-                            className="p-2 text-green-600 hover:text-green-900 hover:bg-green-50 rounded-lg transition-colors"
+                            className="flex items-center justify-center text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm p-2 me-2 mb-2"
                             title="Editar"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(patient)}
-                            className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
+                            className="flex items-center justify-center text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm p-2 me-2 mb-2"
                             title="Eliminar"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -592,7 +592,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
             <div className="flex justify-end mt-6">
               <button
                 onClick={closeModals}
-                className="bg-gray-500 text-white px-6 py-2 rounded-xl hover:bg-gray-600 transition-colors"
+                className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
               >
                 Cerrar
               </button>
@@ -722,14 +722,14 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                 <button
                   type="button"
                   onClick={closeModals}
-                  className="bg-gray-500 text-white px-6 py-2 rounded-xl hover:bg-gray-600 transition-colors"
+                  className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   onClick={handleEditSubmit}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  className="flex items-center text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
                 >
                   <Save className="w-4 h-4" />
                   Guardar Cambios
@@ -768,13 +768,13 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
             <div className="flex justify-end space-x-3">
               <button
                 onClick={closeModals}
-                className="bg-gray-500 text-white px-6 py-2 rounded-xl hover:bg-gray-600 transition-colors"
+                className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmDelete}
-                className="bg-red-600 text-white px-6 py-2 rounded-xl hover:bg-red-700 transition-colors flex items-center gap-2"
+                className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
               >
                 <Trash2 className="w-4 h-4" />
                 Eliminar

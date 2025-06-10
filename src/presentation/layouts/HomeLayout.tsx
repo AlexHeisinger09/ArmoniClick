@@ -3,7 +3,7 @@ import { Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 
 export const HomeLayout = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 
   return (
     <div className="flex h-screen bg-gray-100">

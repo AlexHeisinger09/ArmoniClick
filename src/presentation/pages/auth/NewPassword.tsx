@@ -130,7 +130,7 @@ export const NewPassword = () => {
             <Button
               type="submit"
               variant="blue"
-              className="hover:bg-[#366EFF]/90 w-full flex items-center gap-2 md:text-lg"
+              className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
               disabled={changePasswordMutation.isSuccess}
             >
               <Spinner
