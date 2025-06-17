@@ -58,8 +58,6 @@ const initialEditFormData: PatientFormData = {
 
 // Componente Footer
 const Footer: React.FC = () => {
-  // const currentYear = new Date().getFullYear();
-
   return (
     <footer className="bg-white border-t border-gray-200 mt-8">
       <div className="px-6 py-6">
@@ -72,7 +70,6 @@ const Footer: React.FC = () => {
                 alt="ArmonicClick Logo"
                 className="w-10 h-10 object-contain"
               />
-
             </div>
             <div className="text-sm text-gray-500">
               Sistema de Gestión Médica
@@ -215,20 +212,29 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
   };
 
   // Manejadores de eventos
-  const handleEdit = (patient: Patient) => {
+  const handleEdit = (patient: Patient, e: React.MouseEvent) => {
+    e.stopPropagation();
     setSelectedPatient(patient);
     setEditFormData({ ...patient });
     setShowEditModal(true);
   };
 
-  const handleViewDetail = (patient: Patient) => {
+  const handleViewDetail = (patient: Patient, e: React.MouseEvent) => {
+    e.stopPropagation();
     setSelectedPatient(patient);
     setShowDetailModal(true);
   };
 
-  const handleDelete = (patient: Patient) => {
+  const handleDelete = (patient: Patient, e: React.MouseEvent) => {
+    e.stopPropagation();
     setSelectedPatient(patient);
     setShowDeleteAlert(true);
+  };
+
+  const handlePatientClick = (patient: Patient) => {
+    // Simulamos la navegación - en un entorno real usarías react-router
+    console.log(`Navegando a /dashboard/pacientes/${patient.id}`);
+    // window.location.href = `/dashboard/pacientes/${patient.id}`;
   };
 
   const confirmDelete = () => {
@@ -288,25 +294,14 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-400"></div>
       </div>
     );
   }
 
   return (
     <div className="bg-gray-50 min-h-full flex flex-col">
-      <Header />
       <div className="flex-1 p-6">
-        {/* Título y descripción
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Gestión de Pacientes
-          </h1>
-          <p className="text-gray-600">
-            Administra la información de tus pacientes de manera eficiente
-          </p>
-        </div> */}
-
         {/* Barra de búsqueda y acciones */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-stretch gap-4 mb-4">
@@ -316,62 +311,55 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
               className="w-20 rounded object-cover"
             />
             <div>
-              <h3 className="font-medium text-gray-900 sm:text-lg">Title goes here</h3>
+              <h3 className="font-medium text-gray-900 sm:text-lg">
+                Gestión de Pacientes
+              </h3>
               <p className="mt-0.5 text-gray-700">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Voluptates voluptas distinctio
-                nesciunt quas non animi.
+                Administra la información de tus pacientes de manera eficiente y
+                organizada.
               </p>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
-
             <div className="relative flex-1">
-
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
                 placeholder="Buscar por RUT del paciente..."
                 value={searchRut}
                 onChange={(e) => setSearchRut(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent text-sm"
               />
             </div>
-            <button className="flex items-center text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+            <button className="flex items-center bg-green-200 hover:bg-green-300 text-green-800 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors">
               <Plus className="w-5 h-5 mr-2" />
               Nuevo Paciente
             </button>
           </div>
-
-          {/* Contador de resultados */}
-          {/* <div className="mt-4 text-sm text-gray-600">
-            Mostrando{" "}
-            <span className="font-medium">{filteredPatients.length}</span> de{" "}
-            <span className="font-medium">{patients.length}</span> pacientes
-          </div> */}
         </div>
 
         {/* Tabla de pacientes */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full table-auto">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-100 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     RUT
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Nombre Completo
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Edad
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Teléfono
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Email
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Acciones
                   </th>
                 </tr>
@@ -399,7 +387,8 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   filteredPatients.map((patient) => (
                     <tr
                       key={patient.id}
-                      className="hover:bg-gray-50 transition-colors"
+                      onClick={() => handlePatientClick(patient)}
+                      className="hover:bg-gray-100 transition-colors cursor-pointer"
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm font-medium text-gray-900">
@@ -407,18 +396,8 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 rounded-full flex items-center justify-center">
-                            <span className="text-white font-semibold text-sm">
-                              {patient.nombres.charAt(0)}
-                              {patient.apellidos.charAt(0)}
-                            </span>
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {patient.nombres} {patient.apellidos}
-                            </div>
-                          </div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {patient.nombres} {patient.apellidos}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -437,27 +416,27 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex space-x-2">
+                        <div className="flex space-x-3">
                           <button
-                            onClick={() => handleViewDetail(patient)}
-                            className="flex items-center justify-center text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm p-2 me-2 mb-2"
+                            onClick={(e) => handleViewDetail(patient, e)}
+                            className="text-gray-500 hover:text-gray-700 transition-colors"
                             title="Ver detalle"
                           >
-                            <Eye className="w-4 h-4" />
+                            <Eye className="w-5 h-5" />
                           </button>
                           <button
-                            onClick={() => handleEdit(patient)}
-                            className="flex items-center justify-center text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm p-2 me-2 mb-2"
+                            onClick={(e) => handleEdit(patient, e)}
+                            className="text-gray-500 hover:text-gray-700 transition-colors"
                             title="Editar"
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-5 h-5" />
                           </button>
                           <button
-                            onClick={() => handleDelete(patient)}
-                            className="flex items-center justify-center text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm p-2 me-2 mb-2"
+                            onClick={(e) => handleDelete(patient, e)}
+                            className="text-gray-500 hover:text-gray-700 transition-colors"
                             title="Eliminar"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-5 h-5" />
                           </button>
                         </div>
                       </td>
@@ -475,13 +454,13 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                 <div className="text-sm text-gray-600">Página 1 de 1</div>
                 <div className="flex space-x-2">
                   <button
-                    className="px-4 py-2 text-sm bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="px-4 py-2 text-sm bg-blue-200 hover:bg-blue-300 text-blue-800 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     disabled
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <button
-                    className="px-4 py-2 text-sm bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="px-4 py-2 text-sm bg-blue-200 hover:bg-blue-300 text-blue-800 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     disabled
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -593,7 +572,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
             <div className="flex justify-end mt-6">
               <button
                 onClick={closeModals}
-                className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
               >
                 Cerrar
               </button>
@@ -629,7 +608,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                     name="rut"
                     value={editFormData.rut || ""}
                     onChange={handleEditInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent"
                     required
                   />
                 </div>
@@ -643,7 +622,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                     name="nombres"
                     value={editFormData.nombres || ""}
                     onChange={handleEditInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent"
                     required
                   />
                 </div>
@@ -657,7 +636,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                     name="apellidos"
                     value={editFormData.apellidos || ""}
                     onChange={handleEditInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent"
                     required
                   />
                 </div>
@@ -671,7 +650,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                     name="fecha_nacimiento"
                     value={editFormData.fecha_nacimiento || ""}
                     onChange={handleEditInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent"
                     required
                   />
                 </div>
@@ -685,7 +664,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                     name="telefono"
                     value={editFormData.telefono || ""}
                     onChange={handleEditInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent"
                     required
                   />
                 </div>
@@ -699,7 +678,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                     name="email"
                     value={editFormData.email || ""}
                     onChange={handleEditInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent"
                     required
                   />
                 </div>
@@ -714,7 +693,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   value={editFormData.direccion || ""}
                   onChange={handleEditInputChange}
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent"
                   required
                 />
               </div>
@@ -723,16 +702,16 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                 <button
                   type="button"
                   onClick={closeModals}
-                  className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   onClick={handleEditSubmit}
-                  className="flex items-center text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
+                  className="flex items-center bg-blue-200 hover:bg-blue-300 text-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
                 >
-                  <Save className="w-4 h-4" />
+                  <Save className="w-4 h-4 mr-2" />
                   Guardar Cambios
                 </button>
               </div>
@@ -769,15 +748,15 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
             <div className="flex justify-end space-x-3">
               <button
                 onClick={closeModals}
-                className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex items-center text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
+                className="flex items-center bg-red-200 hover:bg-red-300 text-red-800 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-4 h-4 mr-2" />
                 Eliminar
               </button>
             </div>

@@ -5,9 +5,7 @@ import {
   Users,
   Calendar,
   Settings,
-  Stethoscope,
-  Home,
-  LogOut,
+  Notebook,
   LucideLogOut,
   ChevronDown,
   ChevronRight
@@ -36,37 +34,40 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
     {
       id: 'home',
       label: 'Inicio',
-      icon: Home,
-      href: '/dashboard' // Correcto - coincide con la ruta index del dashboard
+      icon: Notebook,
+      href: '/dashboard'
     },
     {
       id: 'pacientes',
       label: 'Pacientes',
       icon: Users,
-      href: '/dashboard/pacientes' // Correcto - ruta anidada
+      href: '/dashboard/pacientes'
     },
     {
       id: 'calendario',
       label: 'Calendario',
       icon: Calendar,
-      href: '/dashboard/calendario' // Correcto - ruta anidada
+      href: '/dashboard/calendario'
     },
     {
       id: 'configuracion',
       label: 'Configuración',
       icon: Settings,
-      href: '/dashboard/configuracion' // Correcto - ruta anidada
+      href: '/dashboard/configuracion'
     }
   ];
-  const handleLogout = () => {
-    // Aquí puedes agregar tu lógica de logout
-    // Por ejemplo: limpiar localStorage, cookies, etc.
-    localStorage.removeItem('token'); // Ejemplo
-    localStorage.removeItem('user'); // Ejemplo
 
-    // Redirigir al login
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     navigate('/auth/login');
   };
+
+  const handleMenuClick = () => {
+    // Colapsar sidebar al seleccionar un menú
+    setIsCollapsed(true);
+  };
+
   const toggleExpanded = (itemId: string) => {
     setExpandedItems(prev =>
       prev.includes(itemId)
@@ -81,50 +82,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
     const isActive = location.pathname === item.href;
     const Icon = item.icon;
 
-    if (hasChildren) {
-      return (
-        <div key={item.id}>
-          <button
-            onClick={() => toggleExpanded(item.id)}
-            className={`
-              w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-200
-              ${level > 0 ? 'pl-12' : ''}
-              ${isActive
-                ? 'bg-gradient-to-r from-cyan-50 to-cyan-100 text-cyan-700 border-r-4 border-cyan-500'
-                : 'text-gray-600 hover:bg-gradient-to-r hover:from-cyan-50 hover:to-cyan-100 hover:text-cyan-600'
-              }
-              ${isCollapsed ? 'justify-center px-2' : ''}
-            `}
-          >
-            <Icon className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} flex-shrink-0`} />
-
-            {!isCollapsed && (
-              <>
-                <span className="font-medium text-sm flex-1">{item.label}</span>
-                <div className="flex-shrink-0">
-                  {isExpanded ? (
-                    <ChevronDown className="w-4 h-4" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4" />
-                  )}
-                </div>
-              </>
-            )}
-          </button>
-
-          {isExpanded && !isCollapsed && (
-            <div className="bg-gray-50">
-              {item.children?.map(child => renderMenuItem(child, level + 1))}
-            </div>
-          )}
-        </div>
-      );
-    }
-
     return (
       <Link
         key={item.id}
         to={item.href}
+        onClick={handleMenuClick}
         className={`
           w-full flex items-center gap-3 px-4 py-3 transition-all duration-200
           ${level > 0 ? 'pl-12' : ''}
@@ -147,11 +109,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
   return (
     <div className={`bg-white shadow-lg border-r border-gray-200 ${isCollapsed ? 'w-16' : 'w-64'} transition-all duration-300 flex flex-col ${className}`}>
       {/* Header del Sidebar */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+      <div className="flex items-center justify-between p-4">
         {!isCollapsed && (
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center">
-              <Stethoscope className="w-5 h-5 text-white" />
+            <div className="w-30 h-30 flex items-center justify-center">
+              <img 
+                src="/letras.PNG" 
+                alt="Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
           </div>
         )}
@@ -171,16 +137,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
         </div>
       </nav>
 
-      {/* Footer del Sidebar */}
+      {/* Footer del Sidebar - Minimalista */}
       {!isCollapsed && (
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4">
           <div className="text-center">
             <button
               onClick={handleLogout}
-              className="w-12 h-12 bg-gradient-to-r from-cyan-100 to-cyan-200 rounded-full mx-auto mb-2 flex items-center justify-center hover:bg-gradient-to-r hover:from-cyan-200 hover:to-cyan-300 transition-all duration-200 focus:ring-4 focus:ring-cyan-300 focus:outline-none"
+              className="w-10 h-10 bg-gradient-to-r from-cyan-100 to-cyan-200 rounded-full mx-auto mb-2 flex items-center justify-center hover:bg-gradient-to-r hover:from-cyan-200 hover:to-cyan-300 transition-all duration-200 focus:ring-4 focus:ring-cyan-300 focus:outline-none"
               title="Cerrar sesión"
             >
-              <LucideLogOut className="w-6 h-6 text-cyan-500" />
+              <LucideLogOut className="w-5 h-5 text-cyan-500" />
             </button>
             <p className="text-xs text-gray-500">Cerrar sesión</p>
           </div>

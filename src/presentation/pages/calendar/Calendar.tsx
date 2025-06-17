@@ -33,47 +33,51 @@ const Calendar: React.FC = () => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showModal, setShowModal] = useState<boolean>(false);
+  const [showNewAppointmentModal, setShowNewAppointmentModal] = useState<boolean>(false);
   const [appointments, setAppointments] = useState<AppointmentsData>({});
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('month');
+  const [viewMode, setViewMode] = useState<ViewMode>('week');
+  
+  // Estados para el formulario de nueva cita
+  const [newAppointment, setNewAppointment] = useState({
+    patient: '',
+    service: '',
+    description: '',
+    time: '',
+    duration: 60 as 30 | 60,
+    date: null as Date | null
+  });
 
   // Datos de ejemplo - esto vendría de tu backend
   const exampleAppointments: AppointmentsData = {
-    '2025-06-09': [
+    '2025-06-10': [
       { id: 1, time: '09:00', duration: 60, patient: 'María García', service: 'Limpieza facial', status: 'confirmed' },
       { id: 2, time: '11:00', duration: 30, patient: 'Ana López', service: 'Depilación cejas', status: 'pending' },
       { id: 3, time: '14:30', duration: 60, patient: 'Carmen Silva', service: 'Tratamiento anti-edad', status: 'confirmed' }
     ],
-    '2025-06-10': [
+    '2025-06-11': [
       { id: 4, time: '10:00', duration: 30, patient: 'Laura Martín', service: 'Manicura', status: 'confirmed' },
       { id: 5, time: '15:00', duration: 60, patient: 'Patricia Ruiz', service: 'Masaje facial', status: 'confirmed' }
     ],
-    '2025-06-11': [
+    '2025-06-17': [
       { id: 6, time: '09:00', duration: 60, patient: 'Isabel Torres', service: 'Depilación', status: 'pending' },
       { id: 7, time: '10:00', duration: 60, patient: 'Sofía Mendoza', service: 'Tratamiento facial', status: 'confirmed' },
-      { id: 8, time: '11:00', duration: 60, patient: 'Carla Vega', service: 'Depilación cejas', status: 'confirmed' },
-      { id: 9, time: '12:00', duration: 60, patient: 'Carla Vega', service: 'Depilación cejas', status: 'confirmed' },
-      { id: 10, time: '13:00', duration: 60, patient: 'Carla Vega', service: 'Depilación cejas', status: 'confirmed' },
-      { id: 11, time: '14:00', duration: 60, patient: 'Carla Vega', service: 'Depilación cejas', status: 'confirmed' },
-      { id: 12, time: '15:00', duration: 60, patient: 'Carla Vega', service: 'Depilación cejas', status: 'confirmed' },
       { id: 13, time: '16:00', duration: 60, patient: 'Carla Vega', service: 'Depilación cejas', status: 'confirmed' },
       { id: 14, time: '17:00', duration: 60, patient: 'Carla Vega', service: 'Depilación cejas', status: 'confirmed' }
     ],
-    '2025-06-12': [
+    '2025-06-18': [
       { id: 15, time: '10:30', duration: 60, patient: 'Rosa Jiménez', service: 'Limpieza profunda', status: 'confirmed' },
       { id: 16, time: '14:00', duration: 30, patient: 'Elena Castro', service: 'Manicura', status: 'pending' }
     ],
-    '2025-06-13': [
+    '2025-06-19': [
       { id: 17, time: '09:00', duration: 30, patient: 'Andrea Morales', service: 'Pedicura', status: 'confirmed' },
       { id: 18, time: '11:30', duration: 60, patient: 'Lucía Herrera', service: 'Masaje relajante', status: 'confirmed' }
     ]
   };
 
-  // Horarios disponibles (9:00 AM a 6:00 PM)
+  // Horarios disponibles (solo horas en punto de 9:00 AM a 5:00 PM)
   const timeSlots: string[] = [
-    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
-    '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'
+    '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'
   ];
 
   const services: Service[] = [
@@ -96,7 +100,8 @@ const Calendar: React.FC = () => {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
+    // Ajustar para que lunes sea el primer día (0) en lugar de domingo
+    const startingDayOfWeek = (firstDay.getDay() + 6) % 7;
 
     const days: CalendarDay[] = [];
 
@@ -121,7 +126,11 @@ const Calendar: React.FC = () => {
   };
 
   const formatDateKey = (date: Date): string => {
-    return date.toISOString().split('T')[0];
+    // Asegurar formato consistente YYYY-MM-DD
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const navigateMonth = (direction: number): void => {
@@ -138,21 +147,21 @@ const Calendar: React.FC = () => {
     });
   };
 
-  const isTimeSlotAvailable = (date: Date, time: string, duration: number = 30): boolean => {
+  const isTimeSlotAvailable = (date: Date, time: string): boolean => {
     const dateKey = formatDateKey(date);
     const dayAppointments = appointments[dateKey] || [];
 
-    const [hours, minutes] = time.split(':').map(Number);
-    const slotStart = hours * 60 + minutes;
-    const slotEnd = slotStart + duration;
+    const conflictingAppointments = dayAppointments.filter(appointment => appointment.time === time);
 
-    return !dayAppointments.some(appointment => {
-      const [appHours, appMinutes] = appointment.time.split(':').map(Number);
-      const appStart = appHours * 60 + appMinutes;
-      const appEnd = appStart + appointment.duration;
+    // Permitir hasta 2 citas en el mismo horario (1 principal + 1 sobrecupo)
+    return conflictingAppointments.length < 2;
+  };
 
-      return (slotStart < appEnd && slotEnd > appStart);
-    });
+  const hasOverlap = (date: Date, time: string): boolean => {
+    const dateKey = formatDateKey(date);
+    const dayAppointments = appointments[dateKey] || [];
+    const conflictingAppointments = dayAppointments.filter(appointment => appointment.time === time);
+    return conflictingAppointments.length >= 1;
   };
 
   const handleDateClick = (day: CalendarDay): void => {
@@ -167,10 +176,74 @@ const Calendar: React.FC = () => {
     }
   };
 
-  const handleNewAppointment = (timeSlot: string): void => {
+  const handleNewAppointment = (timeSlot: string, targetDate?: Date): void => {
     setSelectedTimeSlot(timeSlot);
-    // Aquí abrirías un modal para crear nueva cita
-    console.log('Nueva cita para:', selectedDate ? formatDateKey(selectedDate) : formatDateKey(currentDate), 'a las', timeSlot);
+    const dateToUse = targetDate || selectedDate || currentDate;
+    setNewAppointment({
+      ...newAppointment,
+      time: timeSlot,
+      date: dateToUse
+    });
+    setSelectedDate(dateToUse); // Asegurar que la fecha seleccionada se actualice
+    setShowNewAppointmentModal(true);
+  };
+
+  const handleCreateAppointment = (): void => {
+    if (!newAppointment.patient || !newAppointment.service || !newAppointment.time || !newAppointment.date) {
+      alert('Por favor complete todos los campos obligatorios');
+      return;
+    }
+
+    const dateKey = formatDateKey(newAppointment.date);
+    const newId = Math.max(...Object.values(appointments).flat().map(a => a.id), 0) + 1;
+    
+    // Verificar si es sobrecupo
+    const existingAppointments = appointments[dateKey] || [];
+    const conflictingAppointments = existingAppointments.filter(appointment => appointment.time === newAppointment.time);
+    const isOverbook = conflictingAppointments.length >= 1;
+    
+    const appointment: Appointment = {
+      id: newId,
+      time: newAppointment.time,
+      duration: isOverbook ? 30 : 60, // Sobrecupo = 30min, normal = 60min
+      patient: newAppointment.patient,
+      service: newAppointment.service,
+      status: 'pending' // Todas las citas nuevas quedan pendientes
+    };
+
+    // Actualizar el estado de appointments
+    setAppointments(prev => {
+      const updated = {
+        ...prev,
+        [dateKey]: [...(prev[dateKey] || []), appointment]
+      };
+      console.log('Citas actualizadas:', updated); // Debug
+      return updated;
+    });
+
+    // Limpiar formulario y cerrar modal
+    setNewAppointment({
+      patient: '',
+      service: '',
+      description: '',
+      time: '',
+      duration: 60,
+      date: null
+    });
+    setShowNewAppointmentModal(false);
+    
+    // Mensaje de confirmación
+    alert(`Cita creada exitosamente para ${newAppointment.patient} el ${newAppointment.date.toLocaleDateString('es-CL')} a las ${newAppointment.time}`);
+  };
+
+  const openNewAppointmentModal = (date: Date): void => {
+    setSelectedDate(date); // Asegurar que la fecha se seleccione primero
+    setNewAppointment({
+      ...newAppointment,
+      date: date,
+      time: ''
+    });
+    setShowNewAppointmentModal(true);
   };
 
   const getAppointmentsForDate = (date: Date): Appointment[] => {
@@ -183,7 +256,7 @@ const Calendar: React.FC = () => {
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
 
-  const dayNames: string[] = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const dayNames: string[] = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
   const today = new Date();
   const isToday = (date: Date): boolean => {
@@ -193,8 +266,9 @@ const Calendar: React.FC = () => {
   // Funciones para vista semanal
   const getWeekDays = (date: Date): Date[] => {
     const startOfWeek = new Date(date);
+    // Ajustar para que lunes sea el primer día de la semana
     const day = startOfWeek.getDay();
-    const diff = startOfWeek.getDate() - day;
+    const diff = startOfWeek.getDate() - ((day + 6) % 7);
     startOfWeek.setDate(diff);
 
     const weekDays: Date[] = [];
@@ -218,30 +292,107 @@ const Calendar: React.FC = () => {
     }
   };
 
-  // Función para renderizar cita en timeline
-  const renderAppointmentBlock = (appointment: Appointment, date: Date): React.ReactElement => {
+  // Función para renderizar cita en timeline con manejo de sobrecupos
+  const renderAppointmentBlock = (appointment: Appointment, date: Date, viewType: 'week' | 'day' = 'week'): React.ReactElement => {
+    const dateKey = formatDateKey(date);
+    const dayAppointments = appointments[dateKey] || [];
+    const sameTimeAppointments = dayAppointments.filter(app => app.time === appointment.time);
+    const appointmentIndex = sameTimeAppointments.findIndex(app => app.id === appointment.id);
+    const isOverbook = sameTimeAppointments.length > 1;
+    
     const [hours, minutes] = appointment.time.split(':').map(Number);
-    const startMinutes = hours * 60 + minutes;
-    const topPosition = ((startMinutes - 540) / 30) * 40; // 540 = 9:00 AM en minutos
-    const height = (appointment.duration / 30) * 40;
+    
+    // Configuración según la vista
+    const config = viewType === 'day' ? {
+      slotHeight: 72, // Altura de cada slot de tiempo en vista día
+      leftOffset: 6,
+      rightOffset: 6,
+      textSize: 'text-sm',
+      padding: 'p-2'
+    } : {
+      slotHeight: 65, // Altura de cada slot de tiempo en vista semana
+      leftOffset: 2,
+      rightOffset: 2,
+      textSize: 'text-xs',
+      padding: 'p-1'
+    };
+
+    // Encontrar el slot correcto basado en la hora de la cita
+    const getSlotIndex = (time: string) => {
+      const [hour] = time.split(':').map(Number);
+      return hour - 9; // 9 AM es el primer slot (índice 0)
+    };
+
+    const slotIndex = getSlotIndex(appointment.time);
+    const topOffset = slotIndex * config.slotHeight + 2; // +2 para margen superior
+    const blockHeight = config.slotHeight - 4; // -4 para margen
+
+    let positionStyle: React.CSSProperties = {
+      top: `${topOffset}px`,
+      height: `${blockHeight}px`,
+      maxHeight: `${blockHeight}px`,
+      overflow: 'hidden'
+    };
+
+    if (isOverbook) {
+      if (appointmentIndex === 0) {
+        // Cita principal - ocupa el 70% izquierdo
+        positionStyle = {
+          ...positionStyle,
+          left: `${config.leftOffset}px`,
+          width: '70%',
+          right: 'auto'
+        };
+      } else {
+        // Sobrecupo - línea delgada del 25% derecho
+        positionStyle = {
+          ...positionStyle,
+          right: `${config.rightOffset}px`,
+          width: '25%',
+          left: 'auto'
+        };
+      }
+    } else {
+      // Cita única, ocupa todo el ancho
+      positionStyle = {
+        ...positionStyle,
+        left: `${config.leftOffset}px`,
+        right: `${config.rightOffset}px`
+      };
+    }
 
     return (
       <div
         key={appointment.id}
         className={`
-          absolute left-1 right-1 rounded-lg p-2 text-xs text-white shadow-md cursor-pointer
-          ${appointment.status === 'confirmed' ? 'bg-purple-500 hover:bg-purple-600' : 'bg-yellow-500 hover:bg-yellow-600'}
+          absolute rounded-lg text-white shadow-md cursor-pointer transition-all
+          ${appointment.status === 'confirmed' ? 'bg-green-500 hover:bg-green-600' : 'bg-yellow-500 hover:bg-yellow-600'}
+          ${isOverbook && appointmentIndex > 0 ? 'p-1' : config.padding}
         `}
-        style={{
-          top: `${topPosition}px`,
-          height: `${height}px`,
-          minHeight: '36px'
-        }}
+        style={positionStyle}
         onClick={() => console.log('Editar cita:', appointment)}
       >
-        <div className="font-semibold truncate">{appointment.patient}</div>
-        <div className="truncate opacity-90">{appointment.service}</div>
-        <div className="text-xs opacity-75">{appointment.time} ({appointment.duration}min)</div>
+        {isOverbook && appointmentIndex > 0 ? (
+          // Sobrecupo - vista compacta
+          <div className="text-xs h-full flex flex-col justify-center">
+            <div className="font-semibold truncate">{appointment.patient.split(' ')[0]}</div>
+            <div className="text-xs opacity-90 truncate">Sobrecupo</div>
+            <div className="text-xs opacity-75">{appointment.time}</div>
+          </div>
+        ) : (
+          // Cita normal - vista completa
+          <div className="h-full flex flex-col justify-center">
+            <div className={`font-semibold truncate ${config.textSize}`}>
+              {appointment.patient}
+            </div>
+            <div className={`truncate opacity-90 ${config.textSize === 'text-sm' ? 'text-xs' : 'text-xs'}`}>
+              {appointment.service}
+            </div>
+            <div className={`opacity-75 ${config.textSize === 'text-sm' ? 'text-xs' : 'text-xs'}`}>
+              {appointment.time} ({appointment.duration}min)
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -381,9 +532,13 @@ const Calendar: React.FC = () => {
                 <div className="flex">
                   {/* Columna de horarios */}
                   <div className="w-20 border-r border-gray-100">
-                    <div className="h-12 border-b border-gray-100"></div>
+                    <div className="h-16 border-b border-gray-100"></div>
                     {timeSlots.map(time => (
-                      <div key={time} className="h-10 px-2 py-1 text-xs text-gray-500 border-b border-gray-50">
+                      <div 
+                        key={time} 
+                        className="px-2 py-4 text-sm text-gray-500 border-b border-gray-50 flex items-center justify-center"
+                        style={{ height: '65px' }}
+                      >
                         {time}
                       </div>
                     ))}
@@ -396,11 +551,14 @@ const Calendar: React.FC = () => {
                     return (
                       <div key={dayIndex} className="flex-1 border-r border-gray-100 last:border-r-0">
                         {/* Header del día */}
-                        <div className={`
-                          h-12 p-2 text-center border-b border-gray-100 font-medium
-                          ${isToday(day) ? 'bg-purple-100 text-purple-700' : 'text-gray-700'}
-                        `}>
-                          <div className="text-xs">{dayNames[day.getDay()]}</div>
+                        <div 
+                          className={`
+                            h-16 p-3 text-center border-b border-gray-100 font-medium cursor-pointer hover:bg-purple-50 transition-colors
+                            ${isToday(day) ? 'bg-purple-100 text-purple-700' : 'text-gray-700'}
+                          `}
+                          onClick={() => setSelectedDate(day)}
+                        >
+                          <div className="text-xs">{dayNames[(day.getDay() + 6) % 7]}</div>
                           <div className={`text-lg ${isToday(day) ? 'text-purple-700' : ''}`}>
                             {day.getDate()}
                           </div>
@@ -411,17 +569,16 @@ const Calendar: React.FC = () => {
                           {timeSlots.map((time, timeIndex) => (
                             <div
                               key={time}
-                              className="h-10 border-b border-gray-50 hover:bg-purple-25 cursor-pointer"
+                              className="border-b border-gray-50 hover:bg-purple-25 cursor-pointer"
+                              style={{ height: '65px' }}
                               onClick={() => {
-                                setSelectedDate(day);
-                                setSelectedTimeSlot(time);
-                                handleNewAppointment(time);
+                                handleNewAppointment(time, day);
                               }}
                             />
                           ))}
 
                           {/* Citas del día */}
-                          {dayAppointments.map(appointment => renderAppointmentBlock(appointment, day))}
+                          {dayAppointments.map(appointment => renderAppointmentBlock(appointment, day, 'week'))}
                         </div>
                       </div>
                     );
@@ -433,9 +590,13 @@ const Calendar: React.FC = () => {
               {viewMode === 'day' && (
                 <div className="flex">
                   {/* Columna de horarios */}
-                  <div className="w-20 border-r border-gray-100">
+                  <div className="w-24 border-r border-gray-100">
                     {timeSlots.map(time => (
-                      <div key={time} className="h-16 px-2 py-2 text-sm text-gray-500 border-b border-gray-100">
+                      <div 
+                        key={time} 
+                        className="px-3 py-3 text-base text-gray-500 border-b border-gray-100 flex items-center justify-center font-medium"
+                        style={{ height: '72px' }}
+                      >
                         {time}
                       </div>
                     ))}
@@ -447,11 +608,10 @@ const Calendar: React.FC = () => {
                       {timeSlots.map((time, timeIndex) => (
                         <div
                           key={time}
-                          className="h-16 border-b border-gray-100 hover:bg-purple-25 cursor-pointer px-4 flex items-center"
+                          className="border-b border-gray-100 hover:bg-purple-25 cursor-pointer px-6 flex items-center"
+                          style={{ height: '72px' }}
                           onClick={() => {
-                            setSelectedDate(currentDate);
-                            setSelectedTimeSlot(time);
-                            handleNewAppointment(time);
+                            handleNewAppointment(time, currentDate);
                           }}
                         >
                           <div className="text-sm text-gray-400">Clic para agendar cita</div>
@@ -459,34 +619,7 @@ const Calendar: React.FC = () => {
                       ))}
 
                       {/* Citas del día */}
-                      {getAppointmentsForDate(currentDate).map(appointment => {
-                        const [hours, minutes] = appointment.time.split(':').map(Number);
-                        const startMinutes = hours * 60 + minutes;
-                        const topPosition = ((startMinutes - 540) / 30) * 32; // 540 = 9:00 AM en minutos
-                        const height = (appointment.duration / 30) * 32;
-
-                        return (
-                          <div
-                            key={appointment.id}
-                            className={`
-                              absolute left-4 right-4 rounded-lg p-4 text-white shadow-lg cursor-pointer
-                              ${appointment.status === 'confirmed' ? 'bg-purple-500 hover:bg-purple-600' : 'bg-yellow-500 hover:bg-yellow-600'}
-                            `}
-                            style={{
-                              top: `${topPosition}px`,
-                              height: `${height}px`,
-                              minHeight: '60px'
-                            }}
-                            onClick={() => console.log('Editar cita:', appointment)}
-                          >
-                            <div className="font-bold text-lg">{appointment.patient}</div>
-                            <div className="opacity-90">{appointment.service}</div>
-                            <div className="text-sm opacity-75 mt-1">
-                              {appointment.time} - {appointment.duration} minutos
-                            </div>
-                          </div>
-                        );
-                      })}
+                      {getAppointmentsForDate(currentDate).map(appointment => renderAppointmentBlock(appointment, currentDate, 'day'))}
                     </div>
                   </div>
                 </div>
@@ -499,22 +632,46 @@ const Calendar: React.FC = () => {
             <div className="p-6 border-b border-gray-100">
               <h3 className="text-xl font-bold text-gray-800 flex items-center">
                 <CalendarIcon className="w-5 h-5 mr-2 text-purple-600" />
-                {viewMode === 'day'
-                  ? 'Citas de Hoy'
-                  : `Citas del ${currentDate.toLocaleDateString('es-CL', {
-                    day: 'numeric',
-                    month: 'short'
-                  })}`
-                }
+                {(() => {
+                  let displayDate: Date;
+                  if (viewMode === 'day') {
+                    displayDate = currentDate;
+                    return 'Citas de Hoy';
+                  } else if (selectedDate) {
+                    displayDate = selectedDate;
+                    return `Citas del ${selectedDate.toLocaleDateString('es-CL', {
+                      day: 'numeric',
+                      month: 'short'
+                    })}`;
+                  } else {
+                    displayDate = new Date();
+                    return `Citas del ${displayDate.toLocaleDateString('es-CL', {
+                      day: 'numeric',
+                      month: 'short'
+                    })}`;
+                  }
+                })()}
               </h3>
               <p className="text-sm text-gray-500 mt-1">
-                {viewMode === 'day' && currentDate.toLocaleDateString('es-CL', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-                {viewMode !== 'day' && 'Clic en un día para ver sus citas'}
+                {(() => {
+                  if (viewMode === 'day') {
+                    return currentDate.toLocaleDateString('es-CL', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    });
+                  } else if (selectedDate) {
+                    return selectedDate.toLocaleDateString('es-CL', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    });
+                  } else {
+                    return 'Clic en un día para ver sus citas';
+                  }
+                })()}
               </p>
             </div>
             <div className="p-6">
@@ -585,10 +742,7 @@ const Calendar: React.FC = () => {
 
                           {/* Botón para agregar nueva cita - más compacto */}
                           <button
-                            onClick={() => {
-                              setSelectedDate(selectedDayDate);
-                              setShowModal(true);
-                            }}
+                            onClick={() => openNewAppointmentModal(selectedDayDate)}
                             className="w-full mt-3 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center text-sm"
                           >
                             <Plus className="w-4 h-4 mr-2" />
@@ -601,10 +755,7 @@ const Calendar: React.FC = () => {
                         <CalendarIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                         <p className="text-gray-500 mb-4">No hay citas programadas para este día</p>
                         <button
-                          onClick={() => {
-                            setSelectedDate(selectedDayDate);
-                            setShowModal(true);
-                          }}
+                          onClick={() => openNewAppointmentModal(selectedDayDate)}
                           className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center mx-auto"
                         >
                           <Plus className="w-4 h-4 mr-2" />
@@ -646,44 +797,173 @@ const Calendar: React.FC = () => {
                   <h4 className="font-semibold text-gray-800 mb-3">Horarios disponibles</h4>
                   <div className="grid grid-cols-3 gap-2">
                     {timeSlots.map(time => {
-                      const available30 = isTimeSlotAvailable(selectedDate, time, 30);
-                      const available60 = isTimeSlotAvailable(selectedDate, time, 60);
+                      const available = isTimeSlotAvailable(selectedDate, time);
+                      const isOverlap = hasOverlap(selectedDate, time);
 
                       return (
                         <div key={time} className="text-center">
                           <div className="text-sm font-medium text-gray-700 mb-1">{time}</div>
                           <div className="space-y-1">
                             <button
-                              onClick={() => handleNewAppointment(time)}
-                              disabled={!available30}
+                              onClick={() => handleNewAppointment(time, selectedDate)}
+                              disabled={!available}
                               className={`
-                                w-full px-2 py-1 text-xs rounded transition-colors
-                                ${available30
-                                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                }
-                              `}
-                            >
-                              30min
-                            </button>
-                            <button
-                              onClick={() => handleNewAppointment(time)}
-                              disabled={!available60}
-                              className={`
-                                w-full px-2 py-1 text-xs rounded transition-colors
-                                ${available60
-                                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                w-full px-3 py-2 text-sm rounded transition-colors
+                                ${available
+                                  ? isOverlap 
+                                    ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                                    : 'bg-green-100 text-green-700 hover:bg-green-200'
                                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                 }
                               `}
                             >
                               60min
+                              {isOverlap && available && (
+                                <div className="text-xs">Sobrecupo</div>
+                              )}
                             </button>
                           </div>
                         </div>
                       );
                     })}
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal para crear nueva cita */}
+        {showNewAppointmentModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-2xl w-full">
+              <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                <h3 className="text-xl font-bold text-gray-800">
+                  {newAppointment.date 
+                    ? `Nueva cita para el ${newAppointment.date.toLocaleDateString('es-CL', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long'
+                      })}`
+                    : 'Nueva Cita'
+                  }
+                </h3>
+                <button
+                  onClick={() => setShowNewAppointmentModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+               {/* Paciente */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Paciente *
+                  </label>
+                  <input
+                    type="text"
+                    value={newAppointment.patient}
+                    onChange={(e) => setNewAppointment({...newAppointment, patient: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="Nombre del paciente"
+                  />
+                </div>
+
+                {/* Tratamiento */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tratamiento *
+                  </label>
+                  <select
+                    value={newAppointment.service}
+                    onChange={(e) => {
+                      setNewAppointment({
+                        ...newAppointment, 
+                        service: e.target.value
+                      });
+                    }}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="">Seleccionar tratamiento</option>
+                    {services.map(service => (
+                      <option key={service.name} value={service.name}>
+                        {service.name} - {service.price}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Descripción */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Descripción
+                  </label>
+                  <textarea
+                    value={newAppointment.description}
+                    onChange={(e) => setNewAppointment({...newAppointment, description: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent h-20 resize-none"
+                    placeholder="Detalles adicionales del tratamiento..."
+                  />
+                </div>
+
+                {/* Horario */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Horario * (60 minutos)
+                  </label>
+                  <div className="grid grid-cols-3 gap-3 border border-gray-200 rounded-lg p-4">
+                    {timeSlots.map(time => {
+                      const available = newAppointment.date ? 
+                        isTimeSlotAvailable(newAppointment.date, time) : false;
+                      const isOverlap = newAppointment.date ? 
+                        hasOverlap(newAppointment.date, time) : false;
+                      
+                      return (
+                        <button
+                          key={time}
+                          onClick={() => setNewAppointment({...newAppointment, time: time})}
+                          disabled={!available}
+                          className={`
+                            p-3 text-sm rounded-lg transition-colors border font-medium
+                            ${newAppointment.time === time 
+                              ? 'bg-purple-600 text-white border-purple-600' 
+                              : available 
+                                ? isOverlap
+                                  ? 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100'
+                                  : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' 
+                                : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
+                            }
+                          `}
+                        >
+                          {time}
+                          {isOverlap && available && (
+                            <div className="text-xs">Sobrecupo</div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Verde: Disponible | Amarillo: Sobrecupo | Gris: No disponible
+                  </p>
+                </div>
+
+                {/* Botones */}
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    onClick={() => setShowNewAppointmentModal(false)}
+                    className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleCreateAppointment}
+                    className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                  >
+                    Crear Cita
+                  </button>
                 </div>
               </div>
             </div>
