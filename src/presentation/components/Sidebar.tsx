@@ -88,11 +88,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
         to={item.href}
         onClick={handleMenuClick}
         className={`
-          w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 rounded-lg mx-2 my-1
+          w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 rounded-lg my-1
           ${level > 0 ? 'pl-12' : ''}
           ${isActive
-            ? 'bg-gradient-to-r from-aesthetic-lavanda to-aesthetic-rosa text-aesthetic-gris-profundo shadow-sm border-r-4 border-aesthetic-gris-profundo'
-            : 'text-aesthetic-gris-medio hover:bg-gradient-to-r hover:from-aesthetic-lavanda/30 hover:to-aesthetic-rosa/30 hover:text-aesthetic-gris-profundo'
+            ? 'bg-gradient-to-r from-aesthetic-lavanda to-aesthetic-rosa text-aesthetic-gris-profundo shadow-sm border-r-4 border-aesthetic-gris-profundo mr-1'
+            : 'text-aesthetic-gris-medio hover:bg-gradient-to-r hover:from-aesthetic-lavanda/30 hover:to-aesthetic-rosa/30 hover:text-aesthetic-gris-profundo mx-2'
           }
           ${isCollapsed ? 'justify-center px-2 mx-1' : ''}
         `}
@@ -112,7 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
       <div className="flex items-center justify-between p-4 flex-shrink-0">
         {!isCollapsed && (
           <div className="flex items-center space-x-2">
-            <div className="w-30 h-30 flex items-center justify-center">
+            <div className="w-20 h-20 flex items-center justify-center">
               <img 
                 src="/letras.PNG" 
                 alt="Logo" 
@@ -131,7 +131,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
       </div>
 
       {/* Navigation Menu */}
-      <nav className={`flex-1 py-4 ${isCollapsed ? 'pr-1' : 'pr-2'}`}>
+      <nav className={`flex-1 py-4 ${isCollapsed ? 'pr-1' : 'pr-3'}`}>
         <div className="space-y-1">
           {menuItems.map(item => renderMenuItem(item))}
         </div>
