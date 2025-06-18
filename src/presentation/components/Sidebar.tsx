@@ -88,13 +88,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
         to={item.href}
         onClick={handleMenuClick}
         className={`
-          w-full flex items-center gap-3 px-4 py-3 transition-all duration-200
+          w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 rounded-lg mx-2 my-1
           ${level > 0 ? 'pl-12' : ''}
           ${isActive
-            ? 'bg-gradient-to-r from-cyan-50 to-cyan-100 text-cyan-700 border-r-4 border-cyan-500'
-            : 'text-gray-600 hover:bg-gradient-to-r hover:from-cyan-50 hover:to-cyan-100 hover:text-cyan-600'
+            ? 'bg-gradient-to-r from-aesthetic-lavanda to-aesthetic-rosa text-aesthetic-gris-profundo shadow-sm border-r-4 border-aesthetic-gris-profundo'
+            : 'text-aesthetic-gris-medio hover:bg-gradient-to-r hover:from-aesthetic-lavanda/30 hover:to-aesthetic-rosa/30 hover:text-aesthetic-gris-profundo'
           }
-          ${isCollapsed ? 'justify-center px-2' : ''}
+          ${isCollapsed ? 'justify-center px-2 mx-1' : ''}
         `}
       >
         <Icon className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} flex-shrink-0`} />
@@ -107,9 +107,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
   };
 
   return (
-    <div className={`bg-white shadow-lg border-r border-gray-200 ${isCollapsed ? 'w-16' : 'w-64'} transition-all duration-300 flex flex-col ${className}`}>
+    <div className={`bg-white shadow-lg h-full ${isCollapsed ? 'w-16' : 'w-64'} transition-all duration-300 flex flex-col ${className}`}>
       {/* Header del Sidebar */}
-      <div className="flex items-center justify-between p-4">
+      <div className="flex items-center justify-between p-4 flex-shrink-0">
         {!isCollapsed && (
           <div className="flex items-center space-x-2">
             <div className="w-30 h-30 flex items-center justify-center">
@@ -124,31 +124,31 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
 
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-2 rounded-lg hover:bg-gradient-to-r hover:from-cyan-50 hover:to-cyan-100 hover:text-cyan-600 transition-all duration-200"
+          className="p-2 rounded-lg hover:bg-aesthetic-lavanda/30 hover:text-aesthetic-gris-profundo transition-all duration-200"
         >
-          <Menu className="w-5 h-5 text-gray-600 hover:text-cyan-600 transition-colors" />
+          <Menu className="w-5 h-5 text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo transition-colors" />
         </button>
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 overflow-y-auto">
-        <div className="py-2">
+      <nav className={`flex-1 py-4 ${isCollapsed ? 'pr-1' : 'pr-2'}`}>
+        <div className="space-y-1">
           {menuItems.map(item => renderMenuItem(item))}
         </div>
       </nav>
 
       {/* Footer del Sidebar - Minimalista */}
       {!isCollapsed && (
-        <div className="p-4">
+        <div className="p-4 flex-shrink-0">
           <div className="text-center">
             <button
               onClick={handleLogout}
-              className="w-10 h-10 bg-gradient-to-r from-cyan-100 to-cyan-200 rounded-full mx-auto mb-2 flex items-center justify-center hover:bg-gradient-to-r hover:from-cyan-200 hover:to-cyan-300 transition-all duration-200 focus:ring-4 focus:ring-cyan-300 focus:outline-none"
+              className="w-10 h-10 bg-gradient-to-r from-aesthetic-menta to-aesthetic-rosa rounded-full mx-auto mb-2 flex items-center justify-center hover:from-aesthetic-menta/70 hover:to-aesthetic-rosa/70 transition-all duration-200 focus:ring-4 focus:ring-aesthetic-lavanda/30 focus:outline-none shadow-sm"
               title="Cerrar sesión"
             >
-              <LucideLogOut className="w-5 h-5 text-cyan-500" />
+              <LucideLogOut className="w-5 h-5 text-aesthetic-gris-profundo" />
             </button>
-            <p className="text-xs text-gray-500">Cerrar sesión</p>
+            <p className="text-xs text-aesthetic-gris-medio">Cerrar sesión</p>
           </div>
         </div>
       )}

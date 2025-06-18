@@ -15,8 +15,14 @@ import {
   ChevronRight,
   ChevronLeft,
   Shield,
+  ArrowLeft,
+  Clock,
+  FileText,
+  Activity,
+  Heart,
+  Stethoscope,
+  Pill
 } from "lucide-react";
-import Header from "./Header";
 
 // Tipos e interfaces
 interface Patient {
@@ -29,6 +35,31 @@ interface Patient {
   email: string;
   direccion: string;
   id_doctor: number;
+}
+
+interface Treatment {
+  id: number;
+  nombre: string;
+  fecha_inicio: string;
+  fecha_fin?: string;
+  estado: 'activo' | 'completado' | 'pausado';
+  descripcion: string;
+}
+
+interface Appointment {
+  id: number;
+  fecha: string;
+  hora: string;
+  tipo: string;
+  estado: 'programada' | 'completada' | 'cancelada';
+  notas?: string;
+}
+
+interface MedicalRecord {
+  fecha: string;
+  tipo: string;
+  descripcion: string;
+  medico: string;
 }
 
 interface PatientFormData {
@@ -56,46 +87,398 @@ const initialEditFormData: PatientFormData = {
   telefono: "",
 };
 
-// Componente Footer
-const Footer: React.FC = () => {
+// Datos de ejemplo para tratamientos, citas y ficha médica
+const mockTreatments: Treatment[] = [
+  {
+    id: 1,
+    nombre: "Fisioterapia Rehabilitación",
+    fecha_inicio: "2024-01-15",
+    fecha_fin: "2024-03-15",
+    estado: 'completado',
+    descripcion: "Tratamiento de rehabilitación post-operatoria"
+  },
+  {
+    id: 2,
+    nombre: "Terapia Ocupacional",
+    fecha_inicio: "2024-02-01",
+    estado: 'activo',
+    descripcion: "Mejora de habilidades motoras finas"
+  }
+];
+
+const mockAppointments: Appointment[] = [
+  {
+    id: 1,
+    fecha: "2024-06-20",
+    hora: "10:00",
+    tipo: "Consulta de seguimiento",
+    estado: 'programada'
+  },
+  {
+    id: 2,
+    fecha: "2024-06-15",
+    hora: "14:30",
+    tipo: "Evaluación fisioterapia",
+    estado: 'completada',
+    notas: "Paciente muestra buena evolución"
+  },
+  {
+    id: 3,
+    fecha: "2024-06-25",
+    hora: "09:00",
+    tipo: "Control médico",
+    estado: 'programada'
+  }
+];
+
+const mockMedicalRecords: MedicalRecord[] = [
+  {
+    fecha: "2024-06-10",
+    tipo: "Consulta",
+    descripcion: "Control rutinario. Paciente presenta evolución favorable.",
+    medico: "Dr. García"
+  },
+  {
+    fecha: "2024-05-15",
+    tipo: "Examen",
+    descripcion: "Radiografía de rodilla. Sin anomalías detectadas.",
+    medico: "Dr. Martínez"
+  },
+  {
+    fecha: "2024-04-20",
+    tipo: "Tratamiento",
+    descripcion: "Inicio de fisioterapia post-operatoria.",
+    medico: "Dr. López"
+  }
+];
+
+// Componente para mostrar el detalle completo del paciente
+const PatientDetail: React.FC<{
+  patient: Patient;
+  onBack: () => void;
+  onEdit: (patient: Patient) => void;
+}> = ({ patient, onBack, onEdit }) => {
+  const [activeTab, setActiveTab] = useState('informacion');
+
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString("es-CL");
+  };
+
+  const calculateAge = (birthDate: string): number => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birth.getDate())
+    ) {
+      age--;
+    }
+
+    return age;
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'activo':
+      case 'programada':
+        return 'bg-green-100 text-green-800';
+      case 'completado':
+      case 'completada':
+        return 'bg-blue-100 text-blue-800';
+      case 'pausado':
+      case 'cancelada':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const tabs = [
+    { id: 'informacion', label: 'Información', icon: User },
+    { id: 'tratamientos', label: 'Tratamientos', icon: Stethoscope },
+    { id: 'citas', label: 'Citas Agendadas', icon: Clock },
+    { id: 'historial', label: 'Historial Médico', icon: FileText },
+  ];
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'informacion':
+        return (
+          <div className="space-y-6">
+            {/* Información Personal del Paciente */}
+            <div className="bg-white rounded-xl shadow-sm border border-aesthetic-lavanda/20 p-6">
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-aesthetic-gris-profundo mb-2">
+                    {patient.nombres} {patient.apellidos}
+                  </h2>
+                  <p className="text-aesthetic-gris-medio">RUT: {patient.rut}</p>
+                </div>
+                <div className="bg-aesthetic-lavanda/30 p-3 rounded-full">
+                  <User className="w-8 h-8 text-aesthetic-gris-profundo" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-aesthetic-menta/30 p-2 rounded-full">
+                    <Calendar className="w-5 h-5 text-aesthetic-gris-profundo" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-aesthetic-gris-medio">Edad</p>
+                    <p className="font-medium text-aesthetic-gris-profundo">
+                      {calculateAge(patient.fecha_nacimiento)} años
+                    </p>
+                    <p className="text-xs text-aesthetic-gris-medio">
+                      {formatDate(patient.fecha_nacimiento)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <div className="bg-aesthetic-rosa/30 p-2 rounded-full">
+                    <Phone className="w-5 h-5 text-aesthetic-gris-profundo" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-aesthetic-gris-medio">Teléfono</p>
+                    <p className="font-medium text-aesthetic-gris-profundo">
+                      {patient.telefono}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <Mail className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-aesthetic-gris-medio">Email</p>
+                    <p className="font-medium text-aesthetic-gris-profundo">
+                      {patient.email}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-aesthetic-lavanda/20">
+                <div className="flex items-start space-x-3">
+                  <div className="bg-yellow-100 p-2 rounded-full">
+                    <MapPin className="w-5 h-5 text-yellow-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-aesthetic-gris-medio">Dirección</p>
+                    <p className="font-medium text-aesthetic-gris-profundo">
+                      {patient.direccion}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'tratamientos':
+        return (
+          <div className="bg-white rounded-xl shadow-sm border border-aesthetic-lavanda/20 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-aesthetic-gris-profundo">
+                Tratamientos del Paciente
+              </h3>
+              <button className="flex items-center bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo font-medium rounded-lg text-sm px-4 py-2 transition-colors">
+                <Plus className="w-4 h-4 mr-2" />
+                Nuevo Tratamiento
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {mockTreatments.map((treatment) => (
+                <div key={treatment.id} className="border border-aesthetic-lavanda/20 rounded-lg p-4 hover:bg-aesthetic-lavanda/5 transition-colors">
+                  <div className="flex items-start justify-between mb-3">
+                    <h4 className="font-medium text-aesthetic-gris-profundo text-lg">
+                      {treatment.nombre}
+                    </h4>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(treatment.estado)}`}>
+                      {treatment.estado}
+                    </span>
+                  </div>
+                  <p className="text-aesthetic-gris-medio mb-3">
+                    {treatment.descripcion}
+                  </p>
+                  <div className="flex items-center justify-between text-sm text-aesthetic-gris-medio">
+                    <div className="flex items-center">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Inicio: {formatDate(treatment.fecha_inicio)}
+                      {treatment.fecha_fin && (
+                        <span className="ml-4">
+                          • Fin: {formatDate(treatment.fecha_fin)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex space-x-2">
+                      <button className="text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo transition-colors">
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button className="text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo transition-colors">
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'citas':
+        return (
+          <div className="bg-white rounded-xl shadow-sm border border-aesthetic-lavanda/20 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-aesthetic-gris-profundo">
+                Citas Programadas
+              </h3>
+              <button className="flex items-center bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo font-medium rounded-lg text-sm px-4 py-2 transition-colors">
+                <Plus className="w-4 h-4 mr-2" />
+                Nueva Cita
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {mockAppointments.map((appointment) => (
+                <div key={appointment.id} className="border border-aesthetic-lavanda/20 rounded-lg p-4 hover:bg-aesthetic-lavanda/5 transition-colors">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h4 className="font-medium text-aesthetic-gris-profundo text-lg">
+                        {appointment.tipo}
+                      </h4>
+                      <div className="flex items-center text-aesthetic-gris-medio mt-1">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        {formatDate(appointment.fecha)} • {appointment.hora}
+                      </div>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(appointment.estado)}`}>
+                      {appointment.estado}
+                    </span>
+                  </div>
+                  {appointment.notas && (
+                    <p className="text-aesthetic-gris-medio mb-3">
+                      {appointment.notas}
+                    </p>
+                  )}
+                  <div className="flex justify-end space-x-2">
+                    <button className="text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo transition-colors">
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button className="text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo transition-colors">
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button className="text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo transition-colors">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'historial':
+        return (
+          <div className="bg-white rounded-xl shadow-sm border border-aesthetic-lavanda/20 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-aesthetic-gris-profundo">
+                Historial Médico
+              </h3>
+              <button className="flex items-center bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo font-medium rounded-lg text-sm px-4 py-2 transition-colors">
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar Registro
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {mockMedicalRecords.map((record, index) => (
+                <div key={index} className="border-l-4 border-aesthetic-lavanda pl-4 py-4 hover:bg-aesthetic-lavanda/5 transition-colors rounded-r-lg">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-lg font-medium text-aesthetic-gris-profundo">
+                        {record.tipo}
+                      </span>
+                      <span className="text-sm text-aesthetic-gris-medio">
+                        • {record.medico}
+                      </span>
+                    </div>
+                    <span className="text-sm text-aesthetic-gris-medio">
+                      {formatDate(record.fecha)}
+                    </span>
+                  </div>
+                  <p className="text-aesthetic-gris-medio">
+                    {record.descripcion}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   return (
-    <footer className="bg-white border-t border-gray-200 mt-8">
-      <div className="px-6 py-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-          {/* Logo y descripción */}
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-2">
-              <img
-                src="/logoSmalll.png"
-                alt="ArmonicClick Logo"
-                className="w-10 h-10 object-contain"
-              />
-            </div>
-            <div className="text-sm text-gray-500">
-              Sistema de Gestión Médica
-            </div>
-          </div>
+    <div className="space-y-6">
+      {/* Encabezado con botón de regreso */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={onBack}
+            className="flex items-center text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo transition-colors p-2 rounded-lg hover:bg-aesthetic-lavanda/20"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Volver a la lista
+          </button>
+        </div>
+        <button
+          onClick={() => onEdit(patient)}
+          className="flex items-center bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo font-medium rounded-lg text-sm px-4 py-2 transition-colors"
+        >
+          <Edit className="w-4 h-4 mr-2" />
+          Editar Paciente
+        </button>
+      </div>
 
-          {/* Enlaces y información */}
-          <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-6 text-sm">
-            <div className="flex items-center space-x-2 text-gray-600">
-              <Shield className="w-4 h-4" />
-              <span>Datos protegidos con SSL</span>
-            </div>
+      {/* Pestañas de navegación */}
+      <div className="bg-white rounded-xl shadow-sm border border-aesthetic-lavanda/20 overflow-hidden">
+        <div className="border-b border-aesthetic-lavanda/20">
+          <nav className="flex space-x-0">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-aesthetic-lavanda text-aesthetic-gris-profundo bg-aesthetic-lavanda/10'
+                      : 'border-transparent text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo hover:bg-aesthetic-lavanda/5'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 mr-2" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
 
-            <div className="flex items-center space-x-2 text-gray-600">
-              <Phone className="w-4 h-4" />
-              <span>+56 2 2345 6789</span>
-            </div>
-
-            <div className="flex items-center space-x-2 text-gray-600">
-              <Mail className="w-4 h-4" />
-              <span>soporte@armoniclick.cl</span>
-            </div>
-          </div>
+        {/* Contenido de la pestaña activa */}
+        <div className="p-6">
+          {renderTabContent()}
         </div>
       </div>
-    </footer>
+    </div>
   );
 };
 
@@ -106,12 +489,15 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
   const [searchRut, setSearchRut] = useState("");
   const [loading, setLoading] = useState(true);
+  
+  // Estados para vista
+  const [currentView, setCurrentView] = useState<'grid' | 'detail'>('grid');
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
 
   // Estados para modales
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [editFormData, setEditFormData] =
     useState<PatientFormData>(initialEditFormData);
 
@@ -212,8 +598,8 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
   };
 
   // Manejadores de eventos
-  const handleEdit = (patient: Patient, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleEdit = (patient: Patient, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     setSelectedPatient(patient);
     setEditFormData({ ...patient });
     setShowEditModal(true);
@@ -232,9 +618,13 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
   };
 
   const handlePatientClick = (patient: Patient) => {
-    // Simulamos la navegación - en un entorno real usarías react-router
-    console.log(`Navegando a /dashboard/pacientes/${patient.id}`);
-    // window.location.href = `/dashboard/pacientes/${patient.id}`;
+    setSelectedPatient(patient);
+    setCurrentView('detail');
+  };
+
+  const handleBackToGrid = () => {
+    setCurrentView('grid');
+    setSelectedPatient(null);
   };
 
   const confirmDelete = () => {
@@ -294,16 +684,16 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-400"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aesthetic-lavanda"></div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-50 min-h-full flex flex-col">
+    <div className="bg-gradient-aesthetic min-h-full flex flex-col">
       <div className="flex-1 p-6">
-        {/* Barra de búsqueda y acciones */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        {/* Barra de búsqueda y acciones - SIEMPRE VISIBLE */}
+        <div className="bg-white rounded-xl shadow-sm border border-aesthetic-lavanda/20 p-6 mb-6">
           <div className="flex items-stretch gap-4 mb-4">
             <img
               alt=""
@@ -311,181 +701,196 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
               className="w-20 rounded object-cover"
             />
             <div>
-              <h3 className="font-medium text-gray-900 sm:text-lg">
-                Gestión de Pacientes
+              <h3 className="font-medium text-aesthetic-gris-profundo sm:text-lg">
+                {currentView === 'grid' ? 'Gestión de Pacientes' : `Paciente: ${selectedPatient?.nombres} ${selectedPatient?.apellidos}`}
               </h3>
-              <p className="mt-0.5 text-gray-700">
-                Administra la información de tus pacientes de manera eficiente y
-                organizada.
+              <p className="mt-0.5 text-aesthetic-gris-medio">
+                {currentView === 'grid' 
+                  ? 'Administra la información de tus pacientes de manera eficiente y organizada.'
+                  : 'Vista detallada con tratamientos, citas y historial médico completo.'
+                }
               </p>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Buscar por RUT del paciente..."
-                value={searchRut}
-                onChange={(e) => setSearchRut(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent text-sm"
-              />
-            </div>
-            <button className="flex items-center bg-green-200 hover:bg-green-300 text-green-800 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors">
-              <Plus className="w-5 h-5 mr-2" />
-              Nuevo Paciente
-            </button>
-          </div>
-        </div>
-
-        {/* Tabla de pacientes */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full table-auto">
-              <thead className="bg-gray-100 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    RUT
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Nombre Completo
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Edad
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Teléfono
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
-                {filteredPatients.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
-                      <div className="flex flex-col items-center justify-center">
-                        <User className="w-12 h-12 text-gray-300 mb-4" />
-                        <p className="text-gray-500 text-lg mb-2">
-                          {searchRut
-                            ? "No se encontraron pacientes con ese RUT"
-                            : "No hay pacientes registrados"}
-                        </p>
-                        <p className="text-gray-400 text-sm">
-                          {searchRut
-                            ? "Intenta con otro término de búsqueda"
-                            : "Comienza agregando un nuevo paciente"}
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredPatients.map((patient) => (
-                    <tr
-                      key={patient.id}
-                      onClick={() => handlePatientClick(patient)}
-                      className="hover:bg-gray-100 transition-colors cursor-pointer"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-medium text-gray-900">
-                          {patient.rut}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {patient.nombres} {patient.apellidos}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900">
-                          {calculateAge(patient.fecha_nacimiento)} años
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900">
-                          {patient.telefono}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900">
-                          {patient.email}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex space-x-3">
-                          <button
-                            onClick={(e) => handleViewDetail(patient, e)}
-                            className="text-gray-500 hover:text-gray-700 transition-colors"
-                            title="Ver detalle"
-                          >
-                            <Eye className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={(e) => handleEdit(patient, e)}
-                            className="text-gray-500 hover:text-gray-700 transition-colors"
-                            title="Editar"
-                          >
-                            <Edit className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={(e) => handleDelete(patient, e)}
-                            className="text-gray-500 hover:text-gray-700 transition-colors"
-                            title="Eliminar"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Paginación */}
-          {filteredPatients.length > 0 && (
-            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-              <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-600">Página 1 de 1</div>
-                <div className="flex space-x-2">
-                  <button
-                    className="px-4 py-2 text-sm bg-blue-200 hover:bg-blue-300 text-blue-800 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                    disabled
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    className="px-4 py-2 text-sm bg-blue-200 hover:bg-blue-300 text-blue-800 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                    disabled
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
+          {currentView === 'grid' && (
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-aesthetic-gris-medio w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Buscar por RUT del paciente..."
+                  value={searchRut}
+                  onChange={(e) => setSearchRut(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-sm text-aesthetic-gris-profundo placeholder-aesthetic-gris-medio"
+                />
               </div>
+              <button className="flex items-center bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo font-medium rounded-lg text-sm px-5 py-2.5 transition-colors shadow-sm">
+                <Plus className="w-5 h-5 mr-2" />
+                Nuevo Paciente
+              </button>
             </div>
           )}
         </div>
-      </div>
 
-      {/* Footer */}
-      <Footer />
+        {/* Contenido dinámico - Grilla o Detalle */}
+        <div className="transition-all duration-300 ease-in-out">
+          {currentView === 'grid' ? (
+            /* Tabla de pacientes */
+            <div className="bg-white rounded-xl shadow-sm border border-aesthetic-lavanda/20 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full table-auto">
+                  <thead className="bg-aesthetic-gris-claro border-b border-aesthetic-lavanda/20">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-aesthetic-gris-profundo uppercase tracking-wider">
+                        RUT
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-aesthetic-gris-profundo uppercase tracking-wider">
+                        Nombre Completo
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-aesthetic-gris-profundo uppercase tracking-wider">
+                        Edad
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-aesthetic-gris-profundo uppercase tracking-wider">
+                        Teléfono
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-aesthetic-gris-profundo uppercase tracking-wider">
+                        Email
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-aesthetic-gris-profundo uppercase tracking-wider">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-aesthetic-lavanda/10">
+                    {filteredPatients.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-12 text-center">
+                          <div className="flex flex-col items-center justify-center">
+                            <User className="w-12 h-12 text-aesthetic-gris-medio/50 mb-4" />
+                            <p className="text-aesthetic-gris-profundo text-lg mb-2">
+                              {searchRut
+                                ? "No se encontraron pacientes con ese RUT"
+                                : "No hay pacientes registrados"}
+                            </p>
+                            <p className="text-aesthetic-gris-medio text-sm">
+                              {searchRut
+                                ? "Intenta con otro término de búsqueda"
+                                : "Comienza agregando un nuevo paciente"}
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredPatients.map((patient) => (
+                        <tr
+                          key={patient.id}
+                          onClick={() => handlePatientClick(patient)}
+                          className="hover:bg-aesthetic-lavanda/10 transition-colors cursor-pointer"
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm font-medium text-aesthetic-gris-profundo">
+                              {patient.rut}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-aesthetic-gris-profundo">
+                              {patient.nombres} {patient.apellidos}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-aesthetic-gris-profundo">
+                              {calculateAge(patient.fecha_nacimiento)} años
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-aesthetic-gris-profundo">
+                              {patient.telefono}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-aesthetic-gris-profundo">
+                              {patient.email}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex space-x-3">
+                              <button
+                                onClick={(e) => handleViewDetail(patient, e)}
+                                className="text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo transition-colors"
+                                title="Ver detalle"
+                              >
+                                <Eye className="w-5 h-5" />
+                              </button>
+                              <button
+                                onClick={(e) => handleEdit(patient, e)}
+                                className="text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo transition-colors"
+                                title="Editar"
+                              >
+                                <Edit className="w-5 h-5" />
+                              </button>
+                              <button
+                                onClick={(e) => handleDelete(patient, e)}
+                                className="text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo transition-colors"
+                                title="Eliminar"
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Paginación */}
+              {filteredPatients.length > 0 && (
+                <div className="px-6 py-4 border-t border-aesthetic-lavanda/20 bg-aesthetic-gris-claro">
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm text-aesthetic-gris-medio">Página 1 de 1</div>
+                    <div className="flex space-x-2">
+                      <button
+                        className="px-4 py-2 text-sm bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                        disabled
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button
+                        className="px-4 py-2 text-sm bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                        disabled
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Vista de detalle del paciente */
+            selectedPatient && (
+              <PatientDetail
+                patient={selectedPatient}
+                onBack={handleBackToGrid}
+                onEdit={handleEdit}
+              />
+            )
+          )}
+        </div>
+      </div>
 
       {/* Modal de Detalle */}
       {showDetailModal && selectedPatient && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-800">
+              <h3 className="text-xl font-bold text-aesthetic-gris-profundo">
                 Detalle del Paciente
               </h3>
               <button
                 onClick={closeModals}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -494,12 +899,12 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
-                  <div className="bg-blue-100 p-2 rounded-full">
-                    <Eye className="w-5 h-5 text-blue-600" />
+                  <div className="bg-aesthetic-lavanda/30 p-2 rounded-full">
+                    <Eye className="w-5 h-5 text-aesthetic-gris-profundo" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">RUT</p>
-                    <p className="font-medium text-gray-900">
+                    <p className="text-sm text-aesthetic-gris-medio">RUT</p>
+                    <p className="font-medium text-aesthetic-gris-profundo">
                       {selectedPatient.rut}
                     </p>
                   </div>
@@ -510,23 +915,23 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                     <Calendar className="w-5 h-5 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Fecha de Nacimiento</p>
-                    <p className="font-medium text-gray-900">
+                    <p className="text-sm text-aesthetic-gris-medio">Fecha de Nacimiento</p>
+                    <p className="font-medium text-aesthetic-gris-profundo">
                       {formatDate(selectedPatient.fecha_nacimiento)}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-aesthetic-gris-medio">
                       {calculateAge(selectedPatient.fecha_nacimiento)} años
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-3">
-                  <div className="bg-purple-100 p-2 rounded-full">
-                    <Phone className="w-5 h-5 text-purple-600" />
+                  <div className="bg-aesthetic-rosa/30 p-2 rounded-full">
+                    <Phone className="w-5 h-5 text-aesthetic-gris-profundo" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Teléfono</p>
-                    <p className="font-medium text-gray-900">
+                    <p className="text-sm text-aesthetic-gris-medio">Teléfono</p>
+                    <p className="font-medium text-aesthetic-gris-profundo">
                       {selectedPatient.telefono}
                     </p>
                   </div>
@@ -535,24 +940,24 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
 
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
-                  <div className="bg-yellow-100 p-2 rounded-full">
-                    <Mail className="w-5 h-5 text-yellow-600" />
+                  <div className="bg-aesthetic-menta/30 p-2 rounded-full">
+                    <Mail className="w-5 h-5 text-aesthetic-gris-profundo" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium text-gray-900">
+                    <p className="text-sm text-aesthetic-gris-medio">Email</p>
+                    <p className="font-medium text-aesthetic-gris-profundo">
                       {selectedPatient.email}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start space-x-3">
-                  <div className="bg-red-100 p-2 rounded-full">
-                    <MapPin className="w-5 h-5 text-red-600" />
+                  <div className="bg-yellow-100 p-2 rounded-full">
+                    <MapPin className="w-5 h-5 text-yellow-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Dirección</p>
-                    <p className="font-medium text-gray-900">
+                    <p className="text-sm text-aesthetic-gris-medio">Dirección</p>
+                    <p className="font-medium text-aesthetic-gris-profundo">
                       {selectedPatient.direccion}
                     </p>
                   </div>
@@ -560,11 +965,11 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
               </div>
             </div>
 
-            <div className="bg-gray-50 p-4 rounded-xl mt-6">
-              <h4 className="font-semibold text-gray-800 mb-2">
+            <div className="bg-aesthetic-gris-claro p-4 rounded-xl mt-6">
+              <h4 className="font-semibold text-aesthetic-gris-profundo mb-2">
                 Información Personal
               </h4>
-              <p className="text-lg font-medium text-gray-900">
+              <p className="text-lg font-medium text-aesthetic-gris-profundo">
                 {selectedPatient.nombres} {selectedPatient.apellidos}
               </p>
             </div>
@@ -572,7 +977,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
             <div className="flex justify-end mt-6">
               <button
                 onClick={closeModals}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
+                className="bg-aesthetic-gris-claro hover:bg-aesthetic-gris-claro/80 text-aesthetic-gris-profundo font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
               >
                 Cerrar
               </button>
@@ -586,12 +991,12 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto shadow-2xl">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-800">
+              <h3 className="text-xl font-bold text-aesthetic-gris-profundo">
                 Editar Paciente
               </h3>
               <button
                 onClick={closeModals}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -600,7 +1005,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-1">
                     RUT
                   </label>
                   <input
@@ -608,13 +1013,13 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                     name="rut"
                     value={editFormData.rut || ""}
                     onChange={handleEditInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-1">
                     Nombres
                   </label>
                   <input
@@ -622,13 +1027,13 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                     name="nombres"
                     value={editFormData.nombres || ""}
                     onChange={handleEditInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-1">
                     Apellidos
                   </label>
                   <input
@@ -636,13 +1041,13 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                     name="apellidos"
                     value={editFormData.apellidos || ""}
                     onChange={handleEditInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-1">
                     Fecha de Nacimiento
                   </label>
                   <input
@@ -650,13 +1055,13 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                     name="fecha_nacimiento"
                     value={editFormData.fecha_nacimiento || ""}
                     onChange={handleEditInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-1">
                     Teléfono
                   </label>
                   <input
@@ -664,13 +1069,13 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                     name="telefono"
                     value={editFormData.telefono || ""}
                     onChange={handleEditInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-1">
                     Email
                   </label>
                   <input
@@ -678,14 +1083,14 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                     name="email"
                     value={editFormData.email || ""}
                     onChange={handleEditInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-1">
                   Dirección
                 </label>
                 <textarea
@@ -693,23 +1098,23 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   value={editFormData.direccion || ""}
                   onChange={handleEditInputChange}
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
                   required
                 />
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+              <div className="flex justify-end space-x-3 pt-4 border-t border-aesthetic-lavanda/20">
                 <button
                   type="button"
                   onClick={closeModals}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
+                  className="bg-aesthetic-gris-claro hover:bg-aesthetic-gris-claro/80 text-aesthetic-gris-profundo font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   onClick={handleEditSubmit}
-                  className="flex items-center bg-blue-200 hover:bg-blue-300 text-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
+                  className="flex items-center bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo font-medium rounded-lg text-sm px-5 py-2.5 transition-colors shadow-sm"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   Guardar Cambios
@@ -728,14 +1133,14 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
               <div className="bg-red-100 p-2 rounded-full">
                 <Trash2 className="w-6 h-6 text-red-600" />
               </div>
-              <h3 className="text-lg font-bold text-gray-800">
+              <h3 className="text-lg font-bold text-aesthetic-gris-profundo">
                 Confirmar Eliminación
               </h3>
             </div>
 
-            <p className="text-gray-600 mb-6">
+            <p className="text-aesthetic-gris-medio mb-6">
               ¿Está seguro de que desea eliminar al paciente{" "}
-              <span className="font-semibold text-gray-800">
+              <span className="font-semibold text-aesthetic-gris-profundo">
                 {selectedPatient.nombres} {selectedPatient.apellidos}
               </span>
               ?
@@ -748,13 +1153,13 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
             <div className="flex justify-end space-x-3">
               <button
                 onClick={closeModals}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
+                className="bg-aesthetic-gris-claro hover:bg-aesthetic-gris-claro/80 text-aesthetic-gris-profundo font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex items-center bg-red-200 hover:bg-red-300 text-red-800 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
+                className="flex items-center bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Eliminar

@@ -21,14 +21,44 @@ module.exports = {
         '7/12': '7 / 12',
       },
       backgroundImage: {
-        'gradient-primary': 'linear-gradient(to right, #6993FF, #CE67FF, #FFC760)',
-        'gradient-secondary':'linear-gradient(to bottom,#5078F2,#CE67FF)'
+        'gradient-primary': 'linear-gradient(to right, #e6d7ed, #f2e7f5, #e8f4f0)',
+        'gradient-secondary': 'linear-gradient(to bottom, #e6d7ed, #f2e7f5)',
+        'gradient-aesthetic': 'linear-gradient(135deg, #faf9fb 0%, #f5f3f7 100%)',
       },
       colors: {
+        // Paleta estética principal
+        aesthetic: {
+          'lavanda': '#e6d7ed',
+          'lavanda-hover': '#d6c9e3',
+          'rosa': '#f2e7f5',
+          'rosa-hover': '#e9d8ee',
+          'menta': '#e8f4f0',
+          'menta-hover': '#d9ede5',
+          'blanco': '#fafafa',
+          'gris-claro': '#f5f5f7',
+          'gris-medio': '#8b75a6',
+          'gris-profundo': '#6b5b73',
+        },
+        
+        // Estados y alertas con la paleta
+        success: {
+          DEFAULT: '#d4f5e8',
+          foreground: '#047857',
+        },
+        warning: {
+          DEFAULT: '#fff2e6',
+          foreground: '#ea580c',
+        },
+        error: {
+          DEFAULT: '#ffe6e6',
+          foreground: '#dc2626',
+        },
+        
+        // Colores existentes actualizados
         home: {
           50: "rgba(255, 245, 233, 1)",
           75: "rgba(255, 204, 141, 1)",
-          100: "rgba(255, 169, 64, 1)"
+          100: "#e6d7ed" // Cambiado a lavanda suave
         },
         "light-blue": "var(--light-blue)",
         border: "hsl(var(--border))",

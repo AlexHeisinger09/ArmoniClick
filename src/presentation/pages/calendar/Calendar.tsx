@@ -366,7 +366,9 @@ const Calendar: React.FC = () => {
         key={appointment.id}
         className={`
           absolute rounded-lg text-white shadow-md cursor-pointer transition-all
-          ${appointment.status === 'confirmed' ? 'bg-green-500 hover:bg-green-600' : 'bg-yellow-500 hover:bg-yellow-600'}
+          ${appointment.status === 'confirmed' 
+            ? 'bg-success-foreground hover:bg-success-foreground/90' 
+            : 'bg-warning-foreground hover:bg-warning-foreground/90'}
           ${isOverbook && appointmentIndex > 0 ? 'p-1' : config.padding}
         `}
         style={positionStyle}
@@ -398,16 +400,16 @@ const Calendar: React.FC = () => {
   };
 
   return (
-    <div className="h-full bg-gray-50 p-6">
+    <div className="h-full bg-gradient-aesthetic p-6">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Calendario principal */}
           <div className="lg:col-span-3">
-            <div className="bg-white rounded-xl shadow-lg border border-gray-100">
+            <div className="bg-white rounded-xl shadow-lg border border-aesthetic-lavanda/20">
               {/* Header del calendario */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div className="flex items-center justify-between p-6 border-b border-aesthetic-lavanda/20">
                 <div className="flex items-center space-x-4">
-                  <h2 className="text-2xl font-bold text-gray-800">
+                  <h2 className="text-2xl font-bold text-aesthetic-gris-profundo">
                     {viewMode === 'month' && `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
                     {viewMode === 'week' && getWeekRange(currentDate)}
                     {viewMode === 'day' && currentDate.toLocaleDateString('es-CL', {
@@ -419,24 +421,30 @@ const Calendar: React.FC = () => {
                   </h2>
 
                   {/* Selector de vista */}
-                  <div className="flex bg-gray-100 rounded-lg p-1">
+                  <div className="flex bg-aesthetic-gris-claro rounded-lg p-1">
                     <button
                       onClick={() => setViewMode('day')}
-                      className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === 'day' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+                      className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === 'day' 
+                        ? 'bg-white text-aesthetic-gris-profundo shadow-sm' 
+                        : 'text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo'
                         }`}
                     >
                       Día
                     </button>
                     <button
                       onClick={() => setViewMode('week')}
-                      className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === 'week' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+                      className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === 'week' 
+                        ? 'bg-white text-aesthetic-gris-profundo shadow-sm' 
+                        : 'text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo'
                         }`}
                     >
                       Semana
                     </button>
                     <button
                       onClick={() => setViewMode('month')}
-                      className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === 'month' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+                      className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === 'month' 
+                        ? 'bg-white text-aesthetic-gris-profundo shadow-sm' 
+                        : 'text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo'
                         }`}
                     >
                       Mes
@@ -447,21 +455,21 @@ const Calendar: React.FC = () => {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => navigateMonth(-1)}
-                    className="p-2 hover:bg-purple-50 rounded-lg transition-colors"
+                    className="p-2 hover:bg-aesthetic-lavanda/30 rounded-lg transition-colors"
                   >
-                    <ChevronLeft className="w-5 h-5 text-purple-600" />
+                    <ChevronLeft className="w-5 h-5 text-aesthetic-gris-profundo" />
                   </button>
                   <button
                     onClick={() => setCurrentDate(new Date())}
-                    className="px-3 py-2 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                    className="px-3 py-2 text-sm font-medium text-aesthetic-gris-profundo hover:bg-aesthetic-lavanda/30 rounded-lg transition-colors"
                   >
                     Hoy
                   </button>
                   <button
                     onClick={() => navigateMonth(1)}
-                    className="p-2 hover:bg-purple-50 rounded-lg transition-colors"
+                    className="p-2 hover:bg-aesthetic-lavanda/30 rounded-lg transition-colors"
                   >
-                    <ChevronRight className="w-5 h-5 text-purple-600" />
+                    <ChevronRight className="w-5 h-5 text-aesthetic-gris-profundo" />
                   </button>
                 </div>
               </div>
@@ -470,9 +478,9 @@ const Calendar: React.FC = () => {
               {viewMode === 'month' && (
                 <>
                   {/* Días de la semana */}
-                  <div className="grid grid-cols-7 border-b border-gray-100">
+                  <div className="grid grid-cols-7 border-b border-aesthetic-lavanda/20">
                     {dayNames.map(day => (
-                      <div key={day} className="p-4 text-center font-semibold text-gray-600 text-sm">
+                      <div key={day} className="p-4 text-center font-semibold text-aesthetic-gris-medio text-sm">
                         {day}
                       </div>
                     ))}
@@ -489,14 +497,14 @@ const Calendar: React.FC = () => {
                           key={index}
                           onClick={() => handleDateClick(day)}
                           className={`
-                            min-h-24 p-2 border-b border-r border-gray-100 cursor-pointer transition-colors
-                            ${day.isCurrentMonth ? 'hover:bg-purple-50' : 'bg-gray-50 text-gray-400'}
-                            ${isToday(day.date) ? 'bg-purple-100' : ''}
+                            min-h-24 p-2 border-b border-r border-aesthetic-lavanda/20 cursor-pointer transition-colors
+                            ${day.isCurrentMonth ? 'hover:bg-aesthetic-lavanda/20' : 'bg-aesthetic-gris-claro text-aesthetic-gris-medio/60'}
+                            ${isToday(day.date) ? 'bg-aesthetic-lavanda/30' : ''}
                           `}
                         >
                           <div className={`
                             text-sm font-medium mb-1
-                            ${isToday(day.date) ? 'text-purple-700' : ''}
+                            ${isToday(day.date) ? 'text-aesthetic-gris-profundo font-bold' : ''}
                           `}>
                             {day.date.getDate()}
                           </div>
@@ -507,14 +515,14 @@ const Calendar: React.FC = () => {
                                   key={appointment.id}
                                   className={`
                                     text-xs px-2 py-1 rounded text-white truncate
-                                    ${appointment.status === 'confirmed' ? 'bg-green-500' : 'bg-yellow-500'}
+                                    ${appointment.status === 'confirmed' ? 'bg-success-foreground' : 'bg-warning-foreground'}
                                   `}
                                 >
                                   {appointment.time} - {appointment.patient}
                                 </div>
                               ))}
                               {dayAppointments.length > 2 && (
-                                <div className="text-xs text-gray-500 text-center">
+                                <div className="text-xs text-aesthetic-gris-medio text-center">
                                   +{dayAppointments.length - 2} más
                                 </div>
                               )}
@@ -531,12 +539,12 @@ const Calendar: React.FC = () => {
               {viewMode === 'week' && (
                 <div className="flex">
                   {/* Columna de horarios */}
-                  <div className="w-20 border-r border-gray-100">
-                    <div className="h-16 border-b border-gray-100"></div>
+                  <div className="w-20 border-r border-aesthetic-lavanda/20">
+                    <div className="h-16 border-b border-aesthetic-lavanda/20"></div>
                     {timeSlots.map(time => (
                       <div 
                         key={time} 
-                        className="px-2 py-4 text-sm text-gray-500 border-b border-gray-50 flex items-center justify-center"
+                        className="px-2 py-4 text-sm text-aesthetic-gris-medio border-b border-aesthetic-lavanda/10 flex items-center justify-center"
                         style={{ height: '65px' }}
                       >
                         {time}
@@ -549,17 +557,17 @@ const Calendar: React.FC = () => {
                     const dayAppointments = getAppointmentsForDate(day);
 
                     return (
-                      <div key={dayIndex} className="flex-1 border-r border-gray-100 last:border-r-0">
+                      <div key={dayIndex} className="flex-1 border-r border-aesthetic-lavanda/20 last:border-r-0">
                         {/* Header del día */}
                         <div 
                           className={`
-                            h-16 p-3 text-center border-b border-gray-100 font-medium cursor-pointer hover:bg-purple-50 transition-colors
-                            ${isToday(day) ? 'bg-purple-100 text-purple-700' : 'text-gray-700'}
+                            h-16 p-3 text-center border-b border-aesthetic-lavanda/20 font-medium cursor-pointer hover:bg-aesthetic-lavanda/20 transition-colors
+                            ${isToday(day) ? 'bg-aesthetic-lavanda/30 text-aesthetic-gris-profundo' : 'text-aesthetic-gris-medio'}
                           `}
                           onClick={() => setSelectedDate(day)}
                         >
                           <div className="text-xs">{dayNames[(day.getDay() + 6) % 7]}</div>
-                          <div className={`text-lg ${isToday(day) ? 'text-purple-700' : ''}`}>
+                          <div className={`text-lg ${isToday(day) ? 'text-aesthetic-gris-profundo font-bold' : ''}`}>
                             {day.getDate()}
                           </div>
                         </div>
@@ -569,7 +577,7 @@ const Calendar: React.FC = () => {
                           {timeSlots.map((time, timeIndex) => (
                             <div
                               key={time}
-                              className="border-b border-gray-50 hover:bg-purple-25 cursor-pointer"
+                              className="border-b border-aesthetic-lavanda/10 hover:bg-aesthetic-lavanda/10 cursor-pointer"
                               style={{ height: '65px' }}
                               onClick={() => {
                                 handleNewAppointment(time, day);
@@ -590,11 +598,11 @@ const Calendar: React.FC = () => {
               {viewMode === 'day' && (
                 <div className="flex">
                   {/* Columna de horarios */}
-                  <div className="w-24 border-r border-gray-100">
+                  <div className="w-24 border-r border-aesthetic-lavanda/20">
                     {timeSlots.map(time => (
                       <div 
                         key={time} 
-                        className="px-3 py-3 text-base text-gray-500 border-b border-gray-100 flex items-center justify-center font-medium"
+                        className="px-3 py-3 text-base text-aesthetic-gris-medio border-b border-aesthetic-lavanda/20 flex items-center justify-center font-medium"
                         style={{ height: '72px' }}
                       >
                         {time}
@@ -608,13 +616,13 @@ const Calendar: React.FC = () => {
                       {timeSlots.map((time, timeIndex) => (
                         <div
                           key={time}
-                          className="border-b border-gray-100 hover:bg-purple-25 cursor-pointer px-6 flex items-center"
+                          className="border-b border-aesthetic-lavanda/20 hover:bg-aesthetic-lavanda/10 cursor-pointer px-6 flex items-center"
                           style={{ height: '72px' }}
                           onClick={() => {
                             handleNewAppointment(time, currentDate);
                           }}
                         >
-                          <div className="text-sm text-gray-400">Clic para agendar cita</div>
+                          <div className="text-sm text-aesthetic-gris-medio">Clic para agendar cita</div>
                         </div>
                       ))}
 
@@ -628,10 +636,10 @@ const Calendar: React.FC = () => {
           </div>
 
           {/* Panel lateral - Citas del día seleccionado */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100">
-            <div className="p-6 border-b border-gray-100">
-              <h3 className="text-xl font-bold text-gray-800 flex items-center">
-                <CalendarIcon className="w-5 h-5 mr-2 text-purple-600" />
+          <div className="bg-white rounded-xl shadow-lg border border-aesthetic-lavanda/20">
+            <div className="p-6 border-b border-aesthetic-lavanda/20">
+              <h3 className="text-xl font-bold text-aesthetic-gris-profundo flex items-center">
+                <CalendarIcon className="w-5 h-5 mr-2 text-aesthetic-gris-profundo" />
                 {(() => {
                   let displayDate: Date;
                   if (viewMode === 'day') {
@@ -652,7 +660,7 @@ const Calendar: React.FC = () => {
                   }
                 })()}
               </h3>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-aesthetic-gris-medio mt-1">
                 {(() => {
                   if (viewMode === 'day') {
                     return currentDate.toLocaleDateString('es-CL', {
@@ -696,41 +704,41 @@ const Calendar: React.FC = () => {
                           {selectedDayAppointments
                             .sort((a, b) => a.time.localeCompare(b.time))
                             .map(appointment => (
-                              <div key={appointment.id} className="bg-gray-50 rounded-lg p-3 border-l-4 border-purple-500 hover:shadow-sm transition-shadow mb-2">
+                              <div key={appointment.id} className="bg-aesthetic-gris-claro rounded-lg p-3 border-l-4 border-aesthetic-lavanda hover:shadow-sm transition-shadow mb-2">
                                 <div className="flex items-center justify-between mb-1">
                                   <div className="flex items-center space-x-3">
-                                    <span className="text-sm font-bold text-gray-800 min-w-[50px]">
+                                    <span className="text-sm font-bold text-aesthetic-gris-profundo min-w-[50px]">
                                       {appointment.time}
                                     </span>
-                                    <span className="font-medium text-gray-700 text-sm">
+                                    <span className="font-medium text-aesthetic-gris-profundo text-sm">
                                       {appointment.patient}
                                     </span>
                                   </div>
                                   <span className={`
             px-2 py-0.5 rounded-full text-xs font-medium
-            ${appointment.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}
+            ${appointment.status === 'confirmed' ? 'bg-success text-success-foreground' : 'bg-warning text-warning-foreground'}
           `}>
                                     {appointment.status === 'confirmed' ? 'Confirmada' : 'Pendiente'}
                                   </span>
                                 </div>
 
-                                <div className="flex items-center justify-between text-xs text-gray-600">
+                                <div className="flex items-center justify-between text-xs text-aesthetic-gris-medio">
                                   <div className="flex items-center space-x-4">
                                     <span className="truncate max-w-[120px]">{appointment.service}</span>
-                                    <span className="flex items-center text-gray-500">
+                                    <span className="flex items-center text-aesthetic-gris-medio">
                                       <Clock className="w-3 h-3 mr-1" />
                                       {appointment.duration}min
                                     </span>
                                   </div>
                                   <div className="flex space-x-1">
                                     <button
-                                      className="text-purple-600 hover:text-purple-800 p-1 rounded hover:bg-purple-50 transition-colors"
+                                      className="text-aesthetic-gris-profundo hover:text-aesthetic-gris-profundo/80 p-1 rounded hover:bg-aesthetic-lavanda/30 transition-colors"
                                       title="Editar cita"
                                     >
                                       <Edit2 className="w-3 h-3" />
                                     </button>
                                     <button
-                                      className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors"
+                                      className="text-error-foreground hover:text-error-foreground/80 p-1 rounded hover:bg-error/30 transition-colors"
                                       title="Cancelar cita"
                                     >
                                       <Trash2 className="w-3 h-3" />
@@ -743,7 +751,7 @@ const Calendar: React.FC = () => {
                           {/* Botón para agregar nueva cita - más compacto */}
                           <button
                             onClick={() => openNewAppointmentModal(selectedDayDate)}
-                            className="w-full mt-3 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center text-sm"
+                            className="w-full mt-3 bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center text-sm shadow-sm"
                           >
                             <Plus className="w-4 h-4 mr-2" />
                             Agregar nueva cita
@@ -752,11 +760,11 @@ const Calendar: React.FC = () => {
                       </>
                     ) : (
                       <div className="text-center py-8">
-                        <CalendarIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                        <p className="text-gray-500 mb-4">No hay citas programadas para este día</p>
+                        <CalendarIcon className="w-12 h-12 text-aesthetic-gris-medio/50 mx-auto mb-4" />
+                        <p className="text-aesthetic-gris-medio mb-4">No hay citas programadas para este día</p>
                         <button
                           onClick={() => openNewAppointmentModal(selectedDayDate)}
-                          className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center mx-auto"
+                          className="bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo font-medium py-2 px-4 rounded-lg transition-colors flex items-center mx-auto shadow-sm"
                         >
                           <Plus className="w-4 h-4 mr-2" />
                           Programar primera cita
@@ -773,9 +781,9 @@ const Calendar: React.FC = () => {
         {/* Modal para ver/crear citas */}
         {showModal && selectedDate && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                <h3 className="text-xl font-bold text-gray-800">
+            <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+              <div className="flex items-center justify-between p-6 border-b border-aesthetic-lavanda/20">
+                <h3 className="text-xl font-bold text-aesthetic-gris-profundo">
                   Citas para {selectedDate.toLocaleDateString('es-CL', {
                     weekday: 'long',
                     year: 'numeric',
@@ -785,16 +793,16 @@ const Calendar: React.FC = () => {
                 </h3>
                 <button
                   onClick={() => setShowModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-aesthetic-gris-claro rounded-lg transition-colors"
                 >
-                  <X className="w-5 h-5 text-gray-500" />
+                  <X className="w-5 h-5 text-aesthetic-gris-medio" />
                 </button>
               </div>
 
               <div className="p-6">
                 {/* Horarios disponibles */}
                 <div>
-                  <h4 className="font-semibold text-gray-800 mb-3">Horarios disponibles</h4>
+                  <h4 className="font-semibold text-aesthetic-gris-profundo mb-3">Horarios disponibles</h4>
                   <div className="grid grid-cols-3 gap-2">
                     {timeSlots.map(time => {
                       const available = isTimeSlotAvailable(selectedDate, time);
@@ -802,7 +810,7 @@ const Calendar: React.FC = () => {
 
                       return (
                         <div key={time} className="text-center">
-                          <div className="text-sm font-medium text-gray-700 mb-1">{time}</div>
+                          <div className="text-sm font-medium text-aesthetic-gris-profundo mb-1">{time}</div>
                           <div className="space-y-1">
                             <button
                               onClick={() => handleNewAppointment(time, selectedDate)}
@@ -811,9 +819,9 @@ const Calendar: React.FC = () => {
                                 w-full px-3 py-2 text-sm rounded transition-colors
                                 ${available
                                   ? isOverlap 
-                                    ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                                    : 'bg-green-100 text-green-700 hover:bg-green-200'
-                                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    ? 'bg-warning text-warning-foreground hover:bg-warning/80'
+                                    : 'bg-success text-success-foreground hover:bg-success/80'
+                                  : 'bg-aesthetic-gris-claro text-aesthetic-gris-medio cursor-not-allowed'
                                 }
                               `}
                             >
@@ -836,9 +844,9 @@ const Calendar: React.FC = () => {
         {/* Modal para crear nueva cita */}
         {showNewAppointmentModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl max-w-2xl w-full">
-              <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                <h3 className="text-xl font-bold text-gray-800">
+            <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl">
+              <div className="flex items-center justify-between p-6 border-b border-aesthetic-lavanda/20">
+                <h3 className="text-xl font-bold text-aesthetic-gris-profundo">
                   {newAppointment.date 
                     ? `Nueva cita para el ${newAppointment.date.toLocaleDateString('es-CL', {
                         weekday: 'long',
@@ -850,30 +858,30 @@ const Calendar: React.FC = () => {
                 </h3>
                 <button
                   onClick={() => setShowNewAppointmentModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-aesthetic-gris-claro rounded-lg transition-colors"
                 >
-                  <X className="w-5 h-5 text-gray-500" />
+                  <X className="w-5 h-5 text-aesthetic-gris-medio" />
                 </button>
               </div>
 
               <div className="p-6 space-y-4">
                {/* Paciente */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-1">
                     Paciente *
                   </label>
                   <input
                     type="text"
                     value={newAppointment.patient}
                     onChange={(e) => setNewAppointment({...newAppointment, patient: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full p-3 border border-aesthetic-lavanda/30 rounded-lg focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent placeholder-aesthetic-gris-medio text-aesthetic-gris-profundo"
                     placeholder="Nombre del paciente"
                   />
                 </div>
 
                 {/* Tratamiento */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-1">
                     Tratamiento *
                   </label>
                   <select
@@ -884,7 +892,7 @@ const Calendar: React.FC = () => {
                         service: e.target.value
                       });
                     }}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full p-3 border border-aesthetic-lavanda/30 rounded-lg focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
                   >
                     <option value="">Seleccionar tratamiento</option>
                     {services.map(service => (
@@ -897,23 +905,23 @@ const Calendar: React.FC = () => {
 
                 {/* Descripción */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-1">
                     Descripción
                   </label>
                   <textarea
                     value={newAppointment.description}
                     onChange={(e) => setNewAppointment({...newAppointment, description: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent h-20 resize-none"
+                    className="w-full p-3 border border-aesthetic-lavanda/30 rounded-lg focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent h-20 resize-none placeholder-aesthetic-gris-medio text-aesthetic-gris-profundo"
                     placeholder="Detalles adicionales del tratamiento..."
                   />
                 </div>
 
                 {/* Horario */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-1">
                     Horario * (60 minutos)
                   </label>
-                  <div className="grid grid-cols-3 gap-3 border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-3 gap-3 border border-aesthetic-lavanda/30 rounded-lg p-4">
                     {timeSlots.map(time => {
                       const available = newAppointment.date ? 
                         isTimeSlotAvailable(newAppointment.date, time) : false;
@@ -928,12 +936,12 @@ const Calendar: React.FC = () => {
                           className={`
                             p-3 text-sm rounded-lg transition-colors border font-medium
                             ${newAppointment.time === time 
-                              ? 'bg-purple-600 text-white border-purple-600' 
+                              ? 'bg-aesthetic-lavanda text-aesthetic-gris-profundo border-aesthetic-lavanda' 
                               : available 
                                 ? isOverlap
-                                  ? 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100'
-                                  : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' 
-                                : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
+                                  ? 'bg-warning/20 text-warning-foreground border-warning/30 hover:bg-warning/30'
+                                  : 'bg-success/20 text-success-foreground border-success/30 hover:bg-success/30' 
+                                : 'bg-aesthetic-gris-claro text-aesthetic-gris-medio border-aesthetic-gris-claro cursor-not-allowed'
                             }
                           `}
                         >
@@ -945,7 +953,7 @@ const Calendar: React.FC = () => {
                       );
                     })}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-aesthetic-gris-medio mt-1">
                     Verde: Disponible | Amarillo: Sobrecupo | Gris: No disponible
                   </p>
                 </div>
@@ -954,13 +962,13 @@ const Calendar: React.FC = () => {
                 <div className="flex space-x-3 pt-4">
                   <button
                     onClick={() => setShowNewAppointmentModal(false)}
-                    className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                    className="flex-1 px-4 py-2 text-aesthetic-gris-profundo bg-aesthetic-gris-claro hover:bg-aesthetic-gris-claro/80 rounded-lg transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleCreateAppointment}
-                    className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                    className="flex-1 px-4 py-2 bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo rounded-lg transition-colors shadow-sm"
                   >
                     Crear Cita
                   </button>

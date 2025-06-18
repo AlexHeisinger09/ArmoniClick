@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -14,37 +13,57 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Colores principales de la paleta estética */
+    --lavanda-suave: 230 215 237;
+    --rosa-delicado: 242 231 245;
+    --menta-serena: 232 244 240;
+    --blanco-calido: 250 250 250;
+    --gris-claro: 245 245 247;
+    --gris-profundo: 107 91 115;
+    
+    /* Estados y alertas */
+    --verde-exito: 212 245 232;
+    --naranja-advertencia: 255 242 230;
+    --rosa-error: 255 230 230;
+    
+    /* Variables shadcn/ui actualizadas con la nueva paleta */
+    --background: var(--blanco-calido);
+    --foreground: var(--gris-profundo);
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: var(--blanco-calido);
+    --card-foreground: var(--gris-profundo);
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: var(--blanco-calido);
+    --popover-foreground: var(--gris-profundo);
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: var(--lavanda-suave);
+    --primary-foreground: var(--gris-profundo);
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: var(--rosa-delicado);
+    --secondary-foreground: var(--gris-profundo);
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: var(--gris-claro);
+    --muted-foreground: 139 117 166;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: var(--menta-serena);
+    --accent-foreground: var(--gris-profundo);
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 255 99 99;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 233 227 237;
+    --input: 233 227 237;
+    --ring: var(--lavanda-suave);
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
+    /* Colores adicionales personalizados */
     --light-blue: #379aa1;
+    
+    /* Nuevos colores estética */
+    --aesthetic-lavanda: #e6d7ed;
+    --aesthetic-rosa: #f2e7f5;
+    --aesthetic-menta: #e8f4f0;
   }
 
   .dark {
