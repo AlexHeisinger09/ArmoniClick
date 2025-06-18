@@ -1,4 +1,5 @@
 import { useResetPasswordMutation } from "@/presentation/hooks";
+import { Mail, Key, AlertCircle, CheckCircle } from "lucide-react";
 
 import { TypographyH2 } from "@/presentation/components/shared/TypographyH2";
 import { TypographyP } from "@/presentation/components/shared/TypographyP";
@@ -21,7 +22,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import { z } from "zod";
-import { AlertCircle, LucideMailCheck } from "lucide-react";
 
 export const ResetPassword = () => {
   const form = useForm<z.infer<typeof resetPasswordSchema>>({
@@ -39,33 +39,35 @@ export const ResetPassword = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4 sm:px-8 sm:py-5 ">
-      <header>
-        <TypographyH2 className="uppercase text-center">
+    <div className="w-full p-6 sm:p-8 flex flex-col gap-6 max-w-md mx-auto">
+      {/* Header estético */}
+      <div className="text-center mb-2">
+        <div className="w-20 h-20 bg-gradient-to-r from-aesthetic-rosa to-aesthetic-menta rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg">
+          <Key className="w-10 h-10 text-aesthetic-gris-profundo" />
+        </div>
+        <TypographyH2 className="text-aesthetic-gris-profundo font-bold text-3xl mb-3">
           Recuperar contraseña
         </TypographyH2>
-        <TypographyP className="text-center">
-          Recupera tu cuenta para acceder a tus pacientes
+        <TypographyP className="text-aesthetic-gris-medio text-base">
+          Te enviaremos un enlace para restablecer tu contraseña de forma segura
         </TypographyP>
-      </header>
+      </div>
 
+      {/* Mensaje de éxito */}
       {resetPasswordMutation.data && (
-        <Alert variant="success" className="flex items-center gap-3 py-2">
-          <span>
-            <LucideMailCheck />
-          </span>
-          <AlertTitle className="m-0">
+        <Alert className="bg-success/20 border border-success-foreground/20 text-success-foreground rounded-xl flex items-center gap-3 py-4">
+          <CheckCircle className="w-5 h-5 flex-shrink-0" />
+          <AlertTitle className="m-0 font-medium">
             {resetPasswordMutation.data.message}
           </AlertTitle>
         </Alert>
       )}
 
+      {/* Mensaje de error */}
       {resetPasswordMutation.error && (
-        <Alert variant="destructive" className="flex items-center gap-3 py-2">
-          <span>
-            <AlertCircle />
-          </span>
-          <AlertTitle className="m-0">
+        <Alert className="bg-error/20 border border-error-foreground/20 text-error-foreground rounded-xl flex items-center gap-3 py-4">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <AlertTitle className="m-0 font-medium">
             {resetPasswordMutation.error.message}
           </AlertTitle>
         </Alert>
@@ -74,64 +76,108 @@ export const ResetPassword = () => {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-5"
         >
           <FormField
             control={form.control}
             name="email"
             render={({ field, formState: { errors } }) => (
               <FormItem>
-                <FormLabel>Correo</FormLabel>
+                <FormLabel className="text-aesthetic-gris-profundo font-medium text-sm">
+                  Correo Electrónico
+                </FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="example@gmail.com"
-                    className={`border ${
-                      errors.email?.message
-                        ? "border-red-500"
-                        : "border-blue-600"
-                    }`}
-                    {...field}
-                  />
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-aesthetic-gris-medio w-5 h-5" />
+                    <Input
+                      placeholder="tu-email@ejemplo.com"
+                      className={`
+                        pl-11 pr-4 py-3 h-12 
+                        border border-aesthetic-lavanda/30 rounded-xl 
+                        focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent 
+                        bg-white text-aesthetic-gris-profundo placeholder-aesthetic-gris-medio
+                        transition-all duration-200
+                        ${errors.email?.message
+                          ? "border-error-foreground/50 focus:ring-error-foreground/30"
+                          : "hover:border-aesthetic-lavanda/50"
+                        }
+                      `}
+                      {...field}
+                    />
+                  </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-error-foreground text-xs" />
               </FormItem>
             )}
           />
 
+          {/* Información adicional */}
+          <div className="bg-aesthetic-lavanda/20 border border-aesthetic-lavanda/30 p-4 rounded-xl">
+            <div className="flex items-start space-x-3">
+              <AlertCircle className="w-5 h-5 text-aesthetic-gris-profundo mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-aesthetic-gris-profundo">
+                <p className="font-medium mb-1">¿Cómo funciona?</p>
+                <ul className="text-xs text-aesthetic-gris-medio space-y-1">
+                  <li>• Recibirás un email con un enlace seguro</li>
+                  <li>• El enlace expira en 24 horas</li>
+                  <li>• Podrás crear una nueva contraseña</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
           <Button
             type="submit"
-            variant="blue"
-            className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
-            disabled={resetPasswordMutation.isSuccess}
+            disabled={resetPasswordMutation.isSuccess || isLoadingResetPassword}
+            className="
+              w-full h-12 
+              bg-gradient-to-r from-aesthetic-rosa to-aesthetic-menta 
+              hover:from-aesthetic-rosa-hover hover:to-aesthetic-menta-hover 
+              text-aesthetic-gris-profundo font-semibold text-base
+              rounded-xl shadow-sm
+              transition-all duration-200 transform hover:scale-[1.02]
+              disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none
+              flex items-center justify-center
+            "
           >
-            <Spinner
-              size="small"
-              show={isLoadingResetPassword}
-              className="text-slate-300"
-            />
-            {isLoadingResetPassword ? "Recuperando..." : "Recuperar"}
+            {isLoadingResetPassword ? (
+              <Spinner
+                size="small"
+                show={true}
+                className="text-aesthetic-gris-profundo"
+              />
+            ) : (
+              <>
+                <Mail className="w-5 h-5 mr-2" />
+                {isLoadingResetPassword ? "Enviando..." : "Enviar enlace"}
+              </>
+            )}
           </Button>
 
-          <div className="flex flex-col md:flex-row gap-4 items-center">
-            <TypographyP className="text-md text-balance">
-              ¿Ya tienes cuenta?
-              <Link
-                to="/auth/login"
-                className="text-[#366EFF] ml-2 font-medium"
-              >
-                Inicia sesion
-              </Link>
-            </TypographyP>
+          <div className="flex flex-col space-y-3 pt-4 border-t border-aesthetic-lavanda/20">
+            <div className="text-center">
+              <TypographyP className="text-aesthetic-gris-medio text-sm">
+                ¿Recordaste tu contraseña?{" "}
+                <Link
+                  to="/auth/login"
+                  className="text-aesthetic-gris-profundo font-semibold hover:text-aesthetic-gris-profundo/80 transition-colors hover:underline"
+                >
+                  Iniciar sesión
+                </Link>
+              </TypographyP>
+            </div>
 
-            <TypographyP className="text-md">
-              ¿No tienes cuenta?
-              <Link
-                to="/auth/registrar"
-                className="text-[#366EFF] ml-2 font-medium"
-              >
-                Crea una
-              </Link>
-            </TypographyP>
+            <div className="text-center">
+              <TypographyP className="text-aesthetic-gris-medio text-sm">
+                ¿No tienes cuenta?{" "}
+                <Link
+                  to="/auth/registrar"
+                  className="text-aesthetic-gris-profundo font-semibold hover:text-aesthetic-gris-profundo/80 transition-colors hover:underline"
+                >
+                  Crear cuenta
+                </Link>
+              </TypographyP>
+            </div>
           </div>
         </form>
       </Form>
