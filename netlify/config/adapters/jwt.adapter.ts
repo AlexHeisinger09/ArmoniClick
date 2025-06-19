@@ -5,6 +5,30 @@ import jwt from "jsonwebtoken";
 
 const JWT_SEED = envs.JWT_SEED;
 
+exports.handler = async (event, context) => {
+  // Debug completo
+  console.log('🔍 Headers recibidos:', JSON.stringify(event.headers, null, 2));
+  
+  // Busca el header en todas las variaciones posibles
+  const authHeader = event.headers.authorization || 
+                    event.headers.Authorization ||
+                    event.headers['authorization'];
+  
+  console.log('🔑 Auth header encontrado:', authHeader);
+  
+  if (!authHeader) {
+    return {
+      statusCode: 401,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ message: 'No authorization header' })
+    };
+  }
+  
+  // resto de tu lógica...
+};
 export class JwtAdapter {
   static async generateToken(
     payload: any,

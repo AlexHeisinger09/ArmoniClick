@@ -62,6 +62,7 @@ export class AxiosAdapter implements HttpAdapter {
       }
     );
   }
+  
 
   async get<T>(url: string, options?: AxiosRequestConfig): Promise<T> {
     try {

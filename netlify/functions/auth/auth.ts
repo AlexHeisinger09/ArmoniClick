@@ -23,10 +23,20 @@ const handler: Handler = async (event: HandlerEvent) => {
   const body = event.body ? fromBodyToObject(event.body) : {};
   const token = path.split("/").pop();
 
-  if (event.httpMethod === "OPTIONS") {
+   // CORS headers para todas las respuestas
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'content-type, authorization',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Content-Type': 'application/json'
+  };
+
+  // Manejar OPTIONS request (preflight)
+  if (httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: HEADERS.json,
+      headers: corsHeaders,
+      body: ''
     };
   }
 
@@ -38,7 +48,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         body: JSON.stringify({
           message: error,
         }),
-        headers: HEADERS.json,
+        headers: corsHeaders,
       };
 
     return new RegisterUser()
@@ -55,7 +65,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         body: JSON.stringify({
           message: error,
         }),
-        headers: HEADERS.json,
+        headers: corsHeaders,
       };
 
     return new LoginUser()
@@ -72,7 +82,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         body: JSON.stringify({
           message: error,
         }),
-        headers: HEADERS.json,
+        headers: corsHeaders,
       };
 
     return new ResetPassword()
@@ -88,7 +98,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         body: JSON.stringify({
           message: error,
         }),
-        headers: HEADERS.json,
+        headers: corsHeaders,
       };
     return new ChangePassword()
       .execute(token, changePasswordDto!.newPassword)
@@ -115,7 +125,7 @@ const handler: Handler = async (event: HandlerEvent) => {
     body: JSON.stringify({
       message: "Method Not Allowed",
     }),
-    headers: HEADERS.json,
+    headers: corsHeaders,
   };
 };
 

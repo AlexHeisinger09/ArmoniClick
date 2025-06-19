@@ -1,4 +1,3 @@
-// netlify/functions/patients/patients.ts (VERSIÓN COMPLETA)
 import { Handler, HandlerEvent } from "@netlify/functions";
 
 import { validateJWT } from "../../middlewares";
