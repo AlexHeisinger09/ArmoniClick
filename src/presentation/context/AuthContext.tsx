@@ -30,10 +30,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
+    console.log('Token from localStorage:', storedToken); // Debug
     setToken(storedToken);
     setIsCheckingToken(false);
   }, []);
 
+  // Solo ejecutar useProfile cuando tengamos el token
   const { queryProfile } = useProfile(token || '');
 
   const logout = () => {
@@ -47,7 +49,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user: queryProfile.data || null,
     token,
     isAuthenticated: !!token && !!queryProfile.data,
-    isLoading: isCheckingToken || queryProfile.isLoading,
+    isLoading: isCheckingToken || (!!token && queryProfile.isLoading),
     logout,
   };
 

@@ -12,39 +12,62 @@ export const useLoginMutation = () => {
 
   const loginMutation = useMutation({
     mutationFn: (body: Record<string, string>) => {
+      console.log('Login mutation starting...'); // Debug
       return UseCases.loginUserUseCase(apiFetcher, body)
     },
     onMutate: () => {
+      console.log('Login mutation onMutate'); // Debug
       setisLoadingLogin(true);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Login mutation onSuccess:', data ? '***token received***' : 'no token'); // Debug
       setisLoadingLogin(false);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Login mutation onError:', error); // Debug
       setisLoadingLogin(false);
     },
   });
 
   const [token, saveToken] = useLocalStorage<string | null>("token", null);
 
-  // CAMBIO 1: Redirigir a /dashboard después del login exitoso
+  // Redirigir a /dashboard después del login exitoso
   useEffect(() => {
     if (loginMutation.data) {
-      saveToken(loginMutation.data as string);
-      navitation("/dashboard"); // CAMBIO: era "/" ahora es "/dashboard"
+      const receivedToken = loginMutation.data as string;
+      console.log('Saving token to localStorage:', receivedToken ? '***saving token***' : 'no token to save'); // Debug
+      
+      saveToken(receivedToken);
+      
+      // Verificar que se guardó correctamente
+      setTimeout(() => {
+        const storedToken = localStorage.getItem("token");
+        console.log('Token verification after save:', storedToken ? '***token saved successfully***' : 'token not saved'); // Debug
+        
+        if (storedToken) {
+          console.log('Navigating to dashboard...'); // Debug
+          navitation("/dashboard");
+        } else {
+          console.error('Token was not saved to localStorage'); // Debug
+        }
+      }, 100);
     }
   }, [loginMutation.data, saveToken, navitation]);
 
-  // CAMBIO 2: Redirigir a /auth/login si no hay token (en lugar de "/")
+  // Redirigir a /auth/login si no hay token
   useEffect(() => {
     if (!token && !pathname.includes("/auth")) {
-      navitation("/auth/login"); // CAMBIO: era "/" ahora es "/auth/login"
+      console.log('No token found, redirecting to login'); // Debug
+      navitation("/auth/login");
     }
   }, [token, navitation, pathname]);
 
   const logout = () => {
+    console.log('Logging out...'); // Debug
     saveToken(null);
-    navitation("/auth/login"); // CAMBIO: era "/" ahora es "/auth/login"
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navitation("/auth/login");
   }
 
   return { loginMutation, token, logout, isLoadingLogin };

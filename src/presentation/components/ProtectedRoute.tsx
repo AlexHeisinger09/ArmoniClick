@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useProfile } from '../hooks';
+import { useAuth } from '../context/AuthContext';
 import { Spinner } from './ui/spinner';
 import { Shield, AlertCircle } from 'lucide-react';
 
@@ -10,37 +10,15 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const location = useLocation();
-  const [token, setToken] = useState<string | null>(null);
-  const [isCheckingToken, setIsCheckingToken] = useState(true);
+  const { user, token, isLoading, isAuthenticated } = useAuth();
 
-  // Verificar token en localStorage
-  useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    setToken(storedToken);
-    setIsCheckingToken(false);
-  }, []);
+  console.log('ProtectedRoute - token:', token); // Debug
+  console.log('ProtectedRoute - user:', user); // Debug
+  console.log('ProtectedRoute - isLoading:', isLoading); // Debug
+  console.log('ProtectedRoute - isAuthenticated:', isAuthenticated); // Debug
 
-  const { queryProfile } = useProfile(token || '');
-
-  // Si estamos verificando el token inicial, mostrar loading
-  if (isCheckingToken) {
-    return (
-      <div className="min-h-screen bg-gradient-aesthetic flex items-center justify-center">
-        <div className="text-center">
-          <Spinner size="large" show={true} className="text-aesthetic-gris-profundo mb-4" />
-          <p className="text-aesthetic-gris-medio">Verificando sesión...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Si no hay token, redirigir al login
-  if (!token) {
-    return <Navigate to="/auth/login" state={{ from: location }} replace />;
-  }
-
-  // Si estamos cargando el perfil, mostrar loading
-  if (queryProfile.isLoading) {
+  // Si estamos cargando, mostrar loading
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-aesthetic flex items-center justify-center">
         <div className="bg-white rounded-xl shadow-lg border border-aesthetic-lavanda/20 p-8 max-w-md w-full mx-4">
@@ -61,15 +39,20 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  // Si hay error en la validación del perfil, limpiar token y redirigir
-  if (queryProfile.isError) {
+  // Si no hay token, redirigir al login
+  if (!token) {
+    return <Navigate to="/auth/login" state={{ from: location }} replace />;
+  }
+
+  // Si hay token pero no hay usuario (error de autenticación), limpiar y redirigir
+  if (token && !user && !isLoading) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
 
-  // Si no hay datos del perfil pero tampoco error, mostrar mensaje
-  if (!queryProfile.data) {
+  // Si no está autenticado, mostrar mensaje de error
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-aesthetic flex items-center justify-center">
         <div className="bg-white rounded-xl shadow-lg border border-aesthetic-lavanda/20 p-8 max-w-md w-full mx-4">
