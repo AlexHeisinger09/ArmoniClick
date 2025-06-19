@@ -14,7 +14,9 @@
     "drizzle:generate": "npx drizzle-kit generate",
     "drizzle:push": "npx drizzle-kit push",
     "drizzle:introspect": "npx drizzle-kit introspect",
-    "drizzle:studio": "npx drizzle-kit studio"
+    "drizzle:studio": "npx drizzle-kit studio",
+    "db:generate": "drizzle-kit generate:pg",
+    "db:migrate": "drizzle-kit push:pg"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
@@ -28,6 +30,7 @@
     "@tailwindcss/postcss": "^4.1.8",
     "@tailwindcss/vite": "^4.1.8",
     "@tanstack/react-query": "^5.80.6",
+    "@tanstack/react-query-devtools": "^5.80.10",
     "@uidotdev/usehooks": "^2.4.1",
     "axios": "^1.9.0",
     "bcryptjs": "^3.0.2",

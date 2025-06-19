@@ -21,22 +21,18 @@ import {
   Activity,
   Heart,
   Stethoscope,
-  Pill
+  Pill,
+  RefreshCw
 } from "lucide-react";
 
-// Tipos e interfaces
-interface Patient {
-  id: number;
-  rut: string;
-  nombres: string;
-  apellidos: string;
-  fecha_nacimiento: string;
-  telefono: string;
-  email: string;
-  direccion: string;
-  id_doctor: number;
-}
+// Importaciones para datos reales
+import { usePatients } from "../hooks/patients/usePatients";
+import { useAuth } from "../context/AuthContext";
+import { Patient } from "@/core/entities/patient.entity";
+import { useCreatePatient, useUpdatePatient, useDeletePatient } from "../hooks/patients/usePatientMutations";
+import { PatientFormModal } from "./PatientFormModal";
 
+// Tipos e interfaces existentes
 interface Treatment {
   id: number;
   nombre: string;
@@ -66,28 +62,19 @@ interface PatientFormData {
   rut: string;
   nombres: string;
   apellidos: string;
-  fecha_nacimiento: string;
+  fechaNacimiento: string;
   email: string;
   direccion: string;
   telefono: string;
+  ciudad: string;
+  codigoPostal: string;
 }
 
 interface PatientGridProps {
   doctorId?: number;
 }
 
-// Datos iniciales para formularios
-const initialEditFormData: PatientFormData = {
-  rut: "",
-  nombres: "",
-  apellidos: "",
-  fecha_nacimiento: "",
-  email: "",
-  direccion: "",
-  telefono: "",
-};
-
-// Datos de ejemplo para tratamientos, citas y ficha médica
+// Datos de ejemplo para tratamientos, citas y ficha médica (mantener como mock por ahora)
 const mockTreatments: Treatment[] = [
   {
     id: 1,
@@ -121,13 +108,6 @@ const mockAppointments: Appointment[] = [
     tipo: "Evaluación fisioterapia",
     estado: 'completada',
     notas: "Paciente muestra buena evolución"
-  },
-  {
-    id: 3,
-    fecha: "2024-06-25",
-    hora: "09:00",
-    tipo: "Control médico",
-    estado: 'programada'
   }
 ];
 
@@ -143,14 +123,21 @@ const mockMedicalRecords: MedicalRecord[] = [
     tipo: "Examen",
     descripcion: "Radiografía de rodilla. Sin anomalías detectadas.",
     medico: "Dr. Martínez"
-  },
-  {
-    fecha: "2024-04-20",
-    tipo: "Tratamiento",
-    descripcion: "Inicio de fisioterapia post-operatoria.",
-    medico: "Dr. López"
   }
 ];
+
+// Datos iniciales para formularios
+const initialEditFormData: PatientFormData = {
+  rut: "",
+  nombres: "",
+  apellidos: "",
+  fechaNacimiento: "",
+  email: "",
+  direccion: "",
+  telefono: "",
+  ciudad: "",
+  codigoPostal: "",
+};
 
 // Componente para mostrar el detalle completo del paciente
 const PatientDetail: React.FC<{
@@ -208,7 +195,6 @@ const PatientDetail: React.FC<{
       case 'informacion':
         return (
           <div className="space-y-6">
-            {/* Información Personal del Paciente */}
             <div className="bg-white rounded-xl shadow-sm border border-aesthetic-lavanda/20 p-6">
               <div className="flex items-start justify-between mb-6">
                 <div>
@@ -230,10 +216,10 @@ const PatientDetail: React.FC<{
                   <div>
                     <p className="text-sm text-aesthetic-gris-medio">Edad</p>
                     <p className="font-medium text-aesthetic-gris-profundo">
-                      {calculateAge(patient.fecha_nacimiento)} años
+                      {calculateAge(patient.fechaNacimiento)} años
                     </p>
                     <p className="text-xs text-aesthetic-gris-medio">
-                      {formatDate(patient.fecha_nacimiento)}
+                      {formatDate(patient.fechaNacimiento)}
                     </p>
                   </div>
                 </div>
@@ -245,7 +231,7 @@ const PatientDetail: React.FC<{
                   <div>
                     <p className="text-sm text-aesthetic-gris-medio">Teléfono</p>
                     <p className="font-medium text-aesthetic-gris-profundo">
-                      {patient.telefono}
+                      {patient.telefono || 'No especificado'}
                     </p>
                   </div>
                 </div>
@@ -257,25 +243,32 @@ const PatientDetail: React.FC<{
                   <div>
                     <p className="text-sm text-aesthetic-gris-medio">Email</p>
                     <p className="font-medium text-aesthetic-gris-profundo">
-                      {patient.email}
+                      {patient.email || 'No especificado'}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-aesthetic-lavanda/20">
-                <div className="flex items-start space-x-3">
-                  <div className="bg-yellow-100 p-2 rounded-full">
-                    <MapPin className="w-5 h-5 text-yellow-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-aesthetic-gris-medio">Dirección</p>
-                    <p className="font-medium text-aesthetic-gris-profundo">
-                      {patient.direccion}
-                    </p>
+              {patient.direccion && (
+                <div className="mt-4 pt-4 border-t border-aesthetic-lavanda/20">
+                  <div className="flex items-start space-x-3">
+                    <div className="bg-yellow-100 p-2 rounded-full">
+                      <MapPin className="w-5 h-5 text-yellow-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-aesthetic-gris-medio">Dirección</p>
+                      <p className="font-medium text-aesthetic-gris-profundo">
+                        {patient.direccion}
+                      </p>
+                      {patient.ciudad && (
+                        <p className="text-sm text-aesthetic-gris-medio">
+                          {patient.ciudad}{patient.codigoPostal && `, ${patient.codigoPostal}`}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         );
@@ -292,7 +285,7 @@ const PatientDetail: React.FC<{
                 Nuevo Tratamiento
               </button>
             </div>
-            
+
             <div className="space-y-4">
               {mockTreatments.map((treatment) => (
                 <div key={treatment.id} className="border border-aesthetic-lavanda/20 rounded-lg p-4 hover:bg-aesthetic-lavanda/5 transition-colors">
@@ -459,11 +452,10 @@ const PatientDetail: React.FC<{
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === tab.id
+                  className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id
                       ? 'border-aesthetic-lavanda text-aesthetic-gris-profundo bg-aesthetic-lavanda/10'
                       : 'border-transparent text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo hover:bg-aesthetic-lavanda/5'
-                  }`}
+                    }`}
                 >
                   <Icon className="w-4 h-4 mr-2" />
                   {tab.label}
@@ -482,14 +474,18 @@ const PatientDetail: React.FC<{
   );
 };
 
-// Componente principal PatientGrid
-const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
-  // Estados principales
-  const [patients, setPatients] = useState<Patient[]>([]);
+// Componente principal PatientGrid ACTUALIZADO
+const PatientGrid: React.FC<PatientGridProps> = () => {
+  // Usar datos reales en lugar de mock
+  const { user, token } = useAuth();
+  const { patients, isLoading, error, refetch } = usePatients(token || undefined);
+  const deletePatientMutation = useDeletePatient();
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
   const [searchRut, setSearchRut] = useState("");
-  const [loading, setLoading] = useState(true);
-  
+
   // Estados para vista
   const [currentView, setCurrentView] = useState<'grid' | 'detail'>('grid');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
@@ -498,71 +494,14 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
-  const [editFormData, setEditFormData] =
-    useState<PatientFormData>(initialEditFormData);
+  const [editFormData, setEditFormData] = useState<PatientFormData>(initialEditFormData);
 
-  // Datos de ejemplo
-  const mockPatients: Patient[] = [
-    {
-      id: 1,
-      rut: "12345678-9",
-      nombres: "Alex",
-      apellidos: "Heisinger Vivanco",
-      fecha_nacimiento: "1985-03-15",
-      telefono: "+56912345678",
-      email: "heisinger.vivanco@gmail.com",
-      direccion: "Av. Las Condes 1234, Santiago",
-      id_doctor: 1,
-    },
-    {
-      id: 2,
-      rut: "87654321-0",
-      nombres: "María Fernanda",
-      apellidos: "López Silva",
-      fecha_nacimiento: "1990-07-22",
-      telefono: "+56987654321",
-      email: "maria.lopez@email.com",
-      direccion: "Calle Principal 567, Providencia",
-      id_doctor: 1,
-    },
-    {
-      id: 3,
-      rut: "11223344-5",
-      nombres: "Pedro Antonio",
-      apellidos: "Martínez Rojas",
-      fecha_nacimiento: "1978-12-03",
-      telefono: "+56911223344",
-      email: "pedro.martinez@email.com",
-      direccion: "Pasaje Los Rosales 890, Las Condes",
-      id_doctor: 1,
-    },
-    {
-      id: 4,
-      rut: "99887766-K",
-      nombres: "Ana Sofía",
-      apellidos: "García Muñoz",
-      fecha_nacimiento: "1992-05-18",
-      telefono: "+56999887766",
-      email: "ana.garcia@email.com",
-      direccion: "Av. Libertador 2345, Vitacura",
-      id_doctor: 1,
-    },
-  ];
-
-  // Efectos
+  // Efectos para manejar datos reales
   useEffect(() => {
-    const fetchPatients = async () => {
-      setLoading(true);
-      // Simulando delay de red
-      setTimeout(() => {
-        setPatients(mockPatients);
-        setFilteredPatients(mockPatients);
-        setLoading(false);
-      }, 1000);
-    };
-
-    fetchPatients();
-  }, [doctorId]);
+    if (patients.length > 0) {
+      setFilteredPatients(patients);
+    }
+  }, [patients]);
 
   // Filtrar pacientes por RUT
   useEffect(() => {
@@ -576,7 +515,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
     }
   }, [searchRut, patients]);
 
-  // Funciones utilitarias
+  // Funciones utilitarias ACTUALIZADAS para los nuevos campos
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString("es-CL");
   };
@@ -597,12 +536,11 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
     return age;
   };
 
-  // Manejadores de eventos
+  // Manejadores de eventos ACTUALIZADOS
   const handleEdit = (patient: Patient, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setSelectedPatient(patient);
-    setEditFormData({ ...patient });
-    setShowEditModal(true);
+    setEditingPatient(patient);
+    setShowFormModal(true);
   };
 
   const handleViewDetail = (patient: Patient, e: React.MouseEvent) => {
@@ -627,41 +565,40 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
     setSelectedPatient(null);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (selectedPatient) {
-      const updatedPatients = patients.filter(
-        (p) => p.id !== selectedPatient.id
-      );
-      setPatients(updatedPatients);
-      setFilteredPatients(
-        updatedPatients.filter((patient) =>
-          patient.rut.toLowerCase().includes(searchRut.toLowerCase())
-        )
-      );
-      setShowDeleteAlert(false);
-      setSelectedPatient(null);
+      try {
+        await deletePatientMutation.mutateAsync(selectedPatient.id);
+        setShowDeleteAlert(false);
+        setSelectedPatient(null);
+      } catch (error) {
+        console.error('Error al eliminar paciente:', error);
+      }
     }
   };
 
+  // Simulación de actualización (necesitará implementar PUT en API)
   const handleEditSubmit = () => {
     if (selectedPatient) {
-      const updatedPatients = patients.map((p) =>
-        p.id === selectedPatient.id
-          ? { ...selectedPatient, ...editFormData }
-          : p
-      );
-      setPatients(updatedPatients);
-      setFilteredPatients(
-        updatedPatients.filter((patient) =>
-          patient.rut.toLowerCase().includes(searchRut.toLowerCase())
-        )
-      );
+      // TODO: Implementar actualización real via API
+      console.log('Actualizar paciente:', selectedPatient.id, editFormData);
       setShowEditModal(false);
       setSelectedPatient(null);
       setEditFormData(initialEditFormData);
+      // Recargar datos después de actualizar
+      refetch();
     }
   };
+  const handleNewPatient = () => {
+    setEditingPatient(null);
+    setShowFormModal(true);
+  };
 
+  const handleFormSuccess = () => {
+    setShowFormModal(false);
+    setEditingPatient(null);
+    // Los datos se actualizan automáticamente por React Query
+  };
   const handleEditInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -681,10 +618,31 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
   };
 
   // Render condicional para loading
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aesthetic-lavanda"></div>
+      </div>
+    );
+  }
+
+  // Render condicional para error
+  if (error) {
+    return (
+      <div className="flex flex-col justify-center items-center h-64 space-y-4">
+        <div className="text-center">
+          <div className="text-red-500 mb-2 font-semibold">Error al cargar pacientes</div>
+          <p className="text-aesthetic-gris-medio text-sm mb-4">
+            {error.message || 'Ocurrió un error inesperado'}
+          </p>
+          <button
+            onClick={() => refetch()}
+            className="flex items-center bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo font-medium rounded-lg text-sm px-4 py-2 transition-colors mx-auto"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Reintentar
+          </button>
+        </div>
       </div>
     );
   }
@@ -705,8 +663,8 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                 {currentView === 'grid' ? 'Gestión de Pacientes' : `Paciente: ${selectedPatient?.nombres} ${selectedPatient?.apellidos}`}
               </h3>
               <p className="mt-0.5 text-aesthetic-gris-medio">
-                {currentView === 'grid' 
-                  ? 'Administra la información de tus pacientes de manera eficiente y organizada.'
+                {currentView === 'grid'
+                  ? `Administra la información de tus ${patients.length} pacientes de manera eficiente y organizada.`
                   : 'Vista detallada con tratamientos, citas y historial médico completo.'
                 }
               </p>
@@ -724,10 +682,22 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   className="w-full pl-12 pr-4 py-3 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-sm text-aesthetic-gris-profundo placeholder-aesthetic-gris-medio"
                 />
               </div>
-              <button className="flex items-center bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo font-medium rounded-lg text-sm px-5 py-2.5 transition-colors shadow-sm">
-                <Plus className="w-5 h-5 mr-2" />
-                Nuevo Paciente
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => refetch()}
+                  className="flex items-center bg-aesthetic-menta hover:bg-aesthetic-menta-hover text-aesthetic-gris-profundo font-medium rounded-lg text-sm px-4 py-2.5 transition-colors shadow-sm"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Actualizar
+                </button>
+                <button
+                  onClick={handleNewPatient}
+                  className="flex items-center bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo font-medium rounded-lg text-sm px-5 py-2.5 transition-colors shadow-sm"
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Nuevo Paciente
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -799,17 +769,17 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="text-sm text-aesthetic-gris-profundo">
-                              {calculateAge(patient.fecha_nacimiento)} años
+                              {calculateAge(patient.fechaNacimiento)} años
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="text-sm text-aesthetic-gris-profundo">
-                              {patient.telefono}
+                              {patient.telefono || '-'}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="text-sm text-aesthetic-gris-profundo">
-                              {patient.email}
+                              {patient.email || '-'}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -848,7 +818,9 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
               {filteredPatients.length > 0 && (
                 <div className="px-6 py-4 border-t border-aesthetic-lavanda/20 bg-aesthetic-gris-claro">
                   <div className="flex justify-between items-center">
-                    <div className="text-sm text-aesthetic-gris-medio">Página 1 de 1</div>
+                    <div className="text-sm text-aesthetic-gris-medio">
+                      Mostrando {filteredPatients.length} de {patients.length} pacientes
+                    </div>
                     <div className="flex space-x-2">
                       <button
                         className="px-4 py-2 text-sm bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
@@ -880,6 +852,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
         </div>
       </div>
 
+      {/* Modales existentes actualizados para nuevos campos... */}
       {/* Modal de Detalle */}
       {showDetailModal && selectedPatient && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -917,10 +890,10 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   <div>
                     <p className="text-sm text-aesthetic-gris-medio">Fecha de Nacimiento</p>
                     <p className="font-medium text-aesthetic-gris-profundo">
-                      {formatDate(selectedPatient.fecha_nacimiento)}
+                      {formatDate(selectedPatient.fechaNacimiento)}
                     </p>
                     <p className="text-sm text-aesthetic-gris-medio">
-                      {calculateAge(selectedPatient.fecha_nacimiento)} años
+                      {calculateAge(selectedPatient.fechaNacimiento)} años
                     </p>
                   </div>
                 </div>
@@ -932,7 +905,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   <div>
                     <p className="text-sm text-aesthetic-gris-medio">Teléfono</p>
                     <p className="font-medium text-aesthetic-gris-profundo">
-                      {selectedPatient.telefono}
+                      {selectedPatient.telefono || 'No especificado'}
                     </p>
                   </div>
                 </div>
@@ -946,7 +919,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   <div>
                     <p className="text-sm text-aesthetic-gris-medio">Email</p>
                     <p className="font-medium text-aesthetic-gris-profundo">
-                      {selectedPatient.email}
+                      {selectedPatient.email || 'No especificado'}
                     </p>
                   </div>
                 </div>
@@ -958,8 +931,13 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   <div>
                     <p className="text-sm text-aesthetic-gris-medio">Dirección</p>
                     <p className="font-medium text-aesthetic-gris-profundo">
-                      {selectedPatient.direccion}
+                      {selectedPatient.direccion || 'No especificado'}
                     </p>
+                    {selectedPatient.ciudad && (
+                      <p className="text-sm text-aesthetic-gris-medio">
+                        {selectedPatient.ciudad}{selectedPatient.codigoPostal && `, ${selectedPatient.codigoPostal}`}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -985,8 +963,8 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
           </div>
         </div>
       )}
-
-      {/* Modal de Edición */}
+        
+      {/* Modal de Edición actualizado para nuevos campos */}
       {showEditModal && selectedPatient && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto shadow-2xl">
@@ -1011,7 +989,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   <input
                     type="text"
                     name="rut"
-                    value={editFormData.rut || ""}
+                    value={editFormData.rut}
                     onChange={handleEditInputChange}
                     className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
                     required
@@ -1025,7 +1003,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   <input
                     type="text"
                     name="nombres"
-                    value={editFormData.nombres || ""}
+                    value={editFormData.nombres}
                     onChange={handleEditInputChange}
                     className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
                     required
@@ -1039,7 +1017,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   <input
                     type="text"
                     name="apellidos"
-                    value={editFormData.apellidos || ""}
+                    value={editFormData.apellidos}
                     onChange={handleEditInputChange}
                     className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
                     required
@@ -1052,8 +1030,8 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   </label>
                   <input
                     type="date"
-                    name="fecha_nacimiento"
-                    value={editFormData.fecha_nacimiento || ""}
+                    name="fechaNacimiento"
+                    value={editFormData.fechaNacimiento}
                     onChange={handleEditInputChange}
                     className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
                     required
@@ -1067,10 +1045,9 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   <input
                     type="tel"
                     name="telefono"
-                    value={editFormData.telefono || ""}
+                    value={editFormData.telefono}
                     onChange={handleEditInputChange}
                     className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
-                    required
                   />
                 </div>
 
@@ -1081,10 +1058,35 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                   <input
                     type="email"
                     name="email"
-                    value={editFormData.email || ""}
+                    value={editFormData.email}
                     onChange={handleEditInputChange}
                     className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
-                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-1">
+                    Ciudad
+                  </label>
+                  <input
+                    type="text"
+                    name="ciudad"
+                    value={editFormData.ciudad}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-1">
+                    Código Postal
+                  </label>
+                  <input
+                    type="text"
+                    name="codigoPostal"
+                    value={editFormData.codigoPostal}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
                   />
                 </div>
               </div>
@@ -1095,11 +1097,10 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
                 </label>
                 <textarea
                   name="direccion"
-                  value={editFormData.direccion || ""}
+                  value={editFormData.direccion}
                   onChange={handleEditInputChange}
                   rows={2}
                   className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
-                  required
                 />
               </div>
 

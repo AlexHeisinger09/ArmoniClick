@@ -11,6 +11,8 @@ import { Home } from "../pages/home/Home";
 import { Calendar }  from "../pages/calendar/Calendar";
 import { Patient }  from "../pages/patient/Patient";
 import { Configuration }  from "../pages/configuration/Configuration";
+import { ProtectedRoute } from "../components/ProtectedRoute";
+import { AuthProvider } from "../context/AuthContext";
 
 export const router = createBrowserRouter([
   // Ruta raíz - Redirige al login
@@ -53,14 +55,20 @@ export const router = createBrowserRouter([
     ],
   },
   
-  // Rutas protegidas con HomeLayout
+  // Rutas protegidas con HomeLayout y AuthProvider
   {
     path: "/dashboard",
-    element: <HomeLayout />,
+    element: (
+      <AuthProvider>
+        <ProtectedRoute>
+          <HomeLayout />
+        </ProtectedRoute>
+      </AuthProvider>
+    ),
     children: [
       {
         index: true,
-        element: <Home />, // PatientGrid
+        element: <Home />,
       },
       {
         path: "calendario",
