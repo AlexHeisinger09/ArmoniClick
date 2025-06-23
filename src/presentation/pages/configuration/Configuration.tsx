@@ -11,7 +11,6 @@ import {
   Phone,
   MapPin,
   Calendar,
-  Briefcase,
   Shield,
   Bell,
   Palette,
@@ -24,13 +23,14 @@ import {
   Loader
 } from "lucide-react";
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
+import { useUpdateProfileMutation, useUpdatePasswordMutation } from "@/presentation/hooks/user/useUpdateProfile";
 import { Spinner } from "@/presentation/components/ui/spinner";
 
 // Tipos e interfaces
 interface PasswordForm {
-  current_password: string;
-  new_password: string;
-  confirm_password: string;
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
 interface ProfileFormData {
@@ -44,15 +44,15 @@ interface ProfileFormData {
   city?: string;
 }
 
-// Componente para iconos circulares como en la imagen
-const CircularIcon: React.FC<{ icon: React.ElementType; isActive?: boolean }> = ({ 
-  icon: Icon, 
-  isActive = false 
+// Componente para iconos circulares
+const CircularIcon: React.FC<{ icon: React.ElementType; isActive?: boolean }> = ({
+  icon: Icon,
+  isActive = false
 }) => (
   <div className={`
     w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200
-    ${isActive 
-      ? 'bg-cyan-500 shadow-md' 
+    ${isActive
+      ? 'bg-cyan-500 shadow-md'
       : 'bg-cyan-100 hover:bg-cyan-200'
     }
   `}>
@@ -63,47 +63,43 @@ const CircularIcon: React.FC<{ icon: React.ElementType; isActive?: boolean }> = 
 // Componente de animación de engranajes
 const GearsAnimation: React.FC = () => (
   <div className="relative w-20 h-20 flex items-center justify-center">
-    {/* Engranaje grande */}
     <div className="absolute inset-0 flex items-center justify-center">
-      <Settings 
-        className="w-12 h-12 text-cyan-500 animate-spin" 
-        style={{ 
+      <Settings
+        className="w-12 h-12 text-cyan-500 animate-spin"
+        style={{
           animation: 'spin 4s linear infinite',
           transformOrigin: 'center'
-        }} 
+        }}
       />
     </div>
-    
-    {/* Engranaje pequeño */}
+
     <div className="absolute top-1 right-1">
-      <Cog 
-        className="w-6 h-6 text-cyan-600 animate-spin" 
-        style={{ 
+      <Cog
+        className="w-6 h-6 text-cyan-600 animate-spin"
+        style={{
           animation: 'spin 3s linear infinite reverse',
           transformOrigin: 'center'
-        }} 
+        }}
       />
     </div>
-    
-    {/* Engranaje muy pequeño */}
+
     <div className="absolute bottom-2 left-2">
-      <Settings 
-        className="w-4 h-4 text-cyan-400 animate-spin" 
-        style={{ 
+      <Settings
+        className="w-4 h-4 text-cyan-400 animate-spin"
+        style={{
           animation: 'spin 5s linear infinite',
           transformOrigin: 'center'
-        }} 
+        }}
       />
     </div>
-    
-    {/* Partículas animadas */}
+
     <div className="absolute inset-0">
-      <div className="absolute top-2 left-3 w-1 h-1 bg-cyan-300 rounded-full animate-ping" 
-           style={{animationDelay: '0s'}}></div>
-      <div className="absolute top-4 right-2 w-1 h-1 bg-cyan-400 rounded-full animate-ping" 
-           style={{animationDelay: '1s'}}></div>
-      <div className="absolute bottom-3 left-4 w-1 h-1 bg-cyan-500 rounded-full animate-ping" 
-           style={{animationDelay: '2s'}}></div>
+      <div className="absolute top-2 left-3 w-1 h-1 bg-cyan-300 rounded-full animate-ping"
+        style={{ animationDelay: '0s' }}></div>
+      <div className="absolute top-4 right-2 w-1 h-1 bg-cyan-400 rounded-full animate-ping"
+        style={{ animationDelay: '1s' }}></div>
+      <div className="absolute bottom-3 left-4 w-1 h-1 bg-cyan-500 rounded-full animate-ping"
+        style={{ animationDelay: '2s' }}></div>
     </div>
   </div>
 );
@@ -115,8 +111,6 @@ const Configuration: React.FC = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -125,6 +119,8 @@ const Configuration: React.FC = () => {
   // Hooks para datos reales del usuario
   const { token } = useLoginMutation();
   const { queryProfile } = useProfile(token || '');
+  const { updateProfileMutation, isLoadingUpdate } = useUpdateProfileMutation();
+  const { updatePasswordMutation, isLoadingPasswordUpdate } = useUpdatePasswordMutation();
 
   // Estados para formularios
   const [profileFormData, setProfileFormData] = useState<ProfileFormData>({
@@ -139,26 +135,38 @@ const Configuration: React.FC = () => {
   });
 
   const [passwordForm, setPasswordForm] = useState<PasswordForm>({
-    current_password: '',
-    new_password: '',
-    confirm_password: ''
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
   });
 
-  // Actualizar formulario cuando se cargan los datos del usuario
-  useEffect(() => {
-    if (queryProfile.data) {
-      setProfileFormData({
-        name: queryProfile.data.name || '',
-        lastName: queryProfile.data.lastName || '',
-        username: queryProfile.data.username || '',
-        email: queryProfile.data.email || '',
-        phone: '', // Estos campos no existen en la respuesta actual, pero se pueden agregar
-        address: '',
-        zipCode: '',
-        city: '',
-      });
-    }
-  }, [queryProfile.data]);
+ // Actualizar formulario cuando se cargan los datos del usuario
+useEffect(() => {
+  console.log('🔍 queryProfile.data:', queryProfile.data);
+  if (queryProfile.data) {
+    console.log('📝 Setting form data with:', {
+      name: queryProfile.data.name || '',
+      lastName: queryProfile.data.lastName || '',
+      username: queryProfile.data.username || '',
+      email: queryProfile.data.email || '',
+      phone: queryProfile.data.phone || '', // ✅ Obtener del backend
+      address: queryProfile.data.address || '', // ✅ Obtener del backend
+      zipCode: queryProfile.data.zipCode || '', // ✅ Obtener del backend
+      city: queryProfile.data.city || '', // ✅ Obtener del backend
+    });
+    
+    setProfileFormData({
+      name: queryProfile.data.name || '',
+      lastName: queryProfile.data.lastName || '',
+      username: queryProfile.data.username || '',
+      email: queryProfile.data.email || '',
+      phone: queryProfile.data.phone || '', // ✅ Cambiar aquí
+      address: queryProfile.data.address || '', // ✅ Cambiar aquí
+      zipCode: queryProfile.data.zipCode || '', // ✅ Cambiar aquí
+      city: queryProfile.data.city || '', // ✅ Cambiar aquí
+    });
+  }
+}, [queryProfile.data]);
 
   // Función para mostrar mensajes temporales
   const showMessage = (message: string, type: 'success' | 'error') => {
@@ -169,14 +177,14 @@ const Configuration: React.FC = () => {
       setErrorMessage(message);
       setSuccessMessage('');
     }
-    
+
     setTimeout(() => {
       setSuccessMessage('');
       setErrorMessage('');
-    }, 3000);
+    }, 5000);
   };
 
-  // Pestañas de configuración con iconos estilo circular
+  // Pestañas de configuración
   const tabs = [
     { id: 'perfil', label: 'Información Personal', icon: User },
     { id: 'foto', label: 'Foto de Perfil', icon: Camera },
@@ -202,55 +210,55 @@ const Configuration: React.FC = () => {
   };
 
   const handleProfileSubmit = async () => {
-    setIsUpdatingProfile(true);
     try {
-      // Aquí iría la llamada real a la API para actualizar el perfil
-      // Por ejemplo: await updateProfile(profileFormData);
-      
-      // Simulamos una llamada a la API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // Convertir ProfileFormData a Record<string, string>
+      const dataToSend: Record<string, string> = {
+        name: profileFormData.name,
+        lastName: profileFormData.lastName,
+        username: profileFormData.username,
+        email: profileFormData.email,
+        phone: profileFormData.phone || '',
+        address: profileFormData.address || '',
+        zipCode: profileFormData.zipCode || '',
+        city: profileFormData.city || '',
+      };
+
+      console.log('📤 Sending profile data:', dataToSend);
+
+      await updateProfileMutation.mutateAsync(dataToSend);
       setIsEditing(false);
       showMessage('Información personal actualizada correctamente', 'success');
-      
-      // Refrescar los datos del perfil
-      queryProfile.refetch();
     } catch (error: any) {
+      console.log('❌ Profile update error:', error);
       showMessage(error.message || 'Error al actualizar el perfil', 'error');
-    } finally {
-      setIsUpdatingProfile(false);
     }
   };
 
   const handlePasswordSubmit = async () => {
-    if (passwordForm.new_password !== passwordForm.confirm_password) {
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       showMessage('Las contraseñas no coinciden', 'error');
       return;
     }
-    
-    if (passwordForm.new_password.length < 6) {
+
+    if (passwordForm.newPassword.length < 6) {
       showMessage('La contraseña debe tener al menos 6 caracteres', 'error');
       return;
     }
 
-    setIsChangingPassword(true);
     try {
-      // Aquí iría la llamada real a la API para cambiar la contraseña
-      // Por ejemplo: await changePassword(passwordForm);
-      
-      // Simulamos una llamada a la API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await updatePasswordMutation.mutateAsync({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+
       setPasswordForm({
-        current_password: '',
-        new_password: '',
-        confirm_password: ''
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
       });
       showMessage('Contraseña actualizada correctamente', 'success');
     } catch (error: any) {
       showMessage(error.message || 'Error al cambiar la contraseña', 'error');
-    } finally {
-      setIsChangingPassword(false);
     }
   };
 
@@ -259,12 +267,9 @@ const Configuration: React.FC = () => {
     if (file) {
       try {
         // Aquí iría la llamada real para subir la imagen
-        // Por ejemplo: await uploadProfileImage(file);
-        
         const reader = new FileReader();
         reader.onload = (e) => {
           const result = e.target?.result as string;
-          // Aquí se actualizaría la imagen en el estado o se haría una llamada a la API
           showMessage('Foto de perfil actualizada correctamente', 'success');
         };
         reader.readAsDataURL(file);
@@ -272,16 +277,6 @@ const Configuration: React.FC = () => {
         showMessage(error.message || 'Error al subir la imagen', 'error');
       }
     }
-  };
-
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString("es-CL", {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   };
 
   // Mostrar loading mientras se cargan los datos
@@ -322,7 +317,6 @@ const Configuration: React.FC = () => {
       case 'perfil':
         return (
           <div className="space-y-6">
-            {/* Información Personal */}
             <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-slate-700">
@@ -331,7 +325,7 @@ const Configuration: React.FC = () => {
                 <button
                   onClick={() => setIsEditing(!isEditing)}
                   className="flex items-center text-slate-500 hover:text-slate-700 transition-colors"
-                  disabled={isUpdatingProfile}
+                  disabled={isLoadingUpdate}
                 >
                   <Edit className="w-4 h-4 mr-2" />
                   {isEditing ? 'Cancelar' : 'Editar'}
@@ -343,7 +337,7 @@ const Configuration: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Nombre
+                        Nombre *
                       </label>
                       <input
                         type="text"
@@ -351,13 +345,14 @@ const Configuration: React.FC = () => {
                         value={profileFormData.name}
                         onChange={handleProfileInputChange}
                         className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                        disabled={isUpdatingProfile}
+                        disabled={isLoadingUpdate}
+                        required
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Apellido
+                        Apellido *
                       </label>
                       <input
                         type="text"
@@ -365,13 +360,14 @@ const Configuration: React.FC = () => {
                         value={profileFormData.lastName}
                         onChange={handleProfileInputChange}
                         className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                        disabled={isUpdatingProfile}
+                        disabled={isLoadingUpdate}
+                        required
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Nombre de Usuario
+                        Nombre de Usuario *
                       </label>
                       <input
                         type="text"
@@ -379,13 +375,14 @@ const Configuration: React.FC = () => {
                         value={profileFormData.username}
                         onChange={handleProfileInputChange}
                         className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                        disabled={isUpdatingProfile}
+                        disabled={isLoadingUpdate}
+                        required
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Email
+                        Email *
                       </label>
                       <input
                         type="email"
@@ -393,7 +390,8 @@ const Configuration: React.FC = () => {
                         value={profileFormData.email}
                         onChange={handleProfileInputChange}
                         className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                        disabled={isUpdatingProfile}
+                        disabled={isLoadingUpdate}
+                        required
                       />
                     </div>
 
@@ -407,7 +405,7 @@ const Configuration: React.FC = () => {
                         value={profileFormData.phone}
                         onChange={handleProfileInputChange}
                         className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                        disabled={isUpdatingProfile}
+                        disabled={isLoadingUpdate}
                         placeholder="Ej: +56912345678"
                       />
                     </div>
@@ -422,7 +420,7 @@ const Configuration: React.FC = () => {
                         value={profileFormData.city}
                         onChange={handleProfileInputChange}
                         className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                        disabled={isUpdatingProfile}
+                        disabled={isLoadingUpdate}
                         placeholder="Ej: Santiago"
                       />
                     </div>
@@ -437,7 +435,7 @@ const Configuration: React.FC = () => {
                         value={profileFormData.zipCode}
                         onChange={handleProfileInputChange}
                         className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                        disabled={isUpdatingProfile}
+                        disabled={isLoadingUpdate}
                         placeholder="Ej: 8320000"
                       />
                     </div>
@@ -453,7 +451,7 @@ const Configuration: React.FC = () => {
                       onChange={handleProfileInputChange}
                       rows={3}
                       className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                      disabled={isUpdatingProfile}
+                      disabled={isLoadingUpdate}
                       placeholder="Ej: Av. Las Condes 1234, Oficina 567"
                     />
                   </div>
@@ -462,21 +460,21 @@ const Configuration: React.FC = () => {
                     <button
                       onClick={() => setIsEditing(false)}
                       className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
-                      disabled={isUpdatingProfile}
+                      disabled={isLoadingUpdate}
                     >
                       Cancelar
                     </button>
                     <button
                       onClick={handleProfileSubmit}
                       className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-5 py-2.5 transition-colors disabled:opacity-50"
-                      disabled={isUpdatingProfile}
+                      disabled={isLoadingUpdate}
                     >
-                      {isUpdatingProfile ? (
+                      {isLoadingUpdate ? (
                         <Spinner size="small" show={true} className="text-white mr-2" />
                       ) : (
                         <Save className="w-4 h-4 mr-2" />
                       )}
-                      {isUpdatingProfile ? 'Guardando...' : 'Guardar Cambios'}
+                      {isLoadingUpdate ? 'Guardando...' : 'Guardar Cambios'}
                     </button>
                   </div>
                 </div>
@@ -623,7 +621,7 @@ const Configuration: React.FC = () => {
                     Cambiar foto de perfil
                   </h4>
                   <p className="text-slate-500 mb-4">
-                    Sube una imagen cuadrada para obtener mejores resultados. 
+                    Sube una imagen cuadrada para obtener mejores resultados.
                     Tamaño máximo: 5MB. Formatos aceptados: JPG, PNG.
                   </p>
                   <button
@@ -658,17 +656,18 @@ const Configuration: React.FC = () => {
               <div className="space-y-4 max-w-md">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Contraseña Actual
+                    Contraseña Actual *
                   </label>
                   <div className="relative">
                     <input
                       type={showCurrentPassword ? "text" : "password"}
-                      name="current_password"
-                      value={passwordForm.current_password}
+                      name="currentPassword"
+                      value={passwordForm.currentPassword}
                       onChange={handlePasswordInputChange}
                       className="w-full px-3 py-2 pr-10 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                       placeholder="Ingresa tu contraseña actual"
-                      disabled={isChangingPassword}
+                      disabled={isLoadingPasswordUpdate}
+                      required
                     />
                     <button
                       type="button"
@@ -682,17 +681,18 @@ const Configuration: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Nueva Contraseña
+                    Nueva Contraseña *
                   </label>
                   <div className="relative">
                     <input
                       type={showNewPassword ? "text" : "password"}
-                      name="new_password"
-                      value={passwordForm.new_password}
+                      name="newPassword"
+                      value={passwordForm.newPassword}
                       onChange={handlePasswordInputChange}
                       className="w-full px-3 py-2 pr-10 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                       placeholder="Mínimo 6 caracteres"
-                      disabled={isChangingPassword}
+                      disabled={isLoadingPasswordUpdate}
+                      required
                     />
                     <button
                       type="button"
@@ -706,17 +706,18 @@ const Configuration: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Confirmar Nueva Contraseña
+                    Confirmar Nueva Contraseña *
                   </label>
                   <div className="relative">
                     <input
                       type={showConfirmPassword ? "text" : "password"}
-                      name="confirm_password"
-                      value={passwordForm.confirm_password}
+                      name="confirmPassword"
+                      value={passwordForm.confirmPassword}
                       onChange={handlePasswordInputChange}
                       className="w-full px-3 py-2 pr-10 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                       placeholder="Repite la nueva contraseña"
-                      disabled={isChangingPassword}
+                      disabled={isLoadingPasswordUpdate}
+                      required
                     />
                     <button
                       type="button"
@@ -732,15 +733,15 @@ const Configuration: React.FC = () => {
                   <h4 className="text-sm font-medium text-cyan-800 mb-2">Requisitos de la contraseña:</h4>
                   <ul className="text-sm text-cyan-700 space-y-1">
                     <li className="flex items-center">
-                      <Check className="w-3 h-3 mr-2" />
+                      <Check className={`w-3 h-3 mr-2 ${passwordForm.newPassword.length >= 6 ? 'text-green-600' : 'text-slate-400'}`} />
                       Mínimo 6 caracteres
                     </li>
                     <li className="flex items-center">
-                      <Check className="w-3 h-3 mr-2" />
+                      <Check className={`w-3 h-3 mr-2 ${/[A-Z]/.test(passwordForm.newPassword) ? 'text-green-600' : 'text-slate-400'}`} />
                       Al menos una letra mayúscula
                     </li>
                     <li className="flex items-center">
-                      <Check className="w-3 h-3 mr-2" />
+                      <Check className={`w-3 h-3 mr-2 ${/[0-9]/.test(passwordForm.newPassword) ? 'text-green-600' : 'text-slate-400'}`} />
                       Al menos un número
                     </li>
                   </ul>
@@ -749,14 +750,14 @@ const Configuration: React.FC = () => {
                 <button
                   onClick={handlePasswordSubmit}
                   className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-5 py-2.5 transition-colors disabled:opacity-50"
-                  disabled={isChangingPassword}
+                  disabled={isLoadingPasswordUpdate || !passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
                 >
-                  {isChangingPassword ? (
+                  {isLoadingPasswordUpdate ? (
                     <Spinner size="small" show={true} className="text-white mr-2" />
                   ) : (
                     <Lock className="w-4 h-4 mr-2" />
                   )}
-                  {isChangingPassword ? 'Actualizando...' : 'Actualizar Contraseña'}
+                  {isLoadingPasswordUpdate ? 'Actualizando...' : 'Actualizar Contraseña'}
                 </button>
               </div>
             </div>
@@ -858,7 +859,6 @@ const Configuration: React.FC = () => {
         {/* Encabezado con animación de engranajes */}
         <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6 mb-6">
           <div className="flex items-stretch gap-4 mb-4">
-            {/* Animación de engranajes en lugar de imagen */}
             <GearsAnimation />
             <div>
               <h3 className="font-medium text-slate-700 sm:text-lg">
@@ -872,9 +872,8 @@ const Configuration: React.FC = () => {
 
           {/* Mensajes de éxito/error */}
           {(successMessage || errorMessage) && (
-            <div className={`flex items-center p-4 rounded-xl mb-4 ${
-              successMessage ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-            }`}>
+            <div className={`flex items-center p-4 rounded-xl mb-4 ${successMessage ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+              }`}>
               {successMessage ? (
                 <Check className="w-5 h-5 mr-2" />
               ) : (
@@ -898,11 +897,10 @@ const Configuration: React.FC = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                      isActive
+                    className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${isActive
                         ? 'border-cyan-500 text-slate-700 bg-cyan-50'
                         : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-cyan-25'
-                    }`}
+                      }`}
                   >
                     <CircularIcon icon={Icon} isActive={isActive} />
                     <span className="ml-3">{tab.label}</span>

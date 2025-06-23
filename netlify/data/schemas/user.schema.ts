@@ -1,3 +1,4 @@
+// netlify/data/schemas/user.schema.ts
 import {
   serial,
   varchar,
@@ -5,8 +6,6 @@ import {
   pgTable,
   timestamp,
 } from "drizzle-orm/pg-core";
-
-
 
 export const usersTable = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -28,9 +27,3 @@ export const usersTable = pgTable("users", {
 
 export type InsertUser = typeof usersTable.$inferInsert;
 export type SelectUser = typeof usersTable.$inferSelect;
-
-
-
-
-
-

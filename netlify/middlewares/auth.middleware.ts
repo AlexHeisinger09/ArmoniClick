@@ -1,4 +1,3 @@
-
 import { UserService } from '../services/user.service';
 import { usersTable } from '../data/schemas/user.schema';
 
@@ -46,6 +45,12 @@ export const validateJWT = async (authorization: string) => {
       email: usersTable.email,
       emailValidated: usersTable.emailValidated,
       img: usersTable.img,
+      phone: usersTable.phone,           // ✅ Agregar
+      address: usersTable.address,       // ✅ Agregar
+      zipCode: usersTable.zipCode,       // ✅ Agregar
+      city: usersTable.city,             // ✅ Agregar
+      createdAt: usersTable.createdAt,
+      updatedAt: usersTable.updatedAt,
     });
 
     if (!user) {
@@ -62,7 +67,6 @@ export const validateJWT = async (authorization: string) => {
       headers: HEADERS.json,
     };
   } catch (error) {
-    // console.log(error);
     return {
       statusCode: 500,
       body: JSON.stringify({ message: "Internal server error" }),

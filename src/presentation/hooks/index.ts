@@ -6,3 +6,4 @@ export * from "./auth/useCheckUserToken";
 export * from "./auth/useLoginMutation";
 
 export * from "./user/useProfile";
+export * from "./user/useUpdateProfile";

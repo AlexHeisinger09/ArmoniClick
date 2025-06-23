@@ -11,8 +11,25 @@ export class UserService {
     value: unknown,
     fieldsToShow?: Record<string, any>
   ) {
+    const selectFields = fieldsToShow || {
+      id: usersTable.id,
+      name: usersTable.name,
+      lastName: usersTable.lastName,
+      username: usersTable.username,
+      email: usersTable.email,
+      emailValidated: usersTable.emailValidated,
+      phone: usersTable.phone,
+      address: usersTable.address,
+      zipCode: usersTable.zipCode,
+      city: usersTable.city,
+      img: usersTable.img,
+      createdAt: usersTable.createdAt,
+      updatedAt: usersTable.updatedAt,
+      isActive: usersTable.isActive,
+    };
+
     const oneRecordByFilter = await db
-      .select(fieldsToShow!)
+      .select(selectFields)
       .from(usersTable)
       .where(eq(field, value));
 
@@ -20,9 +37,8 @@ export class UserService {
   }
 
   async insert(newUser: NewUser) {
-    const addedUser = db.insert(usersTable).values(newUser);
-
-    return addedUser;
+    const addedUser = await db.insert(usersTable).values(newUser).returning();
+    return addedUser[0];
   }
 
   async update(
@@ -30,11 +46,25 @@ export class UserService {
     field: Column<ColumnBaseConfig<ColumnDataType, string>>,
     value: unknown
   ) {
-    const updatedUser = db
+    const updatedUser = await db
       .update(usersTable)
       .set(values)
+      .where(eq(field, value))
+      .returning();
+
+    return updatedUser[0];
+  }
+
+  // Método específico para obtener usuario con contraseña
+  async findOneWithPassword(
+    field: Column<ColumnBaseConfig<ColumnDataType, string>>,
+    value: unknown
+  ) {
+    const oneRecordByFilter = await db
+      .select()
+      .from(usersTable)
       .where(eq(field, value));
-    
-    return updatedUser;
+
+    return oneRecordByFilter.at(0);
   }
 }

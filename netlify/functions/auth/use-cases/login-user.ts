@@ -17,7 +17,7 @@ export class LoginUser implements LoginUserUseCase {
   ){}
 
   public async execute(dto: LoginUserDto): Promise<HandlerResponse> {
-    const user = await this.userService.findOne(usersTable.email, dto.email);
+    const user = await this.userService.findOneWithPassword(usersTable.email, dto.email);
     
     if (!user) return {
       statusCode: 400,
