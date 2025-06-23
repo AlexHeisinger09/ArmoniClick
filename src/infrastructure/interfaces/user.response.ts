@@ -18,5 +18,9 @@ export interface UserResponse {
 export interface ProfileResponse extends UserResponse {
   createdAt: string;
   updatedAt: string;
+  // ✅ Propiedades adicionales del perfil de usuario
+  phone?: string;
+  address?: string;
+  zipCode?: string;
+  city?: string;
 }
-

@@ -11,6 +11,10 @@ export class UserMapper {
       email: response.email,
       img: response.img,
       country: response.country,
+      city: response.city || '',
+      zipCode: response.zipCode || '',
+      address: response.address || '',
+      phone: response.phone || '',
     };
   }
 }
