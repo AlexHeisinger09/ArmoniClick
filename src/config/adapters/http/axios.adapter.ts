@@ -24,9 +24,13 @@ export class AxiosAdapter implements HttpAdapter {
         return config;
       }
 
-      const token = localStorage.getItem("token");
+      let token = localStorage.getItem("token");
 
       if (token) {
+        // 🔥 QUITAR comillas si las tiene
+        if (token.startsWith('"') && token.endsWith('"')) {
+          token = token.slice(1, -1);
+        }
         config.headers.Authorization = `Bearer ${token}`;
       }
 

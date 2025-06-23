@@ -23,7 +23,7 @@ import {
   Stethoscope,
   Pill
 } from "lucide-react";
-
+import { useProfile, useLoginMutation } from "@/presentation/hooks";
 // Tipos e interfaces
 interface Patient {
   id: number;
@@ -292,7 +292,7 @@ const PatientDetail: React.FC<{
                 Nuevo Tratamiento
               </button>
             </div>
-            
+
             <div className="space-y-4">
               {mockTreatments.map((treatment) => (
                 <div key={treatment.id} className="border border-aesthetic-lavanda/20 rounded-lg p-4 hover:bg-aesthetic-lavanda/5 transition-colors">
@@ -459,11 +459,10 @@ const PatientDetail: React.FC<{
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === tab.id
+                  className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id
                       ? 'border-aesthetic-lavanda text-aesthetic-gris-profundo bg-aesthetic-lavanda/10'
                       : 'border-transparent text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo hover:bg-aesthetic-lavanda/5'
-                  }`}
+                    }`}
                 >
                   <Icon className="w-4 h-4 mr-2" />
                   {tab.label}
@@ -489,7 +488,9 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
   const [searchRut, setSearchRut] = useState("");
   const [loading, setLoading] = useState(true);
-  
+  const { token } = useLoginMutation();
+  const { queryProfile } = useProfile(token || '');
+
   // Estados para vista
   const [currentView, setCurrentView] = useState<'grid' | 'detail'>('grid');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
@@ -695,18 +696,26 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
         {/* Barra de búsqueda y acciones - SIEMPRE VISIBLE */}
         <div className="bg-white rounded-xl shadow-sm border border-aesthetic-lavanda/20 p-6 mb-6">
           <div className="flex items-stretch gap-4 mb-4">
-            <img
-              alt=""
-              src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=2680&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-              className="w-20 rounded object-cover"
-            />
+            {queryProfile.data?.img ? (
+              <img
+                alt=""
+                src={queryProfile.data.img}
+                className="w-20 rounded object-cover"
+              />
+            ) : (
+              <div className="w-20 h-20 rounded bg-gradient-to-br from-aesthetic-lavanda to-aesthetic-rosa flex items-center justify-center">
+                <span className="text-aesthetic-gris-profundo font-bold text-xl">
+                  {queryProfile.data?.name?.[0] || 'D'}{queryProfile.data?.lastName?.[0] || 'r'}
+                </span>
+              </div>
+            )}
             <div>
               <h3 className="font-medium text-aesthetic-gris-profundo sm:text-lg">
                 {currentView === 'grid' ? 'Gestión de Pacientes' : `Paciente: ${selectedPatient?.nombres} ${selectedPatient?.apellidos}`}
               </h3>
               <p className="mt-0.5 text-aesthetic-gris-medio">
-                {currentView === 'grid' 
-                  ? 'Administra la información de tus pacientes de manera eficiente y organizada.'
+                {currentView === 'grid'
+                  ? `Bienvenido Dr(a) ${queryProfile.data?.name}  ${queryProfile.data?.id || ''}`
                   : 'Vista detallada con tratamientos, citas y historial médico completo.'
                 }
               </p>
