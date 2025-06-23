@@ -44,23 +44,23 @@ export const Login = () => {
     <div className="w-full flex flex-col gap-6">
       {/* Header estético con colores actualizados */}
       <div className="text-center mb-2">
-        <div className="w-20 h-20 bg-gradient-to-r from-white to-aesthetic-rosa rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg">
-          <Stethoscope className="w-10 h-10 text-aesthetic-gris-profundo" />
+        <div className="w-20 h-20 bg-gradient-to-r from-white to-cyan-500 rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg">
+          <Stethoscope className="w-10 h-10 text-slate-700" />
         </div>
-        {/* TÍTULO EN BLANCO para contraste con fondo lavanda */}
+        {/* TÍTULO EN BLANCO para contraste con fondo cyan */}
         <TypographyH2 className="text-white font-bold text-3xl mb-3 drop-shadow-sm">
           Bienvenido de vuelta
         </TypographyH2>
         {/* SUBTÍTULO EN GRIS PROFUNDO */}
-        <TypographyP className="text-aesthetic-gris-profundo text-base font-medium">
+        <TypographyP className="text-slate-700 text-base font-medium">
           Inicia sesión para gestionar tus pacientes y citas
         </TypographyP>
       </div>
 
       {/* Mensaje de error global */}
       {loginMutation.error && (
-        <div className="bg-error/20 border border-error-foreground/20 text-error-foreground p-4 rounded-xl text-sm flex items-center">
-          <div className="w-4 h-4 bg-error-foreground rounded-full mr-3 flex-shrink-0"></div>
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm flex items-center">
+          <div className="w-4 h-4 bg-red-500 rounded-full mr-3 flex-shrink-0"></div>
           {loginMutation.error.message}
         </div>
       )}
@@ -76,30 +76,30 @@ export const Login = () => {
             render={({ field, formState: { errors } }) => (
               <FormItem>
                 {/* LABEL EN GRIS PROFUNDO */}
-                <FormLabel className="text-aesthetic-gris-profundo font-semibold text-sm">
+                <FormLabel className="text-slate-700 font-semibold text-sm">
                   Correo Electrónico
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-aesthetic-gris-medio w-5 h-5" />
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-5 h-5" />
                     <Input
                       placeholder="tu-email@ejemplo.com"
                       className={`
                         pl-11 pr-4 py-3 h-12 
-                        border-2 border-aesthetic-gris-profundo/20 rounded-xl 
-                        focus:ring-2 focus:ring-white focus:border-white 
-                        bg-white text-aesthetic-gris-profundo placeholder-aesthetic-gris-medio
+                        border-2 border-slate-300 rounded-xl 
+                        focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 
+                        bg-white text-slate-700 placeholder-slate-400
                         transition-all duration-200
                         ${errors.email?.message
-                          ? "border-error-foreground/50 focus:ring-error-foreground/30"
-                          : "hover:border-white/50"
+                          ? "border-red-400 focus:ring-red-300"
+                          : "hover:border-cyan-400"
                         }
                       `}
                       {...field}
                     />
                   </div>
                 </FormControl>
-                <FormMessage className="text-error-foreground text-xs" />
+                <FormMessage className="text-red-600 text-xs" />
               </FormItem>
             )}
           />
@@ -110,24 +110,24 @@ export const Login = () => {
             render={({ field, formState: { errors } }) => (
               <FormItem>
                 {/* LABEL EN GRIS PROFUNDO */}
-                <FormLabel className="text-aesthetic-gris-profundo font-semibold text-sm">
+                <FormLabel className="text-slate-700 font-semibold text-sm">
                   Contraseña
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-aesthetic-gris-medio w-5 h-5" />
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-5 h-5" />
                     <Input
                       type={showPassword ? "text" : "password"}
                       placeholder="Tu contraseña segura"
                       className={`
                         pl-11 pr-11 py-3 h-12 
-                        border-2 border-aesthetic-gris-profundo/20 rounded-xl 
-                        focus:ring-2 focus:ring-white focus:border-white 
-                        bg-white text-aesthetic-gris-profundo placeholder-aesthetic-gris-medio
+                        border-2 border-slate-300 rounded-xl 
+                        focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 
+                        bg-white text-slate-700 placeholder-slate-400
                         transition-all duration-200
                         ${errors.password?.message
-                          ? "border-error-foreground/50 focus:ring-error-foreground/30"
-                          : "hover:border-white/50"
+                          ? "border-red-400 focus:ring-red-300"
+                          : "hover:border-cyan-400"
                         }
                       `}
                       {...field}
@@ -135,13 +135,13 @@ export const Login = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo transition-colors"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors"
                     >
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
                 </FormControl>
-                <FormMessage className="text-error-foreground text-xs" />
+                <FormMessage className="text-red-600 text-xs" />
               </FormItem>
             )}
           />
@@ -149,7 +149,7 @@ export const Login = () => {
           <div className="text-right">
             <Link 
               to="/auth/olvide-password" 
-              className="text-aesthetic-gris-profundo hover:text-white text-sm font-semibold transition-colors hover:underline"
+              className="text-slate-700 hover:text-white text-sm font-semibold transition-colors hover:underline"
             >
               ¿Olvidaste tu contraseña?
             </Link>
@@ -161,20 +161,20 @@ export const Login = () => {
             disabled={isLoadingLogin}
             className="
               w-full h-12 
-              bg-white hover:bg-aesthetic-gris-claro 
-              text-aesthetic-gris-profundo font-bold text-base
+              bg-white hover:bg-slate-50 
+              text-slate-700 font-bold text-base
               rounded-xl shadow-lg
               transition-all duration-200 transform hover:scale-[1.02]
               disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none
               flex items-center justify-center
-              border-2 border-transparent hover:border-aesthetic-gris-profundo/20
+              border-2 border-transparent hover:border-cyan-500
             "
           >
             {isLoadingLogin ? (
               <Spinner
                 size="small"
                 show={true}
-                className="text-aesthetic-gris-profundo"
+                className="text-slate-700"
               />
             ) : (
               <>
@@ -184,12 +184,12 @@ export const Login = () => {
             )}
           </Button>
 
-          <div className="text-center pt-4 border-t-2 border-aesthetic-gris-profundo/20">
-            <TypographyP className="text-aesthetic-gris-profundo text-sm font-medium">
+          <div className="text-center pt-4 border-t-2 border-slate-300">
+            <TypographyP className="text-slate-700 text-sm font-medium">
               ¿No tienes cuenta?{" "}
               <Link
                 to="/auth/registrar"
-                className="text-white font-bold hover:text-aesthetic-gris-claro transition-colors hover:underline"
+                className="text-white font-bold hover:text-slate-200 transition-colors hover:underline"
               >
                 Crear cuenta
               </Link>

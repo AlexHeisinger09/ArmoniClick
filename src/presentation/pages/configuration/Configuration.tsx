@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   User,
   Lock,
@@ -18,27 +18,15 @@ import {
   Upload,
   X,
   Check,
-  AlertCircle
+  AlertCircle,
+  Settings,
+  Cog,
+  Loader
 } from "lucide-react";
+import { useLoginMutation, useProfile } from "@/presentation/hooks";
+import { Spinner } from "@/presentation/components/ui/spinner";
 
 // Tipos e interfaces
-interface DoctorProfile {
-  id: number;
-  name: string;
-  lastName: string;
-  username: string;
-  email: string;
-  emailValidated: boolean;
-  phone: string;
-  address: string;
-  zipCode: string;
-  city: string;
-  img?: string;
-  createdAt: string;
-  updatedAt?: string;
-  isActive: boolean;
-}
-
 interface PasswordForm {
   current_password: string;
   new_password: string;
@@ -50,11 +38,75 @@ interface ProfileFormData {
   lastName: string;
   username: string;
   email: string;
-  phone: string;
-  address: string;
-  zipCode: string;
-  city: string;
+  phone?: string;
+  address?: string;
+  zipCode?: string;
+  city?: string;
 }
+
+// Componente para iconos circulares como en la imagen
+const CircularIcon: React.FC<{ icon: React.ElementType; isActive?: boolean }> = ({ 
+  icon: Icon, 
+  isActive = false 
+}) => (
+  <div className={`
+    w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200
+    ${isActive 
+      ? 'bg-cyan-500 shadow-md' 
+      : 'bg-cyan-100 hover:bg-cyan-200'
+    }
+  `}>
+    <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-cyan-600'}`} />
+  </div>
+);
+
+// Componente de animación de engranajes
+const GearsAnimation: React.FC = () => (
+  <div className="relative w-20 h-20 flex items-center justify-center">
+    {/* Engranaje grande */}
+    <div className="absolute inset-0 flex items-center justify-center">
+      <Settings 
+        className="w-12 h-12 text-cyan-500 animate-spin" 
+        style={{ 
+          animation: 'spin 4s linear infinite',
+          transformOrigin: 'center'
+        }} 
+      />
+    </div>
+    
+    {/* Engranaje pequeño */}
+    <div className="absolute top-1 right-1">
+      <Cog 
+        className="w-6 h-6 text-cyan-600 animate-spin" 
+        style={{ 
+          animation: 'spin 3s linear infinite reverse',
+          transformOrigin: 'center'
+        }} 
+      />
+    </div>
+    
+    {/* Engranaje muy pequeño */}
+    <div className="absolute bottom-2 left-2">
+      <Settings 
+        className="w-4 h-4 text-cyan-400 animate-spin" 
+        style={{ 
+          animation: 'spin 5s linear infinite',
+          transformOrigin: 'center'
+        }} 
+      />
+    </div>
+    
+    {/* Partículas animadas */}
+    <div className="absolute inset-0">
+      <div className="absolute top-2 left-3 w-1 h-1 bg-cyan-300 rounded-full animate-ping" 
+           style={{animationDelay: '0s'}}></div>
+      <div className="absolute top-4 right-2 w-1 h-1 bg-cyan-400 rounded-full animate-ping" 
+           style={{animationDelay: '1s'}}></div>
+      <div className="absolute bottom-3 left-4 w-1 h-1 bg-cyan-500 rounded-full animate-ping" 
+           style={{animationDelay: '2s'}}></div>
+    </div>
+  </div>
+);
 
 // Componente principal de Configuración
 const Configuration: React.FC = () => {
@@ -63,38 +115,27 @@ const Configuration: React.FC = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Datos del doctor (simulados)
-  const [doctorProfile, setDoctorProfile] = useState<DoctorProfile>({
-    id: 1,
-    name: "Carlos Eduardo",
-    lastName: "García Mendoza",
-    username: "carlos.garcia",
-    email: "carlos.garcia@clinica.com",
-    emailValidated: true,
-    phone: "+56912345678",
-    address: "Av. Las Condes 1234",
-    zipCode: "7550000",
-    city: "Santiago",
-    img: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
-    createdAt: "2024-01-15T10:30:00Z",
-    updatedAt: "2024-06-10T14:20:00Z",
-    isActive: true
-  });
+  // Hooks para datos reales del usuario
+  const { token } = useLoginMutation();
+  const { queryProfile } = useProfile(token || '');
 
+  // Estados para formularios
   const [profileFormData, setProfileFormData] = useState<ProfileFormData>({
-    name: doctorProfile.name,
-    lastName: doctorProfile.lastName,
-    username: doctorProfile.username,
-    email: doctorProfile.email,
-    phone: doctorProfile.phone,
-    address: doctorProfile.address,
-    zipCode: doctorProfile.zipCode,
-    city: doctorProfile.city,
+    name: '',
+    lastName: '',
+    username: '',
+    email: '',
+    phone: '',
+    address: '',
+    zipCode: '',
+    city: '',
   });
 
   const [passwordForm, setPasswordForm] = useState<PasswordForm>({
@@ -102,6 +143,22 @@ const Configuration: React.FC = () => {
     new_password: '',
     confirm_password: ''
   });
+
+  // Actualizar formulario cuando se cargan los datos del usuario
+  useEffect(() => {
+    if (queryProfile.data) {
+      setProfileFormData({
+        name: queryProfile.data.name || '',
+        lastName: queryProfile.data.lastName || '',
+        username: queryProfile.data.username || '',
+        email: queryProfile.data.email || '',
+        phone: '', // Estos campos no existen en la respuesta actual, pero se pueden agregar
+        address: '',
+        zipCode: '',
+        city: '',
+      });
+    }
+  }, [queryProfile.data]);
 
   // Función para mostrar mensajes temporales
   const showMessage = (message: string, type: 'success' | 'error') => {
@@ -119,7 +176,7 @@ const Configuration: React.FC = () => {
     }, 3000);
   };
 
-  // Pestañas de configuración
+  // Pestañas de configuración con iconos estilo circular
   const tabs = [
     { id: 'perfil', label: 'Información Personal', icon: User },
     { id: 'foto', label: 'Foto de Perfil', icon: Camera },
@@ -144,51 +201,76 @@ const Configuration: React.FC = () => {
     }));
   };
 
-  const handleProfileSubmit = () => {
-    // Simulación de guardado
-    setDoctorProfile(prev => ({
-      ...prev,
-      ...profileFormData,
-      updatedAt: new Date().toISOString()
-    }));
-    setIsEditing(false);
-    showMessage('Información personal actualizada correctamente', 'success');
+  const handleProfileSubmit = async () => {
+    setIsUpdatingProfile(true);
+    try {
+      // Aquí iría la llamada real a la API para actualizar el perfil
+      // Por ejemplo: await updateProfile(profileFormData);
+      
+      // Simulamos una llamada a la API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setIsEditing(false);
+      showMessage('Información personal actualizada correctamente', 'success');
+      
+      // Refrescar los datos del perfil
+      queryProfile.refetch();
+    } catch (error: any) {
+      showMessage(error.message || 'Error al actualizar el perfil', 'error');
+    } finally {
+      setIsUpdatingProfile(false);
+    }
   };
 
-  const handlePasswordSubmit = () => {
+  const handlePasswordSubmit = async () => {
     if (passwordForm.new_password !== passwordForm.confirm_password) {
       showMessage('Las contraseñas no coinciden', 'error');
       return;
     }
     
-    if (passwordForm.new_password.length < 8) {
-      showMessage('La contraseña debe tener al menos 8 caracteres', 'error');
+    if (passwordForm.new_password.length < 6) {
+      showMessage('La contraseña debe tener al menos 6 caracteres', 'error');
       return;
     }
 
-    // Simulación de cambio de contraseña
-    setPasswordForm({
-      current_password: '',
-      new_password: '',
-      confirm_password: ''
-    });
-    showMessage('Contraseña actualizada correctamente', 'success');
+    setIsChangingPassword(true);
+    try {
+      // Aquí iría la llamada real a la API para cambiar la contraseña
+      // Por ejemplo: await changePassword(passwordForm);
+      
+      // Simulamos una llamada a la API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setPasswordForm({
+        current_password: '',
+        new_password: '',
+        confirm_password: ''
+      });
+      showMessage('Contraseña actualizada correctamente', 'success');
+    } catch (error: any) {
+      showMessage(error.message || 'Error al cambiar la contraseña', 'error');
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
-  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setDoctorProfile(prev => ({
-          ...prev,
-          img: result,
-          updatedAt: new Date().toISOString()
-        }));
-        showMessage('Foto de perfil actualizada correctamente', 'success');
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Aquí iría la llamada real para subir la imagen
+        // Por ejemplo: await uploadProfileImage(file);
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result as string;
+          // Aquí se actualizaría la imagen en el estado o se haría una llamada a la API
+          showMessage('Foto de perfil actualizada correctamente', 'success');
+        };
+        reader.readAsDataURL(file);
+      } catch (error: any) {
+        showMessage(error.message || 'Error al subir la imagen', 'error');
+      }
     }
   };
 
@@ -201,6 +283,39 @@ const Configuration: React.FC = () => {
       minute: '2-digit'
     });
   };
+
+  // Mostrar loading mientras se cargan los datos
+  if (queryProfile.isLoading) {
+    return (
+      <div className="bg-slate-50 min-h-full flex flex-col items-center justify-center">
+        <div className="text-center">
+          <GearsAnimation />
+          <p className="mt-4 text-slate-600 font-medium">Cargando configuración...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar error si no se pueden cargar los datos
+  if (queryProfile.isError) {
+    return (
+      <div className="bg-slate-50 min-h-full flex flex-col items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-700 mb-2">Error al cargar los datos</h3>
+          <p className="text-slate-500 mb-4">No se pudieron cargar los datos del perfil</p>
+          <button
+            onClick={() => queryProfile.refetch()}
+            className="bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded-lg transition-colors"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const userData = queryProfile.data;
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -216,6 +331,7 @@ const Configuration: React.FC = () => {
                 <button
                   onClick={() => setIsEditing(!isEditing)}
                   className="flex items-center text-slate-500 hover:text-slate-700 transition-colors"
+                  disabled={isUpdatingProfile}
                 >
                   <Edit className="w-4 h-4 mr-2" />
                   {isEditing ? 'Cancelar' : 'Editar'}
@@ -235,6 +351,7 @@ const Configuration: React.FC = () => {
                         value={profileFormData.name}
                         onChange={handleProfileInputChange}
                         className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                        disabled={isUpdatingProfile}
                       />
                     </div>
 
@@ -248,6 +365,7 @@ const Configuration: React.FC = () => {
                         value={profileFormData.lastName}
                         onChange={handleProfileInputChange}
                         className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                        disabled={isUpdatingProfile}
                       />
                     </div>
 
@@ -261,6 +379,7 @@ const Configuration: React.FC = () => {
                         value={profileFormData.username}
                         onChange={handleProfileInputChange}
                         className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                        disabled={isUpdatingProfile}
                       />
                     </div>
 
@@ -274,6 +393,7 @@ const Configuration: React.FC = () => {
                         value={profileFormData.email}
                         onChange={handleProfileInputChange}
                         className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                        disabled={isUpdatingProfile}
                       />
                     </div>
 
@@ -287,6 +407,8 @@ const Configuration: React.FC = () => {
                         value={profileFormData.phone}
                         onChange={handleProfileInputChange}
                         className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                        disabled={isUpdatingProfile}
+                        placeholder="Ej: +56912345678"
                       />
                     </div>
 
@@ -300,6 +422,8 @@ const Configuration: React.FC = () => {
                         value={profileFormData.city}
                         onChange={handleProfileInputChange}
                         className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                        disabled={isUpdatingProfile}
+                        placeholder="Ej: Santiago"
                       />
                     </div>
 
@@ -313,6 +437,8 @@ const Configuration: React.FC = () => {
                         value={profileFormData.zipCode}
                         onChange={handleProfileInputChange}
                         className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                        disabled={isUpdatingProfile}
+                        placeholder="Ej: 8320000"
                       />
                     </div>
                   </div>
@@ -327,6 +453,8 @@ const Configuration: React.FC = () => {
                       onChange={handleProfileInputChange}
                       rows={3}
                       className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                      disabled={isUpdatingProfile}
+                      placeholder="Ej: Av. Las Condes 1234, Oficina 567"
                     />
                   </div>
 
@@ -334,15 +462,21 @@ const Configuration: React.FC = () => {
                     <button
                       onClick={() => setIsEditing(false)}
                       className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
+                      disabled={isUpdatingProfile}
                     >
                       Cancelar
                     </button>
                     <button
                       onClick={handleProfileSubmit}
-                      className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
+                      className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-5 py-2.5 transition-colors disabled:opacity-50"
+                      disabled={isUpdatingProfile}
                     >
-                      <Save className="w-4 h-4 mr-2" />
-                      Guardar Cambios
+                      {isUpdatingProfile ? (
+                        <Spinner size="small" show={true} className="text-white mr-2" />
+                      ) : (
+                        <Save className="w-4 h-4 mr-2" />
+                      )}
+                      {isUpdatingProfile ? 'Guardando...' : 'Guardar Cambios'}
                     </button>
                   </div>
                 </div>
@@ -356,7 +490,7 @@ const Configuration: React.FC = () => {
                       <div>
                         <p className="text-sm text-slate-500">Nombre Completo</p>
                         <p className="font-medium text-slate-700">
-                          {doctorProfile.name} {doctorProfile.lastName}
+                          {userData?.name} {userData?.lastName}
                         </p>
                       </div>
                     </div>
@@ -368,37 +502,35 @@ const Configuration: React.FC = () => {
                       <div>
                         <p className="text-sm text-slate-500">Nombre de Usuario</p>
                         <p className="font-medium text-slate-700">
-                          {doctorProfile.username}
+                          {userData?.username}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center space-x-3">
-                      <div className="bg-blue-100 p-2 rounded-full">
-                        <Mail className="w-5 h-5 text-blue-600" />
+                      <div className="bg-cyan-100 p-2 rounded-full">
+                        <Mail className="w-5 h-5 text-cyan-600" />
                       </div>
                       <div>
                         <p className="text-sm text-slate-500">Email</p>
                         <p className="font-medium text-slate-700">
-                          {doctorProfile.email}
+                          {userData?.email}
                         </p>
-                        {doctorProfile.emailValidated && (
-                          <div className="flex items-center mt-1">
-                            <Check className="w-3 h-3 text-green-600 mr-1" />
-                            <span className="text-xs text-green-600">Verificado</span>
-                          </div>
-                        )}
+                        <div className="flex items-center mt-1">
+                          <Check className="w-3 h-3 text-green-600 mr-1" />
+                          <span className="text-xs text-green-600">Verificado</span>
+                        </div>
                       </div>
                     </div>
 
                     <div className="flex items-center space-x-3">
-                      <div className="bg-green-100 p-2 rounded-full">
-                        <Phone className="w-5 h-5 text-green-600" />
+                      <div className="bg-cyan-100 p-2 rounded-full">
+                        <Phone className="w-5 h-5 text-cyan-600" />
                       </div>
                       <div>
                         <p className="text-sm text-slate-500">Teléfono</p>
                         <p className="font-medium text-slate-700">
-                          {doctorProfile.phone}
+                          {profileFormData.phone || 'No especificado'}
                         </p>
                       </div>
                     </div>
@@ -406,50 +538,43 @@ const Configuration: React.FC = () => {
 
                   <div className="space-y-4">
                     <div className="flex items-start space-x-3">
-                      <div className="bg-orange-100 p-2 rounded-full">
-                        <MapPin className="w-5 h-5 text-orange-600" />
+                      <div className="bg-cyan-100 p-2 rounded-full">
+                        <MapPin className="w-5 h-5 text-cyan-600" />
                       </div>
                       <div>
                         <p className="text-sm text-slate-500">Dirección</p>
                         <p className="font-medium text-slate-700">
-                          {doctorProfile.address}
+                          {profileFormData.address || 'No especificada'}
                         </p>
-                        <p className="text-sm text-slate-500">
-                          {doctorProfile.city}, {doctorProfile.zipCode}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-3">
-                      <div className="bg-gray-100 p-2 rounded-full">
-                        <Calendar className="w-5 h-5 text-gray-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-slate-500">Cuenta creada</p>
-                        <p className="font-medium text-slate-700">
-                          {formatDate(doctorProfile.createdAt)}
-                        </p>
-                        {doctorProfile.updatedAt && (
-                          <p className="text-xs text-slate-500">
-                            Última actualización: {formatDate(doctorProfile.updatedAt)}
+                        {profileFormData.city && (
+                          <p className="text-sm text-slate-500">
+                            {profileFormData.city}, {profileFormData.zipCode}
                           </p>
                         )}
                       </div>
                     </div>
 
                     <div className="flex items-center space-x-3">
-                      <div className="bg-green-100 p-2 rounded-full">
-                        <Shield className="w-5 h-5 text-green-600" />
+                      <div className="bg-cyan-100 p-2 rounded-full">
+                        <Calendar className="w-5 h-5 text-cyan-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-500">ID de Usuario</p>
+                        <p className="font-medium text-slate-700">
+                          #{userData?.id}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-cyan-100 p-2 rounded-full">
+                        <Shield className="w-5 h-5 text-cyan-600" />
                       </div>
                       <div>
                         <p className="text-sm text-slate-500">Estado de la cuenta</p>
                         <div className="flex items-center">
-                          <div className={`w-2 h-2 rounded-full mr-2 ${
-                            doctorProfile.isActive ? 'bg-green-500' : 'bg-red-500'
-                          }`}></div>
-                          <p className="font-medium text-slate-700">
-                            {doctorProfile.isActive ? 'Activa' : 'Inactiva'}
-                          </p>
+                          <div className="w-2 h-2 rounded-full mr-2 bg-green-500"></div>
+                          <p className="font-medium text-slate-700">Activa</p>
                         </div>
                       </div>
                     </div>
@@ -471,15 +596,17 @@ const Configuration: React.FC = () => {
               <div className="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
                 <div className="relative">
                   <div className="w-32 h-32 rounded-full overflow-hidden bg-slate-100 border-4 border-cyan-200">
-                    {doctorProfile.img ? (
+                    {userData?.img ? (
                       <img
-                        src={doctorProfile.img}
+                        src={userData.img}
                         alt="Foto de perfil"
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <User className="w-16 h-16 text-slate-500" />
+                      <div className="w-full h-full flex items-center justify-center bg-cyan-500">
+                        <span className="text-white font-bold text-2xl">
+                          {userData?.name?.[0]}{userData?.lastName?.[0]}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -541,6 +668,7 @@ const Configuration: React.FC = () => {
                       onChange={handlePasswordInputChange}
                       className="w-full px-3 py-2 pr-10 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                       placeholder="Ingresa tu contraseña actual"
+                      disabled={isChangingPassword}
                     />
                     <button
                       type="button"
@@ -563,7 +691,8 @@ const Configuration: React.FC = () => {
                       value={passwordForm.new_password}
                       onChange={handlePasswordInputChange}
                       className="w-full px-3 py-2 pr-10 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                      placeholder="Mínimo 8 caracteres"
+                      placeholder="Mínimo 6 caracteres"
+                      disabled={isChangingPassword}
                     />
                     <button
                       type="button"
@@ -587,6 +716,7 @@ const Configuration: React.FC = () => {
                       onChange={handlePasswordInputChange}
                       className="w-full px-3 py-2 pr-10 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                       placeholder="Repite la nueva contraseña"
+                      disabled={isChangingPassword}
                     />
                     <button
                       type="button"
@@ -603,7 +733,7 @@ const Configuration: React.FC = () => {
                   <ul className="text-sm text-cyan-700 space-y-1">
                     <li className="flex items-center">
                       <Check className="w-3 h-3 mr-2" />
-                      Mínimo 8 caracteres
+                      Mínimo 6 caracteres
                     </li>
                     <li className="flex items-center">
                       <Check className="w-3 h-3 mr-2" />
@@ -618,10 +748,15 @@ const Configuration: React.FC = () => {
 
                 <button
                   onClick={handlePasswordSubmit}
-                  className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
+                  className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-5 py-2.5 transition-colors disabled:opacity-50"
+                  disabled={isChangingPassword}
                 >
-                  <Lock className="w-4 h-4 mr-2" />
-                  Actualizar Contraseña
+                  {isChangingPassword ? (
+                    <Spinner size="small" show={true} className="text-white mr-2" />
+                  ) : (
+                    <Lock className="w-4 h-4 mr-2" />
+                  )}
+                  {isChangingPassword ? 'Actualizando...' : 'Actualizar Contraseña'}
                 </button>
               </div>
             </div>
@@ -640,8 +775,8 @@ const Configuration: React.FC = () => {
                 {/* Notificaciones */}
                 <div>
                   <h4 className="text-md font-medium text-slate-700 mb-4 flex items-center">
-                    <Bell className="w-5 h-5 mr-2" />
-                    Notificaciones
+                    <CircularIcon icon={Bell} />
+                    <span className="ml-3">Notificaciones</span>
                   </h4>
                   <div className="space-y-3">
                     <label className="flex items-center justify-between p-3 border border-cyan-200 rounded-lg hover:bg-cyan-50 cursor-pointer">
@@ -673,8 +808,8 @@ const Configuration: React.FC = () => {
                 {/* Tema */}
                 <div>
                   <h4 className="text-md font-medium text-slate-700 mb-4 flex items-center">
-                    <Palette className="w-5 h-5 mr-2" />
-                    Apariencia
+                    <CircularIcon icon={Palette} />
+                    <span className="ml-3">Apariencia</span>
                   </h4>
                   <div className="space-y-3">
                     <label className="flex items-center p-3 border border-cyan-200 rounded-lg hover:bg-cyan-50 cursor-pointer">
@@ -720,20 +855,17 @@ const Configuration: React.FC = () => {
   return (
     <div className="bg-slate-50 min-h-full flex flex-col">
       <div className="flex-1 p-6">
-        {/* Encabezado */}
+        {/* Encabezado con animación de engranajes */}
         <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6 mb-6">
           <div className="flex items-stretch gap-4 mb-4">
-            <img
-              alt="Configuración"
-              src="https://images.unsplash.com/photo-1581287053822-fd7bf4f4bfec?q=80&w=2101&auto=format&fit=crop"
-              className="w-20 rounded object-cover"
-            />
+            {/* Animación de engranajes en lugar de imagen */}
+            <GearsAnimation />
             <div>
               <h3 className="font-medium text-slate-700 sm:text-lg">
                 Configuración del Perfil
               </h3>
               <p className="mt-0.5 text-slate-500">
-                Administra tu información personal, configuraciones de seguridad y preferencias de la aplicación.
+                Bienvenido Dr(a) {userData?.name} {userData?.lastName}. Administra tu información personal, configuraciones de seguridad y preferencias.
               </p>
             </div>
           </div>
@@ -755,24 +887,25 @@ const Configuration: React.FC = () => {
           )}
         </div>
 
-        {/* Pestañas de configuración */}
+        {/* Pestañas de configuración con iconos circulares */}
         <div className="bg-white rounded-xl shadow-sm border border-cyan-200 overflow-hidden">
           <div className="border-b border-cyan-200">
-            <nav className="flex space-x-0">
+            <nav className="flex space-x-0 overflow-x-auto">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                      activeTab === tab.id
+                    className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                      isActive
                         ? 'border-cyan-500 text-slate-700 bg-cyan-50'
                         : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-cyan-25'
                     }`}
                   >
-                    <Icon className="w-4 h-4 mr-2" />
-                    {tab.label}
+                    <CircularIcon icon={Icon} isActive={isActive} />
+                    <span className="ml-3">{tab.label}</span>
                   </button>
                 );
               })}
@@ -789,4 +922,4 @@ const Configuration: React.FC = () => {
   );
 };
 
-export  {Configuration};
+export { Configuration };

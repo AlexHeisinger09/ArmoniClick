@@ -42,20 +42,20 @@ export const ResetPassword = () => {
     <div className="w-full p-6 sm:p-8 flex flex-col gap-6 max-w-md mx-auto">
       {/* Header estético */}
       <div className="text-center mb-2">
-        <div className="w-20 h-20 bg-gradient-to-r from-aesthetic-rosa to-aesthetic-menta rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg">
-          <Key className="w-10 h-10 text-aesthetic-gris-profundo" />
+        <div className="w-20 h-20 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg">
+          <Key className="w-10 h-10 text-white" />
         </div>
-        <TypographyH2 className="text-aesthetic-gris-profundo font-bold text-3xl mb-3">
+        <TypographyH2 className="text-slate-700 font-bold text-3xl mb-3">
           Recuperar contraseña
         </TypographyH2>
-        <TypographyP className="text-aesthetic-gris-medio text-base">
+        <TypographyP className="text-slate-500 text-base">
           Te enviaremos un enlace para restablecer tu contraseña de forma segura
         </TypographyP>
       </div>
 
       {/* Mensaje de éxito */}
       {resetPasswordMutation.data && (
-        <Alert className="bg-success/20 border border-success-foreground/20 text-success-foreground rounded-xl flex items-center gap-3 py-4">
+        <Alert className="bg-green-50 border border-green-200 text-green-700 rounded-xl flex items-center gap-3 py-4">
           <CheckCircle className="w-5 h-5 flex-shrink-0" />
           <AlertTitle className="m-0 font-medium">
             {resetPasswordMutation.data.message}
@@ -65,7 +65,7 @@ export const ResetPassword = () => {
 
       {/* Mensaje de error */}
       {resetPasswordMutation.error && (
-        <Alert className="bg-error/20 border border-error-foreground/20 text-error-foreground rounded-xl flex items-center gap-3 py-4">
+        <Alert className="bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-3 py-4">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
           <AlertTitle className="m-0 font-medium">
             {resetPasswordMutation.error.message}
@@ -83,41 +83,41 @@ export const ResetPassword = () => {
             name="email"
             render={({ field, formState: { errors } }) => (
               <FormItem>
-                <FormLabel className="text-aesthetic-gris-profundo font-medium text-sm">
+                <FormLabel className="text-slate-700 font-medium text-sm">
                   Correo Electrónico
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-aesthetic-gris-medio w-5 h-5" />
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-5 h-5" />
                     <Input
                       placeholder="tu-email@ejemplo.com"
                       className={`
                         pl-11 pr-4 py-3 h-12 
-                        border border-aesthetic-lavanda/30 rounded-xl 
-                        focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent 
-                        bg-white text-aesthetic-gris-profundo placeholder-aesthetic-gris-medio
+                        border border-cyan-200 rounded-xl 
+                        focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 
+                        bg-white text-slate-700 placeholder-slate-400
                         transition-all duration-200
                         ${errors.email?.message
-                          ? "border-error-foreground/50 focus:ring-error-foreground/30"
-                          : "hover:border-aesthetic-lavanda/50"
+                          ? "border-red-400 focus:ring-red-300"
+                          : "hover:border-cyan-400"
                         }
                       `}
                       {...field}
                     />
                   </div>
                 </FormControl>
-                <FormMessage className="text-error-foreground text-xs" />
+                <FormMessage className="text-red-600 text-xs" />
               </FormItem>
             )}
           />
 
           {/* Información adicional */}
-          <div className="bg-aesthetic-lavanda/20 border border-aesthetic-lavanda/30 p-4 rounded-xl">
+          <div className="bg-cyan-50 border border-cyan-200 p-4 rounded-xl">
             <div className="flex items-start space-x-3">
-              <AlertCircle className="w-5 h-5 text-aesthetic-gris-profundo mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-aesthetic-gris-profundo">
+              <AlertCircle className="w-5 h-5 text-cyan-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-slate-700">
                 <p className="font-medium mb-1">¿Cómo funciona?</p>
-                <ul className="text-xs text-aesthetic-gris-medio space-y-1">
+                <ul className="text-xs text-slate-500 space-y-1">
                   <li>• Recibirás un email con un enlace seguro</li>
                   <li>• El enlace expira en 24 horas</li>
                   <li>• Podrás crear una nueva contraseña</li>
@@ -131,9 +131,9 @@ export const ResetPassword = () => {
             disabled={resetPasswordMutation.isSuccess || isLoadingResetPassword}
             className="
               w-full h-12 
-              bg-gradient-to-r from-aesthetic-rosa to-aesthetic-menta 
-              hover:from-aesthetic-rosa-hover hover:to-aesthetic-menta-hover 
-              text-aesthetic-gris-profundo font-semibold text-base
+              bg-gradient-to-r from-cyan-500 to-cyan-600 
+              hover:from-cyan-600 hover:to-cyan-700 
+              text-white font-semibold text-base
               rounded-xl shadow-sm
               transition-all duration-200 transform hover:scale-[1.02]
               disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none
@@ -144,7 +144,7 @@ export const ResetPassword = () => {
               <Spinner
                 size="small"
                 show={true}
-                className="text-aesthetic-gris-profundo"
+                className="text-white"
               />
             ) : (
               <>
@@ -154,13 +154,13 @@ export const ResetPassword = () => {
             )}
           </Button>
 
-          <div className="flex flex-col space-y-3 pt-4 border-t border-aesthetic-lavanda/20">
+          <div className="flex flex-col space-y-3 pt-4 border-t border-cyan-200">
             <div className="text-center">
-              <TypographyP className="text-aesthetic-gris-medio text-sm">
+              <TypographyP className="text-slate-500 text-sm">
                 ¿Recordaste tu contraseña?{" "}
                 <Link
                   to="/auth/login"
-                  className="text-aesthetic-gris-profundo font-semibold hover:text-aesthetic-gris-profundo/80 transition-colors hover:underline"
+                  className="text-slate-700 font-semibold hover:text-slate-900 transition-colors hover:underline"
                 >
                   Iniciar sesión
                 </Link>
@@ -168,11 +168,11 @@ export const ResetPassword = () => {
             </div>
 
             <div className="text-center">
-              <TypographyP className="text-aesthetic-gris-medio text-sm">
+              <TypographyP className="text-slate-500 text-sm">
                 ¿No tienes cuenta?{" "}
                 <Link
                   to="/auth/registrar"
-                  className="text-aesthetic-gris-profundo font-semibold hover:text-aesthetic-gris-profundo/80 transition-colors hover:underline"
+                  className="text-slate-700 font-semibold hover:text-slate-900 transition-colors hover:underline"
                 >
                   Crear cuenta
                 </Link>

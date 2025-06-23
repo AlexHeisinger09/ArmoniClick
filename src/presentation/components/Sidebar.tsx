@@ -109,7 +109,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
   return (
     <div className={`bg-white shadow-lg h-full ${isCollapsed ? 'w-16' : 'w-64'} transition-all duration-300 flex flex-col ${className} border-r border-cyan-200`}>
       {/* Header del Sidebar */}
-      <div className="flex items-center justify-between p-4 flex-shrink-0 border-b border-cyan-200">
+      <div className="flex items-center justify-between p-4 flex-shrink-0">
         {!isCollapsed && (
           <div className="flex items-center space-x-2">
             <div className="w-22 h-22 flex items-center justify-center">
@@ -139,7 +139,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
 
       {/* Footer del Sidebar - Minimalista */}
       {!isCollapsed && (
-        <div className="p-4 flex-shrink-0 border-t border-cyan-200">
+        <div className="p-4 flex-shrink-0 border-cyan-200">
           <div className="text-center">
             <button
               onClick={handleLogout}

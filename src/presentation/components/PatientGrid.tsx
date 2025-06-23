@@ -716,7 +716,7 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
               </h3>
               <p className="mt-0.5 text-slate-500">
                 {currentView === 'grid'
-                  ? `Bienvenido Dr(a) ${queryProfile.data?.name}  ${queryProfile.data?.id || ''}`
+                  ? `Bienvenido Dr(a) ${queryProfile.data?.name}  ${queryProfile.data?.lastName }`
                   : 'Vista detallada con tratamientos, citas y historial médico completo.'
                 }
               </p>

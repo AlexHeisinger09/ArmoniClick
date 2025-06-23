@@ -41,6 +41,8 @@ export const validateJWT = async (authorization: string) => {
     const user = await userService.findOne(usersTable.email, payload.email, {
       id: usersTable.id,
       name: usersTable.name,
+      lastName: usersTable.lastName,        
+      username: usersTable.username,        
       email: usersTable.email,
       emailValidated: usersTable.emailValidated,
       img: usersTable.img,

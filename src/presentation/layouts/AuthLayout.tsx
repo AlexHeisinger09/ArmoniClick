@@ -6,7 +6,7 @@ export const AuthLayout = () => {
       {/* Fondo base blanco */}
       <div className="absolute inset-0 bg-white" />
       
-      {/* Burbujas de fondo animadas */}
+      {/* Burbujas de fondo animadas con nueva paleta */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Burbujas grandes */}
         {[...Array(8)].map((_, i) => (
@@ -19,9 +19,9 @@ export const AuthLayout = () => {
               width: `${Math.random() * 180 + 100}px`,
               height: `${Math.random() * 180 + 100}px`,
               backgroundColor: [
-                '#e6d7ed', // lavanda
-                '#f2e7f5', // rosa
-                '#e8f4f0', // menta
+                '#e0f7fa', // cyan-lightest
+                '#67e8f9', // cyan-lighter
+                '#06b6d4', // cyan-light
               ][Math.floor(Math.random() * 3)],
               animationDelay: `${Math.random() * 4}s`,
               animationDuration: `${Math.random() * 5 + 4}s`
@@ -40,11 +40,11 @@ export const AuthLayout = () => {
               width: `${Math.random() * 90 + 50}px`,
               height: `${Math.random() * 90 + 50}px`,
               backgroundColor: [
-                '#e6d7ed', // lavanda
-                '#f2e7f5', // rosa
-                '#e8f4f0', // menta
-                '#d4f5e8', // success light
-                '#fff2e6'  // warning light
+                '#e0f7fa', // cyan-lightest
+                '#67e8f9', // cyan-lighter
+                '#06b6d4', // cyan-light
+                '#dcfdf4', // success light
+                '#fffbeb'  // warning light
               ][Math.floor(Math.random() * 5)],
               animationDelay: `${Math.random() * 3}s`,
               animationDuration: `${Math.random() * 4 + 3}s`
@@ -63,12 +63,12 @@ export const AuthLayout = () => {
               width: `${Math.random() * 40 + 15}px`,
               height: `${Math.random() * 40 + 15}px`,
               backgroundColor: [
-                '#e6d7ed', // lavanda
-                '#f2e7f5', // rosa
-                '#e8f4f0', // menta
-                '#d4f5e8', // success light
-                '#fff2e6', // warning light
-                '#f5f5f7'  // gris claro
+                '#e0f7fa', // cyan-lightest
+                '#67e8f9', // cyan-lighter
+                '#06b6d4', // cyan-light
+                '#dcfdf4', // success light
+                '#fffbeb', // warning light
+                '#f8fafc'  // gris-claro
               ][Math.floor(Math.random() * 6)],
               animationDelay: `${Math.random() * 5}s`,
               animationDuration: `${Math.random() * 3 + 2}s`
@@ -87,13 +87,13 @@ export const AuthLayout = () => {
               width: `${Math.random() * 20 + 5}px`,
               height: `${Math.random() * 20 + 5}px`,
               backgroundColor: [
-                '#e6d7ed', // lavanda
-                '#f2e7f5', // rosa
-                '#e8f4f0', // menta
-                '#d4f5e8', // success light
-                '#fff2e6', // warning light
-                '#f5f5f7', // gris claro
-                '#8b75a6'  // gris medio
+                '#e0f7fa', // cyan-lightest
+                '#67e8f9', // cyan-lighter
+                '#06b6d4', // cyan-light
+                '#dcfdf4', // success light
+                '#fffbeb', // warning light
+                '#f8fafc', // gris-claro
+                '#64748b'  // gris-medio
               ][Math.floor(Math.random() * 7)],
               animationDelay: `${Math.random() * 6}s`,
               animationDuration: `${Math.random() * 2 + 1}s`
@@ -102,8 +102,8 @@ export const AuthLayout = () => {
         ))}
       </div>
 
-      {/* Contenedor principal - FONDO LAVANDA */}
-      <section className="relative z-10 w-full max-w-lg mx-auto bg-aesthetic-lavanda rounded-lg shadow-xl">
+      {/* Contenedor principal - FONDO CYAN-LIGHTEST */}
+      <section className="relative z-10 w-full max-w-lg mx-auto bg-cyan-100 rounded-lg shadow-xl border border-cyan-200">
         <div className="flex items-center justify-center w-full p-6 sm:p-8">
           <Outlet />
         </div>

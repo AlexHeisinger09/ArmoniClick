@@ -14,17 +14,17 @@ export const ConfirmAccount = () => {
     <div className="w-full p-6 sm:p-8 flex flex-col gap-6 max-w-md mx-auto">
       {/* Header estético */}
       <div className="text-center mb-2">
-        <div className="w-20 h-20 bg-gradient-to-r from-aesthetic-menta to-aesthetic-rosa rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg">
+        <div className="w-20 h-20 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg">
           {queryConfirmAccount.isLoading ? (
-            <Loader className="w-10 h-10 text-aesthetic-gris-profundo animate-spin" />
+            <Loader className="w-10 h-10 text-white animate-spin" />
           ) : queryConfirmAccount.data ? (
-            <UserCheck className="w-10 h-10 text-aesthetic-gris-profundo" />
+            <UserCheck className="w-10 h-10 text-white" />
           ) : (
-            <AlertCircle className="w-10 h-10 text-aesthetic-gris-profundo" />
+            <AlertCircle className="w-10 h-10 text-white" />
           )}
         </div>
         
-        <TypographyH2 className="text-aesthetic-gris-profundo font-bold text-3xl mb-3">
+        <TypographyH2 className="text-slate-700 font-bold text-3xl mb-3">
           {queryConfirmAccount.isLoading 
             ? "Verificando cuenta..." 
             : queryConfirmAccount.data 
@@ -33,7 +33,7 @@ export const ConfirmAccount = () => {
           }
         </TypographyH2>
         
-        <TypographyP className="text-aesthetic-gris-medio text-base">
+        <TypographyP className="text-slate-500 text-base">
           {queryConfirmAccount.isLoading 
             ? "Estamos confirmando tu registro, por favor espera un momento"
             : queryConfirmAccount.data 
@@ -45,21 +45,21 @@ export const ConfirmAccount = () => {
 
       {/* Estado de carga */}
       {queryConfirmAccount.isLoading && (
-        <div className="bg-aesthetic-lavanda/20 border border-aesthetic-lavanda/30 rounded-xl p-6">
+        <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-6">
           <div className="flex items-center space-x-4">
             <div className="animate-spin">
-              <Loader className="w-6 h-6 text-aesthetic-gris-profundo" />
+              <Loader className="w-6 h-6 text-slate-600" />
             </div>
             <div>
-              <p className="font-medium text-aesthetic-gris-profundo">Validando cuenta...</p>
-              <p className="text-sm text-aesthetic-gris-medio">Este proceso puede tomar unos segundos</p>
+              <p className="font-medium text-slate-700">Validando cuenta...</p>
+              <p className="text-sm text-slate-500">Este proceso puede tomar unos segundos</p>
             </div>
           </div>
           
           {/* Indicador de progreso */}
           <div className="mt-4">
-            <div className="w-full bg-aesthetic-gris-claro rounded-full h-2 overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-aesthetic-lavanda to-aesthetic-menta rounded-full animate-pulse" style={{width: '70%'}}></div>
+            <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-full animate-pulse" style={{width: '70%'}}></div>
             </div>
           </div>
         </div>
@@ -68,30 +68,30 @@ export const ConfirmAccount = () => {
       {/* Estado de éxito */}
       {queryConfirmAccount.data && (
         <div className="space-y-4">
-          <div className="bg-success/20 border border-success-foreground/20 rounded-xl p-6">
+          <div className="bg-green-50 border border-green-200 rounded-xl p-6">
             <div className="flex items-center space-x-4 mb-4">
-              <div className="w-12 h-12 bg-success-foreground rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="font-semibold text-success-foreground text-lg">¡Perfecto!</p>
-                <p className="text-sm text-success-foreground/80">{queryConfirmAccount.data.message}</p>
+                <p className="font-semibold text-green-700 text-lg">¡Perfecto!</p>
+                <p className="text-sm text-green-600">{queryConfirmAccount.data.message}</p>
               </div>
             </div>
             
             <div className="bg-white/50 rounded-lg p-4">
-              <h4 className="font-medium text-success-foreground mb-2">¿Qué sigue ahora?</h4>
-              <ul className="text-sm text-success-foreground/80 space-y-1">
+              <h4 className="font-medium text-green-700 mb-2">¿Qué sigue ahora?</h4>
+              <ul className="text-sm text-green-600 space-y-1">
                 <li className="flex items-center space-x-2">
-                  <div className="w-1.5 h-1.5 bg-success-foreground rounded-full"></div>
+                  <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                   <span>Accede con tu email y contraseña</span>
                 </li>
                 <li className="flex items-center space-x-2">
-                  <div className="w-1.5 h-1.5 bg-success-foreground rounded-full"></div>
+                  <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                   <span>Configura tu perfil profesional</span>
                 </li>
                 <li className="flex items-center space-x-2">
-                  <div className="w-1.5 h-1.5 bg-success-foreground rounded-full"></div>
+                  <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                   <span>Comienza a gestionar tus pacientes</span>
                 </li>
               </ul>
@@ -102,30 +102,30 @@ export const ConfirmAccount = () => {
 
       {/* Estado de error */}
       {queryConfirmAccount.error && (
-        <div className="bg-error/20 border border-error-foreground/20 rounded-xl p-6">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
           <div className="flex items-center space-x-4 mb-4">
-            <div className="w-12 h-12 bg-error-foreground rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
               <AlertCircle className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="font-semibold text-error-foreground text-lg">Verificación fallida</p>
-              <p className="text-sm text-error-foreground/80">{queryConfirmAccount.error.message}</p>
+              <p className="font-semibold text-red-700 text-lg">Verificación fallida</p>
+              <p className="text-sm text-red-600">{queryConfirmAccount.error.message}</p>
             </div>
           </div>
           
           <div className="bg-white/50 rounded-lg p-4">
-            <h4 className="font-medium text-error-foreground mb-2">¿Qué puedes hacer?</h4>
-            <ul className="text-sm text-error-foreground/80 space-y-1">
+            <h4 className="font-medium text-red-700 mb-2">¿Qué puedes hacer?</h4>
+            <ul className="text-sm text-red-600 space-y-1">
               <li className="flex items-center space-x-2">
-                <div className="w-1.5 h-1.5 bg-error-foreground rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-red-600 rounded-full"></div>
                 <span>Verifica que el enlace esté completo</span>
               </li>
               <li className="flex items-center space-x-2">
-                <div className="w-1.5 h-1.5 bg-error-foreground rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-red-600 rounded-full"></div>
                 <span>Solicita un nuevo email de confirmación</span>
               </li>
               <li className="flex items-center space-x-2">
-                <div className="w-1.5 h-1.5 bg-error-foreground rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-red-600 rounded-full"></div>
                 <span>Contacta con soporte si persiste</span>
               </li>
             </ul>
@@ -141,9 +141,9 @@ export const ConfirmAccount = () => {
             to="/auth/login"
             className="
               w-full h-12 
-              bg-gradient-to-r from-aesthetic-menta to-aesthetic-rosa 
-              hover:from-aesthetic-menta-hover hover:to-aesthetic-rosa-hover 
-              text-aesthetic-gris-profundo font-semibold text-base
+              bg-gradient-to-r from-cyan-500 to-cyan-600 
+              hover:from-cyan-600 hover:to-cyan-700 
+              text-white font-semibold text-base
               rounded-xl shadow-sm
               transition-all duration-200 transform hover:scale-[1.02]
               flex items-center justify-center
@@ -160,9 +160,9 @@ export const ConfirmAccount = () => {
               to="/auth/registrar"
               className="
                 w-full h-12 
-                bg-gradient-to-r from-aesthetic-lavanda to-aesthetic-menta 
-                hover:from-aesthetic-lavanda-hover hover:to-aesthetic-menta-hover 
-                text-aesthetic-gris-profundo font-semibold text-base
+                bg-gradient-to-r from-cyan-500 to-cyan-600 
+                hover:from-cyan-600 hover:to-cyan-700 
+                text-white font-semibold text-base
                 rounded-xl shadow-sm
                 transition-all duration-200 transform hover:scale-[1.02]
                 flex items-center justify-center
@@ -177,9 +177,9 @@ export const ConfirmAccount = () => {
               to="/auth/login"
               className="
                 w-full h-12 
-                bg-white border border-aesthetic-lavanda/30
-                hover:bg-aesthetic-lavanda/10 
-                text-aesthetic-gris-profundo font-medium text-base
+                bg-white border border-cyan-200
+                hover:bg-cyan-50 
+                text-slate-700 font-medium text-base
                 rounded-xl 
                 transition-all duration-200
                 flex items-center justify-center
@@ -195,8 +195,8 @@ export const ConfirmAccount = () => {
 
       {/* Información adicional */}
       {!queryConfirmAccount.isLoading && (
-        <div className="text-center pt-4 border-t border-aesthetic-lavanda/20">
-          <TypographyP className="text-aesthetic-gris-medio text-xs">
+        <div className="text-center pt-4 border-t border-cyan-200">
+          <TypographyP className="text-slate-500 text-xs">
             ¿Necesitas ayuda? Contacta con nuestro equipo de soporte técnico
           </TypographyP>
         </div>
