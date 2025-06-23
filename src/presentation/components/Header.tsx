@@ -9,15 +9,15 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-white border-b border-aesthetic-lavanda/20 px-6 py-4 shadow-sm">
+    <header className="bg-white border-b border-cyan-200 px-6 py-4 shadow-sm">
       <div className="flex justify-between items-center">
         {/* Título de la página actual */}
         <div>
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-aesthetic-lavanda to-aesthetic-rosa rounded-lg flex items-center justify-center shadow-sm">
-              <Stethoscope className="w-5 h-5 text-aesthetic-gris-profundo" />
+            <div className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center shadow-sm">
+              <Stethoscope className="w-5 h-5 text-white" />
             </div>
-            <span className="font-bold text-aesthetic-gris-profundo text-lg">ArmoniClick</span>
+            <span className="font-bold text-slate-700 text-lg">ArmoniClick</span>
           </div>
         </div>
         
@@ -25,34 +25,34 @@ const Header: React.FC = () => {
         <div className="flex items-center space-x-4">
           {/* Buscador rápido */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-aesthetic-gris-medio w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-4 h-4" />
             <input
               type="text"
               placeholder="Búsqueda rápida..."
-              className="pl-10 pr-4 py-2 w-64 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-sm bg-white placeholder-aesthetic-gris-medio text-aesthetic-gris-profundo"
+              className="pl-10 pr-4 py-2 w-64 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm bg-white placeholder-slate-500 text-slate-700"
             />
           </div>
           
           {/* Notificaciones */}
-          <button className="relative p-2 text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo hover:bg-aesthetic-rosa/30 rounded-lg transition-colors">
+          <button className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-cyan-100 rounded-lg transition-colors">
             <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-error-foreground rounded-full"></span>
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
           </button>
           
           {/* Configuración */}
-          <button className="p-2 text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo hover:bg-aesthetic-menta/30 rounded-lg transition-colors">
+          <button className="p-2 text-slate-500 hover:text-slate-700 hover:bg-cyan-100 rounded-lg transition-colors">
             <Settings className="w-5 h-5" />
           </button>
           
           {/* Usuario */}
-          <div className="flex items-center space-x-3 pl-4 border-l border-aesthetic-lavanda/30">
+          <div className="flex items-center space-x-3 pl-4 border-l border-cyan-200">
             <div className="text-right hidden sm:block">
-              <p className="text-sm font-medium text-aesthetic-gris-profundo">{currentUser.name}</p>
-              <p className="text-xs text-aesthetic-gris-medio">{currentUser.rut}</p>
+              <p className="text-sm font-medium text-slate-700">{currentUser.name}</p>
+              <p className="text-xs text-slate-500">{currentUser.rut}</p>
             </div>
             
-            <div className="w-10 h-10 bg-gradient-to-br from-aesthetic-lavanda to-aesthetic-rosa rounded-full flex items-center justify-center shadow-sm">
-              <span className="text-aesthetic-gris-profundo font-semibold text-sm">CD</span>
+            <div className="w-10 h-10 bg-cyan-500 rounded-full flex items-center justify-center shadow-sm">
+              <span className="text-white font-semibold text-sm">CD</span>
             </div>
           </div>
         </div>

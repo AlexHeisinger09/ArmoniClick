@@ -208,14 +208,14 @@ const Configuration: React.FC = () => {
         return (
           <div className="space-y-6">
             {/* Información Personal */}
-            <div className="bg-white rounded-xl shadow-sm border border-aesthetic-lavanda/20 p-6">
+            <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-aesthetic-gris-profundo">
+                <h3 className="text-lg font-semibold text-slate-700">
                   Información Personal
                 </h3>
                 <button
                   onClick={() => setIsEditing(!isEditing)}
-                  className="flex items-center text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo transition-colors"
+                  className="flex items-center text-slate-500 hover:text-slate-700 transition-colors"
                 >
                   <Edit className="w-4 h-4 mr-2" />
                   {isEditing ? 'Cancelar' : 'Editar'}
@@ -226,7 +226,7 @@ const Configuration: React.FC = () => {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-2">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
                         Nombre
                       </label>
                       <input
@@ -234,12 +234,12 @@ const Configuration: React.FC = () => {
                         name="name"
                         value={profileFormData.name}
                         onChange={handleProfileInputChange}
-                        className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
+                        className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-2">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
                         Apellido
                       </label>
                       <input
@@ -247,12 +247,12 @@ const Configuration: React.FC = () => {
                         name="lastName"
                         value={profileFormData.lastName}
                         onChange={handleProfileInputChange}
-                        className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
+                        className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-2">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
                         Nombre de Usuario
                       </label>
                       <input
@@ -260,12 +260,12 @@ const Configuration: React.FC = () => {
                         name="username"
                         value={profileFormData.username}
                         onChange={handleProfileInputChange}
-                        className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
+                        className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-2">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
                         Email
                       </label>
                       <input
@@ -273,12 +273,12 @@ const Configuration: React.FC = () => {
                         name="email"
                         value={profileFormData.email}
                         onChange={handleProfileInputChange}
-                        className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
+                        className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-2">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
                         Teléfono
                       </label>
                       <input
@@ -286,12 +286,12 @@ const Configuration: React.FC = () => {
                         name="phone"
                         value={profileFormData.phone}
                         onChange={handleProfileInputChange}
-                        className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
+                        className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-2">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
                         Ciudad
                       </label>
                       <input
@@ -299,12 +299,12 @@ const Configuration: React.FC = () => {
                         name="city"
                         value={profileFormData.city}
                         onChange={handleProfileInputChange}
-                        className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
+                        className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-2">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
                         Código Postal
                       </label>
                       <input
@@ -312,13 +312,13 @@ const Configuration: React.FC = () => {
                         name="zipCode"
                         value={profileFormData.zipCode}
                         onChange={handleProfileInputChange}
-                        className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
+                        className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
                       Dirección
                     </label>
                     <textarea
@@ -326,20 +326,20 @@ const Configuration: React.FC = () => {
                       value={profileFormData.address}
                       onChange={handleProfileInputChange}
                       rows={3}
-                      className="w-full px-3 py-2 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
+                      className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                     />
                   </div>
 
-                  <div className="flex justify-end space-x-3 pt-4 border-t border-aesthetic-lavanda/20">
+                  <div className="flex justify-end space-x-3 pt-4 border-t border-cyan-200">
                     <button
                       onClick={() => setIsEditing(false)}
-                      className="bg-aesthetic-gris-claro hover:bg-aesthetic-gris-claro/80 text-aesthetic-gris-profundo font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
+                      className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
                     >
                       Cancelar
                     </button>
                     <button
                       onClick={handleProfileSubmit}
-                      className="flex items-center bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
+                      className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
                     >
                       <Save className="w-4 h-4 mr-2" />
                       Guardar Cambios
@@ -350,24 +350,24 @@ const Configuration: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div className="flex items-center space-x-3">
-                      <div className="bg-aesthetic-lavanda/30 p-2 rounded-full">
-                        <User className="w-5 h-5 text-aesthetic-gris-profundo" />
+                      <div className="bg-cyan-100 p-2 rounded-full">
+                        <User className="w-5 h-5 text-cyan-600" />
                       </div>
                       <div>
-                        <p className="text-sm text-aesthetic-gris-medio">Nombre Completo</p>
-                        <p className="font-medium text-aesthetic-gris-profundo">
+                        <p className="text-sm text-slate-500">Nombre Completo</p>
+                        <p className="font-medium text-slate-700">
                           {doctorProfile.name} {doctorProfile.lastName}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center space-x-3">
-                      <div className="bg-purple-100 p-2 rounded-full">
-                        <User className="w-5 h-5 text-purple-600" />
+                      <div className="bg-cyan-100 p-2 rounded-full">
+                        <User className="w-5 h-5 text-cyan-600" />
                       </div>
                       <div>
-                        <p className="text-sm text-aesthetic-gris-medio">Nombre de Usuario</p>
-                        <p className="font-medium text-aesthetic-gris-profundo">
+                        <p className="text-sm text-slate-500">Nombre de Usuario</p>
+                        <p className="font-medium text-slate-700">
                           {doctorProfile.username}
                         </p>
                       </div>
@@ -378,8 +378,8 @@ const Configuration: React.FC = () => {
                         <Mail className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <p className="text-sm text-aesthetic-gris-medio">Email</p>
-                        <p className="font-medium text-aesthetic-gris-profundo">
+                        <p className="text-sm text-slate-500">Email</p>
+                        <p className="font-medium text-slate-700">
                           {doctorProfile.email}
                         </p>
                         {doctorProfile.emailValidated && (
@@ -396,8 +396,8 @@ const Configuration: React.FC = () => {
                         <Phone className="w-5 h-5 text-green-600" />
                       </div>
                       <div>
-                        <p className="text-sm text-aesthetic-gris-medio">Teléfono</p>
-                        <p className="font-medium text-aesthetic-gris-profundo">
+                        <p className="text-sm text-slate-500">Teléfono</p>
+                        <p className="font-medium text-slate-700">
                           {doctorProfile.phone}
                         </p>
                       </div>
@@ -410,11 +410,11 @@ const Configuration: React.FC = () => {
                         <MapPin className="w-5 h-5 text-orange-600" />
                       </div>
                       <div>
-                        <p className="text-sm text-aesthetic-gris-medio">Dirección</p>
-                        <p className="font-medium text-aesthetic-gris-profundo">
+                        <p className="text-sm text-slate-500">Dirección</p>
+                        <p className="font-medium text-slate-700">
                           {doctorProfile.address}
                         </p>
-                        <p className="text-sm text-aesthetic-gris-medio">
+                        <p className="text-sm text-slate-500">
                           {doctorProfile.city}, {doctorProfile.zipCode}
                         </p>
                       </div>
@@ -425,12 +425,12 @@ const Configuration: React.FC = () => {
                         <Calendar className="w-5 h-5 text-gray-600" />
                       </div>
                       <div>
-                        <p className="text-sm text-aesthetic-gris-medio">Cuenta creada</p>
-                        <p className="font-medium text-aesthetic-gris-profundo">
+                        <p className="text-sm text-slate-500">Cuenta creada</p>
+                        <p className="font-medium text-slate-700">
                           {formatDate(doctorProfile.createdAt)}
                         </p>
                         {doctorProfile.updatedAt && (
-                          <p className="text-xs text-aesthetic-gris-medio">
+                          <p className="text-xs text-slate-500">
                             Última actualización: {formatDate(doctorProfile.updatedAt)}
                           </p>
                         )}
@@ -442,12 +442,12 @@ const Configuration: React.FC = () => {
                         <Shield className="w-5 h-5 text-green-600" />
                       </div>
                       <div>
-                        <p className="text-sm text-aesthetic-gris-medio">Estado de la cuenta</p>
+                        <p className="text-sm text-slate-500">Estado de la cuenta</p>
                         <div className="flex items-center">
                           <div className={`w-2 h-2 rounded-full mr-2 ${
                             doctorProfile.isActive ? 'bg-green-500' : 'bg-red-500'
                           }`}></div>
-                          <p className="font-medium text-aesthetic-gris-profundo">
+                          <p className="font-medium text-slate-700">
                             {doctorProfile.isActive ? 'Activa' : 'Inactiva'}
                           </p>
                         </div>
@@ -463,14 +463,14 @@ const Configuration: React.FC = () => {
       case 'foto':
         return (
           <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-aesthetic-lavanda/20 p-6">
-              <h3 className="text-lg font-semibold text-aesthetic-gris-profundo mb-6">
+            <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
+              <h3 className="text-lg font-semibold text-slate-700 mb-6">
                 Foto de Perfil
               </h3>
 
               <div className="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
                 <div className="relative">
-                  <div className="w-32 h-32 rounded-full overflow-hidden bg-aesthetic-gris-claro border-4 border-aesthetic-lavanda/20">
+                  <div className="w-32 h-32 rounded-full overflow-hidden bg-slate-100 border-4 border-cyan-200">
                     {doctorProfile.img ? (
                       <img
                         src={doctorProfile.img}
@@ -479,29 +479,29 @@ const Configuration: React.FC = () => {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <User className="w-16 h-16 text-aesthetic-gris-medio" />
+                        <User className="w-16 h-16 text-slate-500" />
                       </div>
                     )}
                   </div>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="absolute bottom-0 right-0 bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo p-2 rounded-full shadow-sm transition-colors"
+                    className="absolute bottom-0 right-0 bg-cyan-500 hover:bg-cyan-600 text-white p-2 rounded-full shadow-sm transition-colors"
                   >
                     <Camera className="w-4 h-4" />
                   </button>
                 </div>
 
                 <div className="flex-1 text-center md:text-left">
-                  <h4 className="text-lg font-medium text-aesthetic-gris-profundo mb-2">
+                  <h4 className="text-lg font-medium text-slate-700 mb-2">
                     Cambiar foto de perfil
                   </h4>
-                  <p className="text-aesthetic-gris-medio mb-4">
+                  <p className="text-slate-500 mb-4">
                     Sube una imagen cuadrada para obtener mejores resultados. 
                     Tamaño máximo: 5MB. Formatos aceptados: JPG, PNG.
                   </p>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center justify-center bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo font-medium rounded-lg text-sm px-5 py-2.5 transition-colors mx-auto md:mx-0"
+                    className="flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-5 py-2.5 transition-colors mx-auto md:mx-0"
                   >
                     <Upload className="w-4 h-4 mr-2" />
                     Subir nueva foto
@@ -523,14 +523,14 @@ const Configuration: React.FC = () => {
       case 'seguridad':
         return (
           <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-aesthetic-lavanda/20 p-6">
-              <h3 className="text-lg font-semibold text-aesthetic-gris-profundo mb-6">
+            <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
+              <h3 className="text-lg font-semibold text-slate-700 mb-6">
                 Cambiar Contraseña
               </h3>
 
               <div className="space-y-4 max-w-md">
                 <div>
-                  <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
                     Contraseña Actual
                   </label>
                   <div className="relative">
@@ -539,13 +539,13 @@ const Configuration: React.FC = () => {
                       name="current_password"
                       value={passwordForm.current_password}
                       onChange={handlePasswordInputChange}
-                      className="w-full px-3 py-2 pr-10 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
+                      className="w-full px-3 py-2 pr-10 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                       placeholder="Ingresa tu contraseña actual"
                     />
                     <button
                       type="button"
                       onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-700"
                     >
                       {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -553,7 +553,7 @@ const Configuration: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
                     Nueva Contraseña
                   </label>
                   <div className="relative">
@@ -562,13 +562,13 @@ const Configuration: React.FC = () => {
                       name="new_password"
                       value={passwordForm.new_password}
                       onChange={handlePasswordInputChange}
-                      className="w-full px-3 py-2 pr-10 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
+                      className="w-full px-3 py-2 pr-10 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                       placeholder="Mínimo 8 caracteres"
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-700"
                     >
                       {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -576,7 +576,7 @@ const Configuration: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-aesthetic-gris-profundo mb-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
                     Confirmar Nueva Contraseña
                   </label>
                   <div className="relative">
@@ -585,22 +585,22 @@ const Configuration: React.FC = () => {
                       name="confirm_password"
                       value={passwordForm.confirm_password}
                       onChange={handlePasswordInputChange}
-                      className="w-full px-3 py-2 pr-10 border border-aesthetic-lavanda/30 rounded-xl focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent text-aesthetic-gris-profundo"
+                      className="w-full px-3 py-2 pr-10 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                       placeholder="Repite la nueva contraseña"
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-700"
                     >
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
 
-                <div className="bg-blue-50 p-4 rounded-xl">
-                  <h4 className="text-sm font-medium text-blue-800 mb-2">Requisitos de la contraseña:</h4>
-                  <ul className="text-sm text-blue-700 space-y-1">
+                <div className="bg-cyan-50 p-4 rounded-xl">
+                  <h4 className="text-sm font-medium text-cyan-800 mb-2">Requisitos de la contraseña:</h4>
+                  <ul className="text-sm text-cyan-700 space-y-1">
                     <li className="flex items-center">
                       <Check className="w-3 h-3 mr-2" />
                       Mínimo 8 caracteres
@@ -618,7 +618,7 @@ const Configuration: React.FC = () => {
 
                 <button
                   onClick={handlePasswordSubmit}
-                  className="flex items-center bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
+                  className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-5 py-2.5 transition-colors"
                 >
                   <Lock className="w-4 h-4 mr-2" />
                   Actualizar Contraseña
@@ -631,79 +631,79 @@ const Configuration: React.FC = () => {
       case 'preferencias':
         return (
           <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-aesthetic-lavanda/20 p-6">
-              <h3 className="text-lg font-semibold text-aesthetic-gris-profundo mb-6">
+            <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
+              <h3 className="text-lg font-semibold text-slate-700 mb-6">
                 Preferencias de la Aplicación
               </h3>
 
               <div className="space-y-6">
                 {/* Notificaciones */}
                 <div>
-                  <h4 className="text-md font-medium text-aesthetic-gris-profundo mb-4 flex items-center">
+                  <h4 className="text-md font-medium text-slate-700 mb-4 flex items-center">
                     <Bell className="w-5 h-5 mr-2" />
                     Notificaciones
                   </h4>
                   <div className="space-y-3">
-                    <label className="flex items-center justify-between p-3 border border-aesthetic-lavanda/20 rounded-lg hover:bg-aesthetic-lavanda/5 cursor-pointer">
+                    <label className="flex items-center justify-between p-3 border border-cyan-200 rounded-lg hover:bg-cyan-50 cursor-pointer">
                       <div>
-                        <p className="font-medium text-aesthetic-gris-profundo">Nuevas citas</p>
-                        <p className="text-sm text-aesthetic-gris-medio">Recibir notificaciones de nuevas citas agendadas</p>
+                        <p className="font-medium text-slate-700">Nuevas citas</p>
+                        <p className="text-sm text-slate-500">Recibir notificaciones de nuevas citas agendadas</p>
                       </div>
-                      <input type="checkbox" defaultChecked className="w-5 h-5 text-aesthetic-lavanda rounded" />
+                      <input type="checkbox" defaultChecked className="w-5 h-5 text-cyan-500 rounded" />
                     </label>
 
-                    <label className="flex items-center justify-between p-3 border border-aesthetic-lavanda/20 rounded-lg hover:bg-aesthetic-lavanda/5 cursor-pointer">
+                    <label className="flex items-center justify-between p-3 border border-cyan-200 rounded-lg hover:bg-cyan-50 cursor-pointer">
                       <div>
-                        <p className="font-medium text-aesthetic-gris-profundo">Recordatorios</p>
-                        <p className="text-sm text-aesthetic-gris-medio">Recordatorios de citas próximas</p>
+                        <p className="font-medium text-slate-700">Recordatorios</p>
+                        <p className="text-sm text-slate-500">Recordatorios de citas próximas</p>
                       </div>
-                      <input type="checkbox" defaultChecked className="w-5 h-5 text-aesthetic-lavanda rounded" />
+                      <input type="checkbox" defaultChecked className="w-5 h-5 text-cyan-500 rounded" />
                     </label>
 
-                    <label className="flex items-center justify-between p-3 border border-aesthetic-lavanda/20 rounded-lg hover:bg-aesthetic-lavanda/5 cursor-pointer">
+                    <label className="flex items-center justify-between p-3 border border-cyan-200 rounded-lg hover:bg-cyan-50 cursor-pointer">
                       <div>
-                        <p className="font-medium text-aesthetic-gris-profundo">Reportes semanales</p>
-                        <p className="text-sm text-aesthetic-gris-medio">Resumen semanal de actividad</p>
+                        <p className="font-medium text-slate-700">Reportes semanales</p>
+                        <p className="text-sm text-slate-500">Resumen semanal de actividad</p>
                       </div>
-                      <input type="checkbox" className="w-5 h-5 text-aesthetic-lavanda rounded" />
+                      <input type="checkbox" className="w-5 h-5 text-cyan-500 rounded" />
                     </label>
                   </div>
                 </div>
 
                 {/* Tema */}
                 <div>
-                  <h4 className="text-md font-medium text-aesthetic-gris-profundo mb-4 flex items-center">
+                  <h4 className="text-md font-medium text-slate-700 mb-4 flex items-center">
                     <Palette className="w-5 h-5 mr-2" />
                     Apariencia
                   </h4>
                   <div className="space-y-3">
-                    <label className="flex items-center p-3 border border-aesthetic-lavanda/20 rounded-lg hover:bg-aesthetic-lavanda/5 cursor-pointer">
-                      <input type="radio" name="theme" defaultChecked className="w-4 h-4 text-aesthetic-lavanda mr-3" />
+                    <label className="flex items-center p-3 border border-cyan-200 rounded-lg hover:bg-cyan-50 cursor-pointer">
+                      <input type="radio" name="theme" defaultChecked className="w-4 h-4 text-cyan-500 mr-3" />
                       <div>
-                        <p className="font-medium text-aesthetic-gris-profundo">Modo claro</p>
-                        <p className="text-sm text-aesthetic-gris-medio">Interfaz con colores claros</p>
+                        <p className="font-medium text-slate-700">Modo claro</p>
+                        <p className="text-sm text-slate-500">Interfaz con colores claros</p>
                       </div>
                     </label>
 
-                    <label className="flex items-center p-3 border border-aesthetic-lavanda/20 rounded-lg hover:bg-aesthetic-lavanda/5 cursor-pointer">
-                      <input type="radio" name="theme" className="w-4 h-4 text-aesthetic-lavanda mr-3" />
+                    <label className="flex items-center p-3 border border-cyan-200 rounded-lg hover:bg-cyan-50 cursor-pointer">
+                      <input type="radio" name="theme" className="w-4 h-4 text-cyan-500 mr-3" />
                       <div>
-                        <p className="font-medium text-aesthetic-gris-profundo">Modo oscuro</p>
-                        <p className="text-sm text-aesthetic-gris-medio">Interfaz con colores oscuros</p>
+                        <p className="font-medium text-slate-700">Modo oscuro</p>
+                        <p className="text-sm text-slate-500">Interfaz con colores oscuros</p>
                       </div>
                     </label>
 
-                    <label className="flex items-center p-3 border border-aesthetic-lavanda/20 rounded-lg hover:bg-aesthetic-lavanda/5 cursor-pointer">
-                      <input type="radio" name="theme" className="w-4 h-4 text-aesthetic-lavanda mr-3" />
+                    <label className="flex items-center p-3 border border-cyan-200 rounded-lg hover:bg-cyan-50 cursor-pointer">
+                      <input type="radio" name="theme" className="w-4 h-4 text-cyan-500 mr-3" />
                       <div>
-                        <p className="font-medium text-aesthetic-gris-profundo">Automático</p>
-                        <p className="text-sm text-aesthetic-gris-medio">Sigue la configuración del sistema</p>
+                        <p className="font-medium text-slate-700">Automático</p>
+                        <p className="text-sm text-slate-500">Sigue la configuración del sistema</p>
                       </div>
                     </label>
                   </div>
                 </div>
 
-                <button className="flex items-center bg-aesthetic-lavanda hover:bg-aesthetic-lavanda-hover text-aesthetic-gris-profundo font-medium rounded-lg text-sm px-5 py-2.5 transition-colors">
+                <button className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-5 py-2.5 transition-colors">
                   <Save className="w-4 h-4 mr-2" />
                   Guardar Preferencias
                 </button>
@@ -718,10 +718,10 @@ const Configuration: React.FC = () => {
   };
 
   return (
-    <div className="bg-gradient-aesthetic min-h-full flex flex-col">
+    <div className="bg-slate-50 min-h-full flex flex-col">
       <div className="flex-1 p-6">
         {/* Encabezado */}
-        <div className="bg-white rounded-xl shadow-sm border border-aesthetic-lavanda/20 p-6 mb-6">
+        <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6 mb-6">
           <div className="flex items-stretch gap-4 mb-4">
             <img
               alt="Configuración"
@@ -729,10 +729,10 @@ const Configuration: React.FC = () => {
               className="w-20 rounded object-cover"
             />
             <div>
-              <h3 className="font-medium text-aesthetic-gris-profundo sm:text-lg">
+              <h3 className="font-medium text-slate-700 sm:text-lg">
                 Configuración del Perfil
               </h3>
-              <p className="mt-0.5 text-aesthetic-gris-medio">
+              <p className="mt-0.5 text-slate-500">
                 Administra tu información personal, configuraciones de seguridad y preferencias de la aplicación.
               </p>
             </div>
@@ -756,8 +756,8 @@ const Configuration: React.FC = () => {
         </div>
 
         {/* Pestañas de configuración */}
-        <div className="bg-white rounded-xl shadow-sm border border-aesthetic-lavanda/20 overflow-hidden">
-          <div className="border-b border-aesthetic-lavanda/20">
+        <div className="bg-white rounded-xl shadow-sm border border-cyan-200 overflow-hidden">
+          <div className="border-b border-cyan-200">
             <nav className="flex space-x-0">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
@@ -767,8 +767,8 @@ const Configuration: React.FC = () => {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
                       activeTab === tab.id
-                        ? 'border-aesthetic-lavanda text-aesthetic-gris-profundo bg-aesthetic-lavanda/10'
-                        : 'border-transparent text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo hover:bg-aesthetic-lavanda/5'
+                        ? 'border-cyan-500 text-slate-700 bg-cyan-50'
+                        : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-cyan-25'
                     }`}
                   >
                     <Icon className="w-4 h-4 mr-2" />

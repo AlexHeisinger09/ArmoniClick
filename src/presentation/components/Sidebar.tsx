@@ -91,8 +91,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
           w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 rounded-lg my-1
           ${level > 0 ? 'pl-12' : ''}
           ${isActive
-            ? 'bg-gradient-to-r from-aesthetic-lavanda to-aesthetic-rosa text-aesthetic-gris-profundo shadow-sm border-r-4 border-aesthetic-gris-profundo mr-1'
-            : 'text-aesthetic-gris-medio hover:bg-gradient-to-r hover:from-aesthetic-lavanda/30 hover:to-aesthetic-rosa/30 hover:text-aesthetic-gris-profundo mx-2'
+            ? 'bg-cyan-500 text-white shadow-sm border-r-4 border-slate-700 mr-1'
+            : 'text-slate-600 hover:bg-cyan-100 hover:text-slate-700 mx-2'
           }
           ${isCollapsed ? 'justify-center px-2 mx-1' : ''}
         `}
@@ -107,9 +107,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
   };
 
   return (
-    <div className={`bg-white shadow-lg h-full ${isCollapsed ? 'w-16' : 'w-64'} transition-all duration-300 flex flex-col ${className}`}>
+    <div className={`bg-white shadow-lg h-full ${isCollapsed ? 'w-16' : 'w-64'} transition-all duration-300 flex flex-col ${className} border-r border-cyan-200`}>
       {/* Header del Sidebar */}
-      <div className="flex items-center justify-between p-4 flex-shrink-0">
+      <div className="flex items-center justify-between p-4 flex-shrink-0 border-b border-cyan-200">
         {!isCollapsed && (
           <div className="flex items-center space-x-2">
             <div className="w-22 h-22 flex items-center justify-center">
@@ -124,9 +124,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
 
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-2 rounded-lg hover:bg-aesthetic-lavanda/30 hover:text-aesthetic-gris-profundo transition-all duration-200"
+          className="p-2 rounded-lg hover:bg-cyan-100 hover:text-cyan-700 transition-all duration-200"
         >
-          <Menu className="w-5 h-5 text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo transition-colors" />
+          <Menu className="w-5 h-5 text-slate-600 hover:text-cyan-700 transition-colors" />
         </button>
       </div>
 
@@ -139,16 +139,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
 
       {/* Footer del Sidebar - Minimalista */}
       {!isCollapsed && (
-        <div className="p-4 flex-shrink-0">
+        <div className="p-4 flex-shrink-0 border-t border-cyan-200">
           <div className="text-center">
             <button
               onClick={handleLogout}
-              className="w-10 h-10 bg-gradient-to-r from-aesthetic-menta to-aesthetic-rosa rounded-full mx-auto mb-2 flex items-center justify-center hover:from-aesthetic-menta/70 hover:to-aesthetic-rosa/70 transition-all duration-200 focus:ring-4 focus:ring-aesthetic-lavanda/30 focus:outline-none shadow-sm"
+              className="w-10 h-10 bg-cyan-500 rounded-full mx-auto mb-2 flex items-center justify-center hover:bg-cyan-600 transition-all duration-200 focus:ring-4 focus:ring-cyan-300 focus:outline-none shadow-sm"
               title="Cerrar sesión"
             >
-              <LucideLogOut className="w-5 h-5 text-aesthetic-gris-profundo" />
+              <LucideLogOut className="w-5 h-5 text-white" />
             </button>
-            <p className="text-xs text-aesthetic-gris-medio">Cerrar sesión</p>
+            <p className="text-xs text-slate-500">Cerrar sesión</p>
           </div>
         </div>
       )}

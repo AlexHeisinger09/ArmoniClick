@@ -21,46 +21,49 @@ module.exports = {
         '7/12': '7 / 12',
       },
       backgroundImage: {
-        'gradient-primary': 'linear-gradient(to right, #e6d7ed, #f2e7f5, #e8f4f0)',
-        'gradient-secondary': 'linear-gradient(to bottom, #e6d7ed, #f2e7f5)',
-        'gradient-aesthetic': 'linear-gradient(135deg, #faf9fb 0%, #f5f3f7 100%)',
+        'gradient-aesthetic': 'linear-gradient(135deg, #f0fbff 0%, #f8fafc 100%)',
       },
       colors: {
-        // Paleta estética principal
+        // Paleta simplificada solo con #0891b2
         aesthetic: {
-          'lavanda': '#e6d7ed',
-          'lavanda-hover': '#d6c9e3',
-          'rosa': '#f2e7f5',
-          'rosa-hover': '#e9d8ee',
-          'menta': '#e8f4f0',
-          'menta-hover': '#d9ede5',
-          'blanco': '#fafafa',
-          'gris-claro': '#f5f5f7',
-          'gris-medio': '#8b75a6',
-          'gris-profundo': '#6b5b73',
+          // Azul primario y sus variaciones
+          'cyan': '#0891b2',
+          'cyan-hover': '#0e7490',
+          'cyan-light': '#06b6d4',
+          'cyan-lighter': '#67e8f9',
+          'cyan-lightest': '#e0f7fa',
+          'cyan-dark': '#164e63',
+          'cyan-darker': '#0c4a6e',
+          
+          // Grises y neutros
+          'blanco': '#ffffff',
+          'gris-claro': '#f8fafc',
+          'gris-medio': '#64748b',
+          'gris-profundo': '#334155',
+          'gris-oscuro': '#1e293b',
         },
         
-        // Estados y alertas con la paleta
+        // Estados y alertas con la nueva paleta
         success: {
-          DEFAULT: '#d4f5e8',
+          DEFAULT: '#dcfdf4',
           foreground: '#047857',
         },
         warning: {
-          DEFAULT: '#fff2e6',
-          foreground: '#ea580c',
+          DEFAULT: '#fef3c7',
+          foreground: '#d97706',
         },
         error: {
-          DEFAULT: '#ffe6e6',
+          DEFAULT: '#fef2f2',
           foreground: '#dc2626',
         },
         
         // Colores existentes actualizados
         home: {
-          50: "rgba(255, 245, 233, 1)",
-          75: "rgba(255, 204, 141, 1)",
-          100: "#e6d7ed" // Cambiado a lavanda suave
+          50: "rgba(240, 251, 255, 1)",
+          75: "rgba(103, 232, 249, 1)",
+          100: "#0891b2" // Cambiado al azul primario
         },
-        "light-blue": "var(--light-blue)",
+        "light-blue": "#0891b2",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

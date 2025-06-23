@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Eye, EyeOff, Mail, Lock, LogIn } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, LogIn, Stethoscope } from "lucide-react";
 import { useState } from "react";
 
 import { TypographyH2 } from "@/presentation/components/shared/TypographyH2";
@@ -41,16 +41,18 @@ export const Login = () => {
   }
 
   return (
-    <div className="w-full p-6 sm:p-8 flex flex-col gap-6 max-w-md mx-auto">
-      {/* Header estético */}
+    <div className="w-full flex flex-col gap-6">
+      {/* Header estético con colores actualizados */}
       <div className="text-center mb-2">
-        <div className="w-20 h-20 bg-gradient-to-r from-aesthetic-lavanda to-aesthetic-rosa rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg">
-          <LogIn className="w-10 h-10 text-aesthetic-gris-profundo" />
+        <div className="w-20 h-20 bg-gradient-to-r from-white to-aesthetic-rosa rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg">
+          <Stethoscope className="w-10 h-10 text-aesthetic-gris-profundo" />
         </div>
-        <TypographyH2 className="text-aesthetic-gris-profundo font-bold text-3xl mb-3">
+        {/* TÍTULO EN BLANCO para contraste con fondo lavanda */}
+        <TypographyH2 className="text-white font-bold text-3xl mb-3 drop-shadow-sm">
           Bienvenido de vuelta
         </TypographyH2>
-        <TypographyP className="text-aesthetic-gris-medio text-base">
+        {/* SUBTÍTULO EN GRIS PROFUNDO */}
+        <TypographyP className="text-aesthetic-gris-profundo text-base font-medium">
           Inicia sesión para gestionar tus pacientes y citas
         </TypographyP>
       </div>
@@ -73,7 +75,8 @@ export const Login = () => {
             name="email"
             render={({ field, formState: { errors } }) => (
               <FormItem>
-                <FormLabel className="text-aesthetic-gris-profundo font-medium text-sm">
+                {/* LABEL EN GRIS PROFUNDO */}
+                <FormLabel className="text-aesthetic-gris-profundo font-semibold text-sm">
                   Correo Electrónico
                 </FormLabel>
                 <FormControl>
@@ -83,13 +86,13 @@ export const Login = () => {
                       placeholder="tu-email@ejemplo.com"
                       className={`
                         pl-11 pr-4 py-3 h-12 
-                        border border-aesthetic-lavanda/30 rounded-xl 
-                        focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent 
+                        border-2 border-aesthetic-gris-profundo/20 rounded-xl 
+                        focus:ring-2 focus:ring-white focus:border-white 
                         bg-white text-aesthetic-gris-profundo placeholder-aesthetic-gris-medio
                         transition-all duration-200
                         ${errors.email?.message
                           ? "border-error-foreground/50 focus:ring-error-foreground/30"
-                          : "hover:border-aesthetic-lavanda/50"
+                          : "hover:border-white/50"
                         }
                       `}
                       {...field}
@@ -106,7 +109,8 @@ export const Login = () => {
             name="password"
             render={({ field, formState: { errors } }) => (
               <FormItem>
-                <FormLabel className="text-aesthetic-gris-profundo font-medium text-sm">
+                {/* LABEL EN GRIS PROFUNDO */}
+                <FormLabel className="text-aesthetic-gris-profundo font-semibold text-sm">
                   Contraseña
                 </FormLabel>
                 <FormControl>
@@ -117,13 +121,13 @@ export const Login = () => {
                       placeholder="Tu contraseña segura"
                       className={`
                         pl-11 pr-11 py-3 h-12 
-                        border border-aesthetic-lavanda/30 rounded-xl 
-                        focus:ring-2 focus:ring-aesthetic-lavanda focus:border-transparent 
+                        border-2 border-aesthetic-gris-profundo/20 rounded-xl 
+                        focus:ring-2 focus:ring-white focus:border-white 
                         bg-white text-aesthetic-gris-profundo placeholder-aesthetic-gris-medio
                         transition-all duration-200
                         ${errors.password?.message
                           ? "border-error-foreground/50 focus:ring-error-foreground/30"
-                          : "hover:border-aesthetic-lavanda/50"
+                          : "hover:border-white/50"
                         }
                       `}
                       {...field}
@@ -145,24 +149,25 @@ export const Login = () => {
           <div className="text-right">
             <Link 
               to="/auth/olvide-password" 
-              className="text-aesthetic-gris-medio hover:text-aesthetic-gris-profundo text-sm font-medium transition-colors hover:underline"
+              className="text-aesthetic-gris-profundo hover:text-white text-sm font-semibold transition-colors hover:underline"
             >
               ¿Olvidaste tu contraseña?
             </Link>
           </div>
 
+          {/* BOTÓN CON FONDO BLANCO Y TEXTO GRIS PROFUNDO */}
           <Button
             type="submit"
             disabled={isLoadingLogin}
             className="
               w-full h-12 
-              bg-gradient-to-r from-aesthetic-lavanda to-aesthetic-rosa 
-              hover:from-aesthetic-lavanda-hover hover:to-aesthetic-rosa-hover 
-              text-aesthetic-gris-profundo font-semibold text-base
-              rounded-xl shadow-sm
+              bg-white hover:bg-aesthetic-gris-claro 
+              text-aesthetic-gris-profundo font-bold text-base
+              rounded-xl shadow-lg
               transition-all duration-200 transform hover:scale-[1.02]
               disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none
               flex items-center justify-center
+              border-2 border-transparent hover:border-aesthetic-gris-profundo/20
             "
           >
             {isLoadingLogin ? (
@@ -179,12 +184,12 @@ export const Login = () => {
             )}
           </Button>
 
-          <div className="text-center pt-4 border-t border-aesthetic-lavanda/20">
-            <TypographyP className="text-aesthetic-gris-medio text-sm">
+          <div className="text-center pt-4 border-t-2 border-aesthetic-gris-profundo/20">
+            <TypographyP className="text-aesthetic-gris-profundo text-sm font-medium">
               ¿No tienes cuenta?{" "}
               <Link
                 to="/auth/registrar"
-                className="text-aesthetic-gris-profundo font-semibold hover:text-aesthetic-gris-profundo/80 transition-colors hover:underline"
+                className="text-white font-bold hover:text-aesthetic-gris-claro transition-colors hover:underline"
               >
                 Crear cuenta
               </Link>

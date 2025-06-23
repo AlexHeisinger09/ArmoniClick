@@ -13,18 +13,26 @@ body {
 
 @layer base {
   :root {
-    /* Colores principales de la paleta estética */
-    --lavanda-suave: 230 215 237;
-    --rosa-delicado: 242 231 245;
-    --menta-serena: 232 244 240;
-    --blanco-calido: 250 250 250;
-    --gris-claro: 245 245 247;
-    --gris-profundo: 107 91 115;
+    /* Paleta simplificada solo con #0891b2 */
+    --cyan-primary: 8 145 178;         /* #0891b2 */
+    --cyan-hover: 14 116 144;          /* #0e7490 */
+    --cyan-light: 6 182 212;           /* #06b6d4 */
+    --cyan-lighter: 103 232 249;       /* #67e8f9 */
+    --cyan-lightest: 224 247 250;      /* #e0f7fa */
+    --cyan-dark: 22 78 99;             /* #164e63 */
+    --cyan-darker: 12 74 110;          /* #0c4a6e */
+    
+    /* Neutros */
+    --blanco-calido: 255 255 255;      /* #ffffff */
+    --gris-claro: 248 250 252;         /* #f8fafc */
+    --gris-medio: 100 116 139;         /* #64748b */
+    --gris-profundo: 51 65 85;         /* #334155 */
+    --gris-oscuro: 30 41 59;           /* #1e293b */
     
     /* Estados y alertas */
-    --verde-exito: 212 245 232;
-    --naranja-advertencia: 255 242 230;
-    --rosa-error: 255 230 230;
+    --verde-exito: 220 253 244;        /* #dcfdf4 */
+    --amarillo-advertencia: 255 251 235; /* #fffbeb */
+    --rosa-error: 254 242 242;         /* #fef2f2 */
     
     /* Variables shadcn/ui actualizadas con la nueva paleta */
     --background: var(--blanco-calido);
@@ -36,63 +44,74 @@ body {
     --popover: var(--blanco-calido);
     --popover-foreground: var(--gris-profundo);
 
-    --primary: var(--lavanda-suave);
-    --primary-foreground: var(--gris-profundo);
+    --primary: var(--cyan-primary);
+    --primary-foreground: var(--blanco-calido);
 
-    --secondary: var(--rosa-delicado);
+    --secondary: var(--cyan-lightest);
     --secondary-foreground: var(--gris-profundo);
 
     --muted: var(--gris-claro);
-    --muted-foreground: 139 117 166;
+    --muted-foreground: var(--gris-medio);
 
-    --accent: var(--menta-serena);
+    --accent: var(--cyan-lightest);
     --accent-foreground: var(--gris-profundo);
 
-    --destructive: 255 99 99;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 220 38 38;
+    --destructive-foreground: 248 250 252;
 
-    --border: 233 227 237;
-    --input: 233 227 237;
-    --ring: var(--lavanda-suave);
+    --border: var(--gris-claro);
+    --input: var(--gris-claro);
+    --ring: var(--cyan-primary);
 
     --radius: 0.75rem;
 
-    /* Colores adicionales personalizados */
-    --light-blue: #379aa1;
+    /* Colores personalizados actualizados */
+    --light-blue: #0891b2;
     
-    /* Nuevos colores estética */
-    --aesthetic-lavanda: #e6d7ed;
-    --aesthetic-rosa: #f2e7f5;
-    --aesthetic-menta: #e8f4f0;
+    /* Color principal para compatibilidad */
+    --aesthetic-cyan: #0891b2;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: var(--gris-oscuro);
+    --foreground: var(--gris-claro);
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: var(--gris-oscuro);
+    --card-foreground: var(--gris-claro);
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: var(--gris-oscuro);
+    --popover-foreground: var(--gris-claro);
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: var(--cyan-light);
+    --primary-foreground: var(--gris-oscuro);
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: var(--yellow-dark);
+    --secondary-foreground: var(--gris-claro);
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: var(--gris-profundo);
+    --muted-foreground: var(--gris-medio);
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: var(--cyan-dark);
+    --accent-foreground: var(--gris-claro);
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: var(--gris-claro);
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: var(--gris-profundo);
+    --input: var(--gris-profundo);
+    --ring: var(--cyan-light);
   }
 }
+
+/* Clases de utilidad para los colores */
+.bg-aesthetic-cyan { background-color: rgb(var(--cyan-primary)); }
+.bg-aesthetic-cyan-hover { background-color: rgb(var(--cyan-hover)); }
+.bg-aesthetic-cyan-light { background-color: rgb(var(--cyan-light)); }
+.bg-aesthetic-cyan-lighter { background-color: rgb(var(--cyan-lighter)); }
+.bg-aesthetic-cyan-lightest { background-color: rgb(var(--cyan-lightest)); }
+
+.text-aesthetic-cyan { color: rgb(var(--cyan-primary)); }
+.text-aesthetic-gris-profundo { color: rgb(var(--gris-profundo)); }
+.text-aesthetic-gris-medio { color: rgb(var(--gris-medio)); }
+
+.border-aesthetic-cyan { border-color: rgb(var(--cyan-primary)); }
