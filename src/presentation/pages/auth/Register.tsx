@@ -48,12 +48,16 @@ export const Register = () => {
     <div className="w-full p-6 sm:p-8 flex flex-col gap-6 max-w-md mx-auto">
       {/* Header estético */}
       <div className="text-center mb-2">
-        <div className="w-20 h-20 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg">
-          <UserPlus className="w-10 h-10 text-white" />
-        </div>
-        <TypographyH2 className="text-slate-700 font-bold text-3xl mb-3">
+        <div className="w-25 h-25">
+          <img
+            src="/letras.PNG"
+            alt="Logo ArmoniClick"
+            className="w-full h-full object-contain"
+          />
+          </div>
+        {/* <TypographyH2 className="text-slate-700 font-bold text-3xl mb-3">
           Crea tu cuenta
-        </TypographyH2>
+        </TypographyH2> */}
         <TypographyP className="text-slate-500 text-base">
           Únete a nuestra plataforma y comienza a gestionar tus pacientes
         </TypographyP>
@@ -101,7 +105,7 @@ export const Register = () => {
                           pl-10 pr-4 py-3 h-11
                           border border-cyan-200 rounded-xl 
                           focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 
-                          bg-white text-slate-700 placeholder-slate-400
+                          bg-white text-slate-700 placeholder-slate-600 placeholder:text-slate-500
                           transition-all duration-200
                           ${errors.name?.message
                             ? "border-red-400 focus:ring-red-300"
@@ -132,7 +136,7 @@ export const Register = () => {
                         px-4 py-3 h-11
                         border border-cyan-200 rounded-xl 
                         focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 
-                        bg-white text-slate-700 placeholder-slate-400
+                        bg-white text-slate-700 placeholder-slate-600 placeholder:text-slate-500
                         transition-all duration-200
                         ${errors.lastName?.message
                           ? "border-red-400 focus:ring-red-300"
@@ -165,7 +169,7 @@ export const Register = () => {
                         pl-11 pr-4 py-3 h-12
                         border border-cyan-200 rounded-xl 
                         focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 
-                        bg-white text-slate-700 placeholder-slate-400
+                        bg-white text-slate-700 placeholder-slate-600 placeholder:text-slate-500
                         transition-all duration-200
                         ${errors.username?.message
                           ? "border-red-400 focus:ring-red-300"
@@ -198,7 +202,7 @@ export const Register = () => {
                         pl-11 pr-4 py-3 h-12
                         border border-cyan-200 rounded-xl 
                         focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 
-                        bg-white text-slate-700 placeholder-slate-400
+                        bg-white text-slate-700 placeholder-slate-600 placeholder:text-slate-500
                         transition-all duration-200
                         ${errors.email?.message
                           ? "border-red-400 focus:ring-red-300"
@@ -232,7 +236,7 @@ export const Register = () => {
                         pl-11 pr-11 py-3 h-12
                         border border-cyan-200 rounded-xl 
                         focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 
-                        bg-white text-slate-700 placeholder-slate-400
+                        bg-white text-slate-700 placeholder-slate-600 placeholder:text-slate-500
                         transition-all duration-200
                         ${errors.password?.message
                           ? "border-red-400 focus:ring-red-300"
