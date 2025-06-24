@@ -42,18 +42,18 @@ export const Login = () => {
 
   return (
     <div className="w-full flex flex-col gap-6">
-      {/* Header estético con colores actualizados */}
+      {/* Header simple sin animaciones */}
       <div className="text-center mb-2">
-        <div className="w-20 h-20 bg-gradient-to-r from-white to-cyan-500 rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg">
-          <Stethoscope className="w-10 h-10 text-slate-700" />
+        <div className="w-20 h-20 bg-cyan-500 rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg">
+          <Stethoscope className="w-10 h-10 text-white" />
         </div>
-        {/* TÍTULO EN BLANCO para contraste con fondo cyan */}
-        <TypographyH2 className="text-white font-bold text-3xl mb-3 drop-shadow-sm">
-          Bienvenido de vuelta
+        {/* Título con color gris oscuro para contraste */}
+        <TypographyH2 className="text-slate-700 font-bold text-3xl mb-3">
+          Iniciar Sesión
         </TypographyH2>
-        {/* SUBTÍTULO EN GRIS PROFUNDO */}
-        <TypographyP className="text-slate-700 text-base font-medium">
-          Inicia sesión para gestionar tus pacientes y citas
+        {/* Subtítulo más discreto */}
+        <TypographyP className="text-slate-500 text-base">
+          Accede a tu cuenta de ArmoniClick
         </TypographyP>
       </div>
 
@@ -75,7 +75,6 @@ export const Login = () => {
             name="email"
             render={({ field, formState: { errors } }) => (
               <FormItem>
-                {/* LABEL EN GRIS PROFUNDO */}
                 <FormLabel className="text-slate-700 font-semibold text-sm">
                   Correo Electrónico
                 </FormLabel>
@@ -109,7 +108,6 @@ export const Login = () => {
             name="password"
             render={({ field, formState: { errors } }) => (
               <FormItem>
-                {/* LABEL EN GRIS PROFUNDO */}
                 <FormLabel className="text-slate-700 font-semibold text-sm">
                   Contraseña
                 </FormLabel>
@@ -149,32 +147,32 @@ export const Login = () => {
           <div className="text-right">
             <Link 
               to="/auth/olvide-password" 
-              className="text-slate-700 hover:text-white text-sm font-semibold transition-colors hover:underline"
+              className="text-cyan-600 hover:text-cyan-700 text-sm font-semibold transition-colors hover:underline"
             >
               ¿Olvidaste tu contraseña?
             </Link>
           </div>
 
-          {/* BOTÓN CON FONDO BLANCO Y TEXTO GRIS PROFUNDO */}
+          {/* Botón con fondo cyan y texto blanco */}
           <Button
             type="submit"
             disabled={isLoadingLogin}
             className="
               w-full h-12 
-              bg-white hover:bg-slate-50 
-              text-slate-700 font-bold text-base
+              bg-cyan-500 hover:bg-cyan-600 
+              text-white font-bold text-base
               rounded-xl shadow-lg
               transition-all duration-200 transform hover:scale-[1.02]
               disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none
               flex items-center justify-center
-              border-2 border-transparent hover:border-cyan-500
+              border-2 border-transparent
             "
           >
             {isLoadingLogin ? (
               <Spinner
                 size="small"
                 show={true}
-                className="text-slate-700"
+                className="text-white"
               />
             ) : (
               <>
@@ -185,11 +183,11 @@ export const Login = () => {
           </Button>
 
           <div className="text-center pt-4 border-t-2 border-slate-300">
-            <TypographyP className="text-slate-700 text-sm font-medium">
+            <TypographyP className="text-slate-500 text-sm font-medium">
               ¿No tienes cuenta?{" "}
               <Link
                 to="/auth/registrar"
-                className="text-white font-bold hover:text-slate-200 transition-colors hover:underline"
+                className="text-cyan-600 font-bold hover:text-cyan-700 transition-colors hover:underline"
               >
                 Crear cuenta
               </Link>
