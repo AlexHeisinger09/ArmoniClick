@@ -25,7 +25,7 @@ import { Spinner } from "@/presentation/components/ui/spinner";
 
 export const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -44,16 +44,20 @@ export const Login = () => {
     <div className="w-full flex flex-col gap-6">
       {/* Header simple sin animaciones */}
       <div className="text-center mb-2">
-        <div className="w-20 h-20 bg-cyan-500 rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg">
-          <Stethoscope className="w-10 h-10 text-white" />
+        <div className="w-25 h-25">
+          <img
+            src="/letras.PNG"
+            alt="Logo ArmoniClick"
+            className="w-full h-full object-contain"
+          />
         </div>
         {/* Título con color gris oscuro para contraste */}
-        <TypographyH2 className="text-slate-700 font-bold text-3xl mb-3">
+        {/* <TypographyH2 className="text-slate-700 font-bold text-3xl mb-3">
           Iniciar Sesión
-        </TypographyH2>
+        </TypographyH2> */}
         {/* Subtítulo más discreto */}
         <TypographyP className="text-slate-500 text-base">
-          Accede a tu cuenta de ArmoniClick
+          Accede a tu cuenta y administra tus pacientes.
         </TypographyP>
       </div>
 
@@ -87,7 +91,7 @@ export const Login = () => {
                         pl-11 pr-4 py-3 h-12 
                         border-2 border-slate-300 rounded-xl 
                         focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 
-                        bg-white text-slate-700 placeholder-slate-400
+                        bg-white text-slate-700 placeholder-slate-600 placeholder:text-slate-500
                         transition-all duration-200
                         ${errors.email?.message
                           ? "border-red-400 focus:ring-red-300"
@@ -116,12 +120,12 @@ export const Login = () => {
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-5 h-5" />
                     <Input
                       type={showPassword ? "text" : "password"}
-                      placeholder="Tu contraseña segura"
+                      placeholder="••••••••••"
                       className={`
                         pl-11 pr-11 py-3 h-12 
                         border-2 border-slate-300 rounded-xl 
                         focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 
-                        bg-white text-slate-700 placeholder-slate-400
+                        bg-white text-slate-700 placeholder-slate-600 placeholder:text-slate-500
                         transition-all duration-200
                         ${errors.password?.message
                           ? "border-red-400 focus:ring-red-300"
@@ -145,8 +149,8 @@ export const Login = () => {
           />
 
           <div className="text-right">
-            <Link 
-              to="/auth/olvide-password" 
+            <Link
+              to="/auth/olvide-password"
               className="text-cyan-600 hover:text-cyan-700 text-sm font-semibold transition-colors hover:underline"
             >
               ¿Olvidaste tu contraseña?

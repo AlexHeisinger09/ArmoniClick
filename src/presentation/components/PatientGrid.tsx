@@ -152,7 +152,66 @@ const mockMedicalRecords: MedicalRecord[] = [
     medico: "Dr. López"
   }
 ];
+// Componente de animación médica para pacientes
+const PatientsAnimation: React.FC = () => (
+  <div className="relative w-20 h-20 flex items-center justify-center">
+    {/* Corazón central pulsante */}
+    <div className="absolute inset-0 flex items-center justify-center">
+      <Heart
+        className="w-12 h-12 text-red-500 animate-pulse"
+        style={{
+          animation: 'pulse 2s ease-in-out infinite',
+          transformOrigin: 'center'
+        }}
+      />
+    </div>
 
+    {/* Estetoscopio rebotando */}
+    <div className="absolute top-0 right-1">
+      <Stethoscope
+        className="w-6 h-6 text-cyan-600 animate-bounce"
+        style={{
+          animation: 'bounce 3s ease-in-out infinite',
+          transformOrigin: 'center'
+        }}
+      />
+    </div>
+
+    {/* Monitor de actividad pulsante */}
+    <div className="absolute bottom-1 left-1">
+      <Activity
+        className="w-5 h-5 text-green-500"
+        style={{
+          animation: 'pulse 1.5s ease-in-out infinite',
+          transformOrigin: 'center'
+        }}
+      />
+    </div>
+
+    {/* Píldora rotando */}
+    <div className="absolute top-2 left-3">
+      <Pill
+        className="w-4 h-4 text-blue-500 animate-spin"
+        style={{
+          animation: 'spin 4s linear infinite',
+          transformOrigin: 'center'
+        }}
+      />
+    </div>
+
+    {/* Partículas médicas flotantes */}
+    <div className="absolute inset-0">
+      <div className="absolute top-3 right-4 w-1 h-1 bg-red-400 rounded-full animate-ping"
+        style={{ animationDelay: '0s' }}></div>
+      <div className="absolute top-6 left-2 w-1 h-1 bg-cyan-400 rounded-full animate-ping"
+        style={{ animationDelay: '1s' }}></div>
+      <div className="absolute bottom-4 right-3 w-1 h-1 bg-green-400 rounded-full animate-ping"
+        style={{ animationDelay: '2s' }}></div>
+      <div className="absolute bottom-6 left-5 w-1 h-1 bg-blue-400 rounded-full animate-ping"
+        style={{ animationDelay: '0.5s' }}></div>
+    </div>
+  </div>
+);
 // Componente para mostrar el detalle completo del paciente
 const PatientDetail: React.FC<{
   patient: Patient;
@@ -453,16 +512,16 @@ const PatientDetail: React.FC<{
       {/* Pestañas de navegación */}
       <div className="bg-white rounded-xl shadow-sm border border-cyan-200 overflow-hidden">
         <div className="border-b border-cyan-200">
-          <nav className="flex space-x-0">
+          <nav className="flex space-x-0 overflow-x-auto">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id
-                      ? 'border-cyan-500 text-slate-700 bg-cyan-50'
-                      : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-cyan-25'
+                  className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === tab.id
+                    ? 'border-cyan-500 text-slate-700 bg-cyan-50'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-cyan-25'
                     }`}
                 >
                   <Icon className="w-4 h-4 mr-2" />
@@ -694,21 +753,25 @@ const PatientGrid: React.FC<PatientGridProps> = ({ doctorId = 1 }) => {
   return (
     <div className="bg-gradient-to-br from-slate-50 to-cyan-50 min-h-full flex flex-col">
       <div className="flex-1 p-6">
-        {/* Barra de búsqueda y acciones - SIEMPRE VISIBLE */}
+       {/* Barra de búsqueda y acciones - SIEMPRE VISIBLE */}
         <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6 mb-6">
           <div className="flex items-stretch gap-4 mb-4">
-            {queryProfile.data?.img ? (
-              <img
-                alt=""
-                src={queryProfile.data.img}
-                className="w-20 rounded object-cover"
-              />
+            {currentView === 'detail' ? (
+              <PatientsAnimation />
             ) : (
-              <div className="w-20 h-20 rounded bg-cyan-500 flex items-center justify-center">
-                <span className="text-white font-bold text-xl">
-                  {queryProfile.data?.name?.[0] || 'D'}{queryProfile.data?.lastName?.[0] || 'r'}
-                </span>
-              </div>
+              queryProfile.data?.img ? (
+                <img
+                  alt=""
+                  src={queryProfile.data.img}
+                  className="w-20 rounded object-cover"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded bg-cyan-500 flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">
+                    {queryProfile.data?.name?.[0] || 'D'}{queryProfile.data?.lastName?.[0] || 'r'}
+                  </span>
+                </div>
+              )
             )}
             <div>
               <h3 className="font-medium text-slate-700 sm:text-lg">
