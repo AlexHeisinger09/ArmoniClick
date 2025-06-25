@@ -1,6 +1,6 @@
-import PatientGrid from "../../components/PatientGrid";
+import Dashboard from "../../components/Dashboard";
 
 export function Home() {
-  return <PatientGrid />;
+  return <Dashboard />;
 }
 
