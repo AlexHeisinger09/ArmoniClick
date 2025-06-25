@@ -753,33 +753,18 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   return (
     <div className="bg-gradient-to-br from-slate-50 to-cyan-50 min-h-full flex flex-col">
       <div className="flex-1 p-6">
-       {/* Barra de búsqueda y acciones - SIEMPRE VISIBLE */}
+        {/* Barra de búsqueda y acciones - SIEMPRE VISIBLE */}
         <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6 mb-6">
           <div className="flex items-stretch gap-4 mb-4">
-            {currentView === 'detail' ? (
-              <PatientsAnimation />
-            ) : (
-              queryProfile.data?.img ? (
-                <img
-                  alt=""
-                  src={queryProfile.data.img}
-                  className="w-20 rounded object-cover"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded bg-cyan-500 flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">
-                    {queryProfile.data?.name?.[0] || 'D'}{queryProfile.data?.lastName?.[0] || 'r'}
-                  </span>
-                </div>
-              )
-            )}
+            <PatientsAnimation />
             <div>
               <h3 className="font-medium text-slate-700 sm:text-lg">
                 {currentView === 'grid' ? 'Gestión de Pacientes' : `Paciente: ${selectedPatient?.nombres} ${selectedPatient?.apellidos}`}
               </h3>
               <p className="mt-0.5 text-slate-500">
                 {currentView === 'grid'
-                  ? `Bienvenido Dr(a) ${queryProfile.data?.name}  ${queryProfile.data?.lastName }`
+                  ? `Bienvenido/a al módulo de gestión de pacientes. Buscar pacientes por RUT para acceder rápidamente a su informacion, tratamientos y ficha médica.
+                     Registrar nuevos pacientes con todos sus datos clínicos relevantes`
                   : 'Vista detallada con tratamientos, citas y historial médico completo.'
                 }
               </p>
@@ -1246,4 +1231,4 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   );
 };
 
-export {Patient};
+export { Patient };

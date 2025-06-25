@@ -865,7 +865,8 @@ useEffect(() => {
                 Configuración del Perfil
               </h3>
               <p className="mt-0.5 text-slate-500">
-                Bienvenido Dr(a) {userData?.name} {userData?.lastName}. Administra tu información personal, configuraciones de seguridad y preferencias.
+                {/* Bienvenido Dr(a) {userData?.name} {userData?.lastName}.  */}
+                Administra tu información personal, configuraciones de seguridad y preferencias.
               </p>
             </div>
           </div>

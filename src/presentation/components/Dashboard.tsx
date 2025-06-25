@@ -3,9 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/presentation/compone
 import { Badge } from '@/presentation/components/ui/badge';
 import { Button } from '@/presentation/components/ui/button';
 import { Alert, AlertDescription } from '@/presentation/components/ui/alert';
+import { useProfile, useLoginMutation } from "@/presentation/hooks";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const Dashboard = () => {
+  const { token } = useLoginMutation();
+  const { queryProfile } = useProfile(token || '');
   // Datos de ejemplo
   const todayAppointments = [
     { id: 1, time: '09:00', patient: 'María González', treatment: 'Botox', status: 'confirmed' },
@@ -57,16 +60,28 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-clinic-50 to-white p-4 sm:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-clinic-800 mb-2">Dashboard Clínica Estética</h1>
-            <p className="text-clinic-600">Bienvenido, Dr. Martínez - {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        {/* Barra de Header */}
+        <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6 mb-6">
+          <div className="flex items-stretch gap-4 mb-4">
+            {queryProfile.data?.img ? (
+              <img
+                alt="foto Dr(a)"
+                src={queryProfile.data.img}
+                className="w-20 rounded object-cover"
+              />
+            ) : (
+              <div className="w-20 h-20 rounded bg-cyan-500 flex items-center justify-center">
+                <span className="text-white font-bold text-xl">
+                  {queryProfile.data?.name?.[0] || 'D'}{queryProfile.data?.lastName?.[0] || 'r'}
+                </span>
+              </div>
+            )}
+            <div>
+               <h3 className="font-medium text-slate-700 sm:text-lg">
+                {queryProfile.data ? `Bienvenido Dr(a) ${queryProfile.data.name} ${queryProfile.data.lastName}` : 'Cargando...'}
+              </h3>
+            </div>
           </div>
-          <Button className="bg-clinic-500 hover:bg-clinic-600 text-white">
-            <Bell className="w-4 h-4 mr-2" />
-            Ver todas las notificaciones
-          </Button>
         </div>
 
         {/* Stats Cards */}
@@ -117,8 +132,8 @@ const Dashboard = () => {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 ">
+
           {/* Citas de Hoy */}
           <Card className="lg:col-span-2 hover:shadow-lg transition-shadow duration-300">
             <CardHeader className="bg-gradient-to-r from-clinic-50 to-clinic-100">
@@ -127,7 +142,7 @@ const Dashboard = () => {
                 Citas de Hoy
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-6 bg-white">
               <div className="space-y-4">
                 {todayAppointments.map((appointment) => (
                   <div key={appointment.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-clinic-50 to-transparent rounded-lg border border-clinic-200 hover:shadow-md transition-all duration-200">
@@ -150,29 +165,31 @@ const Dashboard = () => {
           </Card>
 
           {/* Tratamientos Populares */}
-          <Card className="hover:shadow-lg transition-shadow duration-300">
+          <Card className="bg-white hover:shadow-lg transition-shadow duration-300">
             <CardHeader className="bg-gradient-to-r from-clinic-50 to-clinic-100">
               <CardTitle className="text-clinic-800">Tratamientos Populares</CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
-                    data={treatmentData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={80}
-                    dataKey="value"
-                  >
-                    {treatmentData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [`${value}%`, 'Porcentaje']} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="mt-4 space-y-2">
+            <CardContent className="p-6 bg-white">
+              <div className="bg-white"> {/* Cambié style por className */}
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={treatmentData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={80}
+                      dataKey="value"
+                    >
+                      {treatmentData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => [`${value}%`, 'Porcentaje']} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-4 space-y-2 bg-white"> {/* Añadí bg-white aquí */}
                 {treatmentData.map((item, index) => (
                   <div key={index} className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -189,24 +206,24 @@ const Dashboard = () => {
 
         {/* Segunda fila de contenido */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
+
           {/* Gráfico de Citas Mensuales */}
-          <Card className="hover:shadow-lg transition-shadow duration-300">
+          <Card className="bg-white hover:shadow-lg transition-shadow duration-300">
             <CardHeader className="bg-gradient-to-r from-clinic-50 to-clinic-100">
               <CardTitle className="flex items-center text-clinic-800">
                 <TrendingUp className="w-5 h-5 mr-2" />
-                Evolución Mensual
+                Ingreso Mensual
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-p-6 bg-white">
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e0f7fa" />
                   <XAxis dataKey="name" stroke="#0e7490" />
                   <YAxis stroke="#0e7490" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#ecfeff', 
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#ecfeff',
                       border: '1px solid #17c1e8',
                       borderRadius: '8px'
                     }}
@@ -218,14 +235,14 @@ const Dashboard = () => {
           </Card>
 
           {/* Pacientes Recientes */}
-          <Card className="hover:shadow-lg transition-shadow duration-300">
+          <Card className="bg-white hover:shadow-lg transition-shadow duration-300">
             <CardHeader className="bg-gradient-to-r from-clinic-50 to-clinic-100">
               <CardTitle className="flex items-center text-clinic-800">
                 <Users className="w-5 h-5 mr-2" />
                 Pacientes Recientes
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-6 bg-white">
               <div className="space-y-4">
                 {recentPatients.map((patient, index) => (
                   <div key={index} className="flex items-center justify-between p-4 bg-gradient-to-r from-clinic-50 to-transparent rounded-lg border border-clinic-200 hover:shadow-md transition-all duration-200">
@@ -240,9 +257,9 @@ const Dashboard = () => {
                     </div>
                     <div className="flex items-center space-x-1">
                       {[...Array(5)].map((_, i) => (
-                        <Star 
-                          key={i} 
-                          className={`w-4 h-4 ${i < patient.satisfaction ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
+                        <Star
+                          key={i}
+                          className={`w-4 h-4 ${i < patient.satisfaction ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
                         />
                       ))}
                     </div>
