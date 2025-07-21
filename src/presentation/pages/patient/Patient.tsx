@@ -260,9 +260,6 @@ const PatientDetail: React.FC<{
                     <Edit className="w-4 h-4 mr-2" />
                     Editar Paciente
                   </button>
-                  <div className="bg-cyan-100 p-3 rounded-full">
-                    <User className="w-8 h-8 text-cyan-600" />
-                  </div>
                 </div>
               </div>
 
