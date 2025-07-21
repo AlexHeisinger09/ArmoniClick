@@ -603,7 +603,7 @@ useEffect(() => {
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-cyan-500">
                         <span className="text-white font-bold text-2xl">
-                          {userData?.name?.[0]}{userData?.lastName?.[0]}
+                          {userData?.name?.[0]?.toUpperCase() || ''}{userData?.lastName?.[0]?.toUpperCase() || ''}
                         </span>
                       </div>
                     )}

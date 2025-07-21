@@ -614,7 +614,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
       cirugias_previas: "Sin cirugías previas",
       hospitalizaciones_previas: "Sin hospitalizaciones previas",
       notas_medicas: "Paciente joven y sana. Controles ginecológicos anuales. Última citología normal (2024).",
-      id_doctor: 1,
+      id_doctor: 2,
       createdat: "2024-04-05T14:10:00.000Z",
       updatedat: "2024-06-01T09:25:00.000Z",
       isactive: true,
