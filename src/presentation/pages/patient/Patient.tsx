@@ -1,27 +1,8 @@
-interface PatientFormData {
-  rut: string;
-  nombres: string;
-  apellidos: string;
-  fecha_nacimiento: string;
-  telefono: string;
-  email: string;
-  direccion: string;
-  ciudad: string;
-  codigo_postal: string;
-  alergias: string;
-  medicamentos_actuales: string;
-  enfermedades_cronicas: string;
-  cirugias_previas: string;
-  hospitalizaciones_previas: string;
-  notas_medicas: string;
-}import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
   Plus,
   Calendar,
-  Phone,
-  Mail,
-  MapPin,
   User,
   ChevronRight,
   ChevronLeft,
@@ -33,13 +14,14 @@ import {
   Stethoscope,
   Pill,
   AlertTriangle,
-  X,
   AlertCircle,
-  Info
+  Info,
+  Edit
 } from "lucide-react";
 import { useProfile, useLoginMutation } from "@/presentation/hooks";
+import { NewPatientModal, PatientFormData } from "./NewPatientModal";
 
-// Interfaz actualizada según la tabla real de la base de datos
+// Interfaces originales - CONSERVADAS
 interface Patient {
   id: number;
   rut: string;
@@ -92,26 +74,7 @@ interface PatientProps {
   doctorId?: number;
 }
 
-// Datos iniciales para el formulario de nuevo paciente
-const initialFormData: PatientFormData = {
-  rut: "",
-  nombres: "",
-  apellidos: "",
-  fecha_nacimiento: "",
-  telefono: "",
-  email: "",
-  direccion: "",
-  ciudad: "",
-  codigo_postal: "",
-  alergias: "",
-  medicamentos_actuales: "",
-  enfermedades_cronicas: "",
-  cirugias_previas: "",
-  hospitalizaciones_previas: "",
-  notas_medicas: "",
-};
-
-// Datos de ejemplo para tratamientos, citas y ficha médica
+// Datos de ejemplo - ORIGINALES CONSERVADOS
 const mockTreatments: Treatment[] = [
   {
     id: 1,
@@ -176,7 +139,7 @@ const mockMedicalRecords: MedicalRecord[] = [
   }
 ];
 
-// Componente de animación médica para pacientes
+// Componente de animación médica - ORIGINAL CONSERVADO
 const PatientsAnimation: React.FC = () => (
   <div className="relative w-20 h-20 flex items-center justify-center">
     <div className="absolute inset-0 flex items-center justify-center">
@@ -228,7 +191,7 @@ const PatientsAnimation: React.FC = () => (
   </div>
 );
 
-// Componente para mostrar el detalle completo del paciente
+// Componente para mostrar el detalle completo del paciente - ORIGINAL CONSERVADO
 const PatientDetail: React.FC<{
   patient: Patient;
   onBack: () => void;
@@ -290,6 +253,7 @@ const PatientDetail: React.FC<{
                     {patient.nombres} {patient.apellidos}
                   </h2>
                   <p className="text-slate-500">RUT: {patient.rut}</p>
+                  <p className="text-slate-500">Edad: {calculateAge(patient.fecha_nacimiento)} años</p>
                 </div>
                 <div className="flex items-center space-x-3">
                   <button className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors shadow-sm">
@@ -302,11 +266,38 @@ const PatientDetail: React.FC<{
                 </div>
               </div>
 
+              {/* Información de contacto */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <p className="text-sm text-slate-500 font-medium mb-2">Email</p>
+                  <p className="text-sm text-slate-700">{patient.email}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500 font-medium mb-2">Teléfono</p>
+                  <p className="text-sm text-slate-700">{patient.telefono}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500 font-medium mb-2">Dirección</p>
+                  <p className="text-sm text-slate-700">{patient.direccion}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500 font-medium mb-2">Ciudad</p>
+                  <p className="text-sm text-slate-700">{patient.ciudad}</p>
+                </div>
+              </div>
+
               {/* Información médica */}
               <div className="mt-6 pt-6 border-t border-cyan-200">
                 <h4 className="font-semibold text-slate-700 mb-4">Información Médica</h4>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {patient.alergias && (
+                    <div>
+                      <p className="text-sm text-slate-500 font-medium mb-2">Alergias</p>
+                      <p className="text-sm text-slate-700">{patient.alergias}</p>
+                    </div>
+                  )}
+
                   {patient.medicamentos_actuales && (
                     <div>
                       <p className="text-sm text-slate-500 font-medium mb-2">Medicamentos Actuales</p>
@@ -473,8 +464,6 @@ const PatientDetail: React.FC<{
     }
   };
 
-  const alertConfig = getAlertConfig();
-
   return (
     <div className="space-y-6">
       {/* Encabezado con botón de regreso */}
@@ -515,326 +504,13 @@ const PatientDetail: React.FC<{
           {renderTabContent()}
         </div>
       </div>
-
-      {/* Modal de Nuevo Paciente */}
-      {showNewPatientModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-slate-700">
-                Agregar Nuevo Paciente
-              </h3>
-              <button
-                onClick={handleCloseNewPatientModal}
-                className="text-slate-500 hover:text-slate-700 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <form className="space-y-6">
-              {/* Información Personal */}
-              <div>
-                <h4 className="text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-cyan-200">
-                  Información Personal
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      RUT *
-                    </label>
-                    <input
-                      type="text"
-                      name="rut"
-                      value={newPatientForm.rut}
-                      onChange={handleFormChange}
-                      placeholder="12345678-9"
-                      className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700 ${
-                        formErrors.rut ? 'border-red-300' : 'border-cyan-200'
-                      }`}
-                    />
-                    {formErrors.rut && (
-                      <p className="text-red-600 text-xs mt-1">{formErrors.rut}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Nombres *
-                    </label>
-                    <input
-                      type="text"
-                      name="nombres"
-                      value={newPatientForm.nombres}
-                      onChange={handleFormChange}
-                      placeholder="Juan Carlos"
-                      className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700 ${
-                        formErrors.nombres ? 'border-red-300' : 'border-cyan-200'
-                      }`}
-                    />
-                    {formErrors.nombres && (
-                      <p className="text-red-600 text-xs mt-1">{formErrors.nombres}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Apellidos *
-                    </label>
-                    <input
-                      type="text"
-                      name="apellidos"
-                      value={newPatientForm.apellidos}
-                      onChange={handleFormChange}
-                      placeholder="González López"
-                      className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700 ${
-                        formErrors.apellidos ? 'border-red-300' : 'border-cyan-200'
-                      }`}
-                    />
-                    {formErrors.apellidos && (
-                      <p className="text-red-600 text-xs mt-1">{formErrors.apellidos}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Fecha de Nacimiento *
-                    </label>
-                    <input
-                      type="date"
-                      name="fecha_nacimiento"
-                      value={newPatientForm.fecha_nacimiento}
-                      onChange={handleFormChange}
-                      className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700 ${
-                        formErrors.fecha_nacimiento ? 'border-red-300' : 'border-cyan-200'
-                      }`}
-                    />
-                    {formErrors.fecha_nacimiento && (
-                      <p className="text-red-600 text-xs mt-1">{formErrors.fecha_nacimiento}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Teléfono *
-                    </label>
-                    <input
-                      type="tel"
-                      name="telefono"
-                      value={newPatientForm.telefono}
-                      onChange={handleFormChange}
-                      placeholder="+56912345678"
-                      className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700 ${
-                        formErrors.telefono ? 'border-red-300' : 'border-cyan-200'
-                      }`}
-                    />
-                    {formErrors.telefono && (
-                      <p className="text-red-600 text-xs mt-1">{formErrors.telefono}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Email *
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={newPatientForm.email}
-                      onChange={handleFormChange}
-                      placeholder="juan@email.com"
-                      className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700 ${
-                        formErrors.email ? 'border-red-300' : 'border-cyan-200'
-                      }`}
-                    />
-                    {formErrors.email && (
-                      <p className="text-red-600 text-xs mt-1">{formErrors.email}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Información de Ubicación */}
-              <div>
-                <h4 className="text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-cyan-200">
-                  Ubicación
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Dirección *
-                    </label>
-                    <input
-                      type="text"
-                      name="direccion"
-                      value={newPatientForm.direccion}
-                      onChange={handleFormChange}
-                      placeholder="Av. Las Condes 1234"
-                      className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700 ${
-                        formErrors.direccion ? 'border-red-300' : 'border-cyan-200'
-                      }`}
-                    />
-                    {formErrors.direccion && (
-                      <p className="text-red-600 text-xs mt-1">{formErrors.direccion}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Ciudad *
-                    </label>
-                    <input
-                      type="text"
-                      name="ciudad"
-                      value={newPatientForm.ciudad}
-                      onChange={handleFormChange}
-                      placeholder="Santiago"
-                      className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700 ${
-                        formErrors.ciudad ? 'border-red-300' : 'border-cyan-200'
-                      }`}
-                    />
-                    {formErrors.ciudad && (
-                      <p className="text-red-600 text-xs mt-1">{formErrors.ciudad}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Código Postal
-                    </label>
-                    <input
-                      type="text"
-                      name="codigo_postal"
-                      value={newPatientForm.codigo_postal}
-                      onChange={handleFormChange}
-                      placeholder="7550000"
-                      className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Información Médica */}
-              <div>
-                <h4 className="text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-cyan-200">
-                  Información Médica
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Alergias
-                    </label>
-                    <textarea
-                      name="alergias"
-                      value={newPatientForm.alergias}
-                      onChange={handleFormChange}
-                      placeholder="Penicilina, polen, mariscos..."
-                      rows={3}
-                      className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Medicamentos Actuales
-                    </label>
-                    <textarea
-                      name="medicamentos_actuales"
-                      value={newPatientForm.medicamentos_actuales}
-                      onChange={handleFormChange}
-                      placeholder="Omeprazol 20mg (diario)..."
-                      rows={3}
-                      className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Enfermedades Crónicas
-                    </label>
-                    <textarea
-                      name="enfermedades_cronicas"
-                      value={newPatientForm.enfermedades_cronicas}
-                      onChange={handleFormChange}
-                      placeholder="Diabetes, hipertensión..."
-                      rows={3}
-                      className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Cirugías Previas
-                    </label>
-                    <textarea
-                      name="cirugias_previas"
-                      value={newPatientForm.cirugias_previas}
-                      onChange={handleFormChange}
-                      placeholder="Apendicectomía (2020)..."
-                      rows={3}
-                      className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Hospitalizaciones Previas
-                    </label>
-                    <textarea
-                      name="hospitalizaciones_previas"
-                      value={newPatientForm.hospitalizaciones_previas}
-                      onChange={handleFormChange}
-                      placeholder="Neumonía (2018) - 5 días..."
-                      rows={2}
-                      className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Notas Médicas
-                    </label>
-                    <textarea
-                      name="notas_medicas"
-                      value={newPatientForm.notas_medicas}
-                      onChange={handleFormChange}
-                      placeholder="Observaciones adicionales del paciente..."
-                      rows={3}
-                      className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Botones de acción */}
-              <div className="flex justify-end space-x-3 pt-6 border-t border-cyan-200">
-                <button
-                  type="button"
-                  onClick={handleCloseNewPatientModal}
-                  className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg text-sm px-6 py-2.5 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSubmitNewPatient}
-                  className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-6 py-2.5 transition-colors shadow-sm"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Crear Paciente
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-// Componente principal Patient
+// Componente principal Patient - CÓDIGO ORIGINAL CONSERVADO
 const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
-  // Estados principales
+  // Estados principales - ORIGINALES
   const [patients, setPatients] = useState<Patient[]>([]);
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
   const [searchRut, setSearchRut] = useState("");
@@ -842,16 +518,14 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   const { token } = useLoginMutation();
   const { queryProfile } = useProfile(token || '');
 
-  // Estados para vista
+  // Estados para vista - ORIGINALES
   const [currentView, setCurrentView] = useState<'grid' | 'detail'>('grid');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
 
-  // Estados para modal de nuevo paciente
+  // Estados para modal de nuevo paciente - SIMPLIFICADOS
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
-  const [newPatientForm, setNewPatientForm] = useState<PatientFormData>(initialFormData);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  // Datos de ejemplo adaptados a la tabla real de la base de datos
+  // Datos de ejemplo adaptados a la tabla real - ORIGINALES CONSERVADOS
   const mockPatients: Patient[] = [
     {
       id: 1,
@@ -943,11 +617,10 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
     },
   ];
 
-  // Efectos
+  // Efectos - ORIGINALES CONSERVADOS
   useEffect(() => {
     const fetchPatients = async () => {
       setLoading(true);
-      // Simulando delay de red
       setTimeout(() => {
         setPatients(mockPatients);
         setFilteredPatients(mockPatients);
@@ -958,7 +631,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
     fetchPatients();
   }, [doctorId]);
 
-  // Filtrar pacientes por nombre
+  // Filtrar pacientes por nombre - ORIGINAL CONSERVADO
   useEffect(() => {
     if (searchRut.trim() === "") {
       setFilteredPatients(patients);
@@ -970,7 +643,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
     }
   }, [searchRut, patients]);
 
-  // Funciones utilitarias
+  // Funciones utilitarias - ORIGINALES CONSERVADAS
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString("es-CL");
   };
@@ -991,7 +664,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
     return age;
   };
 
-  // Manejadores de eventos
+  // Manejadores de eventos - ORIGINALES CONSERVADOS
   const handlePatientClick = (patient: Patient) => {
     setSelectedPatient(patient);
     setCurrentView('detail');
@@ -1002,62 +675,20 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
     setSelectedPatient(null);
   };
 
-  // Manejadores para el modal de nuevo paciente
+  // Manejadores para el modal - SIMPLIFICADOS
   const handleNewPatient = () => {
     setShowNewPatientModal(true);
   };
 
   const handleCloseNewPatientModal = () => {
     setShowNewPatientModal(false);
-    setNewPatientForm(initialFormData);
-    setFormErrors({});
   };
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setNewPatientForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Limpiar error del campo si existe
-    if (formErrors[name]) {
-      setFormErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const errors: Record<string, string> = {};
-
-    // Campos requeridos
-    if (!newPatientForm.rut.trim()) errors.rut = 'RUT es requerido';
-    if (!newPatientForm.nombres.trim()) errors.nombres = 'Nombres es requerido';
-    if (!newPatientForm.apellidos.trim()) errors.apellidos = 'Apellidos es requerido';
-    if (!newPatientForm.fecha_nacimiento) errors.fecha_nacimiento = 'Fecha de nacimiento es requerida';
-    if (!newPatientForm.telefono.trim()) errors.telefono = 'Teléfono es requerido';
-    if (!newPatientForm.email.trim()) errors.email = 'Email es requerido';
-    if (!newPatientForm.direccion.trim()) errors.direccion = 'Dirección es requerida';
-    if (!newPatientForm.ciudad.trim()) errors.ciudad = 'Ciudad es requerida';
-
-    // Validación de email
-    if (newPatientForm.email && !/\S+@\S+\.\S+/.test(newPatientForm.email)) {
-      errors.email = 'Email no es válido';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleSubmitNewPatient = () => {
-    if (!validateForm()) return;
-
+  const handleSubmitNewPatient = (formData: PatientFormData) => {
     // Crear nuevo paciente
     const newPatient: Patient = {
       id: Math.max(...patients.map(p => p.id)) + 1,
-      ...newPatientForm,
+      ...formData,
       id_doctor: doctorId,
       createdat: new Date().toISOString(),
       updatedat: new Date().toISOString(),
@@ -1068,12 +699,9 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
     const updatedPatients = [...patients, newPatient];
     setPatients(updatedPatients);
     setFilteredPatients(updatedPatients);
-
-    // Cerrar modal y limpiar formulario
-    handleCloseNewPatientModal();
   };
 
-  // Render condicional para loading
+  // Render condicional para loading - ORIGINAL CONSERVADO
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -1085,7 +713,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   return (
     <div className="bg-gradient-to-br from-slate-50 to-cyan-50 min-h-full flex flex-col">
       <div className="flex-1 p-6">
-        {/* Barra de búsqueda y acciones - SIEMPRE VISIBLE */}
+        {/* Barra de búsqueda y acciones - ORIGINAL CONSERVADA */}
         <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6 mb-6">
           <div className="flex items-stretch gap-4 mb-4">
             <PatientsAnimation />
@@ -1095,16 +723,14 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
               </h3>
               <p className="mt-0.5 text-slate-500">
                 {currentView === 'grid'
-                  ? `Bienvenido/a al módulo de gestión de pacientes. Buscar pacientes por RUT para acceder rápidamente a su informacion, tratamientos y ficha médica.
-                     Registrar nuevos pacientes con todos sus datos clínicos relevantes`
+                  ? `Bienvenido/a al módulo de gestión de pacientes. Buscar pacientes por nombre para acceder rápidamente a su información, tratamientos y ficha médica. Registrar nuevos pacientes con todos sus datos clínicos relevantes`
                   : 'Vista detallada con tratamientos, citas y historial médico completo.'
                 }
               </p>
               
-              {/* Cuadros de alertas médicas - Solo en vista de detalle */}
+              {/* Cuadros de alertas médicas - Solo en vista de detalle - ORIGINAL CONSERVADO */}
               {currentView === 'detail' && selectedPatient && (
                 <div className="flex flex-wrap gap-3 mt-4">
-                  {/* Cuadro de Alergias */}
                   <div className={`px-4 py-2 rounded-lg border-2 ${
                     selectedPatient.alergias && selectedPatient.alergias !== "Sin alergias conocidas" 
                       ? 'border-red-300 bg-red-50' 
@@ -1135,7 +761,6 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                     </div>
                   </div>
 
-                  {/* Cuadro de Enfermedades Crónicas */}
                   <div className={`px-4 py-2 rounded-lg border-2 ${
                     selectedPatient.enfermedades_cronicas && selectedPatient.enfermedades_cronicas !== "Sin enfermedades crónicas" 
                       ? 'border-orange-300 bg-orange-50' 
@@ -1166,7 +791,6 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                     </div>
                   </div>
 
-                  {/* Cuadro de Notas Médicas */}
                   {selectedPatient.notas_medicas && (
                     <div className="px-4 py-2 rounded-lg border-2 border-blue-300 bg-blue-50">
                       <div className="flex items-center space-x-2">
@@ -1209,10 +833,9 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
           )}
         </div>
 
-        {/* Contenido dinámico - Grilla o Detalle */}
+        {/* Contenido dinámico - ORIGINAL CONSERVADO */}
         <div className="transition-all duration-300 ease-in-out">
           {currentView === 'grid' ? (
-            /* Tabla de pacientes */
             <div className="bg-white rounded-xl shadow-sm border border-cyan-200 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full table-auto">
@@ -1293,7 +916,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                 </table>
               </div>
 
-              {/* Paginación */}
+              {/* Paginación - ORIGINAL CONSERVADA */}
               {filteredPatients.length > 0 && (
                 <div className="px-6 py-4 border-t border-cyan-200 bg-slate-50">
                   <div className="flex justify-between items-center">
@@ -1317,7 +940,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
               )}
             </div>
           ) : (
-            /* Vista de detalle del paciente */
+            /* Vista de detalle del paciente - ORIGINAL CONSERVADA */
             selectedPatient && (
               <PatientDetail
                 patient={selectedPatient}
@@ -1326,6 +949,13 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
             )
           )}
         </div>
+
+        {/* Modal de Nuevo Paciente - USANDO COMPONENTE SEPARADO */}
+        <NewPatientModal
+          isOpen={showNewPatientModal}
+          onClose={handleCloseNewPatientModal}
+          onSubmit={handleSubmitNewPatient}
+        />
       </div>
     </div>
   );
