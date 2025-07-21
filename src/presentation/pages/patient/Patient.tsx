@@ -258,7 +258,7 @@ const PatientDetail: React.FC<{
                   <p className="text-slate-500">Edad: {calculateAge(patient.fecha_nacimiento)} años</p>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <button 
+                  <button
                     onClick={() => onEdit(patient)}
                     className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors shadow-sm"
                   >
@@ -291,7 +291,7 @@ const PatientDetail: React.FC<{
               {/* Información médica */}
               <div className="mt-6 pt-6 border-t border-cyan-200">
                 <h4 className="font-semibold text-slate-700 mb-4">Información Médica</h4>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {patient.alergias && (
                     <div>
@@ -718,19 +718,19 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
 
   const handleSubmitEditPatient = (patientId: number, formData: EditPatientFormData) => {
     // Actualizar el paciente en la lista
-    const updatedPatients = patients.map(patient => 
-      patient.id === patientId 
+    const updatedPatients = patients.map(patient =>
+      patient.id === patientId
         ? {
-            ...patient,
-            ...formData,
-            updatedat: new Date().toISOString(),
-          }
+          ...patient,
+          ...formData,
+          updatedat: new Date().toISOString(),
+        }
         : patient
     );
-    
+
     setPatients(updatedPatients);
     setFilteredPatients(updatedPatients);
-    
+
     // Si el paciente está siendo visualizado, actualizarlo también
     if (selectedPatient && selectedPatient.id === patientId) {
       setSelectedPatient({
@@ -767,15 +767,14 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                   : ''
                 }
               </p>
-              
+
               {/* Cuadros de alertas médicas - Solo en vista de detalle - ORIGINAL CONSERVADO */}
               {currentView === 'detail' && selectedPatient && (
                 <div className="flex flex-wrap gap-3 mt-4">
-                  <div className={`px-4 py-2 rounded-lg border-2 ${
-                    selectedPatient.alergias && selectedPatient.alergias !== "Sin alergias conocidas" 
-                      ? 'border-red-300 bg-red-50' 
+                  <div className={`px-4 py-2 rounded-lg border-2 ${selectedPatient.alergias && selectedPatient.alergias !== "Sin alergias conocidas"
+                      ? 'border-red-300 bg-red-50'
                       : 'border-green-300 bg-green-50'
-                  }`}>
+                    }`}>
                     <div className="flex items-center space-x-2">
                       {selectedPatient.alergias && selectedPatient.alergias !== "Sin alergias conocidas" ? (
                         <AlertTriangle className="w-4 h-4 text-red-600" />
@@ -783,29 +782,26 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                         <Heart className="w-4 h-4 text-green-600" />
                       )}
                       <div>
-                        <p className={`text-xs font-medium ${
-                          selectedPatient.alergias && selectedPatient.alergias !== "Sin alergias conocidas" 
-                            ? 'text-red-700' 
+                        <p className={`text-xs font-medium ${selectedPatient.alergias && selectedPatient.alergias !== "Sin alergias conocidas"
+                            ? 'text-red-700'
                             : 'text-green-700'
-                        }`}>
+                          }`}>
                           Alergias
                         </p>
-                        <p className={`text-sm ${
-                          selectedPatient.alergias && selectedPatient.alergias !== "Sin alergias conocidas" 
-                            ? 'text-red-800' 
+                        <p className={`text-sm ${selectedPatient.alergias && selectedPatient.alergias !== "Sin alergias conocidas"
+                            ? 'text-red-800'
                             : 'text-green-800'
-                        }`}>
+                          }`}>
                           {selectedPatient.alergias || "Sin alergias"}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className={`px-4 py-2 rounded-lg border-2 ${
-                    selectedPatient.enfermedades_cronicas && selectedPatient.enfermedades_cronicas !== "Sin enfermedades crónicas" 
-                      ? 'border-orange-300 bg-orange-50' 
+                  <div className={`px-4 py-2 rounded-lg border-2 ${selectedPatient.enfermedades_cronicas && selectedPatient.enfermedades_cronicas !== "Sin enfermedades crónicas"
+                      ? 'border-orange-300 bg-orange-50'
                       : 'border-green-300 bg-green-50'
-                  }`}>
+                    }`}>
                     <div className="flex items-center space-x-2">
                       {selectedPatient.enfermedades_cronicas && selectedPatient.enfermedades_cronicas !== "Sin enfermedades crónicas" ? (
                         <AlertCircle className="w-4 h-4 text-orange-600" />
@@ -813,18 +809,16 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                         <Stethoscope className="w-4 h-4 text-green-600" />
                       )}
                       <div>
-                        <p className={`text-xs font-medium ${
-                          selectedPatient.enfermedades_cronicas && selectedPatient.enfermedades_cronicas !== "Sin enfermedades crónicas" 
-                            ? 'text-orange-700' 
+                        <p className={`text-xs font-medium ${selectedPatient.enfermedades_cronicas && selectedPatient.enfermedades_cronicas !== "Sin enfermedades crónicas"
+                            ? 'text-orange-700'
                             : 'text-green-700'
-                        }`}>
+                          }`}>
                           Enfermedades Crónicas
                         </p>
-                        <p className={`text-sm ${
-                          selectedPatient.enfermedades_cronicas && selectedPatient.enfermedades_cronicas !== "Sin enfermedades crónicas" 
-                            ? 'text-orange-800' 
+                        <p className={`text-sm ${selectedPatient.enfermedades_cronicas && selectedPatient.enfermedades_cronicas !== "Sin enfermedades crónicas"
+                            ? 'text-orange-800'
                             : 'text-green-800'
-                        }`}>
+                          }`}>
                           {selectedPatient.enfermedades_cronicas || "Sin enfermedades"}
                         </p>
                       </div>
@@ -862,7 +856,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                   className="w-full pl-12 pr-4 py-3 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 placeholder-slate-500"
                 />
               </div>
-              <button 
+              <button
                 onClick={handleNewPatient}
                 className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-5 py-2.5 transition-colors shadow-sm"
               >
@@ -877,99 +871,160 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
         <div className="transition-all duration-300 ease-in-out">
           {currentView === 'grid' ? (
             <div className="bg-white rounded-xl shadow-sm border border-cyan-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full table-auto">
-                  <thead className="bg-slate-50 border-b border-cyan-200">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                        Nombre Completo
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                        Edad
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                        Correo
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                        Teléfono
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                        Dirección
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-cyan-100">
-                    {filteredPatients.length === 0 ? (
+              {/* Vista Desktop - Tabla */}
+              <div className="hidden md:block">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full table-auto">
+                    <thead className="bg-slate-50 border-b border-cyan-200">
                       <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center">
-                          <div className="flex flex-col items-center justify-center">
-                            <User className="w-12 h-12 text-slate-400 mb-4" />
-                            <p className="text-slate-700 text-lg mb-2">
-                              {searchRut
-                                ? "No se encontraron pacientes con ese nombre"
-                                : "No hay pacientes registrados"}
-                            </p>
-                            <p className="text-slate-500 text-sm">
-                              {searchRut
-                                ? "Intenta con otro término de búsqueda"
-                                : "Comienza agregando un nuevo paciente"}
-                            </p>
-                          </div>
-                        </td>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                          Nombre Completo
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                          Edad
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                          Correo
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                          Teléfono
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                          Dirección
+                        </th>
                       </tr>
-                    ) : (
-                      filteredPatients.map((patient) => (
-                        <tr
-                          key={patient.id}
-                          onClick={() => handlePatientClick(patient)}
-                          className="hover:bg-cyan-50 transition-colors cursor-pointer"
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-slate-700">
-                              {patient.nombres} {patient.apellidos}
+                    </thead>
+                    <tbody className="bg-white divide-y divide-cyan-100">
+                      {filteredPatients.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-12 text-center">
+                            <div className="flex flex-col items-center justify-center">
+                              <User className="w-12 h-12 text-slate-400 mb-4" />
+                              <p className="text-slate-700 text-lg mb-2">
+                                {searchRut
+                                  ? "No se encontraron pacientes con ese nombre"
+                                  : "No hay pacientes registrados"}
+                              </p>
+                              <p className="text-slate-500 text-sm">
+                                {searchRut
+                                  ? "Intenta con otro término de búsqueda"
+                                  : "Comienza agregando un nuevo paciente"}
+                              </p>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-sm text-slate-700">
-                              {calculateAge(patient.fecha_nacimiento)} años
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-sm text-slate-700">
-                              {patient.email}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-sm text-slate-700">
-                              {patient.telefono}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-sm text-slate-700">
-                              {patient.direccion}, {patient.ciudad}
-                            </span>
-                          </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : (
+                        filteredPatients.map((patient) => (
+                          <tr
+                            key={patient.id}
+                            onClick={() => handlePatientClick(patient)}
+                            className="hover:bg-cyan-50 transition-colors cursor-pointer"
+                          >
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm font-medium text-slate-700">
+                                {patient.nombres} {patient.apellidos}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="text-sm text-slate-700">
+                                {calculateAge(patient.fecha_nacimiento)} años
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="text-sm text-slate-700">
+                                {patient.email}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="text-sm text-slate-700">
+                                {patient.telefono}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="text-sm text-slate-700">
+                                {patient.direccion}, {patient.ciudad}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
-              {/* Paginación - ORIGINAL CONSERVADA */}
+              {/* Vista Mobile - Cards */}
+              <div className="md:hidden">
+                {filteredPatients.length === 0 ? (
+                  <div className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <User className="w-12 h-12 text-slate-400 mb-4" />
+                      <p className="text-slate-700 text-lg mb-2">
+                        {searchRut
+                          ? "No se encontraron pacientes con ese nombre"
+                          : "No hay pacientes registrados"}
+                      </p>
+                      <p className="text-slate-500 text-sm">
+                        {searchRut
+                          ? "Intenta con otro término de búsqueda"
+                          : "Comienza agregando un nuevo paciente"}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-cyan-100">
+                    {filteredPatients.map((patient) => (
+                      <div
+                        key={patient.id}
+                        onClick={() => handlePatientClick(patient)}
+                        className="p-4 hover:bg-cyan-50 transition-colors cursor-pointer active:bg-cyan-100"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <h3 className="text-base font-semibold text-slate-700 mb-1">
+                              {patient.nombres} {patient.apellidos}
+                            </h3>
+                            <p className="text-sm text-slate-500">
+                              {calculateAge(patient.fecha_nacimiento)} años • RUT: {patient.rut}
+                            </p>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-slate-400 ml-2 flex-shrink-0" />
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center text-sm text-slate-600">
+                            <div className="w-2 h-2 bg-cyan-500 rounded-full mr-2 flex-shrink-0"></div>
+                            <span className="truncate">{patient.email}</span>
+                          </div>
+                          <div className="flex items-center text-sm text-slate-600">
+                            <div className="w-2 h-2 bg-green-500 rounded-full mr-2 flex-shrink-0"></div>
+                            <span>{patient.telefono}</span>
+                          </div>
+                          <div className="flex items-center text-sm text-slate-600">
+                            <div className="w-2 h-2 bg-orange-500 rounded-full mr-2 flex-shrink-0"></div>
+                            <span className="truncate">{patient.direccion}, {patient.ciudad}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Paginación - Responsiva */}
               {filteredPatients.length > 0 && (
-                <div className="px-6 py-4 border-t border-cyan-200 bg-slate-50">
+                <div className="px-4 md:px-6 py-4 border-t border-cyan-200 bg-slate-50">
                   <div className="flex justify-between items-center">
                     <div className="text-sm text-slate-500">Página 1 de 1</div>
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-1 md:space-x-2">
                       <button
-                        className="px-4 py-2 text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                        className="px-2 md:px-4 py-2 text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                         disabled
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
                       <button
-                        className="px-4 py-2 text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                        className="px-2 md:px-4 py-2 text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                         disabled
                       >
                         <ChevronRight className="w-4 h-4" />

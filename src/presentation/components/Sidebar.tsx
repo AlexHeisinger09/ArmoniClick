@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate} from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Menu,
   Users,
@@ -8,7 +8,8 @@ import {
   Notebook,
   LucideLogOut,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  X
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -76,12 +77,34 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
     );
   };
 
-  const renderMenuItem = (item: MenuItem, level = 0) => {
+  const renderMenuItem = (item: MenuItem, level = 0, isMobile = false) => {
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedItems.includes(item.id);
     const isActive = location.pathname === item.href;
     const Icon = item.icon;
 
+    if (isMobile) {
+      // Estilo para barra horizontal móvil
+      return (
+        <Link
+          key={item.id}
+          to={item.href}
+          onClick={handleMenuClick}
+          className={`
+            flex flex-col items-center justify-center px-2 py-1.5 rounded-lg transition-all duration-200 min-w-0 flex-1 text-center
+            ${isActive 
+              ? 'bg-cyan-500 text-white shadow-sm' 
+              : 'text-slate-600 hover:bg-cyan-100 hover:text-slate-700'
+            }
+          `}
+        >
+          <Icon className="w-4 h-4 mb-0.5 flex-shrink-0" />
+          <span className="text-xs font-medium truncate w-full">{item.label}</span>
+        </Link>
+      );
+    }
+
+    // Estilo para sidebar desktop (original)
     return (
       <Link
         key={item.id}
@@ -107,12 +130,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
   };
 
   return (
-    <div className={`bg-white shadow-lg h-full ${isCollapsed ? 'w-16' : 'w-64'} transition-all duration-300 flex flex-col ${className} border-r border-cyan-200`}>
-      {/* Header del Sidebar */}
-      <div className="flex items-center justify-between p-4 flex-shrink-0">
-        {!isCollapsed && (
+    <>
+      {/* MOBILE TOP BAR - Barra horizontal con navegación */}
+      <div className="md:hidden bg-white shadow-lg border-b border-cyan-200 relative z-50">
+        {/* Logo y título */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-cyan-100">
           <div className="flex items-center space-x-2">
-            <div className="w-22 h-22 flex items-center justify-center">
+            <div className="w-28 h-12 flex items-center justify-center">
               <img 
                 src="/letras.PNG" 
                 alt="Logo" 
@@ -120,39 +144,79 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, classNam
               />
             </div>
           </div>
-        )}
+          
+          {/* Botón logout móvil */}
+          <button
+            onClick={handleLogout}
+            className="p-1.5 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors"
+            title="Cerrar sesión"
+          >
+            <LucideLogOut className="w-4 h-4 text-slate-600" />
+          </button>
+        </div>
 
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-2 rounded-lg hover:bg-cyan-100 hover:text-cyan-700 transition-all duration-200"
-        >
-          <Menu className="w-5 h-5 text-slate-600 hover:text-cyan-700 transition-colors" />
-        </button>
+        {/* Navegación horizontal */}
+        <nav className="px-2 py-2">
+          <div className="flex items-center justify-between space-x-1 overflow-x-auto">
+            {menuItems.map(item => renderMenuItem(item, 0, true))}
+          </div>
+        </nav>
       </div>
 
-      {/* Navigation Menu */}
-      <nav className={`flex-1 py-4 ${isCollapsed ? 'pr-1' : 'pr-3'}`}>
-        <div className="space-y-1">
-          {menuItems.map(item => renderMenuItem(item))}
-        </div>
-      </nav>
+      {/* DESKTOP/TABLET SIDEBAR - Hidden en móvil */}
+      <div className={`
+        hidden md:flex bg-white shadow-lg h-full transition-all duration-300 flex-col border-r border-cyan-200
+        ${isCollapsed ? 'w-16' : 'w-64'} 
+        ${className}
+      `}>
+        {/* Header del Sidebar */}
+        <div className="flex items-center justify-between p-4 flex-shrink-0">
+          {!isCollapsed && (
+            <div className="flex items-center space-x-2">
+              <div className="w-22 h-22 flex items-center justify-center">
+                <img 
+                  src="/letras.PNG" 
+                  alt="Logo" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </div>
+          )}
 
-      {/* Footer del Sidebar - Minimalista */}
-      {!isCollapsed && (
-        <div className="p-4 flex-shrink-0 border-cyan-200">
-          <div className="text-center">
-            <button
-              onClick={handleLogout}
-              className="w-10 h-10 bg-cyan-500 rounded-full mx-auto mb-2 flex items-center justify-center hover:bg-cyan-600 transition-all duration-200 focus:ring-4 focus:ring-cyan-300 focus:outline-none shadow-sm"
-              title="Cerrar sesión"
-            >
-              <LucideLogOut className="w-5 h-5 text-white" />
-            </button>
-            <p className="text-xs text-slate-500">Cerrar sesión</p>
-          </div>
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-2 rounded-lg hover:bg-cyan-100 hover:text-cyan-700 transition-all duration-200"
+          >
+            <Menu className="w-5 h-5 text-slate-600 hover:text-cyan-700 transition-colors" />
+          </button>
         </div>
-      )}
-    </div>
+
+        {/* Navigation Menu */}
+        <nav className={`flex-1 py-4 ${isCollapsed ? 'pr-1' : 'pr-3'}`}>
+          <div className="space-y-1">
+            {menuItems.map(item => renderMenuItem(item))}
+          </div>
+        </nav>
+
+        {/* Footer del Sidebar - Minimalista */}
+        {!isCollapsed && (
+          <div className="p-4 flex-shrink-0 border-cyan-200">
+            <div className="text-center">
+              <button
+                onClick={handleLogout}
+                className="w-10 h-10 bg-cyan-500 rounded-full mx-auto mb-2 flex items-center justify-center hover:bg-cyan-600 transition-all duration-200 focus:ring-4 focus:ring-cyan-300 focus:outline-none shadow-sm"
+                title="Cerrar sesión"
+              >
+                <LucideLogOut className="w-5 h-5 text-white" />
+              </button>
+              <p className="text-xs text-slate-500">Cerrar sesión</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* OVERLAY - Eliminado ya que no hay menú desplegable */}
+    </>
   );
 };
 
