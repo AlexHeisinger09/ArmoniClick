@@ -721,7 +721,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
               <p className="mt-0.5 text-slate-500">
                 {currentView === 'grid'
                   ? `Bienvenido/a al módulo de gestión de pacientes. Buscar pacientes por nombre para acceder rápidamente a su información, tratamientos y ficha médica. Registrar nuevos pacientes con todos sus datos clínicos relevantes`
-                  : 'Vista detallada con tratamientos, citas y historial médico completo.'
+                  : ''
                 }
               </p>
               
