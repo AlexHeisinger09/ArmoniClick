@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useProfile, useLoginMutation } from "@/presentation/hooks";
 import { NewPatientModal, PatientFormData } from "./NewPatientModal";
+import { EditPatientModal, PatientFormData as EditPatientFormData } from "./EditPatientModal";
 
 // Interfaces originales - CONSERVADAS
 interface Patient {
@@ -191,11 +192,12 @@ const PatientsAnimation: React.FC = () => (
   </div>
 );
 
-// Componente para mostrar el detalle completo del paciente - ORIGINAL CONSERVADO
+// Componente para mostrar el detalle completo del paciente - MODIFICADO PARA EDICIÓN
 const PatientDetail: React.FC<{
   patient: Patient;
   onBack: () => void;
-}> = ({ patient, onBack }) => {
+  onEdit: (patient: Patient) => void;
+}> = ({ patient, onBack, onEdit }) => {
   const [activeTab, setActiveTab] = useState('informacion');
 
   const formatDate = (dateString: string): string => {
@@ -256,7 +258,10 @@ const PatientDetail: React.FC<{
                   <p className="text-slate-500">Edad: {calculateAge(patient.fecha_nacimiento)} años</p>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <button className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors shadow-sm">
+                  <button 
+                    onClick={() => onEdit(patient)}
+                    className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors shadow-sm"
+                  >
                     <Edit className="w-4 h-4 mr-2" />
                     Editar Paciente
                   </button>
@@ -505,7 +510,7 @@ const PatientDetail: React.FC<{
   );
 };
 
-// Componente principal Patient - CÓDIGO ORIGINAL CONSERVADO
+// Componente principal Patient
 const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   // Estados principales - ORIGINALES
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -519,8 +524,10 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   const [currentView, setCurrentView] = useState<'grid' | 'detail'>('grid');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
 
-  // Estados para modal de nuevo paciente - SIMPLIFICADOS
+  // Estados para modales
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
+  const [showEditPatientModal, setShowEditPatientModal] = useState(false);
+  const [patientToEdit, setPatientToEdit] = useState<Patient | null>(null);
 
   // Datos de ejemplo adaptados a la tabla real - ORIGINALES CONSERVADOS
   const mockPatients: Patient[] = [
@@ -672,7 +679,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
     setSelectedPatient(null);
   };
 
-  // Manejadores para el modal - SIMPLIFICADOS
+  // Manejadores para el modal de nuevo paciente
   const handleNewPatient = () => {
     setShowNewPatientModal(true);
   };
@@ -696,6 +703,42 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
     const updatedPatients = [...patients, newPatient];
     setPatients(updatedPatients);
     setFilteredPatients(updatedPatients);
+  };
+
+  // Manejadores para el modal de editar paciente
+  const handleEditPatient = (patient: Patient) => {
+    setPatientToEdit(patient);
+    setShowEditPatientModal(true);
+  };
+
+  const handleCloseEditPatientModal = () => {
+    setShowEditPatientModal(false);
+    setPatientToEdit(null);
+  };
+
+  const handleSubmitEditPatient = (patientId: number, formData: EditPatientFormData) => {
+    // Actualizar el paciente en la lista
+    const updatedPatients = patients.map(patient => 
+      patient.id === patientId 
+        ? {
+            ...patient,
+            ...formData,
+            updatedat: new Date().toISOString(),
+          }
+        : patient
+    );
+    
+    setPatients(updatedPatients);
+    setFilteredPatients(updatedPatients);
+    
+    // Si el paciente está siendo visualizado, actualizarlo también
+    if (selectedPatient && selectedPatient.id === patientId) {
+      setSelectedPatient({
+        ...selectedPatient,
+        ...formData,
+        updatedat: new Date().toISOString(),
+      });
+    }
   };
 
   // Render condicional para loading - ORIGINAL CONSERVADO
@@ -942,16 +985,25 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
               <PatientDetail
                 patient={selectedPatient}
                 onBack={handleBackToGrid}
+                onEdit={handleEditPatient}
               />
             )
           )}
         </div>
 
-        {/* Modal de Nuevo Paciente - USANDO COMPONENTE SEPARADO */}
+        {/* Modal de Nuevo Paciente */}
         <NewPatientModal
           isOpen={showNewPatientModal}
           onClose={handleCloseNewPatientModal}
           onSubmit={handleSubmitNewPatient}
+        />
+
+        {/* Modal de Editar Paciente */}
+        <EditPatientModal
+          isOpen={showEditPatientModal}
+          patient={patientToEdit}
+          onClose={handleCloseEditPatientModal}
+          onSubmit={handleSubmitEditPatient}
         />
       </div>
     </div>
