@@ -20,12 +20,14 @@ import {
   Edit,
   Trash2,
   X,
-  CheckCircle
+  CheckCircle,
+  Calculator
 } from "lucide-react";
+
 import { useLoginMutation } from "@/presentation/hooks";
 import { NewPatientModal, PatientFormData } from "./NewPatientModal";
 import { EditPatientModal, PatientFormData as EditPatientFormData } from "./EditPatientModal";
-
+import { BudgetComponent } from "./BudgetComponent";
 // IMPORTAR LOS NUEVOS HOOKS
 import {
   usePatients,
@@ -295,6 +297,7 @@ const PatientDetail: React.FC<{
 
   const tabs = [
     { id: 'informacion', label: 'Información', icon: User },
+    { id: 'presupuesto', label: 'Presupuesto', icon: Calculator },
     { id: 'tratamientos', label: 'Tratamientos', icon: Stethoscope },
     { id: 'citas', label: 'Citas Agendadas', icon: Clock },
     { id: 'historial', label: 'Historial Médico', icon: FileText },
@@ -406,6 +409,23 @@ const PatientDetail: React.FC<{
               </div>
             </div>
           </div>
+        );
+      case 'presupuesto':  // <- AGREGAR ESTE CASE COMPLETO
+        return (
+          <BudgetComponent
+            patient={{
+              id: patient.id,
+              nombres: patient.nombres,
+              apellidos: patient.apellidos,
+              rut: patient.rut,
+              telefono: patient.telefono,
+              email: patient.email,
+              direccion: patient.direccion,
+              ciudad: patient.ciudad
+            }}
+            doctorName="Dra. Camila Delgado Salas"
+            doctorRut="18.746.029-8"
+          />
         );
 
       case 'tratamientos':
@@ -592,7 +612,7 @@ const processApiError = (error: any): string => {
   const data = error.response?.data;
 
   let errorMessage = `Error ${status}`;
-  
+
   if (data) {
     if (typeof data === 'string') {
       errorMessage += `: ${data}`;
@@ -643,7 +663,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   // Función para mostrar notificación
   const showNotification = (type: 'success' | 'error' | 'info', title: string, message: string) => {
     setNotification({ type, title, message });
-    
+
     // Auto-hide después de 5 segundos
     setTimeout(() => {
       setNotification(null);
@@ -694,7 +714,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   const handleSubmitNewPatient = async (formData: PatientFormData) => {
     try {
       console.log('Enviando datos del paciente:', formData);
-      
+
       await createPatientMutation.mutateAsync({
         rut: formData.rut,
         nombres: formData.nombres,
@@ -712,10 +732,10 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
         hospitalizaciones_previas: formData.hospitalizaciones_previas,
         notas_medicas: formData.notas_medicas,
       });
-      
+
       showNotification('success', 'Éxito', 'Paciente creado exitosamente');
       setShowNewPatientModal(false);
-      
+
     } catch (error: any) {
       console.error('Error al crear paciente:', error);
       const errorMessage = processApiError(error);
@@ -737,7 +757,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   const handleSubmitEditPatient = async (patientId: number, formData: EditPatientFormData) => {
     try {
       console.log('Actualizando paciente:', patientId, formData);
-      
+
       await updatePatientMutation.mutateAsync({
         patientId,
         patientData: {
@@ -764,11 +784,11 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
         // La query se invalidará automáticamente y los datos se actualizarán
         setCurrentView('grid'); // Volver a la lista para ver los cambios
       }
-      
+
       showNotification('success', 'Éxito', 'Paciente actualizado exitosamente');
       setShowEditPatientModal(false);
       setPatientToEdit(null);
-      
+
     } catch (error: any) {
       console.error('Error al actualizar paciente:', error);
       const errorMessage = processApiError(error);
@@ -780,15 +800,15 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   const handleDeletePatient = async (patientId: number) => {
     try {
       console.log('Eliminando paciente:', patientId);
-      
+
       await deletePatientMutation.mutateAsync(patientId);
-      
+
       // Volver a la lista después de eliminar
       setCurrentView('grid');
       setSelectedPatient(null);
-      
+
       showNotification('success', 'Éxito', 'Paciente eliminado exitosamente');
-      
+
     } catch (error: any) {
       console.error('Error al eliminar paciente:', error);
       const errorMessage = processApiError(error);
@@ -816,7 +836,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
           onClose={() => setNotification(null)}
         />
       )}
-      
+
       <div className="flex-1 p-6">
         {/* Barra de búsqueda y acciones */}
         <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6 mb-6">
@@ -837,8 +857,8 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
               {currentView === 'detail' && selectedPatient && (
                 <div className="flex flex-wrap gap-3 mt-4">
                   <div className={`px-4 py-2 rounded-lg border-2 ${selectedPatient.alergias && selectedPatient.alergias !== "Sin alergias conocidas"
-                      ? 'border-red-300 bg-red-50'
-                      : 'border-green-300 bg-green-50'
+                    ? 'border-red-300 bg-red-50'
+                    : 'border-green-300 bg-green-50'
                     }`}>
                     <div className="flex items-center space-x-2">
                       {selectedPatient.alergias && selectedPatient.alergias !== "Sin alergias conocidas" ? (
@@ -848,14 +868,14 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                       )}
                       <div>
                         <p className={`text-xs font-medium ${selectedPatient.alergias && selectedPatient.alergias !== "Sin alergias conocidas"
-                            ? 'text-red-700'
-                            : 'text-green-700'
+                          ? 'text-red-700'
+                          : 'text-green-700'
                           }`}>
                           Alergias
                         </p>
                         <p className={`text-sm ${selectedPatient.alergias && selectedPatient.alergias !== "Sin alergias conocidas"
-                            ? 'text-red-800'
-                            : 'text-green-800'
+                          ? 'text-red-800'
+                          : 'text-green-800'
                           }`}>
                           {selectedPatient.alergias || "Sin alergias"}
                         </p>
@@ -864,8 +884,8 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                   </div>
 
                   <div className={`px-4 py-2 rounded-lg border-2 ${selectedPatient.enfermedades_cronicas && selectedPatient.enfermedades_cronicas !== "Sin enfermedades crónicas"
-                      ? 'border-orange-300 bg-orange-50'
-                      : 'border-green-300 bg-green-50'
+                    ? 'border-orange-300 bg-orange-50'
+                    : 'border-green-300 bg-green-50'
                     }`}>
                     <div className="flex items-center space-x-2">
                       {selectedPatient.enfermedades_cronicas && selectedPatient.enfermedades_cronicas !== "Sin enfermedades crónicas" ? (
@@ -875,14 +895,14 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                       )}
                       <div>
                         <p className={`text-xs font-medium ${selectedPatient.enfermedades_cronicas && selectedPatient.enfermedades_cronicas !== "Sin enfermedades crónicas"
-                            ? 'text-orange-700'
-                            : 'text-green-700'
+                          ? 'text-orange-700'
+                          : 'text-green-700'
                           }`}>
                           Enfermedades Crónicas
                         </p>
                         <p className={`text-sm ${selectedPatient.enfermedades_cronicas && selectedPatient.enfermedades_cronicas !== "Sin enfermedades crónicas"
-                            ? 'text-orange-800'
-                            : 'text-green-800'
+                          ? 'text-orange-800'
+                          : 'text-green-800'
                           }`}>
                           {selectedPatient.enfermedades_cronicas || "Sin enfermedades"}
                         </p>
