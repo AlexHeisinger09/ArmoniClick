@@ -1,5 +1,5 @@
-// src/presentation/pages/patient/Patient.tsx - ACTUALIZADO CON MEJOR MANEJO DE ERRORES
-import { useState } from "react";
+// src/presentation/pages/patient/Patient.tsx - OPTIMIZADO CON FILTRADO LOCAL
+import { useState, useMemo } from "react";
 import {
   Search,
   Plus,
@@ -648,15 +648,36 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
     message: string;
   } | null>(null);
 
-  // USAR LOS HOOKS REALES EN LUGAR DE DATOS MOCK
-  const { queryPatients } = usePatients(searchTerm.trim() || undefined);
+  // ✅ CAMBIO PRINCIPAL: Cargar todos los pacientes sin filtro de búsqueda
+  const { queryPatients } = usePatients(); // Sin pasar searchTerm
   const { createPatientMutation, isLoadingCreate } = useCreatePatient();
   const { updatePatientMutation, isLoadingUpdate } = useUpdatePatient();
   const { deletePatientMutation, isLoadingDelete } = useDeletePatient();
 
   // Obtener datos de la query
-  const patients = queryPatients.data?.patients || [];
+  const allPatients = queryPatients.data?.patients || [];
   const loading = queryPatients.isLoading;
+
+  // ✅ FILTRADO LOCAL: Usar useMemo para filtrar los pacientes en el frontend
+  const filteredPatients = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return allPatients;
+    }
+
+    const lowercaseSearch = searchTerm.toLowerCase().trim();
+    
+    return allPatients.filter(patient => {
+      const fullName = `${patient.nombres} ${patient.apellidos}`.toLowerCase();
+      const nombres = patient.nombres.toLowerCase();
+      const apellidos = patient.apellidos.toLowerCase();
+      
+      return (
+        fullName.includes(lowercaseSearch) ||
+        nombres.includes(lowercaseSearch) ||
+        apellidos.includes(lowercaseSearch)
+      );
+    });
+  }, [allPatients, searchTerm]);
 
   // Función para mostrar notificación
   const showNotification = (type: 'success' | 'error' | 'info', title: string, message: string) => {
@@ -846,7 +867,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
               </h3>
               <p className="mt-0.5 text-slate-500">
                 {currentView === 'grid'
-                  ? `Gestión integral de pacientes conectada a tu base de datos. Buscar, crear, editar y administrar la información médica de tus pacientes de forma segura.`
+                  ? `Gestión integral de pacientes. Buscar, crear, editar y administrar la información médica de tus pacientes de forma rápida.`
                   : ''
                 }
               </p>
@@ -936,8 +957,16 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                   placeholder="Buscar por nombre del paciente..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 placeholder-slate-500"
+                  className="w-full pl-12 pr-4 py-3 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 placeholder-slate-500 transition-all"
                 />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
               <button
                 onClick={handleNewPatient}
@@ -947,6 +976,21 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                 <Plus className="w-5 h-5 mr-2" />
                 {isLoadingCreate ? 'Creando...' : 'Nuevo Paciente'}
               </button>
+            </div>
+          )}
+          
+          {/* Indicador de resultados de búsqueda */}
+          {currentView === 'grid' && searchTerm && (
+            <div className="mt-3 text-sm text-slate-600">
+              {filteredPatients.length === 0 ? (
+                <span className="text-orange-600">
+                  No se encontraron pacientes con "{searchTerm}"
+                </span>
+              ) : (
+                <span>
+                  Mostrando {filteredPatients.length} de {allPatients.length} pacientes
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -982,7 +1026,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-cyan-100">
-                      {patients.length === 0 ? (
+                      {filteredPatients.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="px-6 py-12 text-center">
                             <div className="flex flex-col items-center justify-center">
@@ -1001,7 +1045,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                           </td>
                         </tr>
                       ) : (
-                        patients.map((patient) => (
+                        filteredPatients.map((patient) => (
                           <tr
                             key={patient.id}
                             onClick={() => handlePatientClick(patient)}
@@ -1047,7 +1091,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
 
               {/* Vista Mobile - Cards */}
               <div className="md:hidden">
-                {patients.length === 0 ? (
+                {filteredPatients.length === 0 ? (
                   <div className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <User className="w-12 h-12 text-slate-400 mb-4" />
@@ -1065,7 +1109,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                   </div>
                 ) : (
                   <div className="divide-y divide-cyan-100">
-                    {patients.map((patient) => (
+                    {filteredPatients.map((patient) => (
                       <div
                         key={patient.id}
                         onClick={() => handlePatientClick(patient)}
@@ -1104,11 +1148,11 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
               </div>
 
               {/* Paginación */}
-              {patients.length > 0 && (
+              {filteredPatients.length > 0 && (
                 <div className="px-4 md:px-6 py-4 border-t border-cyan-200 bg-slate-50">
                   <div className="flex justify-between items-center">
                     <div className="text-sm text-slate-500">
-                      {queryPatients.data?.total || 0} paciente(s) encontrado(s)
+                      {filteredPatients.length} paciente(s) {searchTerm ? 'filtrado(s)' : 'encontrado(s)'}
                     </div>
                     <div className="flex space-x-1 md:space-x-2">
                       <button
