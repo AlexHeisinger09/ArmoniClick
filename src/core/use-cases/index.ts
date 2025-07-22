@@ -9,3 +9,5 @@ export * from "./user/profile.use-case";
 export * from "./user/update-profile.use-case";
 export * from "./user/update-password.use-case";
 
+export * from "./patients";
+

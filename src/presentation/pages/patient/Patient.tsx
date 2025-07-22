@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+// src/presentation/pages/patient/Patient.tsx - ACTUALIZADO PARA USAR API REAL
+import { useState } from "react";
 import {
   Search,
   Plus,
@@ -16,36 +17,25 @@ import {
   AlertTriangle,
   AlertCircle,
   Info,
-  Edit
+  Edit,
+  Trash2
 } from "lucide-react";
-import { useProfile, useLoginMutation } from "@/presentation/hooks";
+import { useLoginMutation } from "@/presentation/hooks";
 import { NewPatientModal, PatientFormData } from "./NewPatientModal";
 import { EditPatientModal, PatientFormData as EditPatientFormData } from "./EditPatientModal";
 
-// Interfaces originales - CONSERVADAS
-interface Patient {
-  id: number;
-  rut: string;
-  nombres: string;
-  apellidos: string;
-  fecha_nacimiento: string;
-  telefono: string;
-  email: string;
-  direccion: string;
-  ciudad: string;
-  codigo_postal: string;
-  alergias: string;
-  medicamentos_actuales: string;
-  enfermedades_cronicas: string;
-  cirugias_previas: string;
-  hospitalizaciones_previas: string;
-  notas_medicas: string;
-  id_doctor: number;
-  createdat: string;
-  updatedat: string;
-  isactive: boolean;
-}
+// IMPORTAR LOS NUEVOS HOOKS
+import {
+  usePatients,
+  useCreatePatient,
+  useUpdatePatient,
+  useDeletePatient,
+} from "@/presentation/hooks/patients/usePatients";
 
+// USAR LA INTERFACE REAL DEL BACKEND
+import { Patient as PatientType } from "@/core/use-cases/patients";
+
+// Interfaces para tratamientos y citas (mantener como mock por ahora)
 interface Treatment {
   id: number;
   nombre: string;
@@ -75,7 +65,7 @@ interface PatientProps {
   doctorId?: number;
 }
 
-// Datos de ejemplo - ORIGINALES CONSERVADOS
+// Datos de ejemplo para tratamientos, citas e historial (mantener como mock)
 const mockTreatments: Treatment[] = [
   {
     id: 1,
@@ -140,7 +130,7 @@ const mockMedicalRecords: MedicalRecord[] = [
   }
 ];
 
-// Componente de animación médica - ORIGINAL CONSERVADO
+// Componente de animación médica
 const PatientsAnimation: React.FC = () => (
   <div className="relative w-20 h-20 flex items-center justify-center">
     <div className="absolute inset-0 flex items-center justify-center">
@@ -192,12 +182,13 @@ const PatientsAnimation: React.FC = () => (
   </div>
 );
 
-// Componente para mostrar el detalle completo del paciente - MODIFICADO PARA EDICIÓN
+// Componente para mostrar el detalle completo del paciente
 const PatientDetail: React.FC<{
-  patient: Patient;
+  patient: PatientType;
   onBack: () => void;
-  onEdit: (patient: Patient) => void;
-}> = ({ patient, onBack, onEdit }) => {
+  onEdit: (patient: PatientType) => void;
+  onDelete: (patientId: number) => void;
+}> = ({ patient, onBack, onEdit, onDelete }) => {
   const [activeTab, setActiveTab] = useState('informacion');
 
   const formatDate = (dateString: string): string => {
@@ -264,6 +255,17 @@ const PatientDetail: React.FC<{
                   >
                     <Edit className="w-4 h-4 mr-2" />
                     Editar Paciente
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (window.confirm('¿Estás seguro de que deseas eliminar este paciente?')) {
+                        onDelete(patient.id);
+                      }
+                    }}
+                    className="flex items-center bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors shadow-sm"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Eliminar
                   </button>
                 </div>
               </div>
@@ -512,142 +514,27 @@ const PatientDetail: React.FC<{
 
 // Componente principal Patient
 const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
-  // Estados principales - ORIGINALES
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
-  const [searchRut, setSearchRut] = useState("");
-  const [loading, setLoading] = useState(true);
-  const { token } = useLoginMutation();
-  const { queryProfile } = useProfile(token || '');
-
-  // Estados para vista - ORIGINALES
+  // Estados para vista
   const [currentView, setCurrentView] = useState<'grid' | 'detail'>('grid');
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<PatientType | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Estados para modales
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
   const [showEditPatientModal, setShowEditPatientModal] = useState(false);
-  const [patientToEdit, setPatientToEdit] = useState<Patient | null>(null);
+  const [patientToEdit, setPatientToEdit] = useState<PatientType | null>(null);
 
-  // Datos de ejemplo adaptados a la tabla real - ORIGINALES CONSERVADOS
-  const mockPatients: Patient[] = [
-    {
-      id: 1,
-      rut: "12345678-9",
-      nombres: "Alex",
-      apellidos: "Heisinger Vivanco",
-      fecha_nacimiento: "1985-03-15",
-      telefono: "+56912345678",
-      email: "heisinger.vivanco@gmail.com",
-      direccion: "Av. Las Condes 1234",
-      ciudad: "Santiago",
-      codigo_postal: "7550000",
-      alergias: "Penicilina, Polen",
-      medicamentos_actuales: "Omeprazol 20mg (diario), Losartán 50mg (diario)",
-      enfermedades_cronicas: "Hipertensión arterial",
-      cirugias_previas: "Apendicectomía (2010)",
-      hospitalizaciones_previas: "Neumonía (2018) - 5 días",
-      notas_medicas: "Paciente colaborador, sigue tratamiento correctamente. Control cada 3 meses.",
-      id_doctor: 1,
-      createdat: "2024-01-15T10:30:00.000Z",
-      updatedat: "2024-06-10T14:20:00.000Z",
-      isactive: true,
-    },
-    {
-      id: 2,
-      rut: "87654321-0",
-      nombres: "María Fernanda",
-      apellidos: "López Silva",
-      fecha_nacimiento: "1990-07-22",
-      telefono: "+56987654321",
-      email: "maria.lopez@email.com",
-      direccion: "Calle Principal 567",
-      ciudad: "Providencia",
-      codigo_postal: "7500000",
-      alergias: "Sin alergias conocidas",
-      medicamentos_actuales: "Levotiroxina 75mcg (en ayunas)",
-      enfermedades_cronicas: "Hipotiroidismo",
-      cirugias_previas: "Cesárea (2020)",
-      hospitalizaciones_previas: "Parto por cesárea (2020) - 3 días",
-      notas_medicas: "Paciente con buen control hormonal. Controles anuales de TSH.",
-      id_doctor: 1,
-      createdat: "2024-02-20T09:15:00.000Z",
-      updatedat: "2024-05-25T16:45:00.000Z",
-      isactive: true,
-    },
-    {
-      id: 3,
-      rut: "11223344-5",
-      nombres: "Pedro Antonio",
-      apellidos: "Martínez Rojas",
-      fecha_nacimiento: "1978-12-03",
-      telefono: "+56911223344",
-      email: "pedro.martinez@email.com",
-      direccion: "Pasaje Los Rosales 890",
-      ciudad: "Las Condes",
-      codigo_postal: "7550000",
-      alergias: "Mariscos, Ibuprofeno",
-      medicamentos_actuales: "Metformina 850mg (2 veces al día), Atorvastatina 20mg (nocturno)",
-      enfermedades_cronicas: "Diabetes Mellitus tipo 2, Dislipidemia",
-      cirugias_previas: "Colecistectomía laparoscópica (2015)",
-      hospitalizaciones_previas: "Infarto agudo al miocardio (2019) - 7 días, Colecistectomía (2015) - 2 días",
-      notas_medicas: "Paciente de alto riesgo cardiovascular. Requiere controles estrictos cada 2 meses. Dieta y ejercicio supervisado.",
-      id_doctor: 1,
-      createdat: "2024-03-10T11:20:00.000Z",
-      updatedat: "2024-06-15T10:30:00.000Z",
-      isactive: true,
-    },
-    {
-      id: 4,
-      rut: "99887766-K",
-      nombres: "Ana Sofía",
-      apellidos: "García Muñoz",
-      fecha_nacimiento: "1992-05-18",
-      telefono: "+56999887766",
-      email: "ana.garcia@email.com",
-      direccion: "Av. Libertador 2345",
-      ciudad: "Vitacura",
-      codigo_postal: "7630000",
-      alergias: "Sin alergias conocidas",
-      medicamentos_actuales: "Anticonceptivos orales, Vitamina D 1000UI",
-      enfermedades_cronicas: "Sin enfermedades crónicas",
-      cirugias_previas: "Sin cirugías previas",
-      hospitalizaciones_previas: "Sin hospitalizaciones previas",
-      notas_medicas: "Paciente joven y sana. Controles ginecológicos anuales. Última citología normal (2024).",
-      id_doctor: 2,
-      createdat: "2024-04-05T14:10:00.000Z",
-      updatedat: "2024-06-01T09:25:00.000Z",
-      isactive: true,
-    },
-  ];
+  // USAR LOS HOOKS REALES EN LUGAR DE DATOS MOCK
+  const { queryPatients } = usePatients(searchTerm.trim() || undefined);
+  const { createPatientMutation, isLoadingCreate } = useCreatePatient();
+  const { updatePatientMutation, isLoadingUpdate } = useUpdatePatient();
+  const { deletePatientMutation, isLoadingDelete } = useDeletePatient();
 
-  // Efectos - ORIGINALES CONSERVADOS
-  useEffect(() => {
-    const fetchPatients = async () => {
-      setLoading(true);
-      setTimeout(() => {
-        setPatients(mockPatients);
-        setFilteredPatients(mockPatients);
-        setLoading(false);
-      }, 1000);
-    };
+  // Obtener datos de la query
+  const patients = queryPatients.data?.patients || [];
+  const loading = queryPatients.isLoading;
 
-    fetchPatients();
-  }, [doctorId]);
-
-  // Filtrar pacientes por nombre - ORIGINAL CONSERVADO
-  useEffect(() => {
-    if (searchRut.trim() === "") {
-      setFilteredPatients(patients);
-    } else {
-      const filtered = patients.filter((patient) =>
-        `${patient.nombres} ${patient.apellidos}`.toLowerCase().includes(searchRut.toLowerCase())
-      );
-      setFilteredPatients(filtered);
-    }
-  }, [searchRut, patients]);
-
-  // Funciones utilitarias - ORIGINALES CONSERVADAS
+  // Funciones utilitarias
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString("es-CL");
   };
@@ -668,8 +555,8 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
     return age;
   };
 
-  // Manejadores de eventos - ORIGINALES CONSERVADOS
-  const handlePatientClick = (patient: Patient) => {
+  // Manejadores de eventos
+  const handlePatientClick = (patient: PatientType) => {
     setSelectedPatient(patient);
     setCurrentView('detail');
   };
@@ -688,25 +575,34 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
     setShowNewPatientModal(false);
   };
 
-  const handleSubmitNewPatient = (formData: PatientFormData) => {
-    // Crear nuevo paciente
-    const newPatient: Patient = {
-      id: Math.max(...patients.map(p => p.id)) + 1,
-      ...formData,
-      id_doctor: doctorId,
-      createdat: new Date().toISOString(),
-      updatedat: new Date().toISOString(),
-      isactive: true,
-    };
-
-    // Agregar a la lista
-    const updatedPatients = [...patients, newPatient];
-    setPatients(updatedPatients);
-    setFilteredPatients(updatedPatients);
+  const handleSubmitNewPatient = async (formData: PatientFormData) => {
+    try {
+      await createPatientMutation.mutateAsync({
+        rut: formData.rut,
+        nombres: formData.nombres,
+        apellidos: formData.apellidos,
+        fecha_nacimiento: formData.fecha_nacimiento,
+        telefono: formData.telefono,
+        email: formData.email,
+        direccion: formData.direccion,
+        ciudad: formData.ciudad,
+        codigo_postal: formData.codigo_postal,
+        alergias: formData.alergias,
+        medicamentos_actuales: formData.medicamentos_actuales,
+        enfermedades_cronicas: formData.enfermedades_cronicas,
+        cirugias_previas: formData.cirugias_previas,
+        hospitalizaciones_previas: formData.hospitalizaciones_previas,
+        notas_medicas: formData.notas_medicas,
+      });
+      
+      alert('Paciente creado exitosamente');
+    } catch (error: any) {
+      alert(error.message || 'Error al crear el paciente');
+    }
   };
 
   // Manejadores para el modal de editar paciente
-  const handleEditPatient = (patient: Patient) => {
+  const handleEditPatient = (patient: PatientType) => {
     setPatientToEdit(patient);
     setShowEditPatientModal(true);
   };
@@ -716,32 +612,57 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
     setPatientToEdit(null);
   };
 
-  const handleSubmitEditPatient = (patientId: number, formData: EditPatientFormData) => {
-    // Actualizar el paciente en la lista
-    const updatedPatients = patients.map(patient =>
-      patient.id === patientId
-        ? {
-          ...patient,
-          ...formData,
-          updatedat: new Date().toISOString(),
-        }
-        : patient
-    );
-
-    setPatients(updatedPatients);
-    setFilteredPatients(updatedPatients);
-
-    // Si el paciente está siendo visualizado, actualizarlo también
-    if (selectedPatient && selectedPatient.id === patientId) {
-      setSelectedPatient({
-        ...selectedPatient,
-        ...formData,
-        updatedat: new Date().toISOString(),
+  const handleSubmitEditPatient = async (patientId: number, formData: EditPatientFormData) => {
+    try {
+      await updatePatientMutation.mutateAsync({
+        patientId,
+        patientData: {
+          rut: formData.rut,
+          nombres: formData.nombres,
+          apellidos: formData.apellidos,
+          fecha_nacimiento: formData.fecha_nacimiento,
+          telefono: formData.telefono,
+          email: formData.email,
+          direccion: formData.direccion,
+          ciudad: formData.ciudad,
+          codigo_postal: formData.codigo_postal,
+          alergias: formData.alergias,
+          medicamentos_actuales: formData.medicamentos_actuales,
+          enfermedades_cronicas: formData.enfermedades_cronicas,
+          cirugias_previas: formData.cirugias_previas,
+          hospitalizaciones_previas: formData.hospitalizaciones_previas,
+          notas_medicas: formData.notas_medicas,
+        },
       });
+
+      // Si el paciente está siendo visualizado, actualizarlo
+      if (selectedPatient && selectedPatient.id === patientId) {
+        // La query se invalidará automáticamente y los datos se actualizarán
+        setCurrentView('grid'); // Volver a la lista para ver los cambios
+      }
+      
+      alert('Paciente actualizado exitosamente');
+    } catch (error: any) {
+      alert(error.message || 'Error al actualizar el paciente');
     }
   };
 
-  // Render condicional para loading - ORIGINAL CONSERVADO
+  // Manejador para eliminar paciente
+  const handleDeletePatient = async (patientId: number) => {
+    try {
+      await deletePatientMutation.mutateAsync(patientId);
+      
+      // Volver a la lista después de eliminar
+      setCurrentView('grid');
+      setSelectedPatient(null);
+      
+      alert('Paciente eliminado exitosamente');
+    } catch (error: any) {
+      alert(error.message || 'Error al eliminar el paciente');
+    }
+  };
+
+  // Render condicional para loading
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -753,7 +674,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   return (
     <div className="bg-gradient-to-br from-slate-50 to-cyan-50 min-h-full flex flex-col">
       <div className="flex-1 p-6">
-        {/* Barra de búsqueda y acciones - ORIGINAL CONSERVADA */}
+        {/* Barra de búsqueda y acciones */}
         <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6 mb-6">
           <div className="flex items-stretch gap-4 mb-4">
             <PatientsAnimation />
@@ -763,12 +684,12 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
               </h3>
               <p className="mt-0.5 text-slate-500">
                 {currentView === 'grid'
-                  ? `Bienvenido/a al módulo de gestión de pacientes. Buscar pacientes por nombre para acceder rápidamente a su información, tratamientos y ficha médica. Registrar nuevos pacientes con todos sus datos clínicos relevantes`
+                  ? `Gestión integral de pacientes conectada a tu base de datos. Buscar, crear, editar y administrar la información médica de tus pacientes de forma segura.`
                   : ''
                 }
               </p>
 
-              {/* Cuadros de alertas médicas - Solo en vista de detalle - ORIGINAL CONSERVADO */}
+              {/* Cuadros de alertas médicas - Solo en vista de detalle */}
               {currentView === 'detail' && selectedPatient && (
                 <div className="flex flex-wrap gap-3 mt-4">
                   <div className={`px-4 py-2 rounded-lg border-2 ${selectedPatient.alergias && selectedPatient.alergias !== "Sin alergias conocidas"
@@ -851,23 +772,24 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                 <input
                   type="text"
                   placeholder="Buscar por nombre del paciente..."
-                  value={searchRut}
-                  onChange={(e) => setSearchRut(e.target.value)}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-12 pr-4 py-3 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 placeholder-slate-500"
                 />
               </div>
               <button
                 onClick={handleNewPatient}
-                className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-5 py-2.5 transition-colors shadow-sm"
+                disabled={isLoadingCreate}
+                className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-5 py-2.5 transition-colors shadow-sm disabled:opacity-50"
               >
                 <Plus className="w-5 h-5 mr-2" />
-                Nuevo Paciente
+                {isLoadingCreate ? 'Creando...' : 'Nuevo Paciente'}
               </button>
             </div>
           )}
         </div>
 
-        {/* Contenido dinámico - ORIGINAL CONSERVADO */}
+        {/* Contenido dinámico */}
         <div className="transition-all duration-300 ease-in-out">
           {currentView === 'grid' ? (
             <div className="bg-white rounded-xl shadow-sm border border-cyan-200 overflow-hidden">
@@ -881,6 +803,9 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                           Nombre Completo
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                          RUT
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                           Edad
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
@@ -890,23 +815,23 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                           Teléfono
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                          Dirección
+                          Ciudad
                         </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-cyan-100">
-                      {filteredPatients.length === 0 ? (
+                      {patients.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="px-6 py-12 text-center">
+                          <td colSpan={6} className="px-6 py-12 text-center">
                             <div className="flex flex-col items-center justify-center">
                               <User className="w-12 h-12 text-slate-400 mb-4" />
                               <p className="text-slate-700 text-lg mb-2">
-                                {searchRut
+                                {searchTerm
                                   ? "No se encontraron pacientes con ese nombre"
                                   : "No hay pacientes registrados"}
                               </p>
                               <p className="text-slate-500 text-sm">
-                                {searchRut
+                                {searchTerm
                                   ? "Intenta con otro término de búsqueda"
                                   : "Comienza agregando un nuevo paciente"}
                               </p>
@@ -914,7 +839,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                           </td>
                         </tr>
                       ) : (
-                        filteredPatients.map((patient) => (
+                        patients.map((patient) => (
                           <tr
                             key={patient.id}
                             onClick={() => handlePatientClick(patient)}
@@ -924,6 +849,11 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                               <div className="text-sm font-medium text-slate-700">
                                 {patient.nombres} {patient.apellidos}
                               </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="text-sm text-slate-700">
+                                {patient.rut}
+                              </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className="text-sm text-slate-700">
@@ -942,7 +872,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className="text-sm text-slate-700">
-                                {patient.direccion}, {patient.ciudad}
+                                {patient.ciudad}
                               </span>
                             </td>
                           </tr>
@@ -955,17 +885,17 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
 
               {/* Vista Mobile - Cards */}
               <div className="md:hidden">
-                {filteredPatients.length === 0 ? (
+                {patients.length === 0 ? (
                   <div className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <User className="w-12 h-12 text-slate-400 mb-4" />
                       <p className="text-slate-700 text-lg mb-2">
-                        {searchRut
+                        {searchTerm
                           ? "No se encontraron pacientes con ese nombre"
                           : "No hay pacientes registrados"}
                       </p>
                       <p className="text-slate-500 text-sm">
-                        {searchRut
+                        {searchTerm
                           ? "Intenta con otro término de búsqueda"
                           : "Comienza agregando un nuevo paciente"}
                       </p>
@@ -973,7 +903,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                   </div>
                 ) : (
                   <div className="divide-y divide-cyan-100">
-                    {filteredPatients.map((patient) => (
+                    {patients.map((patient) => (
                       <div
                         key={patient.id}
                         onClick={() => handlePatientClick(patient)}
@@ -1011,11 +941,13 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                 )}
               </div>
 
-              {/* Paginación - Responsiva */}
-              {filteredPatients.length > 0 && (
+              {/* Paginación */}
+              {patients.length > 0 && (
                 <div className="px-4 md:px-6 py-4 border-t border-cyan-200 bg-slate-50">
                   <div className="flex justify-between items-center">
-                    <div className="text-sm text-slate-500">Página 1 de 1</div>
+                    <div className="text-sm text-slate-500">
+                      {queryPatients.data?.total || 0} paciente(s) encontrado(s)
+                    </div>
                     <div className="flex space-x-1 md:space-x-2">
                       <button
                         className="px-2 md:px-4 py-2 text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
@@ -1035,12 +967,13 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
               )}
             </div>
           ) : (
-            /* Vista de detalle del paciente - ORIGINAL CONSERVADA */
+            /* Vista de detalle del paciente */
             selectedPatient && (
               <PatientDetail
                 patient={selectedPatient}
                 onBack={handleBackToGrid}
                 onEdit={handleEditPatient}
+                onDelete={handleDeletePatient}
               />
             )
           )}
