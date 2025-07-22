@@ -410,7 +410,7 @@ const PatientDetail: React.FC<{
             </div>
           </div>
         );
-      case 'presupuesto':  // <- AGREGAR ESTE CASE COMPLETO
+      case 'presupuesto':  
         return (
           <BudgetComponent
             patient={{
@@ -423,8 +423,6 @@ const PatientDetail: React.FC<{
               direccion: patient.direccion,
               ciudad: patient.ciudad
             }}
-            doctorName="Dra. Camila Delgado Salas"
-            doctorRut="18.746.029-8"
           />
         );
 
