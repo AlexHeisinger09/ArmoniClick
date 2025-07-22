@@ -1,3 +1,4 @@
+// netlify/services/user.service.ts - VERIFICAR findOne
 import { db } from '../data/db';
 import { usersTable } from '../data/schemas/user.schema';
 
@@ -11,8 +12,10 @@ export class UserService {
     value: unknown,
     fieldsToShow?: Record<string, any>
   ) {
+    // ✅ Si no se especifican campos, seleccionar TODOS los campos principales
     const selectFields = fieldsToShow || {
       id: usersTable.id,
+      rut: usersTable.rut,                     // ✅ INCLUIR RUT POR DEFECTO
       name: usersTable.name,
       lastName: usersTable.lastName,
       username: usersTable.username,
@@ -28,12 +31,18 @@ export class UserService {
       isActive: usersTable.isActive,
     };
 
+    console.log('🔍 UserService.findOne - Campos a seleccionar:', Object.keys(selectFields)); // ✅ DEBUG
+    console.log('🔍 UserService.findOne - Buscando:', field, '=', value); // ✅ DEBUG
+
     const oneRecordByFilter = await db
       .select(selectFields)
       .from(usersTable)
       .where(eq(field, value));
 
-    return oneRecordByFilter.at(0);
+    const result = oneRecordByFilter.at(0);
+    console.log('🔍 UserService.findOne - Resultado:', result); // ✅ DEBUG
+
+    return result;
   }
 
   async insert(newUser: NewUser) {
@@ -46,12 +55,15 @@ export class UserService {
     field: Column<ColumnBaseConfig<ColumnDataType, string>>,
     value: unknown
   ) {
+    console.log('🔍 UserService.update - Actualizando:', values); // ✅ DEBUG
+    
     const updatedUser = await db
       .update(usersTable)
       .set(values)
       .where(eq(field, value))
       .returning();
 
+    console.log('🔍 UserService.update - Usuario actualizado:', updatedUser[0]); // ✅ DEBUG
     return updatedUser[0];
   }
 
@@ -61,7 +73,7 @@ export class UserService {
     value: unknown
   ) {
     const oneRecordByFilter = await db
-      .select()
+      .select()  // ✅ Seleccionar TODOS los campos incluyendo password
       .from(usersTable)
       .where(eq(field, value));
 

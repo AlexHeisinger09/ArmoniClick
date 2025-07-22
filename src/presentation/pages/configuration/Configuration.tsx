@@ -35,6 +35,7 @@ interface PasswordForm {
 
 interface ProfileFormData {
   name: string;
+  rut?: string;
   lastName: string;
   username: string;
   email: string;
@@ -125,6 +126,7 @@ const Configuration: React.FC = () => {
   // Estados para formularios
   const [profileFormData, setProfileFormData] = useState<ProfileFormData>({
     name: '',
+    rut: '',
     lastName: '',
     username: '',
     email: '',
@@ -140,33 +142,34 @@ const Configuration: React.FC = () => {
     confirmPassword: ''
   });
 
- // Actualizar formulario cuando se cargan los datos del usuario
-useEffect(() => {
-  console.log('🔍 queryProfile.data:', queryProfile.data);
-  if (queryProfile.data) {
-    console.log('📝 Setting form data with:', {
-      name: queryProfile.data.name || '',
-      lastName: queryProfile.data.lastName || '',
-      username: queryProfile.data.username || '',
-      email: queryProfile.data.email || '',
-      phone: queryProfile.data.phone || '', // ✅ Obtener del backend
-      address: queryProfile.data.address || '', // ✅ Obtener del backend
-      zipCode: queryProfile.data.zipCode || '', // ✅ Obtener del backend
-      city: queryProfile.data.city || '', // ✅ Obtener del backend
-    });
-    
-    setProfileFormData({
-      name: queryProfile.data.name || '',
-      lastName: queryProfile.data.lastName || '',
-      username: queryProfile.data.username || '',
-      email: queryProfile.data.email || '',
-      phone: queryProfile.data.phone || '', // ✅ Cambiar aquí
-      address: queryProfile.data.address || '', // ✅ Cambiar aquí
-      zipCode: queryProfile.data.zipCode || '', // ✅ Cambiar aquí
-      city: queryProfile.data.city || '', // ✅ Cambiar aquí
-    });
-  }
-}, [queryProfile.data]);
+  // Actualizar formulario cuando se cargan los datos del usuario
+  useEffect(() => {
+    console.log('🔍 queryProfile.data:', queryProfile.data);
+    if (queryProfile.data) {
+      console.log('📝 Setting form data with:', {
+        rut: queryProfile.data.rut || '',
+        name: queryProfile.data.name || '',
+        lastName: queryProfile.data.lastName || '',
+        username: queryProfile.data.username || '',
+        email: queryProfile.data.email || '',
+        phone: queryProfile.data.phone || '', // ✅ Obtener del backend
+        address: queryProfile.data.address || '', // ✅ Obtener del backend
+        zipCode: queryProfile.data.zipCode || '', // ✅ Obtener del backend
+        city: queryProfile.data.city || '', // ✅ Obtener del backend
+      });
+
+      setProfileFormData({
+        name: queryProfile.data.name || '',
+        lastName: queryProfile.data.lastName || '',
+        username: queryProfile.data.username || '',
+        email: queryProfile.data.email || '',
+        phone: queryProfile.data.phone || '', // ✅ Cambiar aquí
+        address: queryProfile.data.address || '', // ✅ Cambiar aquí
+        zipCode: queryProfile.data.zipCode || '', // ✅ Cambiar aquí
+        city: queryProfile.data.city || '', // ✅ Cambiar aquí
+      });
+    }
+  }, [queryProfile.data]);
 
   // Función para mostrar mensajes temporales
   const showMessage = (message: string, type: 'success' | 'error') => {
@@ -367,21 +370,6 @@ useEffect(() => {
 
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Nombre de Usuario *
-                      </label>
-                      <input
-                        type="text"
-                        name="username"
-                        value={profileFormData.username}
-                        onChange={handleProfileInputChange}
-                        className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                        disabled={isLoadingUpdate}
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
                         Email *
                       </label>
                       <input
@@ -394,7 +382,20 @@ useEffect(() => {
                         required
                       />
                     </div>
-
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        RUT
+                      </label>
+                      <input
+                        type="text"
+                        name="rut"
+                        value={profileFormData.rut}
+                        onChange={handleProfileInputChange}
+                        className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                        disabled={isLoadingUpdate}
+                        placeholder="12345678-9"
+                      />
+                    </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
                         Teléfono
@@ -492,19 +493,6 @@ useEffect(() => {
                         </p>
                       </div>
                     </div>
-
-                    <div className="flex items-center space-x-3">
-                      <div className="bg-cyan-100 p-2 rounded-full">
-                        <User className="w-5 h-5 text-cyan-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-slate-500">Nombre de Usuario</p>
-                        <p className="font-medium text-slate-700">
-                          {userData?.username}
-                        </p>
-                      </div>
-                    </div>
-
                     <div className="flex items-center space-x-3">
                       <div className="bg-cyan-100 p-2 rounded-full">
                         <Mail className="w-5 h-5 text-cyan-600" />
@@ -520,15 +508,14 @@ useEffect(() => {
                         </div>
                       </div>
                     </div>
-
                     <div className="flex items-center space-x-3">
                       <div className="bg-cyan-100 p-2 rounded-full">
-                        <Phone className="w-5 h-5 text-cyan-600" />
+                        <User className="w-5 h-5 text-cyan-600" />
                       </div>
                       <div>
-                        <p className="text-sm text-slate-500">Teléfono</p>
+                        <p className="text-sm text-slate-500">RUT</p>
                         <p className="font-medium text-slate-700">
-                          {profileFormData.phone || 'No especificado'}
+                          {userData?.rut || 'No especificado'}
                         </p>
                       </div>
                     </div>
@@ -551,19 +538,17 @@ useEffect(() => {
                         )}
                       </div>
                     </div>
-
                     <div className="flex items-center space-x-3">
                       <div className="bg-cyan-100 p-2 rounded-full">
-                        <Calendar className="w-5 h-5 text-cyan-600" />
+                        <Phone className="w-5 h-5 text-cyan-600" />
                       </div>
                       <div>
-                        <p className="text-sm text-slate-500">ID de Usuario</p>
+                        <p className="text-sm text-slate-500">Teléfono</p>
                         <p className="font-medium text-slate-700">
-                          #{userData?.id}
+                          {profileFormData.phone || 'No especificado'}
                         </p>
                       </div>
                     </div>
-
                     <div className="flex items-center space-x-3">
                       <div className="bg-cyan-100 p-2 rounded-full">
                         <Shield className="w-5 h-5 text-cyan-600" />
@@ -899,8 +884,8 @@ useEffect(() => {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${isActive
-                        ? 'border-cyan-500 text-slate-700 bg-cyan-50'
-                        : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-cyan-25'
+                      ? 'border-cyan-500 text-slate-700 bg-cyan-50'
+                      : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-cyan-25'
                       }`}
                   >
                     <CircularIcon icon={Icon} isActive={isActive} />

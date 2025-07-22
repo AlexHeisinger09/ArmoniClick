@@ -1,3 +1,4 @@
+// netlify/functions/user/user.ts - ACTUALIZADO CON RUT
 import { Handler, HandlerEvent } from "@netlify/functions";
 
 import { validateJWT } from "../../middlewares";
@@ -29,7 +30,17 @@ const handler: Handler = async (event: HandlerEvent) => {
 
   if (httpMethod === "PUT" && path.includes("/profile")) {
     try {
-      const { name, lastName, username, email, phone, address, zipCode, city } = body;
+      const { 
+        rut, // ✅ INCLUIR RUT
+        name, 
+        lastName, 
+        username, 
+        email, 
+        phone, 
+        address, 
+        zipCode, 
+        city 
+      } = body;
 
       // Validaciones básicas
       if (!name || !lastName || !username || !email) {
@@ -42,7 +53,18 @@ const handler: Handler = async (event: HandlerEvent) => {
         };
       }
 
-      // Verificar si el username o email ya existen (excepto para el usuario actual)
+      // Validar formato de RUT si se proporciona
+      if (rut && !/^\d{7,8}-[\dkK]$/.test(rut)) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: "Formato de RUT inválido (ej: 12345678-9)",
+          }),
+          headers: HEADERS.json,
+        };
+      }
+
+      // Verificar si el username, email o RUT ya existen (excepto para el usuario actual)
       const existingUserByUsername = await userService.findOne(usersTable.username, username);
       if (existingUserByUsername && existingUserByUsername.id !== userData.id) {
         return {
@@ -65,9 +87,24 @@ const handler: Handler = async (event: HandlerEvent) => {
         };
       }
 
+      // Verificar RUT si se proporciona y es diferente al actual
+      if (rut && rut !== userData.rut) {
+        const existingUserByRut = await userService.findOne(usersTable.rut, rut);
+        if (existingUserByRut && existingUserByRut.id !== userData.id) {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({
+              message: "El RUT ya está registrado por otro usuario",
+            }),
+            headers: HEADERS.json,
+          };
+        }
+      }
+
       // Actualizar el perfil
       await userService.update(
         {
+          rut: rut || null, // ✅ INCLUIR RUT
           name,
           lastName,
           username,

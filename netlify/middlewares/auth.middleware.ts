@@ -1,3 +1,4 @@
+// netlify/middlewares/auth.middleware.ts - CORREGIDO
 import { UserService } from '../services/user.service';
 import { usersTable } from '../data/schemas/user.schema';
 
@@ -37,20 +38,23 @@ export const validateJWT = async (authorization: string) => {
       };
     }
 
+    // ✅ CORREGIDO: Incluir TODOS los campos necesarios en la selección
     const user = await userService.findOne(usersTable.email, payload.email, {
       id: usersTable.id,
+      rut: usersTable.rut,                     // ✅ CAMPO RUT
       name: usersTable.name,
       lastName: usersTable.lastName,        
       username: usersTable.username,        
       email: usersTable.email,
       emailValidated: usersTable.emailValidated,
       img: usersTable.img,
-      phone: usersTable.phone,           // ✅ Agregar
-      address: usersTable.address,       // ✅ Agregar
-      zipCode: usersTable.zipCode,       // ✅ Agregar
-      city: usersTable.city,             // ✅ Agregar
+      phone: usersTable.phone,               // ✅ CAMPOS ADICIONALES
+      address: usersTable.address,           // ✅ 
+      zipCode: usersTable.zipCode,           // ✅ 
+      city: usersTable.city,                 // ✅ 
       createdAt: usersTable.createdAt,
       updatedAt: usersTable.updatedAt,
+      isActive: usersTable.isActive,         // ✅ CAMPO QUE FALTABA
     });
 
     if (!user) {
@@ -61,12 +65,15 @@ export const validateJWT = async (authorization: string) => {
       };
     }
 
+    console.log('🔍 Usuario encontrado en auth middleware:', user); // ✅ DEBUG
+
     return {
       statusCode: 200,
       body: JSON.stringify(user),
       headers: HEADERS.json,
     };
   } catch (error) {
+    console.error('❌ Error en validateJWT:', error); // ✅ DEBUG
     return {
       statusCode: 500,
       body: JSON.stringify({ message: "Internal server error" }),

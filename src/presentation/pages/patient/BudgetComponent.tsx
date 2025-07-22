@@ -12,7 +12,9 @@ import {
     X,
     CheckCircle,
     AlertCircle,
-    ArrowLeft
+    ArrowLeft,
+    Sparkles,
+    Stethoscope
 } from 'lucide-react';
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
 
@@ -41,6 +43,8 @@ interface NotificationProps {
     message: string;
     onClose: () => void;
 }
+
+type BudgetType = 'odontologico' | 'estetica';
 
 const Notification: React.FC<NotificationProps> = ({ type, message, onClose }) => {
     const getIcon = () => {
@@ -76,6 +80,7 @@ const Notification: React.FC<NotificationProps> = ({ type, message, onClose }) =
 
 const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
     const [items, setItems] = useState<BudgetItem[]>([]);
+    const [budgetType, setBudgetType] = useState<BudgetType>('odontologico');
     const [newItem, setNewItem] = useState({
         pieza: '',
         accion: '',
@@ -98,11 +103,14 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
     const { token } = useLoginMutation();
     const { queryProfile } = useProfile(token || '');
 
+    // Fecha actual en formato DD/MM/YYYY
+    const currentDate = new Date().toLocaleDateString('es-CL');
+
     const doctorData = queryProfile.data;
     const doctorName = doctorData ? `${doctorData.name} ${doctorData.lastName}` : "Doctor(a)";
-    const doctorRut = doctorData?.id ? doctorData.id : "Sin Rut";
+    const doctorRut = doctorData?.rut ? doctorData.rut : "Sin Rut";
 
-    const commonTreatments = [
+    const odontologicoTreatments = [
         'Destartraje',
         'Resina Compuesta OM',
         'Resina Compuesta OD',
@@ -113,7 +121,6 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
         'Extracción Simple',
         'Extracción Quirúrgica',
         'Implante Dental',
-        'Blanqueamiento',
         'Prótesis Parcial',
         'Prótesis Total',
         'Ortodoncia',
@@ -122,6 +129,26 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
         'Pulpotomía',
         'Apiceptomía'
     ];
+
+    const esteticaTreatments = [
+        'Diseño de Sonrisa',
+        'Armonización Facial',
+        'Botox Terapéutico',
+        'Ácido Hialurónico',
+        'Blanqueamiento Profesional'
+    ];
+
+    const getCurrentTreatments = () => {
+        return budgetType === 'odontologico' ? odontologicoTreatments : esteticaTreatments;
+    };
+
+    const getBudgetTitle = () => {
+        return budgetType === 'odontologico' ? 'Presupuesto Odontológico' : 'Presupuesto Estético';
+    };
+
+    const getLogoPath = () => {
+        return budgetType === 'odontologico' ? '/logoPresupuesto.PNG' : '/logo.PNG';
+    };
 
     const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
         setNotification({ type, message });
@@ -223,37 +250,36 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
             setIsGeneratingPDF(false);
             return;
         }
+
         const windowFeatures = `
-                                width=${screen.width * 0.8},
-                                height=${screen.height * 0.8},
-                                left=${screen.width * 0.1},
-                                top=${screen.height * 0.1},
-                                menubar=no,
-                                toolbar=no,
-                                location=no,
-                                resizable=yes,
-                                scrollbars=yes,
-                                status=no
-                            `;
-        const printWindow = window.open('', 'PresupuestoOdontologico', windowFeatures);
+        width=${screen.width * 0.8},
+        height=${screen.height * 0.8},
+        left=${screen.width * 0.1},
+        top=${screen.height * 0.1},
+        menubar=no,
+        toolbar=no,
+        location=no,
+        resizable=yes,
+        scrollbars=yes,
+        status=no
+    `;
+        const printWindow = window.open('', getBudgetTitle(), windowFeatures);
 
         if (printWindow) {
             printWindow.document.write(`
         <!DOCTYPE html>
         <html>
         <head>
-          <title>Presupuesto Odontológico - ${patient.nombres} ${patient.apellidos}</title>
+          <title>${getBudgetTitle()} - ${patient.nombres} ${patient.apellidos}</title>
           <meta charset="UTF-8">
           <style>
             * {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
                 color-adjust: exact !important;
-              }
-            {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
             }
             
             body {
@@ -265,57 +291,66 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
             }
             
             .budget-header {
-              text-align: center;
-              margin-bottom: 30px;
-              padding-bottom: 20px;
-              border-bottom: 2px solid #0891b2;
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              margin-bottom: 20px;
+              padding-bottom: 10px;
+            }
+            
+            .logo-doctor-section {
+              display: flex;
+              align-items: center;
+              gap: 15px;
+            }
+            
+            .logo-container {
+              width: 80px;
+              height: 80px;
+              flex-shrink: 0;
+            }
+            
+            .logo-container img {
+              width: 100%;
+              height: 100%;
+              object-fit: contain;
             }
             
             .doctor-info {
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              margin-bottom: 20px;
+              text-align: left;
             }
             
-            .logo-placeholder {
-              width: 60px;
-              height: 60px;
-              background: linear-gradient(135deg, #06b6d4, #0891b2);
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              margin-right: 20px;
-              color: white;
-              font-weight: bold;
-              font-size: 24px;
-            }
-            
-            .doctor-details h2 {
+            .doctor-info h2 {
               color: #0891b2;
               font-size: 18px;
               font-weight: 600;
               margin-bottom: 4px;
             }
             
-            .doctor-details p {
+            .doctor-info p {
               color: #64748b;
               font-size: 14px;
+              margin: 2px 0;
+            }
+            
+            .budget-title-section {
+              text-align: center;
+              flex: 1;
+              padding: 0 20px;
             }
             
             .budget-title {
               color: #374151;
               font-size: 28px;
               font-weight: 700;
-              margin: 20px 0;
+              margin: 0;
             }
             
             .patient-info {
               background: #f8fafc;
               padding: 20px;
               border-radius: 12px;
-              margin-bottom: 30px;
+              margin: 20px 0;
               border-left: 4px solid #0891b2;
             }
             
@@ -359,40 +394,12 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
               letter-spacing: 0.5px;
             }
             
-            .budget-table td {
-              padding: 16px;
-              border-bottom: 1px solid #e2e8f0;
-              font-size: 14px;
-            }
-            
             .budget-table tbody tr {
               background: white;
             }
             
             .budget-table tbody tr:nth-child(even) {
               background: #f8fafc;
-            }
-            
-            .budget-table tbody tr:hover {
-              background: #e0f7fa;
-            }
-            
-            .valor-cell {
-              text-align: right;
-              font-weight: 600;
-              color: #059669;
-            }
-            
-            .total-row {
-              background: #f1f5f9 !important;
-              font-weight: 700;
-              font-size: 16px;
-              border-top: 2px solid #0891b2;
-            }
-            
-            .total-row .valor-cell {
-              color: #0891b2;
-              font-size: 18px;
             }
             
             .footer-note {
@@ -427,40 +434,57 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
               display: block;
             }
             
+            .footer-logo {
+              text-align: center;
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 1px solid #e2e8f0;
+            }
+            
+            .footer-logo img {
+              height: 40px;
+              opacity: 0.8;
+            }
+            
             @media print {
-              body { margin: 0; padding: 15px; }
-              .budget-container { box-shadow: none; }
+              body { 
+                margin: 0; 
+                padding: 15px; 
+              }
+              
+              /* Ocultar cualquier botón en la impresión */
+              button, 
+              .no-print,
+              .print-controls {
+                display: none !important;
+              }
             }
           </style>
         </head>
         <body>
           ${printContent.innerHTML}
+          
+          <!-- Controles de impresión que NO aparecen en el PDF final -->
+          <div class="print-controls" style="position:fixed;bottom:20px;right:20px;display:flex;gap:10px;z-index:1000;">
+              <button onclick="window.print()" style="padding:10px 20px;background:#0891b2;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:500;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+              📄 Imprimir
+              </button>
+              <button onclick="window.close()" style="padding:10px 20px;background:#64748b;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:500;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+              ✖ Cerrar
+              </button>
+          </div>
         </body>
         </html>
       `);
 
             printWindow.document.close();
-            // Esperar a que cargue el contenido antes de imprimir
             printWindow.onload = () => {
-                printWindow.focus(); // Enfocar la ventana emergente
-                // Opción 1: Mostrar botones de acción
-                printWindow.document.body.innerHTML += `
-                <div style="position:fixed;bottom:20px;right:20px;display:flex;gap:10px;">
-                    <button onclick="window.print()" style="padding:8px 16px;background:#0891b2;color:white;border:none;border-radius:4px;cursor:pointer;">
-                    Imprimir
-                    </button>
-                    <button onclick="window.close()" style="padding:8px 16px;background:#64748b;color:white;border:none;border-radius:4px;cursor:pointer;">
-                    Cerrar
-                    </button>
-                </div>
-                `;
-
+                printWindow.focus();
                 setIsGeneratingPDF(false);
-                showNotification('success', 'Vista previa generada');
+                showNotification('success', 'Vista previa generada exitosamente');
             };
+
             setTimeout(() => {
-                //printWindow.print();
-                //printWindow.close();
                 setIsGeneratingPDF(false);
                 showNotification('success', 'PDF generado exitosamente');
             }, 250);
@@ -469,13 +493,6 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
             showNotification('error', 'No se pudo abrir la ventana para imprimir');
         }
     };
-
-    const currentDate = new Date().toLocaleDateString('es-CL', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-    });
-
     return (
         <div className="space-y-6">
             {notification && (
@@ -486,6 +503,64 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
                 />
             )}
 
+            {/* Selección del tipo de presupuesto */}
+            <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center space-x-3">
+                        <div className="bg-cyan-100 p-2 rounded-full">
+                            <FileText className="w-6 h-6 text-cyan-600" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-semibold text-slate-700">Tipo de Presupuesto</h3>
+                            <p className="text-sm text-slate-500">Selecciona el tipo de presupuesto a generar</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button
+                        onClick={() => setBudgetType('odontologico')}
+                        className={`p-4 rounded-xl border-2 transition-all duration-200 ${budgetType === 'odontologico'
+                            ? 'border-cyan-500 bg-cyan-50 shadow-md'
+                            : 'border-gray-200 hover:border-cyan-300'
+                            }`}
+                    >
+                        <div className="flex items-center space-x-3">
+                            <div className={`p-2 rounded-full ${budgetType === 'odontologico' ? 'bg-cyan-500' : 'bg-gray-300'
+                                }`}>
+                                <Stethoscope className={`w-5 h-5 ${budgetType === 'odontologico' ? 'text-white' : 'text-gray-600'
+                                    }`} />
+                            </div>
+                            <div className="text-left">
+                                <h4 className="font-semibold text-slate-700">Odontológico</h4>
+                                <p className="text-sm text-slate-500">Tratamientos dentales generales</p>
+                            </div>
+                        </div>
+                    </button>
+
+                    <button
+                        onClick={() => setBudgetType('estetica')}
+                        className={`p-4 rounded-xl border-2 transition-all duration-200 ${budgetType === 'estetica'
+                            ? 'border-cyan-500 bg-cyan-50 shadow-md'
+                            : 'border-gray-200 hover:border-cyan-300'
+                            }`}
+                    >
+                        <div className="flex items-center space-x-3">
+                            <div className={`p-2 rounded-full ${budgetType === 'estetica' ? 'bg-cyan-500' : 'bg-gray-300'
+                                }`}>
+                                <Sparkles className={`w-5 h-5 ${budgetType === 'estetica' ? 'text-white' : 'text-gray-600'
+                                    }`} />
+                            </div>
+                            <div className="text-left">
+                                <h4 className="font-semibold text-slate-700">Estética</h4>
+                                <p className="text-sm text-slate-500">Tratamientos estéticos y armonización</p>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            {/* Formulario para agregar tratamientos */}
             <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center space-x-3">
@@ -494,19 +569,23 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
                         </div>
                         <div>
                             <h3 className="text-lg font-semibold text-slate-700">Agregar Tratamiento</h3>
-                            <p className="text-sm text-slate-500">Agrega tratamientos al presupuesto</p>
+                            <p className="text-sm text-slate-500">
+                                Agrega tratamientos {budgetType === 'odontologico' ? 'odontológicos' : 'estéticos'} al presupuesto
+                            </p>
                         </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Pieza</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                            {budgetType === 'odontologico' ? 'Pieza' : 'Zona'}
+                        </label>
                         <input
                             type="text"
                             value={newItem.pieza}
                             onChange={(e) => setNewItem({ ...newItem, pieza: e.target.value })}
-                            placeholder="ej: 4.4, B.C, 2.6"
+                            placeholder={budgetType === 'odontologico' ? "ej: 4.4, B.C, 2.6" : "ej: Sonrisa, Labios, Rostro"}
                             className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                         />
                     </div>
@@ -519,7 +598,7 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
                             className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                         >
                             <option value="">Seleccionar tratamiento</option>
-                            {commonTreatments.map((treatment) => (
+                            {getCurrentTreatments().map((treatment) => (
                                 <option key={treatment} value={treatment}>{treatment}</option>
                             ))}
                         </select>
@@ -555,6 +634,7 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
                 </div>
             </div>
 
+            {/* Tabla de tratamientos */}
             {items.length > 0 && (
                 <div className="bg-white rounded-xl shadow-sm border border-cyan-200 overflow-hidden">
                     <div className="px-6 py-4 border-b border-cyan-200 bg-slate-50">
@@ -592,15 +672,19 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
                         <table className="min-w-full">
                             <thead className="bg-slate-50 border-b border-cyan-200">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Pieza</th>
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Acción</th>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase">
+                                        {budgetType === 'odontologico' ? 'Pieza' : 'Zona'}
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Tratamiento</th>
                                     <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 uppercase">Valor</th>
                                     <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 uppercase">Acciones</th>
                                 </tr>
                             </thead>
+
                             <tbody className="bg-white divide-y divide-cyan-100">
                                 {items.map((item) => (
                                     <tr key={item.id} className="hover:bg-cyan-50 transition-colors">
+                                        {/* COLUMNA 1: PIEZA/ZONA */}
                                         <td className="px-6 py-4">
                                             {isEditing === item.id ? (
                                                 <input
@@ -610,9 +694,13 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
                                                     className="w-full px-2 py-1 border border-cyan-300 rounded text-sm"
                                                 />
                                             ) : (
-                                                <span className="text-sm font-medium text-slate-700">{item.pieza}</span>
+                                                <span className="text-sm font-medium text-slate-700">
+                                                    {item.pieza}
+                                                </span>
                                             )}
                                         </td>
+
+                                        {/* COLUMNA 2: ACCIÓN/TRATAMIENTO */}
                                         <td className="px-6 py-4">
                                             {isEditing === item.id ? (
                                                 <input
@@ -622,9 +710,13 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
                                                     className="w-full px-2 py-1 border border-cyan-300 rounded text-sm"
                                                 />
                                             ) : (
-                                                <span className="text-sm text-slate-700">{item.accion}</span>
+                                                <span className="text-sm text-slate-700">
+                                                    {item.accion}
+                                                </span>
                                             )}
                                         </td>
+
+                                        {/* COLUMNA 3: VALOR */}
                                         <td className="px-6 py-4 text-right">
                                             {isEditing === item.id ? (
                                                 <input
@@ -635,10 +727,12 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
                                                 />
                                             ) : (
                                                 <span className="text-sm font-semibold text-green-600">
-                                                    {formatCurrency(item.valor)}
+                                                    ${formatCurrency(item.valor)}
                                                 </span>
                                             )}
                                         </td>
+
+                                        {/* COLUMNA 4: ACCIONES */}
                                         <td className="px-6 py-4 text-center">
                                             <div className="flex items-center justify-center space-x-2">
                                                 {isEditing === item.id ? (
@@ -680,13 +774,15 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
                                         </td>
                                     </tr>
                                 ))}
+
+                                {/* FILA DEL TOTAL */}
                                 <tr className="bg-slate-50 border-t-2 border-cyan-500">
                                     <td className="px-6 py-4 font-semibold text-slate-700" colSpan={2}>
                                         TOTAL
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <span className="text-lg font-bold text-cyan-600">
-                                            {formatCurrency(calculateTotal())}
+                                            ${formatCurrency(calculateTotal())}
                                         </span>
                                     </td>
                                     <td></td>
@@ -705,109 +801,117 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
                 </div>
             )}
 
+            {/* Contenido oculto para PDF */}
             <div style={{ display: 'none' }}>
                 <div ref={printRef} className="budget-container">
-                    {/* Encabezado compacto manteniendo el estilo original */}
-                    <div className="budget-header" style={{
-                        marginBottom: '15px',
-                        paddingBottom: '10px',
-                        borderBottom: '2px solid #0891b2'
-                    }}>
-                        <div className="doctor-info" style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            marginBottom: '10px'
-                        }}>
-                            <div className="doctor-details" style={{ textAlign: 'center' }}>
-                                <h2 style={{
-                                    fontSize: '18px',
-                                    marginBottom: '2px',
-                                    color: '#0891b2'
-                                }}>{doctorName}</h2>
-                                <p style={{
-                                    fontSize: '13px',
-                                    margin: '2px 0',
-                                    color: '#64748b'
-                                }}>CIRUJANO DENTISTA</p>
-                                <p style={{
-                                    fontSize: '13px',
-                                    margin: '2px 0',
-                                    color: '#64748b'
-                                }}>RUT: {doctorRut}</p>
+                    {/* Encabezado con logo y datos del doctor */}
+                    <div className="budget-header">
+                        <div className="logo-doctor-section">
+                            <div className="logo-container">
+                                <img src={getLogoPath()} alt="Logo" />
+                            </div>
+                            <div className="doctor-info">
+                                <h2>{doctorName}</h2>
+                                <p>CIRUJANO DENTISTA</p>
+                                <p>RUT: {doctorRut}</p>
+                                <p>Especialista en {budgetType === 'odontologico' ? 'Odontología General' : 'Estética Dental'}</p>
                             </div>
                         </div>
 
-                        <h1 className="budget-title" style={{
-                            fontSize: '22px',
-                            fontWeight: '700',
-                            textAlign: 'center',
-                            margin: '10px 0',
-                            color: '#374151'
-                        }}>Presupuesto Odontológico</h1>
+                        <div className="budget-title-section">
+                            <h1 className="budget-title">{getBudgetTitle()}</h1>
+                        </div>
+                    </div>
 
-                        <div className="patient-info" style={{
-                            background: '#f8fafc',
-                            padding: '12px',
-                            borderRadius: '8px',
-                            marginBottom: '15px',
-                            borderLeft: '4px solid #0891b2'
-                        }}>
-                            <div className="patient-grid" style={{
-                                display: 'grid',
-                                gridTemplateColumns: '1fr 1fr',
-                                gap: '10px'
-                            }}>
-                                <div className="patient-field" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <strong style={{ fontSize: '13px' }}>Paciente:</strong>
-                                    <span style={{ fontSize: '13px' }}>{patient.nombres} {patient.apellidos}</span>
-                                </div>
-                                <div className="patient-field" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <strong style={{ fontSize: '13px' }}>Contacto:</strong>
-                                    <span style={{ fontSize: '13px' }}>{patient.telefono}</span>
-                                </div>
-                                <div className="patient-field" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <strong style={{ fontSize: '13px' }}>Rut:</strong>
-                                    <span style={{ fontSize: '13px' }}>{patient.rut}</span>
-                                </div>
-                                <div className="patient-field" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <strong style={{ fontSize: '13px' }}>Fecha:</strong>
-                                    <span style={{ fontSize: '13px' }}>{currentDate}</span>
-                                </div>
+                    {/* Información del paciente */}
+                    <div className="patient-info">
+                        <div className="patient-grid">
+                            <div className="patient-field">
+                                <strong>Paciente:</strong>
+                                <span>{patient.nombres} {patient.apellidos}</span>
+                            </div>
+                            <div className="patient-field">
+                                <strong>Contacto:</strong>
+                                <span>{patient.telefono}</span>
+                            </div>
+                            <div className="patient-field">
+                                <strong>Rut:</strong>
+                                <span>{patient.rut}</span>
+                            </div>
+                            <div className="patient-field">
+                                <strong>Fecha:</strong>
+                                <span>{currentDate}</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Resto del contenido se mantiene igual */}
+                    {/* Tabla de tratamientos - SOLO PARA IMPRESIÓN */}
                     {items.length > 0 && (
                         <table className="budget-table">
                             <thead>
                                 <tr>
-                                    <th style={{ width: '15%' }}>Piezas</th>
-                                    <th style={{ width: '60%' }}>Acción</th>
-                                    <th style={{ width: '25%', textAlign: 'right' }}>Valor</th>
+                                    <th style={{ width: '15%' }}>
+                                        {budgetType === 'odontologico' ? 'Piezas' : 'Zonas'}
+                                    </th>
+                                    <th style={{ width: '65%' }}>Tratamiento</th>
+                                    <th style={{ width: '20%', textAlign: 'right' }}>Valor</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {items.map((item) => (
                                     <tr key={item.id}>
-                                        <td>{item.pieza}</td>
-                                        <td>{item.accion}</td>
-                                        <td className="valor-cell">{formatCurrency(item.valor)}</td>
+                                        <td style={{ padding: '12px', borderBottom: '1px solid #e2e8f0', fontSize: '14px' }}>
+                                            {item.pieza || '-'}
+                                        </td>
+                                        <td style={{ padding: '12px', borderBottom: '1px solid #e2e8f0', fontSize: '14px' }}>
+                                            {item.accion || '-'}
+                                        </td>
+                                        <td style={{
+                                            padding: '12px',
+                                            borderBottom: '1px solid #e2e8f0',
+                                            fontSize: '14px',
+                                            textAlign: 'right',
+                                            fontWeight: '600',
+                                            color: '#059669'
+                                        }}>
+                                            ${formatCurrency(item.valor || 0)}
+                                        </td>
                                     </tr>
                                 ))}
-                                <tr className="total-row">
-                                    <td colSpan={2}><strong>Total</strong></td>
-                                    <td className="valor-cell"><strong>{formatCurrency(calculateTotal())}</strong></td>
+
+                                {/* Fila del total */}
+                                <tr style={{
+                                    background: '#f1f5f9',
+                                    fontWeight: '700',
+                                    fontSize: '16px',
+                                    borderTop: '2px solid #0891b2'
+                                }}>
+                                    <td colSpan={2} style={{
+                                        padding: '16px',
+                                        fontWeight: 'bold',
+                                        color: '#374151'
+                                    }}>
+                                        <strong>TOTAL</strong>
+                                    </td>
+                                    <td style={{
+                                        padding: '16px',
+                                        textAlign: 'right',
+                                        fontWeight: 'bold',
+                                        fontSize: '18px',
+                                        color: '#0891b2'
+                                    }}>
+                                        <strong>${formatCurrency(calculateTotal())}</strong>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
                     )}
 
                     <div className="footer-note">
-                        *Queda sujeto a modificaciones
+                        *Queda sujeto a modificaciones según evaluación clínica
                     </div>
 
+                    {/* Sección de firma */}
                     <div className="signature-section">
                         <img
                             src="/firmaDraCamila.png"
@@ -822,6 +926,11 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
 
                     <div className="date-section">
                         <p>Fecha de emisión: {currentDate}</p>
+                    </div>
+
+                    {/* Pie de página con logo de letras */}
+                    <div className="footer-logo">
+                        <img src="/letras.PNG" alt="Logo Letras" />
                     </div>
                 </div>
             </div>

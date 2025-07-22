@@ -5,6 +5,7 @@ export class UserMapper {
   static fromAuthResponseToUserProfile(response: ProfileResponse): User {
     return {
       id: response.id,
+      rut: response.rut,
       lastName: response.lastName,
       username: response.username,
       name: response.name,

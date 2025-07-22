@@ -4,9 +4,10 @@ export interface AuthResponse {
 }
 
 export interface UserResponse {
+  id: number;
+  rut?: string; // ✅ NUEVO CAMPO RUT
   email: string;
   emailValidated: boolean;
-  id: number;
   lastName: string;
   username: string;
   name: string;
@@ -18,7 +19,7 @@ export interface UserResponse {
 export interface ProfileResponse extends UserResponse {
   createdAt: string;
   updatedAt: string;
-  // ✅ Propiedades adicionales del perfil de usuario
+  // Propiedades adicionales del perfil de usuario
   phone?: string;
   address?: string;
   zipCode?: string;
