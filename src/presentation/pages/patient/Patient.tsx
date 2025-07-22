@@ -1,4 +1,4 @@
-// src/presentation/pages/patient/Patient.tsx - ACTUALIZADO PARA USAR API REAL
+// src/presentation/pages/patient/Patient.tsx - ACTUALIZADO CON MEJOR MANEJO DE ERRORES
 import { useState } from "react";
 import {
   Search,
@@ -18,7 +18,9 @@ import {
   AlertCircle,
   Info,
   Edit,
-  Trash2
+  Trash2,
+  X,
+  CheckCircle
 } from "lucide-react";
 import { useLoginMutation } from "@/presentation/hooks";
 import { NewPatientModal, PatientFormData } from "./NewPatientModal";
@@ -64,6 +66,70 @@ interface MedicalRecord {
 interface PatientProps {
   doctorId?: number;
 }
+
+// Componente para mostrar notificaciones de error/éxito
+interface NotificationProps {
+  type: 'success' | 'error' | 'info';
+  title: string;
+  message: string;
+  onClose: () => void;
+}
+
+const Notification: React.FC<NotificationProps> = ({ type, title, message, onClose }) => {
+  const getStyles = () => {
+    switch (type) {
+      case 'success':
+        return 'bg-green-50 border-green-200 text-green-800';
+      case 'error':
+        return 'bg-red-50 border-red-200 text-red-800';
+      case 'info':
+        return 'bg-blue-50 border-blue-200 text-blue-800';
+      default:
+        return 'bg-gray-50 border-gray-200 text-gray-800';
+    }
+  };
+
+  const getIcon = () => {
+    switch (type) {
+      case 'success':
+        return <CheckCircle className="w-5 h-5 text-green-600" />;
+      case 'error':
+        return <AlertCircle className="w-5 h-5 text-red-600" />;
+      case 'info':
+        return <Info className="w-5 h-5 text-blue-600" />;
+      default:
+        return <Info className="w-5 h-5 text-gray-600" />;
+    }
+  };
+
+  return (
+    <div className={`fixed top-4 right-4 z-50 max-w-md w-full mx-auto`}>
+      <div className={`p-4 rounded-lg border shadow-lg ${getStyles()}`}>
+        <div className="flex items-start">
+          <div className="flex-shrink-0">
+            {getIcon()}
+          </div>
+          <div className="ml-3 w-0 flex-1">
+            <p className="text-sm font-medium">
+              {title}
+            </p>
+            <p className="mt-1 text-sm">
+              {message}
+            </p>
+          </div>
+          <div className="ml-4 flex-shrink-0 flex">
+            <button
+              onClick={onClose}
+              className="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Datos de ejemplo para tratamientos, citas e historial (mantener como mock)
 const mockTreatments: Treatment[] = [
@@ -512,6 +578,39 @@ const PatientDetail: React.FC<{
   );
 };
 
+// Función utilitaria para procesar errores de API
+const processApiError = (error: any): string => {
+  console.error('Error completo:', error);
+
+  // Si es un error de red o no hay respuesta
+  if (!error.response) {
+    return `Error de conexión: ${error.message || 'No se pudo conectar al servidor'}`;
+  }
+
+  // Si hay respuesta del servidor
+  const status = error.response?.status;
+  const data = error.response?.data;
+
+  let errorMessage = `Error ${status}`;
+  
+  if (data) {
+    if (typeof data === 'string') {
+      errorMessage += `: ${data}`;
+    } else if (data.message) {
+      errorMessage += `: ${data.message}`;
+      if (data.error) {
+        errorMessage += ` (Detalle: ${data.error})`;
+      }
+    } else if (data.error) {
+      errorMessage += `: ${data.error}`;
+    } else {
+      errorMessage += `: ${JSON.stringify(data)}`;
+    }
+  }
+
+  return errorMessage;
+};
+
 // Componente principal Patient
 const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   // Estados para vista
@@ -524,6 +623,13 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   const [showEditPatientModal, setShowEditPatientModal] = useState(false);
   const [patientToEdit, setPatientToEdit] = useState<PatientType | null>(null);
 
+  // Estado para notificaciones
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error' | 'info';
+    title: string;
+    message: string;
+  } | null>(null);
+
   // USAR LOS HOOKS REALES EN LUGAR DE DATOS MOCK
   const { queryPatients } = usePatients(searchTerm.trim() || undefined);
   const { createPatientMutation, isLoadingCreate } = useCreatePatient();
@@ -533,6 +639,16 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   // Obtener datos de la query
   const patients = queryPatients.data?.patients || [];
   const loading = queryPatients.isLoading;
+
+  // Función para mostrar notificación
+  const showNotification = (type: 'success' | 'error' | 'info', title: string, message: string) => {
+    setNotification({ type, title, message });
+    
+    // Auto-hide después de 5 segundos
+    setTimeout(() => {
+      setNotification(null);
+    }, 5000);
+  };
 
   // Funciones utilitarias
   const formatDate = (dateString: string): string => {
@@ -577,6 +693,8 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
 
   const handleSubmitNewPatient = async (formData: PatientFormData) => {
     try {
+      console.log('Enviando datos del paciente:', formData);
+      
       await createPatientMutation.mutateAsync({
         rut: formData.rut,
         nombres: formData.nombres,
@@ -595,9 +713,13 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
         notas_medicas: formData.notas_medicas,
       });
       
-      alert('Paciente creado exitosamente');
+      showNotification('success', 'Éxito', 'Paciente creado exitosamente');
+      setShowNewPatientModal(false);
+      
     } catch (error: any) {
-      alert(error.message || 'Error al crear el paciente');
+      console.error('Error al crear paciente:', error);
+      const errorMessage = processApiError(error);
+      showNotification('error', 'Error al crear paciente', errorMessage);
     }
   };
 
@@ -614,6 +736,8 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
 
   const handleSubmitEditPatient = async (patientId: number, formData: EditPatientFormData) => {
     try {
+      console.log('Actualizando paciente:', patientId, formData);
+      
       await updatePatientMutation.mutateAsync({
         patientId,
         patientData: {
@@ -641,24 +765,34 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
         setCurrentView('grid'); // Volver a la lista para ver los cambios
       }
       
-      alert('Paciente actualizado exitosamente');
+      showNotification('success', 'Éxito', 'Paciente actualizado exitosamente');
+      setShowEditPatientModal(false);
+      setPatientToEdit(null);
+      
     } catch (error: any) {
-      alert(error.message || 'Error al actualizar el paciente');
+      console.error('Error al actualizar paciente:', error);
+      const errorMessage = processApiError(error);
+      showNotification('error', 'Error al actualizar paciente', errorMessage);
     }
   };
 
   // Manejador para eliminar paciente
   const handleDeletePatient = async (patientId: number) => {
     try {
+      console.log('Eliminando paciente:', patientId);
+      
       await deletePatientMutation.mutateAsync(patientId);
       
       // Volver a la lista después de eliminar
       setCurrentView('grid');
       setSelectedPatient(null);
       
-      alert('Paciente eliminado exitosamente');
+      showNotification('success', 'Éxito', 'Paciente eliminado exitosamente');
+      
     } catch (error: any) {
-      alert(error.message || 'Error al eliminar el paciente');
+      console.error('Error al eliminar paciente:', error);
+      const errorMessage = processApiError(error);
+      showNotification('error', 'Error al eliminar paciente', errorMessage);
     }
   };
 
@@ -673,6 +807,16 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
 
   return (
     <div className="bg-gradient-to-br from-slate-50 to-cyan-50 min-h-full flex flex-col">
+      {/* Componente de notificación */}
+      {notification && (
+        <Notification
+          type={notification.type}
+          title={notification.title}
+          message={notification.message}
+          onClose={() => setNotification(null)}
+        />
+      )}
+      
       <div className="flex-1 p-6">
         {/* Barra de búsqueda y acciones */}
         <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6 mb-6">

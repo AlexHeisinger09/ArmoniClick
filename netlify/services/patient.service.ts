@@ -1,7 +1,7 @@
-// netlify/services/patient.service.ts
+// netlify/services/patient.service.ts - ACTUALIZADO
 import { db } from '../data/db';
 import { patientsTable } from '../data/schemas/patient.schema';
-import { Column, ColumnBaseConfig, ColumnDataType, eq, and, ilike, or, SQL } from "drizzle-orm";
+import { Column, ColumnBaseConfig, ColumnDataType, eq, and, ilike, or, ne } from "drizzle-orm";
 
 type NewPatient = typeof patientsTable.$inferInsert;
 
@@ -122,16 +122,17 @@ export class PatientService {
     return patient[0] || null;
   }
 
-  // Verificar si existe un RUT
+  // ✅ MÉTODO ACTUALIZADO: Verificar si existe un RUT para un doctor específico
   async findByRut(rut: string, doctorId: number, excludeId?: number) {
     let conditions = [
       eq(patientsTable.rut, rut),
-      eq(patientsTable.id_doctor, doctorId),
+      eq(patientsTable.id_doctor, doctorId), // ✅ Solo buscar en los pacientes del doctor
       eq(patientsTable.isActive, true)
     ];
 
+    // Si estamos editando, excluir el paciente actual
     if (excludeId) {
-      conditions.push(not(eq(patientsTable.id, excludeId)));
+      conditions.push(ne(patientsTable.id, excludeId));
     }
 
     const patient = await db
@@ -235,8 +236,4 @@ export class PatientService {
 
     return deletedPatient[0];
   }
-}
-
-function not(arg0: SQL<unknown>): import("drizzle-orm").SQL<unknown> {
-    throw new Error('Function not implemented.');
 }
