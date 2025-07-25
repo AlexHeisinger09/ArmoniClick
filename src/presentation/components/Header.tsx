@@ -18,23 +18,13 @@ const Header: React.FC = () => {
       <div className="bg-white rounded-xl shadow-lg border border-cyan-200 px-6 py-4">
       <div className="flex justify-between items-center">
         {/* Mensaje de bienvenida */}
-        <div className="flex items-center space-x-3">
-          <div className="hidden md:block">
-            <h1 className="text-lg font-semibold text-slate-700">
-              Bienvenido Dr(a) {userData ? `${userData.name} ${userData.lastName}` : 'Usuario'}
-            </h1>
-            <p className="text-sm text-slate-500">
-              Sistema de gestión clínica ArmoniClick
-            </p>
+         <div className="flex-shrink-0">
+            <img 
+              src="/letras.PNG" 
+              alt="ArmoniClick Logo" 
+              className="h-12 w-auto object-contain"
+            />
           </div>
-          
-          {/* Versión móvil del saludo */}
-          <div className="block md:hidden">
-            <h1 className="text-base font-semibold text-slate-700">
-              Hola, Dr(a) {userData?.name || 'Usuario'}
-            </h1>
-          </div>
-        </div>
 
         {/* Perfil del usuario y logout */}
         <div className="flex items-center space-x-4">
