@@ -36,13 +36,13 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
     },
     {
       id: 'calendario',
-      label: 'Calendario',
+      label: 'Agenda',
       icon: Calendar,
       href: '/dashboard/calendario'
     },
     {
       id: 'configuracion',
-      label: 'Configuración',
+      label: 'Config',
       icon: Settings,
       href: '/dashboard/configuracion'
     }

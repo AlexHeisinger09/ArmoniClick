@@ -1,5 +1,6 @@
-// src/presentation/pages/patient/Patient.tsx - OPTIMIZADO CON FILTRADO LOCAL
-import { useState, useMemo } from "react";
+// src/presentation/pages/patient/Patient.tsx - CÓDIGO COMPLETO CORREGIDO
+import React, { useState, useMemo } from "react";
+import type { JSX } from "react";
 import {
   Search,
   Plus,
@@ -24,7 +25,6 @@ import {
   Calculator
 } from "lucide-react";
 
-import { useLoginMutation } from "@/presentation/hooks";
 import { NewPatientModal, PatientFormData } from "./NewPatientModal";
 import { EditPatientModal, PatientFormData as EditPatientFormData } from "./EditPatientModal";
 import { BudgetComponent } from "./BudgetComponent";
@@ -250,7 +250,7 @@ const PatientsAnimation: React.FC = () => (
   </div>
 );
 
-// Componente para mostrar el detalle completo del paciente
+// Componente para mostrar el detalle completo del paciente - ESTRUCTURA CORREGIDA
 const PatientDetail: React.FC<{
   patient: PatientType;
   onBack: () => void;
@@ -259,6 +259,7 @@ const PatientDetail: React.FC<{
 }> = ({ patient, onBack, onEdit, onDelete }) => {
   const [activeTab, setActiveTab] = useState('informacion');
 
+  // FUNCIONES UTILITARIAS - DECLARAR PRIMERO
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString("es-CL");
   };
@@ -295,15 +296,17 @@ const PatientDetail: React.FC<{
     }
   };
 
+  // CONFIGURACIÓN DE PESTAÑAS
   const tabs = [
-    { id: 'informacion', label: 'Información', icon: User },
-    { id: 'presupuesto', label: 'Presupuesto', icon: Calculator },
-    { id: 'tratamientos', label: 'Tratamientos', icon: Stethoscope },
-    { id: 'citas', label: 'Citas Agendadas', icon: Clock },
-    { id: 'historial', label: 'Historial Médico', icon: FileText },
+    { id: 'informacion', label: 'Información', shortLabel: 'Info', icon: User },
+    { id: 'presupuesto', label: 'Presupuesto', shortLabel: 'Presup', icon: Calculator },
+    { id: 'tratamientos', label: 'Tratamientos', shortLabel: 'Trat', icon: Stethoscope },
+    { id: 'citas', label: 'Citas Agendadas', shortLabel: 'Citas', icon: Clock },
+    { id: 'historial', label: 'Historial Médico', shortLabel: 'Hist', icon: FileText },
   ];
 
-  const renderTabContent = () => {
+  // FUNCIÓN PARA RENDERIZAR CONTENIDO - DECLARAR DESPUÉS
+  const renderTabContent = (): JSX.Element | null => {
     switch (activeTab) {
       case 'informacion':
         return (
@@ -552,6 +555,7 @@ const PatientDetail: React.FC<{
     }
   };
 
+  // RENDER DEL COMPONENTE PATIENTDETAIL
   return (
     <div className="space-y-6">
       {/* Encabezado con botón de regreso */}
@@ -565,23 +569,50 @@ const PatientDetail: React.FC<{
         </button>
       </div>
 
-      {/* Pestañas de navegación */}
+      {/* Pestañas de navegación RESPONSIVE */}
       <div className="bg-white rounded-xl shadow-sm border border-cyan-200 overflow-hidden">
         <div className="border-b border-cyan-200">
-          <nav className="flex space-x-0 overflow-x-auto">
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex space-x-0 overflow-x-auto">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === tab.id
-                    ? 'border-cyan-500 text-slate-700 bg-cyan-50'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-cyan-25'
-                    }`}
+                  className={`
+                    flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap
+                    ${activeTab === tab.id
+                      ? 'border-cyan-500 text-slate-700 bg-cyan-50'
+                      : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-cyan-25'
+                    }
+                  `}
                 >
                   <Icon className="w-4 h-4 mr-2" />
                   {tab.label}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Mobile Navigation - Solo íconos */}
+          <nav className="md:hidden flex justify-around px-2 py-4">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
+                    flex items-center justify-center w-12 h-12 rounded-full transition-all duration-200
+                    ${activeTab === tab.id
+                      ? 'bg-cyan-500 text-white shadow-lg scale-110'
+                      : 'text-slate-600 hover:bg-cyan-100 hover:text-cyan-700 hover:scale-105'
+                    }
+                  `}
+                  title={tab.label}
+                >
+                  <Icon className="w-6 h-6" />
                 </button>
               );
             })}
