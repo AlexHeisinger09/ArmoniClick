@@ -1,60 +1,83 @@
 import React from 'react';
-import { Bell, Search, Settings , Stethoscope} from 'lucide-react';
+import { LogOut } from 'lucide-react';
+import { useLoginMutation, useProfile } from '@/presentation/hooks'; // ✅ IMPORTAR LOS HOOKS REALES
 
 const Header: React.FC = () => {
-  const currentUser = {
-    name: 'Dra. Camila Delgado',
-    rut: '12345678-9',
-    avatar: ''
+  // ✅ USAR DATOS REALES DE TU APLICACIÓN
+  const { token, logout } = useLoginMutation();
+  const { queryProfile } = useProfile(token || '');
+
+  const userData = queryProfile.data;
+
+  const handleLogout = () => {
+    logout(); // ✅ FUNCIÓN REAL DE LOGOUT
   };
 
   return (
-    <header className="bg-white border-b border-cyan-200 px-6 py-4 shadow-sm">
+    <header className="p-6 pb-0 sticky top-0 z-50">
+      <div className="bg-white rounded-xl shadow-lg border border-cyan-200 px-6 py-4">
       <div className="flex justify-between items-center">
-        {/* Título de la página actual */}
-        <div>
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center shadow-sm">
-              <Stethoscope className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-slate-700 text-lg">ArmoniClick</span>
+        {/* Mensaje de bienvenida */}
+        <div className="flex items-center space-x-3">
+          <div className="hidden md:block">
+            <h1 className="text-lg font-semibold text-slate-700">
+              Bienvenido Dr(a) {userData ? `${userData.name} ${userData.lastName}` : 'Usuario'}
+            </h1>
+            <p className="text-sm text-slate-500">
+              Sistema de gestión clínica ArmoniClick
+            </p>
+          </div>
+          
+          {/* Versión móvil del saludo */}
+          <div className="block md:hidden">
+            <h1 className="text-base font-semibold text-slate-700">
+              Hola, Dr(a) {userData?.name || 'Usuario'}
+            </h1>
           </div>
         </div>
-        
-        {/* Acciones del header */}
+
+        {/* Perfil del usuario y logout */}
         <div className="flex items-center space-x-4">
-          {/* Buscador rápido */}
+          {/* Información del usuario */}
+          <div className="text-right hidden sm:block">
+            <p className="text-sm font-medium text-slate-700">
+              {userData ? `${userData.name} ${userData.lastName}` : 'Cargando...'}
+            </p>
+            <p className="text-xs text-slate-500">
+              {userData?.rut ? userData.rut : 'Profesional de la salud'}
+            </p>
+          </div>
+          
+          {/* Foto de perfil */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Búsqueda rápida..."
-              className="pl-10 pr-4 py-2 w-64 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm bg-white placeholder-slate-500 text-slate-700"
-            />
-          </div>
-          
-          {/* Notificaciones */}
-          <button className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-cyan-100 rounded-lg transition-colors">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
-          
-          {/* Configuración */}
-          <button className="p-2 text-slate-500 hover:text-slate-700 hover:bg-cyan-100 rounded-lg transition-colors">
-            <Settings className="w-5 h-5" />
-          </button>
-          
-          {/* Usuario */}
-          <div className="flex items-center space-x-3 pl-4 border-l border-cyan-200">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-medium text-slate-700">{currentUser.name}</p>
-              <p className="text-xs text-slate-500">{currentUser.rut}</p>
-            </div>
+            {userData?.img ? (
+              <img
+                src={userData.img}
+                alt="Foto de perfil"
+                className="w-12 h-12 rounded-full object-cover border-2 border-cyan-200 shadow-sm hover:border-cyan-300 transition-colors"
+              />
+            ) : (
+              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-full flex items-center justify-center shadow-sm border-2 border-cyan-200 hover:border-cyan-300 transition-colors">
+                <span className="text-white font-semibold text-lg">
+                  {userData?.name?.[0]?.toUpperCase() || 'U'}
+                  {userData?.lastName?.[0]?.toUpperCase() || 'S'}
+                </span>
+              </div>
+            )}
             
-            <div className="w-10 h-10 bg-cyan-500 rounded-full flex items-center justify-center shadow-sm">
-              <span className="text-white font-semibold text-sm">CD</span>
-            </div>
+            {/* Indicador de estado activo */}
+            <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full shadow-sm"></div>
           </div>
+          
+          {/* Botón de cerrar sesión */}
+          <button
+            onClick={handleLogout}
+            className="group p-3 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-all duration-200 border border-transparent hover:border-red-200 shadow-sm hover:shadow-md"
+            title="Cerrar sesión"
+          >
+            <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
+          </button>
+        </div>
         </div>
       </div>
     </header>

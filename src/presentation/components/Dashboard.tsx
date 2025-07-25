@@ -60,30 +60,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-clinic-50 to-white p-4 sm:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Barra de Header */}
-        <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6 mb-6">
-          <div className="flex items-stretch gap-4 mb-4">
-            {queryProfile.data?.img ? (
-              <img
-                alt="foto Dr(a)"
-                src={queryProfile.data.img}
-                className="w-20 rounded object-cover"
-              />
-            ) : (
-              <div className="w-20 h-20 rounded bg-cyan-500 flex items-center justify-center">
-                <span className="text-white font-bold text-xl">
-                  {queryProfile.data?.name?.[0] || 'D'}{queryProfile.data?.lastName?.[0] || 'r'}
-                </span>
-              </div>
-            )}
-            <div>
-               <h3 className="font-medium text-slate-700 sm:text-lg">
-                {queryProfile.data ? `Bienvenido Dr(a) ${queryProfile.data.name} ${queryProfile.data.lastName}` : 'Cargando...'}
-              </h3>
-            </div>
-          </div>
-        </div>
-
+        
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="bg-gradient-to-r from-clinic-500 to-clinic-600 text-white hover:shadow-lg transition-shadow duration-300">

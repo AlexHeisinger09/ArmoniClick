@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
+import Header from "../components/Header";
 
 export const HomeLayout = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
@@ -21,7 +22,7 @@ export const HomeLayout = () => {
         pt-20 md:pt-0
       `}>
         {/* Header - comentado por ahora */}
-        {/* <Header /> */}
+        <Header />
 
         {/* Main Content Area */}
         <main className="min-h-screen overflow-y-auto bg-gradient-to-br from-slate-50 to-cyan-50">
