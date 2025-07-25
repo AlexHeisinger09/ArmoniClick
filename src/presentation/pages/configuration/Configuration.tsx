@@ -1,3 +1,4 @@
+// src/presentation/pages/configuration/Configuration.tsx - SECCIÓN DE FOTO ACTUALIZADA
 import { useState, useRef, useEffect } from "react";
 import {
   User,
@@ -20,10 +21,13 @@ import {
   AlertCircle,
   Settings,
   Cog,
-  Loader
+  Loader,
+  Trash2,
+  Image as ImageIcon
 } from "lucide-react";
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
 import { useUpdateProfileMutation, useUpdatePasswordMutation } from "@/presentation/hooks/user/useUpdateProfile";
+import { useUploadProfileImage } from "@/presentation/hooks/user/useUploadProfileImage";
 import { Spinner } from "@/presentation/components/ui/spinner";
 
 // Tipos e interfaces
@@ -115,6 +119,10 @@ const Configuration: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
+  // ✅ NUEVO: Estados para preview de imagen
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Hooks para datos reales del usuario
@@ -122,6 +130,14 @@ const Configuration: React.FC = () => {
   const { queryProfile } = useProfile(token || '');
   const { updateProfileMutation, isLoadingUpdate } = useUpdateProfileMutation();
   const { updatePasswordMutation, isLoadingPasswordUpdate } = useUpdatePasswordMutation();
+
+  // ✅ NUEVO: Hook para upload de imagen
+  const {
+    uploadImageMutation,
+    deleteImageMutation,
+    isLoadingUpload,
+    uploadProgress
+  } = useUploadProfileImage();
 
   // Estados para formularios
   const [profileFormData, setProfileFormData] = useState<ProfileFormData>({
@@ -144,29 +160,16 @@ const Configuration: React.FC = () => {
 
   // Actualizar formulario cuando se cargan los datos del usuario
   useEffect(() => {
-    console.log('🔍 queryProfile.data:', queryProfile.data);
     if (queryProfile.data) {
-      console.log('📝 Setting form data with:', {
-        rut: queryProfile.data.rut || '',
-        name: queryProfile.data.name || '',
-        lastName: queryProfile.data.lastName || '',
-        username: queryProfile.data.username || '',
-        email: queryProfile.data.email || '',
-        phone: queryProfile.data.phone || '', // ✅ Obtener del backend
-        address: queryProfile.data.address || '', // ✅ Obtener del backend
-        zipCode: queryProfile.data.zipCode || '', // ✅ Obtener del backend
-        city: queryProfile.data.city || '', // ✅ Obtener del backend
-      });
-
       setProfileFormData({
         name: queryProfile.data.name || '',
         lastName: queryProfile.data.lastName || '',
         username: queryProfile.data.username || '',
         email: queryProfile.data.email || '',
-        phone: queryProfile.data.phone || '', // ✅ Cambiar aquí
-        address: queryProfile.data.address || '', // ✅ Cambiar aquí
-        zipCode: queryProfile.data.zipCode || '', // ✅ Cambiar aquí
-        city: queryProfile.data.city || '', // ✅ Cambiar aquí
+        phone: queryProfile.data.phone || '',
+        address: queryProfile.data.address || '',
+        zipCode: queryProfile.data.zipCode || '',
+        city: queryProfile.data.city || '',
       });
     }
   }, [queryProfile.data]);
@@ -187,6 +190,92 @@ const Configuration: React.FC = () => {
     }, 5000);
   };
 
+  // ✅ NUEVAS FUNCIONES PARA MANEJO DE IMÁGENES
+  const validateImageFile = (file: File): string | null => {
+    // Validar tipo
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      return 'Solo se permiten archivos JPG, PNG y WebP';
+    }
+
+    // Validar tamaño (5MB máximo)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return 'El archivo debe ser menor a 5MB';
+    }
+
+    return null;
+  };
+
+  const handleImageSelect = (file: File) => {
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      showMessage(validationError, 'error');
+      return;
+    }
+
+    // Crear preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Subir imagen
+    uploadImageMutation.mutate(file, {
+      onSuccess: () => {
+        showMessage('Foto de perfil actualizada correctamente', 'success');
+        setImagePreview(null);
+      },
+      onError: (error: any) => {
+        showMessage(error.message || 'Error al subir la imagen', 'error');
+        setImagePreview(null);
+      }
+    });
+  };
+
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      handleImageSelect(file);
+    }
+    // Resetear el input
+    event.target.value = '';
+  };
+
+  const handleDeleteImage = () => {
+    deleteImageMutation.mutate(undefined, {
+      onSuccess: () => {
+        showMessage('Foto de perfil eliminada correctamente', 'success');
+        setImagePreview(null);
+      },
+      onError: (error: any) => {
+        showMessage(error.message || 'Error al eliminar la imagen', 'error');
+      }
+    });
+  };
+
+  // ✅ FUNCIONES PARA DRAG & DROP
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleImageSelect(files[0]);
+    }
+  };
+
   // Pestañas de configuración
   const tabs = [
     { id: 'perfil', label: 'Información Personal', icon: User },
@@ -195,7 +284,7 @@ const Configuration: React.FC = () => {
     { id: 'preferencias', label: 'Preferencias', icon: Palette },
   ];
 
-  // Manejadores de eventos
+  // Manejadores de eventos (existentes)
   const handleProfileInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setProfileFormData(prev => ({
@@ -214,7 +303,6 @@ const Configuration: React.FC = () => {
 
   const handleProfileSubmit = async () => {
     try {
-      // Convertir ProfileFormData a Record<string, string>
       const dataToSend: Record<string, string> = {
         name: profileFormData.name,
         lastName: profileFormData.lastName,
@@ -226,13 +314,10 @@ const Configuration: React.FC = () => {
         city: profileFormData.city || '',
       };
 
-      console.log('📤 Sending profile data:', dataToSend);
-
       await updateProfileMutation.mutateAsync(dataToSend);
       setIsEditing(false);
       showMessage('Información personal actualizada correctamente', 'success');
     } catch (error: any) {
-      console.log('❌ Profile update error:', error);
       showMessage(error.message || 'Error al actualizar el perfil', 'error');
     }
   };
@@ -262,23 +347,6 @@ const Configuration: React.FC = () => {
       showMessage('Contraseña actualizada correctamente', 'success');
     } catch (error: any) {
       showMessage(error.message || 'Error al cambiar la contraseña', 'error');
-    }
-  };
-
-  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      try {
-        // Aquí iría la llamada real para subir la imagen
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const result = e.target?.result as string;
-          showMessage('Foto de perfil actualizada correctamente', 'success');
-        };
-        reader.readAsDataURL(file);
-      } catch (error: any) {
-        showMessage(error.message || 'Error al subir la imagen', 'error');
-      }
     }
   };
 
@@ -569,67 +637,102 @@ const Configuration: React.FC = () => {
         );
 
       case 'foto':
-        return (
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
-              <h3 className="text-lg font-semibold text-slate-700 mb-6">
-                Foto de Perfil
-              </h3>
+return (
+  <div className="bg-white rounded-lg border border-gray-200 p-8">
+    <h3 className="text-xl font-semibold text-gray-900 mb-8">Foto de Perfil</h3>
+    
+    <div className="flex items-start space-x-6">
+      {/* Imagen con ícono de cámara */}
+      <div className="relative">
+        <div className="w-28 h-28 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200">
+          {imagePreview ? (
+            <img
+              src={imagePreview}
+              alt="Vista previa"
+              className="w-full h-full object-cover"
+            />
+          ) : userData?.img ? (
+            <img
+              src={userData.img}
+              alt="Foto de perfil"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500 font-medium text-xl">
+              {userData?.name?.[0]?.toUpperCase() || ''}{userData?.lastName?.[0]?.toUpperCase() || ''}
+            </div>
+          )}
+        </div>
+        
+        {/* Ícono de cámara */}
+        <div className="absolute bottom-0 right-0 bg-cyan-500 rounded-full p-2 border-2 border-white">
+          <Camera className="w-4 h-4 text-white" />
+        </div>
+      </div>
 
-              <div className="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
-                <div className="relative">
-                  <div className="w-32 h-32 rounded-full overflow-hidden bg-slate-100 border-4 border-cyan-200">
-                    {userData?.img ? (
-                      <img
-                        src={userData.img}
-                        alt="Foto de perfil"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-cyan-500">
-                        <span className="text-white font-bold text-2xl">
-                          {userData?.name?.[0]?.toUpperCase() || ''}{userData?.lastName?.[0]?.toUpperCase() || ''}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute bottom-0 right-0 bg-cyan-500 hover:bg-cyan-600 text-white p-2 rounded-full shadow-sm transition-colors"
-                  >
-                    <Camera className="w-4 h-4" />
-                  </button>
-                </div>
+      {/* Contenido de texto y botón */}
+      <div className="flex-1 space-y-4">
+        <div>
+          <h4 className="text-lg font-medium text-gray-900 mb-2">
+            Cambiar foto de perfil
+          </h4>
+          <p className="text-sm text-gray-500 leading-relaxed">
+            Sube una imagen cuadrada para obtener mejores resultados. Tamaño máximo: 5MB. Formatos aceptados: JPG, PNG.
+          </p>
+        </div>
 
-                <div className="flex-1 text-center md:text-left">
-                  <h4 className="text-lg font-medium text-slate-700 mb-2">
-                    Cambiar foto de perfil
-                  </h4>
-                  <p className="text-slate-500 mb-4">
-                    Sube una imagen cuadrada para obtener mejores resultados.
-                    Tamaño máximo: 5MB. Formatos aceptados: JPG, PNG.
-                  </p>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-5 py-2.5 transition-colors mx-auto md:mx-0"
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    Subir nueva foto
-                  </button>
-                </div>
-              </div>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                className="hidden"
-              />
+        {/* Progreso de upload */}
+        {isLoadingUpload && (
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>Subiendo imagen...</span>
+              <span>{uploadProgress}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-cyan-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
             </div>
           </div>
-        );
+        )}
 
+        {/* Botones */}
+        <div className="flex space-x-3">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isLoadingUpload}
+            className="inline-flex items-center px-4 py-2 bg-cyan-500 text-white text-sm font-medium rounded-lg hover:bg-cyan-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Camera className="w-4 h-4 mr-2" />
+            Subir nueva foto
+          </button>
+          
+          {userData?.img && !isLoadingUpload && (
+            <button
+              onClick={handleDeleteImage}
+              disabled={deleteImageMutation.isPending}
+              className="inline-flex items-center px-4 py-2 text-gray-600 text-sm font-medium hover:text-gray-900 transition-colors disabled:opacity-50"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Eliminar
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+
+    {/* Input file oculto */}
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept="image/jpeg,image/png,image/webp"
+      onChange={handlePhotoUpload}
+      className="hidden"
+      disabled={isLoadingUpload}
+    />
+  </div>
+);
       case 'seguridad':
         return (
           <div className="space-y-6">
@@ -748,7 +851,6 @@ const Configuration: React.FC = () => {
             </div>
           </div>
         );
-
       case 'preferencias':
         return (
           <div className="space-y-6">

@@ -818,11 +818,10 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
                             </div>
                         </div>
 
-                        <div className="budget-title-section">
-                            <h1 className="budget-title">{getBudgetTitle()}</h1>
-                        </div>
                     </div>
-
+                    <div className="budget-title-section">
+                        <h1 className="budget-title">{getBudgetTitle()}</h1>
+                    </div>
                     {/* Información del paciente */}
                     <div className="patient-info">
                         <div className="patient-grid">

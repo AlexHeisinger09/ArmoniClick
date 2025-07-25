@@ -8,6 +8,7 @@ export * from "./auth/check-user-token.use-case";
 export * from "./user/profile.use-case";
 export * from "./user/update-profile.use-case";
 export * from "./user/update-password.use-case";
+export * from "./user/upload-profile-image.use-case"; 
 
 export * from "./patients";
 

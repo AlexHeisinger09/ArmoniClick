@@ -7,5 +7,6 @@ export * from "./auth/useLoginMutation";
 
 export * from "./user/useProfile";
 export * from "./user/useUpdateProfile";
+export * from "./user/useUploadProfileImage";
 
 export * from "./patients/usePatients";

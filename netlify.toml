@@ -1,12 +1,28 @@
+# netlify.toml - Configuración de Netlify
+
 [build]
   command = "npm run build"
+  functions = "netlify/functions"
   publish = "dist"
 
 [functions]
   directory = "netlify/functions"
-  node_bundler = "esbuild"
+
+# Redirects para el SPA
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Variables de entorno de ejemplo (configurar en el dashboard de Netlify)
+[build.environment]
+  NODE_VERSION = "18"
+
+# Configuración de las functions
+[functions."*"]
+  max_duration = "30s"

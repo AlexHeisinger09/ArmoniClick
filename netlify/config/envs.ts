@@ -16,4 +16,8 @@ export const envs = {
   MAILER_USER: get("MAILER_USER").required().asString(),
 
   FRONTEND_URL: get("FRONTEND_URL").required().asString(),
+
+  CLOUDINARY_CLOUD_NAME: get("CLOUDINARY_CLOUD_NAME").required().asString(),
+  CLOUDINARY_API_KEY: get("CLOUDINARY_API_KEY").required().asString(),
+  CLOUDINARY_API_SECRET: get("CLOUDINARY_API_SECRET").required().asString(),
 };
