@@ -637,102 +637,79 @@ const Configuration: React.FC = () => {
         );
 
       case 'foto':
-return (
-  <div className="bg-white rounded-lg border border-gray-200 p-8">
-    <h3 className="text-xl font-semibold text-gray-900 mb-8">Foto de Perfil</h3>
-    
-    <div className="flex items-start space-x-6">
-      {/* Imagen con ícono de cámara */}
-      <div className="relative">
-        <div className="w-28 h-28 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200">
-          {imagePreview ? (
-            <img
-              src={imagePreview}
-              alt="Vista previa"
-              className="w-full h-full object-cover"
-            />
-          ) : userData?.img ? (
-            <img
-              src={userData.img}
-              alt="Foto de perfil"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500 font-medium text-xl">
-              {userData?.name?.[0]?.toUpperCase() || ''}{userData?.lastName?.[0]?.toUpperCase() || ''}
-            </div>
-          )}
-        </div>
-        
-        {/* Ícono de cámara */}
-        <div className="absolute bottom-0 right-0 bg-cyan-500 rounded-full p-2 border-2 border-white">
-          <Camera className="w-4 h-4 text-white" />
-        </div>
-      </div>
+        return (
+          <div className="bg-white rounded-lg border border-gray-200 p-8">
+            <h3 className="text-xl font-semibold text-gray-900 mb-8">Foto de Perfil</h3>
 
-      {/* Contenido de texto y botón */}
-      <div className="flex-1 space-y-4">
-        <div>
-          <h4 className="text-lg font-medium text-gray-900 mb-2">
-            Cambiar foto de perfil
-          </h4>
-          <p className="text-sm text-gray-500 leading-relaxed">
-            Sube una imagen cuadrada para obtener mejores resultados. Tamaño máximo: 5MB. Formatos aceptados: JPG, PNG.
-          </p>
-        </div>
+            <div className="flex items-start space-x-6">
+              {/* Imagen con ícono de cámara clickeable */}
+              <div className="relative cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                <div className="w-28 h-28 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200 hover:border-cyan-300 transition-colors">
+                  {imagePreview ? (
+                    <img
+                      src={imagePreview}
+                      alt="Vista previa"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : userData?.img ? (
+                    <img
+                      src={userData.img}
+                      alt="Foto de perfil"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500 font-medium text-xl">
+                      {userData?.name?.[0]?.toUpperCase() || ''}{userData?.lastName?.[0]?.toUpperCase() || ''}
+                    </div>
+                  )}
+                </div>
 
-        {/* Progreso de upload */}
-        {isLoadingUpload && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Subiendo imagen...</span>
-              <span>{uploadProgress}%</span>
+                {/* Ícono de cámara clickeable */}
+                <div className="absolute bottom-0 right-0 bg-cyan-500 hover:bg-cyan-600 rounded-full p-2 border-2 border-white transition-colors">
+                  <Camera className="w-4 h-4 text-white" />
+                </div>
+              </div>
+
+              {/* Contenido de texto */}
+              <div className="flex-1 space-y-4">
+                <div>
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">
+                    Cambiar foto de perfil
+                  </h4>
+                  <p className="text-sm text-gray-500 leading-relaxed">
+                    Nuestra aplicación detecta y centra automáticamente tu rostro para obtener la mejor foto de perfil. Tamaño máximo: 5MB. Formatos aceptados: JPG, PNG.
+                  </p>
+                </div>
+
+                {/* Progreso de upload */}
+                {isLoadingUpload && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>Subiendo imagen...</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-cyan-500 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-cyan-500 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
-            </div>
+
+            {/* Input file oculto */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handlePhotoUpload}
+              className="hidden"
+              disabled={isLoadingUpload}
+            />
           </div>
-        )}
-
-        {/* Botones */}
-        <div className="flex space-x-3">
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isLoadingUpload}
-            className="inline-flex items-center px-4 py-2 bg-cyan-500 text-white text-sm font-medium rounded-lg hover:bg-cyan-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Camera className="w-4 h-4 mr-2" />
-            Subir nueva foto
-          </button>
-          
-          {userData?.img && !isLoadingUpload && (
-            <button
-              onClick={handleDeleteImage}
-              disabled={deleteImageMutation.isPending}
-              className="inline-flex items-center px-4 py-2 text-gray-600 text-sm font-medium hover:text-gray-900 transition-colors disabled:opacity-50"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Eliminar
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-
-    {/* Input file oculto */}
-    <input
-      ref={fileInputRef}
-      type="file"
-      accept="image/jpeg,image/png,image/webp"
-      onChange={handlePhotoUpload}
-      className="hidden"
-      disabled={isLoadingUpload}
-    />
-  </div>
-);
+        );
       case 'seguridad':
         return (
           <div className="space-y-6">
