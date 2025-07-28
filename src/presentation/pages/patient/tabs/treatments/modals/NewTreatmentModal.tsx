@@ -1,8 +1,20 @@
 // src/presentation/pages/patient/tabs/treatments/modals/NewTreatmentModal.tsx
 import React, { useState } from 'react';
-import { Calendar, Clock, Package, Camera, X } from 'lucide-react';
+import {
+  Plus,
+  ChevronRight,
+  Stethoscope,
+  X,
+  Calendar,
+  Clock,
+  Package,
+  Camera,
+  Upload,
+  Trash2
+} from 'lucide-react';
 import { CreateTreatmentData } from "@/core/use-cases/treatments";
 import { NewTreatmentModalProps, SERVICIOS_COMUNES } from '../shared/types';
+import { useTreatmentUpload } from '@/presentation/hooks/treatments/useTreatmentUpload';
 
 const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
   isOpen,
@@ -27,52 +39,54 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
     descripcion: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Limpiar campos vacíos antes de enviar
-    const cleanData = Object.entries(formData).reduce((acc, [key, value]) => {
-      if (value !== '' && value !== undefined) {
-        acc[key as keyof CreateTreatmentData] = value;
-      }
-      return acc;
-    }, {} as Partial<CreateTreatmentData>);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [currentStep, setCurrentStep] = useState<number>(1);
+  const [uploadingImages, setUploadingImages] = useState<{foto1: boolean, foto2: boolean}>({
+    foto1: false,
+    foto2: false
+  });
 
-    onSubmit(cleanData as CreateTreatmentData);
-  };
+  const { uploadImageFromFile, validateImageFile } = useTreatmentUpload();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+    
+    if (formErrors[name]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, imageField: 'foto1' | 'foto2') => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, imageField: 'foto1' | 'foto2') => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Validar tamaño (máximo 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('La imagen es demasiado grande. Máximo 5MB.');
-        return;
-      }
+    if (!file) return;
 
-      // Validar tipo
-      if (!file.type.startsWith('image/')) {
-        alert('Por favor, selecciona una imagen válida.');
-        return;
-      }
+    // Validar archivo
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        setFormData(prev => ({
-          ...prev,
-          [imageField]: result
-        }));
-      };
-      reader.readAsDataURL(file);
+    setUploadingImages(prev => ({ ...prev, [imageField]: true }));
+    
+    try {
+      const response = await uploadImageFromFile(file, 0, 'before'); // Temporal ID 0
+      setFormData(prev => ({
+        ...prev,
+        [imageField]: response.imageUrl
+      }));
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Error al subir la imagen. Por favor intenta de nuevo.');
+    } finally {
+      setUploadingImages(prev => ({ ...prev, [imageField]: false }));
     }
   };
 
@@ -83,295 +97,486 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
     }));
   };
 
+  const validateStep1 = (): boolean => {
+    const errors: Record<string, string> = {};
+    
+    if (!formData.fecha_control) errors.fecha_control = 'Fecha de control es requerida';
+    if (!formData.hora_control) errors.hora_control = 'Hora de control es requerida';
+    if (!formData.nombre_servicio) errors.nombre_servicio = 'Nombre del servicio es requerido';
+
+    // Validar que la fecha de control no sea futura
+    if (formData.fecha_control) {
+      const controlDate = new Date(formData.fecha_control);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (controlDate > today) {
+        errors.fecha_control = 'La fecha de control no puede ser futura';
+      }
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateStep2 = (): boolean => {
+    const errors: Record<string, string> = {};
+    
+    // Validar fecha próximo control si se proporciona
+    if (formData.fecha_proximo_control && formData.fecha_control) {
+      const proximoControlDate = new Date(formData.fecha_proximo_control);
+      const controlDate = new Date(formData.fecha_control);
+      
+      if (proximoControlDate <= controlDate) {
+        errors.fecha_proximo_control = 'La fecha próximo control debe ser posterior a la fecha de control';
+      }
+    }
+
+    // Validar fecha de vencimiento si se proporciona
+    if (formData.fecha_venc_producto) {
+      const vencDate = new Date(formData.fecha_venc_producto);
+      const today = new Date();
+      
+      if (vencDate < today) {
+        errors.fecha_venc_producto = 'La fecha de vencimiento no debería ser anterior a hoy';
+      }
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (currentStep === 1 && validateStep1()) {
+      setCurrentStep(2);
+    } else if (currentStep === 2 && validateStep2()) {
+      setCurrentStep(3);
+    }
+  };
+
+  const handleSubmit = () => {
+    if (validateStep1() && validateStep2()) {
+      // Limpiar campos vacíos antes de enviar
+      const cleanData = Object.entries(formData).reduce((acc, [key, value]) => {
+        if (value !== '' && value !== undefined) {
+          acc[key as keyof CreateTreatmentData] = value;
+        }
+        return acc;
+      }, {} as Partial<CreateTreatmentData>);
+
+      onSubmit(cleanData as CreateTreatmentData);
+      handleClose();
+    }
+  };
+
+  const handleClose = () => {
+    setFormErrors({});
+    setCurrentStep(1);
+    setFormData({
+      id_paciente: patientId,
+      fecha_control: new Date().toISOString().split('T')[0],
+      hora_control: new Date().toTimeString().slice(0, 5),
+      fecha_proximo_control: '',
+      hora_proximo_control: '',
+      nombre_servicio: '',
+      producto: '',
+      lote_producto: '',
+      fecha_venc_producto: '',
+      dilucion: '',
+      foto1: '',
+      foto2: '',
+      descripcion: '',
+    });
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900">
-              Nuevo Tratamiento - Paciente ID: {patientId}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-              disabled={isLoading}
-            >
-              <X className="w-6 h-6" />
-            </button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden shadow-2xl">
+        {/* Header */}
+        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-cyan-200 bg-gradient-to-r from-cyan-50 to-blue-50">
+          <div className="flex items-center space-x-3">
+            <div className="bg-cyan-100 p-2 rounded-full">
+              <Stethoscope className="w-6 h-6 text-cyan-600" />
+            </div>
+            <div>
+              <h3 className="text-lg sm:text-xl font-bold text-slate-700">
+                Nuevo Tratamiento
+              </h3>
+              <p className="text-sm text-slate-500">
+                Paso {currentStep} de 3 - {
+                  currentStep === 1 ? 'Información del Control' :
+                  currentStep === 2 ? 'Producto y Próximo Control' : 'Fotos y Observaciones'
+                }
+              </p>
+            </div>
+          </div>
+          <button 
+            onClick={handleClose} 
+            className="text-slate-500 hover:text-slate-700 transition-colors p-2 hover:bg-slate-100 rounded-full"
+            disabled={isLoading}
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Progress indicator */}
+        <div className="px-4 sm:px-6 py-4 bg-slate-50">
+          <div className="flex items-center space-x-2">
+            {[1, 2, 3].map((step) => (
+              <div key={step} className="flex items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  step <= currentStep ? 'bg-cyan-500 text-white' : 'bg-slate-200 text-slate-500'
+                }`}>
+                  {step}
+                </div>
+                {step < 3 && (
+                  <div className={`w-8 sm:w-16 h-1 mx-2 ${
+                    step < currentStep ? 'bg-cyan-500' : 'bg-slate-200'
+                  }`} />
+                )}
+              </div>
+            ))}
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Información del Control */}
-          <div className="bg-cyan-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-cyan-800 mb-4 flex items-center">
-              <Calendar className="w-5 h-5 mr-2" />
-              Información del Control
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fecha del Control *
-                </label>
-                <input
-                  type="date"
-                  name="fecha_control"
-                  value={formData.fecha_control}
-                  onChange={handleChange}
-                  required
-                  max={new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Hora del Control *
-                </label>
-                <input
-                  type="time"
-                  name="hora_control"
-                  value={formData.hora_control}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                />
+        {/* Form content */}
+        <div className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto">
+          {currentStep === 1 && (
+            <div className="space-y-4">
+              <h4 className="text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-cyan-200 flex items-center">
+                <Calendar className="w-5 h-5 mr-2" />
+                Información del Control
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Fecha del Control *</label>
+                  <input
+                    type="date"
+                    name="fecha_control"
+                    value={formData.fecha_control}
+                    onChange={handleInputChange}
+                    max={new Date().toISOString().split('T')[0]}
+                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700 ${
+                      formErrors.fecha_control ? 'border-red-300' : 'border-cyan-200'
+                    }`}
+                  />
+                  {formErrors.fecha_control && <p className="text-red-600 text-xs mt-1">{formErrors.fecha_control}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Hora del Control *</label>
+                  <input
+                    type="time"
+                    name="hora_control"
+                    value={formData.hora_control}
+                    onChange={handleInputChange}
+                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700 ${
+                      formErrors.hora_control ? 'border-red-300' : 'border-cyan-200'
+                    }`}
+                  />
+                  {formErrors.hora_control && <p className="text-red-600 text-xs mt-1">{formErrors.hora_control}</p>}
+                </div>
+
+                <div className="sm:col-span-2 lg:col-span-1">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Nombre del Servicio *</label>
+                  <select
+                    name="nombre_servicio"
+                    value={formData.nombre_servicio}
+                    onChange={handleInputChange}
+                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700 ${
+                      formErrors.nombre_servicio ? 'border-red-300' : 'border-cyan-200'
+                    }`}
+                  >
+                    <option value="">Seleccionar servicio...</option>
+                    {SERVICIOS_COMUNES.map((servicio) => (
+                      <option key={servicio} value={servicio}>{servicio}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    value={formData.nombre_servicio}
+                    onChange={handleInputChange}
+                    name="nombre_servicio"
+                    placeholder="O escriba un tratamiento personalizado"
+                    className="w-full px-3 py-1 mt-2 border border-cyan-100 rounded-lg text-sm text-slate-600 focus:ring-1 focus:ring-cyan-400"
+                  />
+                  {formErrors.nombre_servicio && <p className="text-red-600 text-xs mt-1">{formErrors.nombre_servicio}</p>}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Próximo Control */}
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-blue-800 mb-4 flex items-center">
-              <Clock className="w-5 h-5 mr-2" />
-              Próximo Control (Opcional)
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {currentStep === 2 && (
+            <div className="space-y-6">
+              {/* Próximo Control */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fecha del Próximo Control
-                </label>
-                <input
-                  type="date"
-                  name="fecha_proximo_control"
-                  value={formData.fecha_proximo_control}
-                  onChange={handleChange}
-                  min={formData.fecha_control}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Hora del Próximo Control
-                </label>
-                <input
-                  type="time"
-                  name="hora_proximo_control"
-                  value={formData.hora_proximo_control}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Servicio y Producto */}
-          <div className="bg-green-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-green-800 mb-4 flex items-center">
-              <Package className="w-5 h-5 mr-2" />
-              Servicio y Producto
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre del Servicio *
-                </label>
-                <select
-                  name="nombre_servicio"
-                  value={formData.nombre_servicio}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="">Seleccionar servicio...</option>
-                  {SERVICIOS_COMUNES.map((servicio) => (
-                    <option key={servicio} value={servicio}>
-                      {servicio}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  value={formData.nombre_servicio}
-                  onChange={handleChange}
-                  name="nombre_servicio"
-                  placeholder="O escriba un tratamiento personalizado"
-                  className="w-full px-3 py-1 mt-2 border border-gray-100 rounded-lg text-sm text-gray-600 focus:ring-1 focus:ring-green-400"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Producto Utilizado
-                </label>
-                <input
-                  type="text"
-                  name="producto"
-                  value={formData.producto}
-                  onChange={handleChange}
-                  placeholder="Ej: Botox Allergan"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Lote del Producto
-                </label>
-                <input
-                  type="text"
-                  name="lote_producto"
-                  value={formData.lote_producto}
-                  onChange={handleChange}
-                  placeholder="Número de lote"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fecha de Vencimiento
-                </label>
-                <input
-                  type="date"
-                  name="fecha_venc_producto"
-                  value={formData.fecha_venc_producto}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Dilución/Concentración
-                </label>
-                <input
-                  type="text"
-                  name="dilucion"
-                  value={formData.dilucion}
-                  onChange={handleChange}
-                  placeholder="Ej: 100 UI en 2.5ml de solución salina"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Fotos */}
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-purple-800 mb-4 flex items-center">
-              <Camera className="w-5 h-5 mr-2" />
-              Fotografías (Antes y Después)
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Foto 1 (Antes)
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleImageUpload(e, 'foto1')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-                {formData.foto1 && (
-                  <div className="mt-2 relative">
-                    <img
-                      src={formData.foto1}
-                      alt="Foto 1 preview"
-                      className="w-32 h-32 object-cover rounded-lg border"
+                <h4 className="text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-cyan-200 flex items-center">
+                  <Clock className="w-5 h-5 mr-2" />
+                  Próximo Control (Opcional)
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Fecha del Próximo Control</label>
+                    <input
+                      type="date"
+                      name="fecha_proximo_control"
+                      value={formData.fecha_proximo_control}
+                      onChange={handleInputChange}
+                      min={formData.fecha_control}
+                      className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700 ${
+                        formErrors.fecha_proximo_control ? 'border-red-300' : 'border-cyan-200'
+                      }`}
                     />
-                    <button
-                      type="button"
-                      onClick={() => removeImage('foto1')}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                    >
-                      ×
-                    </button>
+                    {formErrors.fecha_proximo_control && <p className="text-red-600 text-xs mt-1">{formErrors.fecha_proximo_control}</p>}
                   </div>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Foto 2 (Después)
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleImageUpload(e, 'foto2')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-                {formData.foto2 && (
-                  <div className="mt-2 relative">
-                    <img
-                      src={formData.foto2}
-                      alt="Foto 2 preview"
-                      className="w-32 h-32 object-cover rounded-lg border"
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Hora del Próximo Control</label>
+                    <input
+                      type="time"
+                      name="hora_proximo_control"
+                      value={formData.hora_proximo_control}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                     />
-                    <button
-                      type="button"
-                      onClick={() => removeImage('foto2')}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                    >
-                      ×
-                    </button>
                   </div>
-                )}
+                </div>
+              </div>
+
+              {/* Información del Producto */}
+              <div>
+                <h4 className="text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-cyan-200 flex items-center">
+                  <Package className="w-5 h-5 mr-2" />
+                  Información del Producto
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Producto Utilizado</label>
+                    <input
+                      type="text"
+                      name="producto"
+                      value={formData.producto}
+                      onChange={handleInputChange}
+                      placeholder="Ej: Botox Allergan"
+                      className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Lote del Producto</label>
+                    <input
+                      type="text"
+                      name="lote_producto"
+                      value={formData.lote_producto}
+                      onChange={handleInputChange}
+                      placeholder="Número de lote"
+                      className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Fecha de Vencimiento</label>
+                    <input
+                      type="date"
+                      name="fecha_venc_producto"
+                      value={formData.fecha_venc_producto}
+                      onChange={handleInputChange}
+                      className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700 ${
+                        formErrors.fecha_venc_producto ? 'border-red-300' : 'border-cyan-200'
+                      }`}
+                    />
+                    {formErrors.fecha_venc_producto && <p className="text-red-600 text-xs mt-1">{formErrors.fecha_venc_producto}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Dilución/Concentración</label>
+                    <input
+                      type="text"
+                      name="dilucion"
+                      value={formData.dilucion}
+                      onChange={handleInputChange}
+                      placeholder="Ej: 100 UI en 2.5ml de solución salina"
+                      className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              * Tamaño máximo: 5MB por imagen. Formatos aceptados: JPG, PNG, GIF
-            </p>
-          </div>
+          )}
 
-          {/* Descripción */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Observaciones/Descripción
-            </label>
-            <textarea
-              name="descripcion"
-              value={formData.descripcion}
-              onChange={handleChange}
-              rows={4}
-              placeholder="Detalles del tratamiento, observaciones, efectos secundarios, reacciones del paciente, etc."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent resize-none"
-            />
-          </div>
+          {currentStep === 3 && (
+            <div className="space-y-6">
+              {/* Fotografías */}
+              <div>
+                <h4 className="text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-cyan-200 flex items-center">
+                  <Camera className="w-5 h-5 mr-2" />
+                  Fotografías (Antes y Después)
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* Foto 1 */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Foto 1 (Antes)</label>
+                    {formData.foto1 ? (
+                      <div className="relative">
+                        <img
+                          src={formData.foto1}
+                          alt="Foto 1 preview"
+                          className="w-full h-48 object-cover rounded-xl border border-cyan-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage('foto1')}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-cyan-200 rounded-xl p-6 text-center hover:border-cyan-300 transition-colors">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, 'foto1')}
+                          className="hidden"
+                          id="foto1-input"
+                          disabled={uploadingImages.foto1}
+                        />
+                        <label
+                          htmlFor="foto1-input"
+                          className="cursor-pointer flex flex-col items-center"
+                        >
+                          {uploadingImages.foto1 ? (
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500 mb-2"></div>
+                          ) : (
+                            <Upload className="w-8 h-8 text-cyan-400 mb-2" />
+                          )}
+                          <span className="text-sm text-slate-600">
+                            {uploadingImages.foto1 ? 'Subiendo...' : 'Subir imagen'}
+                          </span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
 
-          {/* Botones */}
-          <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+                  {/* Foto 2 */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Foto 2 (Después)</label>
+                    {formData.foto2 ? (
+                      <div className="relative">
+                        <img
+                          src={formData.foto2}
+                          alt="Foto 2 preview"
+                          className="w-full h-48 object-cover rounded-xl border border-cyan-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage('foto2')}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-cyan-200 rounded-xl p-6 text-center hover:border-cyan-300 transition-colors">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, 'foto2')}
+                          className="hidden"
+                          id="foto2-input"
+                          disabled={uploadingImages.foto2}
+                        />
+                        <label
+                          htmlFor="foto2-input"
+                          className="cursor-pointer flex flex-col items-center"
+                        >
+                          {uploadingImages.foto2 ? (
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500 mb-2"></div>
+                          ) : (
+                            <Upload className="w-8 h-8 text-cyan-400 mb-2" />
+                          )}
+                          <span className="text-sm text-slate-600">
+                            {uploadingImages.foto2 ? 'Subiendo...' : 'Subir imagen'}
+                          </span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">
+                  * Tamaño máximo: 10MB por imagen. Formatos aceptados: JPG, PNG, WebP
+                </p>
+              </div>
+
+              {/* Descripción */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Observaciones/Descripción</label>
+                <textarea
+                  name="descripcion"
+                  value={formData.descripcion}
+                  onChange={handleInputChange}
+                  rows={4}
+                  placeholder="Detalles del tratamiento, observaciones, efectos secundarios, reacciones del paciente, etc."
+                  className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700 resize-none"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex flex-col sm:flex-row justify-between items-center p-4 sm:p-6 border-t border-cyan-200 bg-slate-50 space-y-3 sm:space-y-0">
+          <div className="text-sm text-slate-500">* Campos obligatorios</div>
+          <div className="flex space-x-3 w-full sm:w-auto">
+            {currentStep > 1 && (
+              <button
+                onClick={() => setCurrentStep(prev => prev - 1)}
+                className="flex-1 sm:flex-none bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg text-sm px-6 py-2.5 transition-colors"
+                disabled={isLoading}
+              >
+                Anterior
+              </button>
+            )}
             <button
-              type="button"
-              onClick={onClose}
+              onClick={handleClose}
+              className="flex-1 sm:flex-none bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg text-sm px-6 py-2.5 transition-colors"
               disabled={isLoading}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               Cancelar
             </button>
-            <button
-              type="submit"
-              disabled={isLoading || !formData.nombre_servicio}
-              className="px-6 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors disabled:opacity-50 flex items-center"
-            >
-              {isLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Guardando...
-                </>
-              ) : (
-                'Guardar Tratamiento'
-              )}
-            </button>
+            {currentStep < 3 ? (
+              <button
+                onClick={handleNext}
+                className="flex-1 sm:flex-none flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-6 py-2.5 transition-colors shadow-sm"
+                disabled={isLoading}
+              >
+                Siguiente
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                className="flex-1 sm:flex-none flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-6 py-2.5 transition-colors shadow-sm"
+                disabled={isLoading || uploadingImages.foto1 || uploadingImages.foto2}
+              >
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Crear Tratamiento
+                  </>
+                )}
+              </button>
+            )}
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
