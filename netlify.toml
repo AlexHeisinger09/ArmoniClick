@@ -1,28 +1,42 @@
-# netlify.toml - Configuración de Netlify
+# netlify.toml - EJEMPLO DE CONFIGURACIÓN PARA LAS RUTAS DE TRATAMIENTOS
 
 [build]
-  command = "npm run build"
   functions = "netlify/functions"
-  publish = "dist"
 
-[functions]
-  directory = "netlify/functions"
-
-# Redirects para el SPA
+# Rutas para tratamientos
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  from = "/api/treatments/patient/:patientId"
+  to = "/.netlify/functions/treatments"
   status = 200
 
+[[redirects]]
+  from = "/api/treatments/:treatmentId"
+  to = "/.netlify/functions/treatments"
+  status = 200
+
+# Otras rutas existentes...
+[[redirects]]
+  from = "/api/auth/*"
+  to = "/.netlify/functions/auth"
+  status = 200
+
+[[redirects]]
+  from = "/api/patients/*"
+  to = "/.netlify/functions/patients"
+  status = 200
+
+[[redirects]]
+  from = "/api/user/*"
+  to = "/.netlify/functions/user"
+  status = 200
+
+[[redirects]]
+  from = "/api/upload"
+  to = "/.netlify/functions/upload"
+  status = 200
+
+# Ruta por defecto para SPA
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-# Variables de entorno de ejemplo (configurar en el dashboard de Netlify)
-[build.environment]
-  NODE_VERSION = "18"
-
-# Configuración de las functions
-[functions."*"]
-  max_duration = "30s"
