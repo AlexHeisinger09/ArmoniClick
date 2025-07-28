@@ -6,7 +6,7 @@ import { Patient } from "@/core/use-cases/patients";
 // Importar los componentes de las pestañas
 import { PatientInformation } from './PatientInformation';
 import { PatientBudget } from './PatientBudget';
-import { PatientTreatments } from './PatientTreatments';
+import { PatientTreatments } from './treatments/PatientTreatments';
 import { PatientAppointments } from './PatientAppointments';
 import { PatientMedicalHistory } from './PatientMedicalHistory';
 
