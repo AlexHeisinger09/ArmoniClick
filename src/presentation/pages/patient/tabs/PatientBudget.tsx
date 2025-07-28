@@ -554,77 +554,63 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
             </div>
 
             {/* Formulario para agregar tratamientos */}
-            <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center space-x-3">
-                        <div className="bg-cyan-100 p-2 rounded-full">
-                            <Calculator className="w-6 h-6 text-cyan-600" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-semibold text-slate-700">Agregar Tratamiento</h3>
-                            <p className="text-sm text-slate-500">
-                                Agrega tratamientos {budgetType === 'odontologico' ? 'odontológicos' : 'estéticos'} al presupuesto
-                            </p>
-                        </div>
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">  {/* Agrega items-end aquí */}
+                {/* Primer input */}
+                <div className="flex flex-col">  {/* Añade flex-col para mantener el label arriba */}
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                        {budgetType === 'odontologico' ? 'Pieza' : 'Zona'}
+                    </label>
+                    <input
+                        type="text"
+                        value={newItem.pieza}
+                        onChange={(e) => setNewItem({ ...newItem, pieza: e.target.value })}
+                        placeholder={budgetType === 'odontologico' ? "ej: 4.4, B.C, 2.6" : "ej: Sonrisa, Labios, Rostro"}
+                        className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                    />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                            {budgetType === 'odontologico' ? 'Pieza' : 'Zona'}
-                        </label>
-                        <input
-                            type="text"
-                            value={newItem.pieza}
-                            onChange={(e) => setNewItem({ ...newItem, pieza: e.target.value })}
-                            placeholder={budgetType === 'odontologico' ? "ej: 4.4, B.C, 2.6" : "ej: Sonrisa, Labios, Rostro"}
-                            className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Tratamiento</label>
-                        <select
-                            value={newItem.accion}
-                            onChange={(e) => setNewItem({ ...newItem, accion: e.target.value })}
-                            className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                        >
-                            <option value="">Seleccionar tratamiento</option>
-                            {getCurrentTreatments().map((treatment) => (
-                                <option key={treatment} value={treatment}>{treatment}</option>
-                            ))}
-                        </select>
-                        <input
-                            type="text"
-                            value={newItem.accion}
-                            onChange={(e) => setNewItem({ ...newItem, accion: e.target.value })}
-                            placeholder="O escriba un tratamiento personalizado"
-                            className="w-full px-3 py-1 mt-2 border border-cyan-100 rounded-lg text-sm text-slate-600 focus:ring-1 focus:ring-cyan-400"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Valor ($)</label>
-                        <input
-                            type="text"
-                            value={newItem.valor}
-                            onChange={(e) => handleValueChange(e.target.value, setNewItem, 'valor')}
-                            placeholder="25.000"
-                            className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                        />
-                    </div>
-
-                    <div className="flex items-end">
-                        <button
-                            onClick={handleAddItem}
-                            className="w-full flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-xl text-sm px-4 py-2.5 transition-colors shadow-sm"
-                        >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Agregar
-                        </button>
-                    </div>
+                {/* Segundo input (select) */}
+                <div className="flex flex-col">  {/* Añade flex-col aquí también */}
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Tratamiento</label>
+                    <select
+                        value={newItem.accion}
+                        onChange={(e) => setNewItem({ ...newItem, accion: e.target.value })}
+                        className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                    >
+                        <option value="">Seleccionar tratamiento</option>
+                        {getCurrentTreatments().map((treatment) => (
+                            <option key={treatment} value={treatment}>{treatment}</option>
+                        ))}
+                    </select>
+                    <input
+                        type="text"
+                        value={newItem.accion}
+                        onChange={(e) => setNewItem({ ...newItem, accion: e.target.value })}
+                        placeholder="O escriba un tratamiento personalizado"
+                        className="w-full px-3 py-1 mt-2 border border-cyan-100 rounded-lg text-sm text-slate-600 focus:ring-1 focus:ring-cyan-400"
+                    />
                 </div>
+
+                {/* Tercer input */}
+                <div className="flex flex-col">  {/* Añade flex-col aquí también */}
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Valor ($)</label>
+                    <input
+                        type="text"
+                        value={newItem.valor}
+                        onChange={(e) => handleValueChange(e.target.value, setNewItem, 'valor')}
+                        placeholder="25.000"
+                        className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                    />
+                </div>
+
+                {/* Botón - Elimina el div flex que lo envolvía */}
+                <button
+                    onClick={handleAddItem}
+                    className="w-full flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-xl text-sm px-4 py-2.5 transition-colors shadow-sm h-[42px]"
+                >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar
+                </button>
             </div>
 
             {/* Tabla de tratamientos */}
