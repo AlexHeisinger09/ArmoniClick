@@ -89,6 +89,27 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
           <h4 className="font-semibold text-slate-700 mb-4">Información Médica Adicional</h4>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {patient.alergias && (
+              <div>
+                <p className="text-sm text-slate-500 font-medium mb-2">Alergias</p>
+                <p className="text-sm text-slate-700">{patient.alergias}</p>
+              </div>
+            )}
+
+            {patient.medicamentos_actuales && (
+              <div>
+                <p className="text-sm text-slate-500 font-medium mb-2">Medicamentos Actuales</p>
+                <p className="text-sm text-slate-700">{patient.medicamentos_actuales}</p>
+              </div>
+            )}
+
+            {patient.enfermedades_cronicas && (
+              <div>
+                <p className="text-sm text-slate-500 font-medium mb-2">Enfermedades Crónicas</p>
+                <p className="text-sm text-slate-700">{patient.enfermedades_cronicas}</p>
+              </div>
+            )}
+
             {patient.cirugias_previas && (
               <div>
                 <p className="text-sm text-slate-500 font-medium mb-2">Cirugías Previas</p>
