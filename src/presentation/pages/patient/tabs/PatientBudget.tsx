@@ -1,4 +1,4 @@
-// src/presentation/pages/patient/BudgetComponent.tsx
+// src/presentation/pages/patient/tabs/PatientBudget.tsx
 import React, { useState, useRef } from 'react';
 import {
     Plus,
@@ -17,6 +17,7 @@ import {
     Stethoscope
 } from 'lucide-react';
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
+import { Patient } from "@/core/use-cases/patients";
 
 interface BudgetItem {
     id: string;
@@ -25,17 +26,8 @@ interface BudgetItem {
     valor: number;
 }
 
-interface BudgetProps {
-    patient: {
-        id: number;
-        nombres: string;
-        apellidos: string;
-        rut: string;
-        telefono: string;
-        email: string;
-        direccion: string;
-        ciudad: string;
-    };
+interface PatientBudgetProps {
+    patient: Patient;
 }
 
 interface NotificationProps {
@@ -78,7 +70,7 @@ const Notification: React.FC<NotificationProps> = ({ type, message, onClose }) =
     );
 };
 
-const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
+const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
     const [items, setItems] = useState<BudgetItem[]>([]);
     const [budgetType, setBudgetType] = useState<BudgetType>('odontologico');
     const [newItem, setNewItem] = useState({
@@ -493,6 +485,7 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
             showNotification('error', 'No se pudo abrir la ventana para imprimir');
         }
     };
+
     return (
         <div className="space-y-6">
             {notification && (
@@ -684,7 +677,6 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
                             <tbody className="bg-white divide-y divide-cyan-100">
                                 {items.map((item) => (
                                     <tr key={item.id} className="hover:bg-cyan-50 transition-colors">
-                                        {/* COLUMNA 1: PIEZA/ZONA */}
                                         <td className="px-6 py-4">
                                             {isEditing === item.id ? (
                                                 <input
@@ -700,7 +692,6 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
                                             )}
                                         </td>
 
-                                        {/* COLUMNA 2: ACCIÓN/TRATAMIENTO */}
                                         <td className="px-6 py-4">
                                             {isEditing === item.id ? (
                                                 <input
@@ -716,7 +707,6 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
                                             )}
                                         </td>
 
-                                        {/* COLUMNA 3: VALOR */}
                                         <td className="px-6 py-4 text-right">
                                             {isEditing === item.id ? (
                                                 <input
@@ -732,7 +722,6 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
                                             )}
                                         </td>
 
-                                        {/* COLUMNA 4: ACCIONES */}
                                         <td className="px-6 py-4 text-center">
                                             <div className="flex items-center justify-center space-x-2">
                                                 {isEditing === item.id ? (
@@ -937,4 +926,4 @@ const BudgetComponent: React.FC<BudgetProps> = ({ patient }) => {
     );
 };
 
-export { BudgetComponent };
+export { PatientBudget };
