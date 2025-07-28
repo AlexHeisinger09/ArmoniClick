@@ -33,31 +33,36 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-          <div className="flex gap-3 justify-center sm:justify-end">
+        {/* Encabezado con título y botones de acción */}
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-semibold text-slate-700">
+            Datos Personales
+          </h3>
+          
+          <div className="flex space-x-3">
             <button
               onClick={() => onEdit(patient)}
-              className="flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors shadow-sm"
+              className="flex items-center text-slate-500 hover:text-slate-700 transition-colors"
               title="Editar Paciente"
             >
-              <Edit className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Editar Paciente</span>
+              <Edit className="w-4 h-4 mr-2" />
+              Editar
             </button>
+            
             <button
               onClick={() => {
                 if (window.confirm('¿Estás seguro de que deseas eliminar este paciente?')) {
                   onDelete(patient.id);
                 }
               }}
-              className="flex items-center justify-center bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors shadow-sm"
+              className="flex items-center text-red-500 hover:text-red-700 transition-colors"
               title="Eliminar Paciente"
             >
-              <Trash2 className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Eliminar</span>
+              <Trash2 className="w-4 h-4 mr-2" />
+              Eliminar
             </button>
           </div>
         </div>
-
         {/* Información de contacto */}
         <h4 className="font-semibold text-slate-700 mb-4">Información de contacto</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -79,32 +84,11 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
           </div>
         </div>
 
-        {/* Información médica */}
+        {/* Información médica adicional */}
         <div className="mt-6 pt-6 border-t border-cyan-200">
-          <h4 className="font-semibold text-slate-700 mb-4">Información Médica</h4>
+          <h4 className="font-semibold text-slate-700 mb-4">Información Médica Adicional</h4>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {patient.alergias && (
-              <div>
-                <p className="text-sm text-slate-500 font-medium mb-2">Alergias</p>
-                <p className="text-sm text-slate-700">{patient.alergias}</p>
-              </div>
-            )}
-
-            {patient.medicamentos_actuales && (
-              <div>
-                <p className="text-sm text-slate-500 font-medium mb-2">Medicamentos Actuales</p>
-                <p className="text-sm text-slate-700">{patient.medicamentos_actuales}</p>
-              </div>
-            )}
-
-            {patient.enfermedades_cronicas && (
-              <div>
-                <p className="text-sm text-slate-500 font-medium mb-2">Enfermedades Crónicas</p>
-                <p className="text-sm text-slate-700">{patient.enfermedades_cronicas}</p>
-              </div>
-            )}
-
             {patient.cirugias_previas && (
               <div>
                 <p className="text-sm text-slate-500 font-medium mb-2">Cirugías Previas</p>

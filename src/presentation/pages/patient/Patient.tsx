@@ -414,31 +414,57 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
           </div>
         )}
         {currentView === 'detail' && selectedPatient && (
-          <div className="border border-cyan-200 rounded-lg px-4 py-3 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="bg-white border border-cyan-200 rounded-xl px-6 py-4 mb-6 shadow-sm">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               {/* Información del paciente - Lado izquierdo */}
-              <div className="flex items-center space-x-3 min-w-0">
-                <div className="bg-cyan-100 p-2 rounded-full flex-shrink-0">
-                  <User className="w-5 h-5 text-cyan-600" />
+              <div className="flex items-center space-x-4 min-w-0">
+                <div className="bg-cyan-100 w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center">
+                  <span className="text-cyan-700 font-bold text-lg">
+                    {selectedPatient.nombres?.[0]?.toUpperCase() || ''}{selectedPatient.apellidos?.[0]?.toUpperCase() || ''}
+                  </span>
                 </div>
                 <div className="min-w-0">
-                  <h4 className="font-semibold text-slate-700 truncate">
+                  <h4 className="text-xl font-bold text-slate-700 truncate">
                     {selectedPatient.nombres} {selectedPatient.apellidos}
                   </h4>
-                  <p className="text-slate-500 text-sm">
-                    {selectedPatient.rut} • {calculateAge(selectedPatient.fecha_nacimiento)} años
-                  </p>
+                  <div className="flex items-center space-x-3 mt-1">
+                    <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded-full text-xs font-medium">
+                      {selectedPatient.rut} • {calculateAge(selectedPatient.fecha_nacimiento)} años
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Alertas médicas - Lado derecho */}
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-4 sm:gap-6">
+              {/* Alertas médicas destacadas - Lado derecho */}
+              <div className="flex flex-wrap lg:flex-nowrap items-center gap-3">
                 {/* Alergias */}
-                <div className="flex items-center space-x-2 bg-slate-50 rounded-lg px-3 py-2">
-                  <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0" />
-                  <div className="text-sm">
-                    <span className="text-slate-600 font-medium">Alergias</span>
-                    <div className="text-slate-700 text-xs truncate max-w-32">
+                <div className={`flex items-center space-x-2 rounded-lg px-3 py-2 border-l-4 ${
+                  (selectedPatient.alergias && selectedPatient.alergias !== "Sin alergias conocidas") 
+                    ? 'bg-red-50 border-red-500' 
+                    : 'bg-gray-50 border-gray-300'
+                }`}>
+                  <div className={`rounded-full p-1 ${
+                    (selectedPatient.alergias && selectedPatient.alergias !== "Sin alergias conocidas") 
+                      ? 'bg-red-500' 
+                      : 'bg-gray-400'
+                  }`}>
+                    <svg className="w-3 h-3 text-white" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="text-sm min-w-0">
+                    <span className={`font-semibold ${
+                      (selectedPatient.alergias && selectedPatient.alergias !== "Sin alergias conocidas") 
+                        ? 'text-red-800' 
+                        : 'text-gray-600'
+                    }`}>
+                      Alergias
+                    </span>
+                    <div className={`text-xs truncate max-w-24 ${
+                      (selectedPatient.alergias && selectedPatient.alergias !== "Sin alergias conocidas") 
+                        ? 'text-red-700 font-medium' 
+                        : 'text-gray-500'
+                    }`}>
                       {(selectedPatient.alergias && selectedPatient.alergias !== "Sin alergias conocidas") ? 
                         selectedPatient.alergias : "No"}
                     </div>
@@ -446,11 +472,33 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                 </div>
 
                 {/* Enfermedades */}
-                <div className="flex items-center space-x-2 bg-slate-50 rounded-lg px-3 py-2">
-                  <Heart className="w-4 h-4 text-red-500 flex-shrink-0" />
-                  <div className="text-sm">
-                    <span className="text-slate-600 font-medium">Enfermedades</span>
-                    <div className="text-slate-700 text-xs truncate max-w-32">
+                <div className={`flex items-center space-x-2 rounded-lg px-3 py-2 border-l-4 ${
+                  (selectedPatient.enfermedades_cronicas && selectedPatient.enfermedades_cronicas !== "Sin enfermedades crónicas") 
+                    ? 'bg-orange-50 border-orange-500' 
+                    : 'bg-gray-50 border-gray-300'
+                }`}>
+                  <div className={`rounded-full p-1 ${
+                    (selectedPatient.enfermedades_cronicas && selectedPatient.enfermedades_cronicas !== "Sin enfermedades crónicas") 
+                      ? 'bg-orange-500' 
+                      : 'bg-gray-400'
+                  }`}>
+                    <svg className="w-3 h-3 text-white" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="text-sm min-w-0">
+                    <span className={`font-semibold ${
+                      (selectedPatient.enfermedades_cronicas && selectedPatient.enfermedades_cronicas !== "Sin enfermedades crónicas") 
+                        ? 'text-orange-800' 
+                        : 'text-gray-600'
+                    }`}>
+                      Enfermedades
+                    </span>
+                    <div className={`text-xs truncate max-w-24 ${
+                      (selectedPatient.enfermedades_cronicas && selectedPatient.enfermedades_cronicas !== "Sin enfermedades crónicas") 
+                        ? 'text-orange-700 font-medium' 
+                        : 'text-gray-500'
+                    }`}>
                       {(selectedPatient.enfermedades_cronicas && selectedPatient.enfermedades_cronicas !== "Sin enfermedades crónicas") ? 
                         selectedPatient.enfermedades_cronicas : "No"}
                     </div>
@@ -458,13 +506,69 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                 </div>
 
                 {/* Medicamentos */}
-                <div className="flex items-center space-x-2 bg-slate-50 rounded-lg px-3 py-2">
-                  <Stethoscope className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                  <div className="text-sm">
-                    <span className="text-slate-600 font-medium">Medicamentos</span>
-                    <div className="text-slate-700 text-xs truncate max-w-32">
+                <div className={`flex items-center space-x-2 rounded-lg px-3 py-2 border-l-4 ${
+                  (selectedPatient.medicamentos_actuales && selectedPatient.medicamentos_actuales !== "Sin medicamentos") 
+                    ? 'bg-blue-50 border-blue-500' 
+                    : 'bg-gray-50 border-gray-300'
+                }`}>
+                  <div className={`rounded-full p-1 ${
+                    (selectedPatient.medicamentos_actuales && selectedPatient.medicamentos_actuales !== "Sin medicamentos") 
+                      ? 'bg-blue-500' 
+                      : 'bg-gray-400'
+                  }`}>
+                    <svg className="w-3 h-3 text-white" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="text-sm min-w-0">
+                    <span className={`font-semibold ${
+                      (selectedPatient.medicamentos_actuales && selectedPatient.medicamentos_actuales !== "Sin medicamentos") 
+                        ? 'text-blue-800' 
+                        : 'text-gray-600'
+                    }`}>
+                      Medicamentos
+                    </span>
+                    <div className={`text-xs truncate max-w-24 ${
+                      (selectedPatient.medicamentos_actuales && selectedPatient.medicamentos_actuales !== "Sin medicamentos") 
+                        ? 'text-blue-700 font-medium' 
+                        : 'text-gray-500'
+                    }`}>
                       {(selectedPatient.medicamentos_actuales && selectedPatient.medicamentos_actuales !== "Sin medicamentos") ? 
                         selectedPatient.medicamentos_actuales : "No"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notas Médicas / Observaciones */}
+                <div className={`flex items-center space-x-2 rounded-lg px-3 py-2 border-l-4 ${
+                  (selectedPatient.notas_medicas && selectedPatient.notas_medicas.trim() !== "") 
+                    ? 'bg-purple-50 border-purple-500' 
+                    : 'bg-gray-50 border-gray-300'
+                }`}>
+                  <div className={`rounded-full p-1 ${
+                    (selectedPatient.notas_medicas && selectedPatient.notas_medicas.trim() !== "") 
+                      ? 'bg-purple-500' 
+                      : 'bg-gray-400'
+                  }`}>
+                    <svg className="w-3 h-3 text-white" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="text-sm min-w-0">
+                    <span className={`font-semibold ${
+                      (selectedPatient.notas_medicas && selectedPatient.notas_medicas.trim() !== "") 
+                        ? 'text-purple-800' 
+                        : 'text-gray-600'
+                    }`}>
+                      Observaciones
+                    </span>
+                    <div className={`text-xs truncate max-w-24 ${
+                      (selectedPatient.notas_medicas && selectedPatient.notas_medicas.trim() !== "") 
+                        ? 'text-purple-700 font-medium' 
+                        : 'text-gray-500'
+                    }`}>
+                      {(selectedPatient.notas_medicas && selectedPatient.notas_medicas.trim() !== "") ? 
+                        selectedPatient.notas_medicas : "No"}
                     </div>
                   </div>
                 </div>
