@@ -1,16 +1,18 @@
-// src/presentation/pages/patient/tabs/treatments/PatientTreatments.tsx
+// src/presentation/pages/patient/tabs/treatments/PatientTreatments.tsx - ACTUALIZADO
 import React, { useState } from 'react';
 import { Patient } from "@/core/use-cases/patients";
-import { Treatment, CreateTreatmentData } from "@/core/use-cases/treatments";
+import { Treatment, CreateTreatmentData, UpdateTreatmentData } from "@/core/use-cases/treatments";
 import { 
   useTreatments, 
   useCreateTreatment, 
+  useUpdateTreatment,
   useDeleteTreatment 
 } from "@/presentation/hooks/treatments/useTreatments";
 
 // Componentes
 import { TreatmentsList } from './components/TreatmentsList';
 import { NewTreatmentModal } from './modals/NewTreatmentModal';
+import { EditTreatmentModal } from './modals/EditTreatmentModal';
 import { TreatmentDetailModal } from './modals/TreatmentDetailModal';
 import { Notification } from './shared/Notification';
 
@@ -20,8 +22,10 @@ interface PatientTreatmentsProps {
 
 const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   const [showNewTreatmentModal, setShowNewTreatmentModal] = useState(false);
+  const [showEditTreatmentModal, setShowEditTreatmentModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedTreatment, setSelectedTreatment] = useState<Treatment | null>(null);
+  const [treatmentToEdit, setTreatmentToEdit] = useState<Treatment | null>(null);
   const [notification, setNotification] = useState<{
     type: 'success' | 'error' | 'info';
     title: string;
@@ -31,6 +35,7 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   // Hooks para tratamientos
   const { queryTreatments } = useTreatments(patient.id);
   const { createTreatmentMutation, isLoadingCreate } = useCreateTreatment();
+  const { updateTreatmentMutation, isLoadingUpdate } = useUpdateTreatment();
   const { deleteTreatmentMutation, isLoadingDelete } = useDeleteTreatment();
 
   const treatments = queryTreatments.data?.treatments || [];
@@ -84,6 +89,30 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
     }
   };
 
+  // Manejar actualización de tratamiento
+  const handleUpdateTreatment = async (treatmentId: number, treatmentData: UpdateTreatmentData) => {
+    try {
+      await updateTreatmentMutation.mutateAsync({
+        treatmentId,
+        treatmentData
+      });
+      
+      setShowEditTreatmentModal(false);
+      setTreatmentToEdit(null);
+      
+      // Si el tratamiento está siendo visualizado, cerrar el modal de detalles
+      if (selectedTreatment && selectedTreatment.id_tratamiento === treatmentId) {
+        setShowDetailModal(false);
+        setSelectedTreatment(null);
+      }
+      
+      showNotification('success', 'Éxito', 'Tratamiento actualizado correctamente');
+    } catch (error: any) {
+      const errorMessage = processApiError(error);
+      showNotification('error', 'Error al actualizar tratamiento', errorMessage);
+    }
+  };
+
   // Manejar eliminación de tratamiento
   const handleDeleteTreatment = async (treatmentId: number) => {
     if (!window.confirm('¿Estás seguro de que deseas eliminar este tratamiento? Esta acción no se puede deshacer.')) {
@@ -107,15 +136,30 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
     setShowDetailModal(true);
   };
 
-  // Función para editar tratamiento (placeholder)
+  // Función para editar tratamiento
   const handleEditTreatment = (treatment: Treatment) => {
-    // TODO: Implementar modal de edición
-    showNotification('info', 'Funcionalidad en desarrollo', 'La edición de tratamientos estará disponible próximamente');
+    setTreatmentToEdit(treatment);
+    setShowEditTreatmentModal(true);
   };
 
   // Función para abrir modal de nuevo tratamiento
   const handleNewTreatment = () => {
     setShowNewTreatmentModal(true);
+  };
+
+  // Función para cerrar modales
+  const handleCloseNewModal = () => {
+    setShowNewTreatmentModal(false);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditTreatmentModal(false);
+    setTreatmentToEdit(null);
+  };
+
+  const handleCloseDetailModal = () => {
+    setShowDetailModal(false);
+    setSelectedTreatment(null);
   };
 
   return (
@@ -134,19 +178,25 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
       <NewTreatmentModal
         isOpen={showNewTreatmentModal}
         patientId={patient.id}
-        onClose={() => setShowNewTreatmentModal(false)}
+        onClose={handleCloseNewModal}
         onSubmit={handleCreateTreatment}
         isLoading={isLoadingCreate}
+      />
+
+      {/* Modal para editar tratamiento */}
+      <EditTreatmentModal
+        isOpen={showEditTreatmentModal}
+        treatment={treatmentToEdit}
+        onClose={handleCloseEditModal}
+        onSubmit={handleUpdateTreatment}
+        isLoading={isLoadingUpdate}
       />
 
       {/* Modal para ver detalles del tratamiento */}
       <TreatmentDetailModal
         isOpen={showDetailModal}
         treatment={selectedTreatment}
-        onClose={() => {
-          setShowDetailModal(false);
-          setSelectedTreatment(null);
-        }}
+        onClose={handleCloseDetailModal}
         onEdit={handleEditTreatment}
         onDelete={handleDeleteTreatment}
       />

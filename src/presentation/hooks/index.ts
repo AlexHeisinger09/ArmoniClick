@@ -11,3 +11,4 @@ export * from "./user/useUploadProfileImage";
 
 export * from "./patients/usePatients";
 export * from "./treatments/useTreatments"; 
+export * from "./treatments/useTreatmentUpload"; 

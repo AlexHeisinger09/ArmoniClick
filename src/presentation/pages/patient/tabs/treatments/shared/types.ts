@@ -1,5 +1,5 @@
 // src/presentation/pages/patient/tabs/treatments/shared/types.ts
-import { Treatment, CreateTreatmentData } from "@/core/use-cases/treatments";
+import { Treatment, CreateTreatmentData, UpdateTreatmentData } from "@/core/use-cases/treatments";
 
 export interface NotificationProps {
   type: 'success' | 'error' | 'info';
@@ -16,6 +16,13 @@ export interface TreatmentModalProps {
 export interface NewTreatmentModalProps extends TreatmentModalProps {
   patientId: number;
   onSubmit: (treatmentData: CreateTreatmentData) => void;
+  isLoading?: boolean;
+}
+
+// ✅ NUEVA INTERFACE PARA MODAL DE EDICIÓN
+export interface EditTreatmentModalProps extends TreatmentModalProps {
+  treatment: Treatment | null;
+  onSubmit: (treatmentId: number, treatmentData: UpdateTreatmentData) => void;
   isLoading?: boolean;
 }
 
@@ -52,12 +59,17 @@ export const SERVICIOS_COMUNES = [
   'Radiofrecuencia',
   'Láser CO2',
   'Microdermoabrasión',
-  'Hidrafacial',
+  'Hydrafacial',
   'Lifting no quirúrgico',
   'Rellenos dérmicos',
   'Bioestimulación',
   'Hilos tensores',
   'Criolipólisis',
   'Carboxiterapia',
+  'Lipólisis con enzimas',
+  'Tratamiento con ultrasonido',
+  'Terapia con LED',
+  'Exfoliación química',
+  'Rejuvenecimiento facial',
   'Otro'
 ];
