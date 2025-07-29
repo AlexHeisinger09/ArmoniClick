@@ -1,9 +1,7 @@
-// netlify/middlewares/auth.middleware.ts - CORREGIDO
+// netlify/middlewares/auth.middleware.ts - CORREGIDO COMPLETAMENTE
 import { UserService } from '../services/user.service';
 import { usersTable } from '../data/schemas/user.schema';
-
 import { JwtAdapter } from '../config/adapters/jwt.adapter';
-
 import { EmailResponse } from '../interfaces/response.interface';
 import { HEADERS } from '../config/utils/constants';
 
@@ -38,24 +36,8 @@ export const validateJWT = async (authorization: string) => {
       };
     }
 
-    // ✅ CORREGIDO: Incluir TODOS los campos necesarios en la selección
-    const user = await userService.findOne(usersTable.email, payload.email, {
-      id: usersTable.id,
-      rut: usersTable.rut,                     // ✅ CAMPO RUT
-      name: usersTable.name,
-      lastName: usersTable.lastName,        
-      username: usersTable.username,        
-      email: usersTable.email,
-      emailValidated: usersTable.emailValidated,
-      img: usersTable.img,
-      phone: usersTable.phone,               // ✅ CAMPOS ADICIONALES
-      address: usersTable.address,           // ✅ 
-      zipCode: usersTable.zipCode,           // ✅ 
-      city: usersTable.city,                 // ✅ 
-      createdAt: usersTable.createdAt,
-      updatedAt: usersTable.updatedAt,
-      isActive: usersTable.isActive,         // ✅ CAMPO QUE FALTABA
-    });
+    // ✅ CORREGIDO: Usar findOne sin especificar campos para obtener TODOS los campos
+    const user = await userService.findOne(usersTable.email, payload.email);
 
     if (!user) {
       return {
@@ -65,7 +47,7 @@ export const validateJWT = async (authorization: string) => {
       };
     }
 
-    console.log('🔍 Usuario encontrado en auth middleware:', user); // ✅ DEBUG
+    console.log('🔍 Usuario encontrado en auth middleware:', user);
 
     return {
       statusCode: 200,
@@ -73,7 +55,7 @@ export const validateJWT = async (authorization: string) => {
       headers: HEADERS.json,
     };
   } catch (error) {
-    console.error('❌ Error en validateJWT:', error); // ✅ DEBUG
+    console.error('❌ Error en validateJWT:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ message: "Internal server error" }),

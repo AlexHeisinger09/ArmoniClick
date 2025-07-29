@@ -25,7 +25,7 @@ export class UpdateTreatment implements UpdateTreatmentUseCase {
         };
       }
 
-      // Preparar datos para actualizar (solo los campos que no son undefined)
+      // Preparar datos para actualizar (incluir TODOS los campos que vienen en el DTO)
       const updateData: any = {};
       
       if (dto.fecha_control !== undefined) updateData.fecha_control = dto.fecha_control;
@@ -37,8 +37,11 @@ export class UpdateTreatment implements UpdateTreatmentUseCase {
       if (dto.lote_producto !== undefined) updateData.lote_producto = dto.lote_producto;
       if (dto.fecha_venc_producto !== undefined) updateData.fecha_venc_producto = dto.fecha_venc_producto;
       if (dto.dilucion !== undefined) updateData.dilucion = dto.dilucion;
-      if (dto.foto1 !== undefined) updateData.foto1 = dto.foto1;
-      if (dto.foto2 !== undefined) updateData.foto2 = dto.foto2;
+      
+      // ✅ IMPORTANTE: Permitir actualizar imágenes con valores null/vacíos
+      if (dto.foto1 !== undefined) updateData.foto1 = dto.foto1 || null;
+      if (dto.foto2 !== undefined) updateData.foto2 = dto.foto2 || null;
+      
       if (dto.descripcion !== undefined) updateData.descripcion = dto.descripcion;
 
       const updatedTreatment = await this.treatmentService.update(treatmentId, updateData, doctorId);

@@ -1,13 +1,13 @@
 // src/presentation/pages/patient/tabs/treatments/modals/EditTreatmentModal.tsx
 import React, { useState, useEffect } from 'react';
-import { 
-  Save, 
-  ChevronRight, 
-  Stethoscope, 
-  X, 
-  Calendar, 
-  Clock, 
-  Package, 
+import {
+  Save,
+  ChevronRight,
+  Stethoscope,
+  X,
+  Calendar,
+  Clock,
+  Package,
   Camera,
   Upload,
   Trash2
@@ -34,7 +34,7 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
   const [formData, setFormData] = useState<UpdateTreatmentData>({});
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [uploadingImages, setUploadingImages] = useState<{foto1: boolean, foto2: boolean}>({
+  const [uploadingImages, setUploadingImages] = useState<{ foto1: boolean, foto2: boolean }>({
     foto1: false,
     foto2: false
   });
@@ -67,7 +67,7 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
       ...prev,
       [name]: value
     }));
-    
+
     if (formErrors[name]) {
       setFormErrors(prev => ({
         ...prev,
@@ -88,7 +88,7 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
     }
 
     setUploadingImages(prev => ({ ...prev, [imageField]: true }));
-    
+
     try {
       const response = await uploadImageFromFile(file, treatment?.id_tratamiento || 0, 'before');
       setFormData(prev => ({
@@ -112,7 +112,7 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
 
   const validateStep1 = (): boolean => {
     const errors: Record<string, string> = {};
-    
+
     if (!formData.fecha_control) errors.fecha_control = 'Fecha de control es requerida';
     if (!formData.hora_control) errors.hora_control = 'Hora de control es requerida';
     if (!formData.nombre_servicio) errors.nombre_servicio = 'Nombre del servicio es requerido';
@@ -122,7 +122,7 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
       const controlDate = new Date(formData.fecha_control);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       if (controlDate > today) {
         errors.fecha_control = 'La fecha de control no puede ser futura';
       }
@@ -134,12 +134,12 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
 
   const validateStep2 = (): boolean => {
     const errors: Record<string, string> = {};
-    
+
     // Validar fecha próximo control si se proporciona
     if (formData.fecha_proximo_control && formData.fecha_control) {
       const proximoControlDate = new Date(formData.fecha_proximo_control);
       const controlDate = new Date(formData.fecha_control);
-      
+
       if (proximoControlDate <= controlDate) {
         errors.fecha_proximo_control = 'La fecha próximo control debe ser posterior a la fecha de control';
       }
@@ -149,7 +149,7 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
     if (formData.fecha_venc_producto) {
       const vencDate = new Date(formData.fecha_venc_producto);
       const today = new Date();
-      
+
       if (vencDate < today) {
         errors.fecha_venc_producto = 'La fecha de vencimiento no debería ser anterior a hoy';
       }
@@ -169,11 +169,22 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
 
   const handleSubmit = () => {
     if (treatment && validateStep1() && validateStep2()) {
-      onSubmit(treatment.id_tratamiento, formData);
+      // Preparar datos incluyendo campos vacíos explícitamente
+      const submitData: UpdateTreatmentData = {};
+
+      // Solo incluir campos que han sido modificados o están presentes en formData
+      Object.keys(formData).forEach(key => {
+        const typedKey = key as keyof UpdateTreatmentData;
+        const value = formData[typedKey];
+
+        // Incluir todos los campos, incluso si están vacíos (para permitir borrar imágenes)
+        submitData[typedKey] = value;
+      });
+
+      onSubmit(treatment.id_tratamiento, submitData);
       handleClose();
     }
   };
-
   const handleClose = () => {
     setFormErrors({});
     setCurrentStep(1);
@@ -199,13 +210,13 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
               <p className="text-sm text-slate-500">
                 Paso {currentStep} de 3 - {
                   currentStep === 1 ? 'Información del Control' :
-                  currentStep === 2 ? 'Producto y Próximo Control' : 'Fotos y Observaciones'
+                    currentStep === 2 ? 'Producto y Próximo Control' : 'Fotos y Observaciones'
                 }
               </p>
             </div>
           </div>
-          <button 
-            onClick={handleClose} 
+          <button
+            onClick={handleClose}
             className="text-slate-500 hover:text-slate-700 transition-colors p-2 hover:bg-slate-100 rounded-full"
             disabled={isLoading}
           >
@@ -218,15 +229,13 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
           <div className="flex items-center space-x-2">
             {[1, 2, 3].map((step) => (
               <div key={step} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  step <= currentStep ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-500'
-                }`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step <= currentStep ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-500'
+                  }`}>
                   {step}
                 </div>
                 {step < 3 && (
-                  <div className={`w-8 sm:w-16 h-1 mx-2 ${
-                    step < currentStep ? 'bg-amber-500' : 'bg-slate-200'
-                  }`} />
+                  <div className={`w-8 sm:w-16 h-1 mx-2 ${step < currentStep ? 'bg-amber-500' : 'bg-slate-200'
+                    }`} />
                 )}
               </div>
             ))}
@@ -250,9 +259,8 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
                     value={formData.fecha_control || ''}
                     onChange={handleInputChange}
                     max={new Date().toISOString().split('T')[0]}
-                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 ${
-                      formErrors.fecha_control ? 'border-red-300' : 'border-amber-200'
-                    }`}
+                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 ${formErrors.fecha_control ? 'border-red-300' : 'border-amber-200'
+                      }`}
                   />
                   {formErrors.fecha_control && <p className="text-red-600 text-xs mt-1">{formErrors.fecha_control}</p>}
                 </div>
@@ -264,9 +272,8 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
                     name="hora_control"
                     value={formData.hora_control || ''}
                     onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 ${
-                      formErrors.hora_control ? 'border-red-300' : 'border-amber-200'
-                    }`}
+                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 ${formErrors.hora_control ? 'border-red-300' : 'border-amber-200'
+                      }`}
                   />
                   {formErrors.hora_control && <p className="text-red-600 text-xs mt-1">{formErrors.hora_control}</p>}
                 </div>
@@ -277,9 +284,8 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
                     name="nombre_servicio"
                     value={formData.nombre_servicio || ''}
                     onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 ${
-                      formErrors.nombre_servicio ? 'border-red-300' : 'border-amber-200'
-                    }`}
+                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 ${formErrors.nombre_servicio ? 'border-red-300' : 'border-amber-200'
+                      }`}
                   >
                     <option value="">Seleccionar servicio...</option>
                     {SERVICIOS_COMUNES.map((servicio) => (
@@ -317,9 +323,8 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
                       value={formData.fecha_proximo_control || ''}
                       onChange={handleInputChange}
                       min={formData.fecha_control}
-                      className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 ${
-                        formErrors.fecha_proximo_control ? 'border-red-300' : 'border-amber-200'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 ${formErrors.fecha_proximo_control ? 'border-red-300' : 'border-amber-200'
+                        }`}
                     />
                     {formErrors.fecha_proximo_control && <p className="text-red-600 text-xs mt-1">{formErrors.fecha_proximo_control}</p>}
                   </div>
@@ -375,9 +380,8 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
                       name="fecha_venc_producto"
                       value={formData.fecha_venc_producto || ''}
                       onChange={handleInputChange}
-                      className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 ${
-                        formErrors.fecha_venc_producto ? 'border-red-300' : 'border-amber-200'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 ${formErrors.fecha_venc_producto ? 'border-red-300' : 'border-amber-200'
+                        }`}
                     />
                     {formErrors.fecha_venc_producto && <p className="text-red-600 text-xs mt-1">{formErrors.fecha_venc_producto}</p>}
                   </div>

@@ -1,4 +1,6 @@
+// Solución: Actualizar TreatmentService para asegurar siempre formato HH:MM
 // netlify/services/treatment.service.ts
+
 import { db } from '../data/db';
 import { treatmentsTable } from '../data/schemas/treatment.schema';
 import { eq, and, desc, asc } from "drizzle-orm";
@@ -6,6 +8,24 @@ import { eq, and, desc, asc } from "drizzle-orm";
 type NewTreatment = typeof treatmentsTable.$inferInsert;
 
 export class TreatmentService {
+  
+  // Función auxiliar para asegurar formato HH:MM (sin segundos)
+  private normalizeTimeFormat(timeString: string): string {
+    if (!timeString) return timeString;
+    
+    // Si está en formato HH:MM:SS, convertir a HH:MM
+    if (/^\d{2}:\d{2}:\d{2}$/.test(timeString)) {
+      return timeString.slice(0, 5);
+    }
+    
+    // Si ya está en formato HH:MM, retornarlo tal como está
+    if (/^\d{2}:\d{2}$/.test(timeString)) {
+      return timeString;
+    }
+    
+    return timeString;
+  }
+
   // Obtener todos los tratamientos de un paciente
   async findByPatientId(patientId: number, doctorId: number) {
     const treatments = await db
@@ -39,7 +59,14 @@ export class TreatmentService {
       )
       .orderBy(desc(treatmentsTable.fecha_control), desc(treatmentsTable.hora_control));
 
-    return treatments;
+    // Normalizar horas a formato HH:MM
+    return treatments.map(treatment => ({
+      ...treatment,
+      hora_control: this.normalizeTimeFormat(treatment.hora_control || ''),
+      hora_proximo_control: treatment.hora_proximo_control 
+        ? this.normalizeTimeFormat(treatment.hora_proximo_control) 
+        : treatment.hora_proximo_control,
+    }));
   }
 
   // Obtener un tratamiento específico por ID
@@ -74,7 +101,20 @@ export class TreatmentService {
         )
       );
 
-    return treatment[0] || null;
+    const result = treatment[0] || null;
+    
+    if (result) {
+      // Normalizar horas a formato HH:MM
+      return {
+        ...result,
+        hora_control: this.normalizeTimeFormat(result.hora_control || ''),
+        hora_proximo_control: result.hora_proximo_control 
+          ? this.normalizeTimeFormat(result.hora_proximo_control) 
+          : result.hora_proximo_control,
+      };
+    }
+    
+    return null;
   }
 
   // Obtener todos los tratamientos de un doctor (para dashboard)
@@ -114,18 +154,33 @@ export class TreatmentService {
     }
 
     const treatments = await query;
-    return treatments;
+    
+    // Normalizar horas a formato HH:MM
+    return treatments.map(treatment => ({
+      ...treatment,
+      hora_control: this.normalizeTimeFormat(treatment.hora_control || ''),
+      hora_proximo_control: treatment.hora_proximo_control 
+        ? this.normalizeTimeFormat(treatment.hora_proximo_control) 
+        : treatment.hora_proximo_control,
+    }));
   }
 
   // Crear un nuevo tratamiento
   async create(treatmentData: NewTreatment) {
+    // Normalizar las horas antes de insertar
+    const normalizedData = {
+      ...treatmentData,
+      hora_control: this.normalizeTimeFormat(treatmentData.hora_control || ''),
+      hora_proximo_control: treatmentData.hora_proximo_control 
+        ? this.normalizeTimeFormat(treatmentData.hora_proximo_control) 
+        : undefined,
+      created_at: new Date(),
+      is_active: true,
+    };
+
     const newTreatment = await db
       .insert(treatmentsTable)
-      .values({
-        ...treatmentData,
-        created_at: new Date(),
-        is_active: true,
-      })
+      .values(normalizedData)
       .returning({
         id_tratamiento: treatmentsTable.id_tratamiento,
         id_paciente: treatmentsTable.id_paciente,
@@ -147,15 +202,35 @@ export class TreatmentService {
         is_active: treatmentsTable.is_active,
       });
 
-    return newTreatment[0];
+    const result = newTreatment[0];
+    
+    // Normalizar horas en la respuesta
+    return {
+      ...result,
+      hora_control: this.normalizeTimeFormat(result.hora_control || ''),
+      hora_proximo_control: result.hora_proximo_control 
+        ? this.normalizeTimeFormat(result.hora_proximo_control) 
+        : result.hora_proximo_control,
+    };
   }
 
   // Actualizar un tratamiento
   async update(treatmentId: number, treatmentData: Partial<NewTreatment>, doctorId: number) {
+    // Normalizar las horas antes de actualizar
+    const normalizedData = { ...treatmentData };
+    
+    if (normalizedData.hora_control) {
+      normalizedData.hora_control = this.normalizeTimeFormat(normalizedData.hora_control);
+    }
+    
+    if (normalizedData.hora_proximo_control) {
+      normalizedData.hora_proximo_control = this.normalizeTimeFormat(normalizedData.hora_proximo_control);
+    }
+
     const updatedTreatment = await db
       .update(treatmentsTable)
       .set({
-        ...treatmentData,
+        ...normalizedData,
         updated_at: new Date(),
       })
       .where(
@@ -185,7 +260,16 @@ export class TreatmentService {
         is_active: treatmentsTable.is_active,
       });
 
-    return updatedTreatment[0];
+    const result = updatedTreatment[0];
+    
+    // Normalizar horas en la respuesta
+    return {
+      ...result,
+      hora_control: this.normalizeTimeFormat(result.hora_control || ''),
+      hora_proximo_control: result.hora_proximo_control 
+        ? this.normalizeTimeFormat(result.hora_proximo_control) 
+        : result.hora_proximo_control,
+    };
   }
 
   // Eliminar un tratamiento (soft delete)
@@ -227,6 +311,12 @@ export class TreatmentService {
       .orderBy(asc(treatmentsTable.fecha_proximo_control), asc(treatmentsTable.hora_proximo_control))
       .limit(limit);
 
-    return treatments;
+    // Normalizar horas en la respuesta
+    return treatments.map(treatment => ({
+      ...treatment,
+      hora_proximo_control: treatment.hora_proximo_control 
+        ? this.normalizeTimeFormat(treatment.hora_proximo_control) 
+        : treatment.hora_proximo_control,
+    }));
   }
 }

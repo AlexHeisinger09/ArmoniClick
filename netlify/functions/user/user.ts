@@ -31,7 +31,7 @@ const handler: Handler = async (event: HandlerEvent) => {
   if (httpMethod === "PUT" && path.includes("/profile")) {
     try {
       const { 
-        rut, // ✅ INCLUIR RUT
+        rut, 
         name, 
         lastName, 
         username, 
@@ -104,7 +104,7 @@ const handler: Handler = async (event: HandlerEvent) => {
       // Actualizar el perfil
       await userService.update(
         {
-          rut: rut || null, // ✅ INCLUIR RUT
+          rut: rut || null,
           name,
           lastName,
           username,

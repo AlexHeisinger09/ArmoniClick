@@ -30,6 +30,23 @@ export class UpdateTreatmentDto {
       descripcion
     } = object;
 
+    // Función auxiliar para normalizar formato de hora
+    const normalizeTimeFormat = (timeString: string): string => {
+      if (!timeString) return timeString;
+      
+      // Si ya está en formato HH:MM, retornarlo
+      if (/^\d{2}:\d{2}$/.test(timeString)) {
+        return timeString;
+      }
+      
+      // Si está en formato HH:MM:SS, convertir a HH:MM
+      if (/^\d{2}:\d{2}:\d{2}$/.test(timeString)) {
+        return timeString.slice(0, 5);
+      }
+      
+      return timeString;
+    };
+
     // Validaciones solo si los campos están presentes
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     const timeRegex = /^\d{2}:\d{2}$/;
@@ -49,9 +66,14 @@ export class UpdateTreatmentDto {
       }
     }
 
+    let normalizedHoraControl = hora_control;
     if (hora_control !== undefined) {
       if (!hora_control?.trim()) return ["Hora de control no puede estar vacía"];
-      if (!timeRegex.test(hora_control)) {
+      
+      // Normalizar formato de hora
+      normalizedHoraControl = normalizeTimeFormat(hora_control.trim());
+      
+      if (!timeRegex.test(normalizedHoraControl)) {
         return ["Formato de hora de control inválido (HH:MM)"];
       }
     }
@@ -60,6 +82,7 @@ export class UpdateTreatmentDto {
       return ["Nombre del servicio no puede estar vacío"];
     }
 
+    let normalizedHoraProximoControl = hora_proximo_control;
     if (fecha_proximo_control !== undefined && fecha_proximo_control?.trim()) {
       if (!dateRegex.test(fecha_proximo_control)) {
         return ["Formato de fecha próximo control inválido (YYYY-MM-DD)"];
@@ -67,7 +90,10 @@ export class UpdateTreatmentDto {
     }
 
     if (hora_proximo_control !== undefined && hora_proximo_control?.trim()) {
-      if (!timeRegex.test(hora_proximo_control)) {
+      // Normalizar formato de hora próximo control
+      normalizedHoraProximoControl = normalizeTimeFormat(hora_proximo_control.trim());
+      
+      if (!timeRegex.test(normalizedHoraProximoControl)) {
         return ["Formato de hora próximo control inválido (HH:MM)"];
       }
     }
@@ -80,16 +106,17 @@ export class UpdateTreatmentDto {
 
     return [undefined, new UpdateTreatmentDto(
       fecha_control?.trim(),
-      hora_control?.trim(),
+      normalizedHoraControl,
       fecha_proximo_control?.trim() || undefined,
-      hora_proximo_control?.trim() || undefined,
+      normalizedHoraProximoControl || undefined,
       nombre_servicio?.trim(),
       producto?.trim() || undefined,
       lote_producto?.trim() || undefined,
       fecha_venc_producto?.trim() || undefined,
       dilucion?.trim() || undefined,
-      foto1?.trim() || undefined,
-      foto2?.trim() || undefined,
+      // ✅ IMPORTANTE: Permitir strings vacíos para borrar imágenes
+      foto1 !== undefined ? (foto1?.trim() || null) : undefined,
+      foto2 !== undefined ? (foto2?.trim() || null) : undefined,
       descripcion?.trim() || undefined,
     )];
   }

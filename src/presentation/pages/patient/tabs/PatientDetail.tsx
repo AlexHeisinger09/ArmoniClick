@@ -4,11 +4,11 @@ import { ArrowLeft, User, Calculator, Stethoscope, Clock, FileText } from 'lucid
 import { Patient } from "@/core/use-cases/patients";
 
 // Importar los componentes de las pestañas
-import { PatientInformation } from './PatientInformation';
+import { PatientInformation } from './information/PatientInformation';
 import { PatientBudget } from './PatientBudget';
 import { PatientTreatments } from './treatments/PatientTreatments';
 import { PatientAppointments } from './PatientAppointments';
-import { PatientMedicalHistory } from './PatientMedicalHistory';
+import { PatientMedicalHistory } from './medicalHistory/PatientMedicalHistory';
 
 interface PatientDetailProps {
   patient: Patient;
