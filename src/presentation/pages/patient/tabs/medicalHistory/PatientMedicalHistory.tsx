@@ -1,7 +1,6 @@
 // src/presentation/pages/patient/tabs/PatientMedicalHistory.tsx
 import React, { useState } from 'react';
 import { 
-  Plus, 
   FileText, 
   Stethoscope, 
   Activity, 
@@ -254,191 +253,357 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
             </select>
           </div>
           
-          {/* Botón agregar */}
-          <button className="flex items-center bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white font-medium rounded-lg text-sm px-4 py-2 transition-all duration-200 shadow-sm hover:shadow-md">
-            <Plus className="w-4 h-4 mr-2" />
-            Nuevo Registro
-          </button>
         </div>
       </div>
 
       {/* Timeline */}
-      <div className="relative max-w-6xl mx-auto">
-        {/* Línea vertical principal centrada */}
-        <div className="absolute left-1/2 transform -translate-x-0.5 top-0 bottom-0 w-0.5 bg-gradient-to-b from-gray-200 via-gray-300 to-gray-200"></div>
-        
-        <div className="space-y-8">
-          {sortedRecords.map((record, index) => {
-            const config = getCategoryConfig(record.categoria);
-            const isExpanded = expandedRecord === record.id;
-            const isLeft = index % 2 === 0;
-            
-            return (
-              <div key={record.id} className="relative flex items-center">
-                {isLeft ? (
-                  <>
-                    {/* Tarjeta izquierda */}
-                    <div className="w-1/2 pr-8">
-                      <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200 ml-auto max-w-md`}>
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-semibold text-gray-800 text-sm">
+      <div className="relative">
+        {/* Vista móvil - Timeline centrada */}
+        <div className="block sm:hidden">
+          {/* Línea vertical centrada para móvil */}
+          <div className="absolute left-1/2 transform -translate-x-0.5 top-0 bottom-0 w-0.5 bg-gradient-to-b from-gray-200 via-gray-300 to-gray-200"></div>
+          
+          <div className="space-y-6">
+            {sortedRecords.map((record, index) => {
+              const config = getCategoryConfig(record.categoria);
+              const isExpanded = expandedRecord === record.id;
+              const isLeft = index % 2 === 0;
+              
+              return (
+                <div key={record.id} className="relative flex items-start">
+                  {isLeft ? (
+                    <>
+                      {/* Tarjeta izquierda móvil */}
+                      <div className="w-1/2 pr-3">
+                        <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-3 shadow-sm ml-auto`}>
+                          <div className="mb-2">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-semibold text-gray-800 text-xs leading-tight">
                                 {record.tipo}
                               </h4>
-                              {record.estado && (
-                                <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusBadge(record.estado)}`}>
-                                  {record.estado}
-                                </span>
-                              )}
+                              <button
+                                onClick={() => setExpandedRecord(isExpanded ? null : record.id)}
+                                className="p-1 rounded-full hover:bg-white/50 transition-colors flex-shrink-0 ml-2"
+                              >
+                                {isExpanded ? (
+                                  <ChevronUp className="w-3 h-3 text-gray-500" />
+                                ) : (
+                                  <ChevronDown className="w-3 h-3 text-gray-500" />
+                                )}
+                              </button>
                             </div>
                             
-                            <div className="flex items-center text-xs text-gray-600 mb-1">
-                              <Calendar className="w-3 h-3 mr-1" />
-                              {formatDate(record.fecha)}
-                              <span className="mx-2">•</span>
-                              <span className="font-medium">{record.medico}</span>
+                            {record.estado && (
+                              <span className={`inline-block px-1.5 py-0.5 text-xs font-medium rounded-full border mb-2 ${getStatusBadge(record.estado)}`}>
+                                {record.estado}
+                              </span>
+                            )}
+                            
+                            <div className="text-xs text-gray-600 mb-2 space-y-1">
+                              <div className="flex items-center">
+                                <Calendar className="w-2.5 h-2.5 mr-1 flex-shrink-0" />
+                                <span className="text-xs">{formatDate(record.fecha)}</span>
+                              </div>
+                              <div className="text-xs">
+                                <span className="font-medium">{record.medico}</span>
+                              </div>
                               {record.monto && (
-                                <>
-                                  <span className="mx-2">•</span>
-                                  <span className="font-semibold text-green-600">
-                                    {formatMoney(record.monto)}
-                                  </span>
-                                </>
+                                <div className="font-semibold text-green-600 text-xs">
+                                  {formatMoney(record.monto)}
+                                </div>
                               )}
                             </div>
                             
-                            <p className={`text-gray-700 text-xs leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>
+                            <p className={`text-gray-700 text-xs leading-relaxed ${isExpanded ? '' : 'line-clamp-3'}`}>
                               {record.descripcion}
                             </p>
                           </div>
                           
-                          <button
-                            onClick={() => setExpandedRecord(isExpanded ? null : record.id)}
-                            className="ml-4 p-1 rounded-full hover:bg-white/50 transition-colors"
-                          >
-                            {isExpanded ? (
-                              <ChevronUp className="w-4 h-4 text-gray-500" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 text-gray-500" />
-                            )}
-                          </button>
-                        </div>
-                        
-                        {/* Información adicional expandida */}
-                        {isExpanded && (
-                          <div className="pt-2 border-t border-gray-200">
-                            <div className="grid grid-cols-1 gap-2 text-xs">
-                              <div>
-                                <span className="font-medium text-gray-600">Categoría:</span>
-                                <span className="ml-2 capitalize">{config.label}</span>
-                              </div>
-                              <div>
-                                <span className="font-medium text-gray-600">Estado:</span>
-                                <span className="ml-2 capitalize">{record.estado}</span>
-                              </div>
-                              <div>
-                                <span className="font-medium text-gray-600">Profesional:</span>
-                                <span className="ml-2">{record.medico}</span>
+                          {/* Información expandida móvil */}
+                          {isExpanded && (
+                            <div className="pt-2 border-t border-gray-200">
+                              <div className="space-y-1 text-xs">
+                                <div>
+                                  <span className="font-medium text-gray-600">Categoría:</span>
+                                  <span className="ml-1 capitalize">{config.label}</span>
+                                </div>
+                                <div>
+                                  <span className="font-medium text-gray-600">Estado:</span>
+                                  <span className="ml-1 capitalize">{record.estado}</span>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    
-                    {/* Nodo central */}
-                    <div className={`relative z-10 w-8 h-8 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center shadow-md border-2 border-white flex-shrink-0`}>
-                      {config.icon}
-                    </div>
-                    
-                    {/* Espacio derecho vacío */}
-                    <div className="w-1/2 pl-8"></div>
-                  </>
-                ) : (
-                  <>
-                    {/* Espacio izquierdo vacío */}
-                    <div className="w-1/2 pr-8"></div>
-                    
-                    {/* Nodo central */}
-                    <div className={`relative z-10 w-8 h-8 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center shadow-md border-2 border-white flex-shrink-0`}>
-                      {config.icon}
-                    </div>
-                    
-                    {/* Tarjeta derecha */}
-                    <div className="w-1/2 pl-8">
-                      <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200 mr-auto max-w-md`}>
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-semibold text-gray-800 text-sm">
+                      
+                      {/* Nodo central móvil */}
+                      <div className={`relative z-10 w-6 h-6 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center shadow-md border-2 border-white flex-shrink-0`}>
+                        {config.icon}
+                      </div>
+                      
+                      {/* Espacio derecho vacío */}
+                      <div className="w-1/2 pl-3"></div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Espacio izquierdo vacío */}
+                      <div className="w-1/2 pr-3"></div>
+                      
+                      {/* Nodo central móvil */}
+                      <div className={`relative z-10 w-6 h-6 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center shadow-md border-2 border-white flex-shrink-0`}>
+                        {config.icon}
+                      </div>
+                      
+                      {/* Tarjeta derecha móvil */}
+                      <div className="w-1/2 pl-3">
+                        <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-3 shadow-sm mr-auto`}>
+                          <div className="mb-2">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-semibold text-gray-800 text-xs leading-tight">
                                 {record.tipo}
                               </h4>
-                              {record.estado && (
-                                <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusBadge(record.estado)}`}>
-                                  {record.estado}
-                                </span>
-                              )}
+                              <button
+                                onClick={() => setExpandedRecord(isExpanded ? null : record.id)}
+                                className="p-1 rounded-full hover:bg-white/50 transition-colors flex-shrink-0 ml-2"
+                              >
+                                {isExpanded ? (
+                                  <ChevronUp className="w-3 h-3 text-gray-500" />
+                                ) : (
+                                  <ChevronDown className="w-3 h-3 text-gray-500" />
+                                )}
+                              </button>
                             </div>
                             
-                            <div className="flex items-center text-xs text-gray-600 mb-1">
-                              <Calendar className="w-3 h-3 mr-1" />
-                              {formatDate(record.fecha)}
-                              <span className="mx-2">•</span>
-                              <span className="font-medium">{record.medico}</span>
+                            {record.estado && (
+                              <span className={`inline-block px-1.5 py-0.5 text-xs font-medium rounded-full border mb-2 ${getStatusBadge(record.estado)}`}>
+                                {record.estado}
+                              </span>
+                            )}
+                            
+                            <div className="text-xs text-gray-600 mb-2 space-y-1">
+                              <div className="flex items-center">
+                                <Calendar className="w-2.5 h-2.5 mr-1 flex-shrink-0" />
+                                <span className="text-xs">{formatDate(record.fecha)}</span>
+                              </div>
+                              <div className="text-xs">
+                                <span className="font-medium">{record.medico}</span>
+                              </div>
                               {record.monto && (
-                                <>
-                                  <span className="mx-2">•</span>
-                                  <span className="font-semibold text-green-600">
-                                    {formatMoney(record.monto)}
-                                  </span>
-                                </>
+                                <div className="font-semibold text-green-600 text-xs">
+                                  {formatMoney(record.monto)}
+                                </div>
                               )}
                             </div>
                             
-                            <p className={`text-gray-700 text-xs leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>
+                            <p className={`text-gray-700 text-xs leading-relaxed ${isExpanded ? '' : 'line-clamp-3'}`}>
                               {record.descripcion}
                             </p>
                           </div>
                           
-                          <button
-                            onClick={() => setExpandedRecord(isExpanded ? null : record.id)}
-                            className="ml-4 p-1 rounded-full hover:bg-white/50 transition-colors"
-                          >
-                            {isExpanded ? (
-                              <ChevronUp className="w-4 h-4 text-gray-500" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 text-gray-500" />
-                            )}
-                          </button>
-                        </div>
-                        
-                        {/* Información adicional expandida */}
-                        {isExpanded && (
-                          <div className="pt-2 border-t border-gray-200">
-                            <div className="grid grid-cols-1 gap-2 text-xs">
-                              <div>
-                                <span className="font-medium text-gray-600">Categoría:</span>
-                                <span className="ml-2 capitalize">{config.label}</span>
-                              </div>
-                              <div>
-                                <span className="font-medium text-gray-600">Estado:</span>
-                                <span className="ml-2 capitalize">{record.estado}</span>
-                              </div>
-                              <div>
-                                <span className="font-medium text-gray-600">Profesional:</span>
-                                <span className="ml-2">{record.medico}</span>
+                          {/* Información expandida móvil */}
+                          {isExpanded && (
+                            <div className="pt-2 border-t border-gray-200">
+                              <div className="space-y-1 text-xs">
+                                <div>
+                                  <span className="font-medium text-gray-600">Categoría:</span>
+                                  <span className="ml-1 capitalize">{config.label}</span>
+                                </div>
+                                <div>
+                                  <span className="font-medium text-gray-600">Estado:</span>
+                                  <span className="ml-1 capitalize">{record.estado}</span>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            );
-          })}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Vista desktop - Timeline centrada */}
+        <div className="hidden sm:block max-w-6xl mx-auto">
+          {/* Línea vertical principal centrada */}
+          <div className="absolute left-1/2 transform -translate-x-0.5 top-0 bottom-0 w-0.5 bg-gradient-to-b from-gray-200 via-gray-300 to-gray-200"></div>
+          
+          <div className="space-y-8">
+            {sortedRecords.map((record, index) => {
+              const config = getCategoryConfig(record.categoria);
+              const isExpanded = expandedRecord === record.id;
+              const isLeft = index % 2 === 0;
+              
+              return (
+                <div key={record.id} className="relative flex items-center">
+                  {isLeft ? (
+                    <>
+                      {/* Tarjeta izquierda */}
+                      <div className="w-1/2 pr-8">
+                        <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200 ml-auto max-w-md`}>
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-semibold text-gray-800 text-sm">
+                                  {record.tipo}
+                                </h4>
+                                {record.estado && (
+                                  <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusBadge(record.estado)}`}>
+                                    {record.estado}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              <div className="flex items-center text-xs text-gray-600 mb-1">
+                                <Calendar className="w-3 h-3 mr-1" />
+                                {formatDate(record.fecha)}
+                                <span className="mx-2">•</span>
+                                <span className="font-medium">{record.medico}</span>
+                                {record.monto && (
+                                  <>
+                                    <span className="mx-2">•</span>
+                                    <span className="font-semibold text-green-600">
+                                      {formatMoney(record.monto)}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                              
+                              <p className={`text-gray-700 text-xs leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>
+                                {record.descripcion}
+                              </p>
+                            </div>
+                            
+                            <button
+                              onClick={() => setExpandedRecord(isExpanded ? null : record.id)}
+                              className="ml-4 p-1 rounded-full hover:bg-white/50 transition-colors"
+                            >
+                              {isExpanded ? (
+                                <ChevronUp className="w-4 h-4 text-gray-500" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4 text-gray-500" />
+                              )}
+                            </button>
+                          </div>
+                          
+                          {/* Información adicional expandida */}
+                          {isExpanded && (
+                            <div className="pt-2 border-t border-gray-200">
+                              <div className="grid grid-cols-1 gap-2 text-xs">
+                                <div>
+                                  <span className="font-medium text-gray-600">Categoría:</span>
+                                  <span className="ml-2 capitalize">{config.label}</span>
+                                </div>
+                                <div>
+                                  <span className="font-medium text-gray-600">Estado:</span>
+                                  <span className="ml-2 capitalize">{record.estado}</span>
+                                </div>
+                                <div>
+                                  <span className="font-medium text-gray-600">Profesional:</span>
+                                  <span className="ml-2">{record.medico}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Nodo central */}
+                      <div className={`relative z-10 w-8 h-8 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center shadow-md border-2 border-white flex-shrink-0`}>
+                        {config.icon}
+                      </div>
+                      
+                      {/* Espacio derecho vacío */}
+                      <div className="w-1/2 pl-8"></div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Espacio izquierdo vacío */}
+                      <div className="w-1/2 pr-8"></div>
+                      
+                      {/* Nodo central */}
+                      <div className={`relative z-10 w-8 h-8 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center shadow-md border-2 border-white flex-shrink-0`}>
+                        {config.icon}
+                      </div>
+                      
+                      {/* Tarjeta derecha */}
+                      <div className="w-1/2 pl-8">
+                        <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200 mr-auto max-w-md`}>
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-semibold text-gray-800 text-sm">
+                                  {record.tipo}
+                                </h4>
+                                {record.estado && (
+                                  <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusBadge(record.estado)}`}>
+                                    {record.estado}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              <div className="flex items-center text-xs text-gray-600 mb-1">
+                                <Calendar className="w-3 h-3 mr-1" />
+                                {formatDate(record.fecha)}
+                                <span className="mx-2">•</span>
+                                <span className="font-medium">{record.medico}</span>
+                                {record.monto && (
+                                  <>
+                                    <span className="mx-2">•</span>
+                                    <span className="font-semibold text-green-600">
+                                      {formatMoney(record.monto)}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                              
+                              <p className={`text-gray-700 text-xs leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>
+                                {record.descripcion}
+                              </p>
+                            </div>
+                            
+                            <button
+                              onClick={() => setExpandedRecord(isExpanded ? null : record.id)}
+                              className="ml-4 p-1 rounded-full hover:bg-white/50 transition-colors"
+                            >
+                              {isExpanded ? (
+                                <ChevronUp className="w-4 h-4 text-gray-500" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4 text-gray-500" />
+                              )}
+                            </button>
+                          </div>
+                          
+                          {/* Información adicional expandida */}
+                          {isExpanded && (
+                            <div className="pt-2 border-t border-gray-200">
+                              <div className="grid grid-cols-1 gap-2 text-xs">
+                                <div>
+                                  <span className="font-medium text-gray-600">Categoría:</span>
+                                  <span className="ml-2 capitalize">{config.label}</span>
+                                </div>
+                                <div>
+                                  <span className="font-medium text-gray-600">Estado:</span>
+                                  <span className="ml-2 capitalize">{record.estado}</span>
+                                </div>
+                                <div>
+                                  <span className="font-medium text-gray-600">Profesional:</span>
+                                  <span className="ml-2">{record.medico}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Estado vacío */}
@@ -450,16 +615,12 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
             <h4 className="text-lg font-medium text-gray-600 mb-2">
               No hay registros para mostrar
             </h4>
-            <p className="text-gray-500 mb-6">
+            <p className="text-gray-500 mb-6 text-sm sm:text-base">
               {selectedFilter === 'todos' 
                 ? 'No hay registros médicos para este paciente' 
                 : `No hay registros de tipo "${filterOptions.find(f => f.value === selectedFilter)?.label.toLowerCase()}"`
               }
             </p>
-            <button className="flex items-center mx-auto bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white font-medium rounded-lg text-sm px-6 py-3 transition-all duration-200 shadow-sm hover:shadow-md">
-              <Plus className="w-4 h-4 mr-2" />
-              Agregar Primer Registro
-            </button>
           </div>
         )}
       </div>

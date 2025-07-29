@@ -15,7 +15,7 @@ import { ColumnBaseConfig, ColumnDataType } from "drizzle-orm";
 
 export const patientsTable = pgTable("patients", {
   id: serial("id").primaryKey(),
-  rut: varchar("rut").notNull(), // ❌ Removemos .unique() de aquí
+  rut: varchar("rut").notNull(), 
   nombres: varchar("nombres").notNull(),
   apellidos: varchar("apellidos").notNull(),
   fecha_nacimiento: varchar("fecha_nacimiento").notNull(),
