@@ -78,7 +78,7 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
     } = useBudgetOperations(patient.id);
 
     // Estados locales
-    const [items, setItems] = useState<BudgetItem[]>([]);
+    const [items, setItems] = useState<BudgetItem[]>([]); // ✅ Inicializar como array vacío
     const [budgetType, setBudgetType] = useState<string>(BUDGET_TYPE.ODONTOLOGICO);
     const [newItem, setNewItem] = useState({
         pieza: '',
@@ -103,16 +103,25 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
     const { token } = useLoginMutation();
     const { queryProfile } = useProfile(token || '');
 
-    // Cargar datos del presupuesto existente
+    // ✅ CARGAR DATOS CON VALIDACIÓN MEJORADA
     useEffect(() => {
-        if (budget) {
-            setItems(budget.items.map(item => ({
+        console.log('🔄 useEffect - budget changed:', budget);
+        
+        if (budget && budget.items) {
+            console.log('📋 Budget items:', budget.items);
+            
+            const formattedItems = budget.items.map(item => ({
                 ...item,
-                valor: parseFloat(item.valor.toString())
-            })));
+                valor: parseFloat(item.valor.toString()) || 0
+            }));
+            
+            console.log('📋 Formatted items:', formattedItems);
+            
+            setItems(formattedItems);
             setBudgetType(budget.budget_type);
             setHasUnsavedChanges(false);
         } else {
+            console.log('📋 No budget found, resetting items');
             setItems([]);
             setHasUnsavedChanges(false);
         }
@@ -175,7 +184,14 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
     };
 
     const calculateTotal = (): number => {
-        return items.reduce((total, item) => total + item.valor, 0);
+        if (!items || !Array.isArray(items)) {
+            console.warn('⚠️ Items no es un array válido:', items);
+            return 0;
+        }
+        return items.reduce((total, item) => {
+            const valor = Number(item?.valor) || 0;
+            return total + valor;
+        }, 0);
     };
 
     const markAsChanged = () => {
@@ -198,10 +214,19 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
             pieza: newItem.pieza,
             accion: newItem.accion,
             valor: valor,
-            orden: items.length
+            orden: Array.isArray(items) ? items.length : 0 // ✅ Validación adicional
         };
 
-        setItems([...items, item]);
+        console.log('➕ Agregando nuevo item:', item);
+        console.log('📋 Items actuales:', items);
+
+        // ✅ Asegurar que items es un array antes de agregar
+        const currentItems = Array.isArray(items) ? items : [];
+        const newItems = [...currentItems, item];
+        
+        console.log('📋 Nuevos items:', newItems);
+        
+        setItems(newItems);
         setNewItem({ pieza: '', accion: '', valor: '' });
         markAsChanged();
         showNotification('success', 'Tratamiento agregado exitosamente');
@@ -267,27 +292,55 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
 
     // Guardar presupuesto
     const handleSaveBudget = async () => {
-        if (items.length === 0) {
+        // ✅ VALIDACIÓN MEJORADA
+        if (!items || !Array.isArray(items) || items.length === 0) {
             showNotification('error', 'Agrega al menos un tratamiento antes de guardar');
             return;
         }
 
         try {
-            await saveBudget({
+            // ✅ VALIDACIÓN ADICIONAL: Asegurar que items es un array válido
+            const validItems = items.filter(item => 
+                item && 
+                typeof item === 'object' && 
+                item.accion && 
+                item.valor !== undefined && 
+                item.valor !== null
+            );
+
+            if (validItems.length === 0) {
+                showNotification('error', 'No hay tratamientos válidos para guardar');
+                return;
+            }
+
+            // Formatear items correctamente
+            const formattedItems = validItems.map((item, index) => ({
+                pieza: item.pieza || '',
+                accion: item.accion || '',
+                valor: Number(item.valor) || 0,
+                orden: index
+            }));
+
+            console.log('🔍 Items originales:', items);
+            console.log('🔍 Items válidos:', validItems);
+            console.log('🔍 Items formateados:', formattedItems);
+
+            const budgetData = {
                 patientId: patient.id,
                 budgetType,
-                items: items.map((item, index) => ({
-                    pieza: item.pieza,
-                    accion: item.accion,
-                    valor: item.valor,
-                    orden: index
-                }))
-            });
+                items: formattedItems
+            };
+
+            console.log('📤 Datos finales a enviar:', budgetData);
+
+            await saveBudget(budgetData);
 
             setHasUnsavedChanges(false);
             showNotification('success', 'Presupuesto guardado exitosamente');
         } catch (error: any) {
-            showNotification('error', `Error al guardar: ${error.message}`);
+            console.error('❌ Error completo:', error);
+            const errorMessage = error?.response?.data?.message || error.message || 'Error desconocido al guardar';
+            showNotification('error', `Error al guardar: ${errorMessage}`);
         }
     };
 
@@ -750,6 +803,31 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                         </label>
                         <input
                             type="text"
+                            value={newItem.pieza}
+                            onChange={(e) => setNewItem({ ...newItem, pieza: e.target.value })}
+                            placeholder={budgetType === BUDGET_TYPE.ODONTOLOGICO ? "1.1, 1.2" : "Frente, Pómulos"}
+                            className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                        />
+                    </div>
+
+                    <div className="flex flex-col">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Tratamiento</label>
+                        <select
+                            value={newItem.accion}
+                            onChange={(e) => setNewItem({ ...newItem, accion: e.target.value })}
+                            className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                        >
+                            <option value="">Seleccionar...</option>
+                            {getCurrentTreatments().map((treatment) => (
+                                <option key={treatment} value={treatment}>{treatment}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="flex flex-col">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Valor</label>
+                        <input
+                            type="text"
                             value={newItem.valor}
                             onChange={(e) => handleValueChange(e.target.value, setNewItem, 'valor')}
                             placeholder="25.000"
@@ -858,12 +936,16 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
 
                                         <td className="px-6 py-4">
                                             {canModify && isEditing === index.toString() ? (
-                                                <input
-                                                    type="text"
+                                                <select
                                                     value={editingItem.accion}
                                                     onChange={(e) => setEditingItem({ ...editingItem, accion: e.target.value })}
                                                     className="w-full px-2 py-1 border border-cyan-300 rounded text-sm"
-                                                />
+                                                >
+                                                    <option value="">Seleccionar...</option>
+                                                    {getCurrentTreatments().map((treatment) => (
+                                                        <option key={treatment} value={treatment}>{treatment}</option>
+                                                    ))}
+                                                </select>
                                             ) : (
                                                 <span className="text-sm text-slate-700">
                                                     {item.accion}
