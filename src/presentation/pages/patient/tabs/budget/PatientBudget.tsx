@@ -106,17 +106,23 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
     // ✅ CARGAR DATOS CON VALIDACIÓN MEJORADA
     useEffect(() => {
         console.log('🔄 useEffect - budget changed:', budget);
-        
+
         if (budget && budget.items) {
-            console.log('📋 Budget items:', budget.items);
-            
+            console.log('📋 Budget items from backend:', budget.items);
+
+            // ✅ PRESERVAR TODOS LOS CAMPOS INCLUYENDO ID
             const formattedItems = budget.items.map(item => ({
-                ...item,
-                valor: parseFloat(item.valor.toString()) || 0
+                id: item.id, // ✅ IMPORTANTE: Preservar el ID del backend
+                budget_id: item.budget_id,
+                pieza: item.pieza || '',
+                accion: item.accion,
+                valor: parseFloat(item.valor.toString()) || 0,
+                orden: item.orden || 0,
+                created_at: item.created_at
             }));
-            
-            console.log('📋 Formatted items:', formattedItems);
-            
+
+            console.log('📋 Formatted items with IDs:', formattedItems);
+
             setItems(formattedItems);
             setBudgetType(budget.budget_type);
             setHasUnsavedChanges(false);
@@ -185,7 +191,6 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
 
     const calculateTotal = (): number => {
         if (!items || !Array.isArray(items)) {
-            console.warn('⚠️ Items no es un array válido:', items);
             return 0;
         }
         return items.reduce((total, item) => {
@@ -211,21 +216,16 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         }
 
         const item: BudgetItem = {
+            // ✅ NO incluir ID para items nuevos - el backend sabrá que es nuevo
             pieza: newItem.pieza,
             accion: newItem.accion,
             valor: valor,
-            orden: Array.isArray(items) ? items.length : 0 // ✅ Validación adicional
+            orden: Array.isArray(items) ? items.length : 0
         };
 
-        console.log('➕ Agregando nuevo item:', item);
-        console.log('📋 Items actuales:', items);
-
-        // ✅ Asegurar que items es un array antes de agregar
         const currentItems = Array.isArray(items) ? items : [];
         const newItems = [...currentItems, item];
-        
-        console.log('📋 Nuevos items:', newItems);
-        
+
         setItems(newItems);
         setNewItem({ pieza: '', accion: '', valor: '' });
         markAsChanged();
@@ -233,7 +233,8 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
     };
 
     const handleDeleteItem = (index: number) => {
-        setItems(items.filter((_, i) => i !== index));
+        const newItems = items.filter((_, i) => i !== index);
+        setItems(newItems);
         markAsChanged();
         showNotification('success', 'Tratamiento eliminado');
     };
@@ -268,7 +269,12 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         const index = parseInt(isEditing!);
         setItems(items.map((item, i) =>
             i === index
-                ? { ...item, pieza: editingItem.pieza, accion: editingItem.accion, valor: valor }
+                ? {
+                    ...item, // ✅ MANTENER EL ID si existe
+                    pieza: editingItem.pieza,
+                    accion: editingItem.accion,
+                    valor: valor
+                }
                 : item
         ));
 
@@ -292,19 +298,17 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
 
     // Guardar presupuesto
     const handleSaveBudget = async () => {
-        // ✅ VALIDACIÓN MEJORADA
         if (!items || !Array.isArray(items) || items.length === 0) {
             showNotification('error', 'Agrega al menos un tratamiento antes de guardar');
             return;
         }
 
         try {
-            // ✅ VALIDACIÓN ADICIONAL: Asegurar que items es un array válido
-            const validItems = items.filter(item => 
-                item && 
-                typeof item === 'object' && 
-                item.accion && 
-                item.valor !== undefined && 
+            const validItems = items.filter(item =>
+                item &&
+                typeof item === 'object' &&
+                item.accion &&
+                item.valor !== undefined &&
                 item.valor !== null
             );
 
@@ -313,17 +317,32 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                 return;
             }
 
-            // Formatear items correctamente
-            const formattedItems = validItems.map((item, index) => ({
-                pieza: item.pieza || '',
-                accion: item.accion || '',
-                valor: Number(item.valor) || 0,
-                orden: index
-            }));
+            // ✅ FORMATEAR ITEMS PRESERVANDO IDs EXISTENTES DE FORMA CORRECTA
+            const formattedItems = validItems.map((item, index) => {
+                const formattedItem: any = {
+                    pieza: item.pieza || '',
+                    accion: item.accion || '',
+                    valor: Number(item.valor) || 0,
+                    orden: index
+                };
+
+                // ✅ SOLO INCLUIR ID SI EXISTE Y ES UN NÚMERO VÁLIDO
+                if (item.id && typeof item.id === 'number' && item.id > 0) {
+                    formattedItem.id = item.id;
+                }
+
+                return formattedItem;
+            });
 
             console.log('🔍 Items originales:', items);
             console.log('🔍 Items válidos:', validItems);
-            console.log('🔍 Items formateados:', formattedItems);
+            console.log('🔍 Items formateados para enviar:', formattedItems);
+
+            // ✅ VERIFICAR QUE LOS IDs SE ESTÁN INCLUYENDO
+            const itemsWithIds = formattedItems.filter(item => item.id);
+            const itemsWithoutIds = formattedItems.filter(item => !item.id);
+            console.log('📊 Items con ID:', itemsWithIds.length, itemsWithIds);
+            console.log('📊 Items sin ID (nuevos):', itemsWithoutIds.length, itemsWithoutIds);
 
             const budgetData = {
                 patientId: patient.id,
@@ -688,7 +707,7 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                                 </p>
                             </div>
                         </div>
-                        
+
                         <div className="flex items-center space-x-2">
                             {budget.status === BUDGET_STATUS.BORRADOR && (
                                 <button
@@ -700,7 +719,7 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                                     Activar Plan
                                 </button>
                             )}
-                            
+
                             {budget.status === BUDGET_STATUS.ACTIVO && (
                                 <button
                                     onClick={handleBackToDraft}
@@ -747,19 +766,16 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                     <button
                         onClick={() => handleBudgetTypeChange(BUDGET_TYPE.ODONTOLOGICO)}
                         disabled={!canModify}
-                        className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                            budgetType === BUDGET_TYPE.ODONTOLOGICO
-                                ? 'border-cyan-500 bg-cyan-50 shadow-md'
-                                : 'border-gray-200 hover:border-cyan-300'
-                        } ${!canModify ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        className={`p-4 rounded-xl border-2 transition-all duration-200 ${budgetType === BUDGET_TYPE.ODONTOLOGICO
+                            ? 'border-cyan-500 bg-cyan-50 shadow-md'
+                            : 'border-gray-200 hover:border-cyan-300'
+                            } ${!canModify ? 'opacity-60 cursor-not-allowed' : ''}`}
                     >
                         <div className="flex items-center space-x-3">
-                            <div className={`p-2 rounded-full ${
-                                budgetType === BUDGET_TYPE.ODONTOLOGICO ? 'bg-cyan-500' : 'bg-gray-300'
-                            }`}>
-                                <Stethoscope className={`w-5 h-5 ${
-                                    budgetType === BUDGET_TYPE.ODONTOLOGICO ? 'text-white' : 'text-gray-600'
-                                }`} />
+                            <div className={`p-2 rounded-full ${budgetType === BUDGET_TYPE.ODONTOLOGICO ? 'bg-cyan-500' : 'bg-gray-300'
+                                }`}>
+                                <Stethoscope className={`w-5 h-5 ${budgetType === BUDGET_TYPE.ODONTOLOGICO ? 'text-white' : 'text-gray-600'
+                                    }`} />
                             </div>
                             <div className="text-left">
                                 <h4 className="font-semibold text-slate-700">Odontológico</h4>
@@ -771,19 +787,16 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                     <button
                         onClick={() => handleBudgetTypeChange(BUDGET_TYPE.ESTETICA)}
                         disabled={!canModify}
-                        className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                            budgetType === BUDGET_TYPE.ESTETICA
-                                ? 'border-cyan-500 bg-cyan-50 shadow-md'
-                                : 'border-gray-200 hover:border-cyan-300'
-                        } ${!canModify ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        className={`p-4 rounded-xl border-2 transition-all duration-200 ${budgetType === BUDGET_TYPE.ESTETICA
+                            ? 'border-cyan-500 bg-cyan-50 shadow-md'
+                            : 'border-gray-200 hover:border-cyan-300'
+                            } ${!canModify ? 'opacity-60 cursor-not-allowed' : ''}`}
                     >
                         <div className="flex items-center space-x-3">
-                            <div className={`p-2 rounded-full ${
-                                budgetType === BUDGET_TYPE.ESTETICA ? 'bg-cyan-500' : 'bg-gray-300'
-                            }`}>
-                                <Sparkles className={`w-5 h-5 ${
-                                    budgetType === BUDGET_TYPE.ESTETICA ? 'text-white' : 'text-gray-600'
-                                }`} />
+                            <div className={`p-2 rounded-full ${budgetType === BUDGET_TYPE.ESTETICA ? 'bg-cyan-500' : 'bg-gray-300'
+                                }`}>
+                                <Sparkles className={`w-5 h-5 ${budgetType === BUDGET_TYPE.ESTETICA ? 'text-white' : 'text-gray-600'
+                                    }`} />
                             </div>
                             <div className="text-left">
                                 <h4 className="font-semibold text-slate-700">Estética</h4>
@@ -852,10 +865,6 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                         <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-slate-700">Tratamientos</h3>
                             <div className="flex items-center space-x-3">
-                                <div className="text-sm text-slate-500">
-                                    {items.length} tratamiento(s)
-                                </div>
-                                
                                 {/* Botones de acción */}
                                 {canModify && hasUnsavedChanges && (
                                     <button
@@ -876,7 +885,7 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                                         )}
                                     </button>
                                 )}
-                                
+
                                 <button
                                     onClick={generatePDF}
                                     disabled={isGeneratingPDF}
@@ -1035,7 +1044,7 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                     <Calculator className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-slate-700 mb-2">Sin tratamientos agregados</h3>
                     <p className="text-slate-500">
-                        {canModify 
+                        {canModify
                             ? 'Comienza agregando tratamientos para crear un presupuesto'
                             : 'Este paciente no tiene presupuesto creado'
                         }
@@ -1060,11 +1069,11 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className="budget-title-section">
                         <h1 className="budget-title">{getBudgetTitle()}</h1>
                     </div>
-                    
+
                     {/* Información del paciente */}
                     <div className="patient-info">
                         <div className="patient-grid">

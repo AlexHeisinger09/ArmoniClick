@@ -1,3 +1,5 @@
+// netlify/functions/budgets/dtos/save-budget.dto.ts - AJUSTE BACKEND
+
 export interface BudgetItemDto {
   pieza?: string;
   accion: string;
@@ -24,12 +26,24 @@ export class SaveBudgetDto {
       return ["Tipo de presupuesto debe ser 'odontologico' o 'estetica'"];
     }
 
-    if (!Array.isArray(items)) return ["Items debe ser un array"];
-    if (items.length === 0) return ["Debe incluir al menos un item en el presupuesto"];
+    // ✅ SOLUCIÓN: Parsear items si viene como string JSON
+    let parsedItems;
+    try {
+      if (typeof items === 'string') {
+        parsedItems = JSON.parse(items);
+      } else {
+        parsedItems = items;
+      }
+    } catch (error) {
+      return ["Items debe ser un JSON válido"];
+    }
+
+    if (!Array.isArray(parsedItems)) return ["Items debe ser un array"];
+    if (parsedItems.length === 0) return ["Debe incluir al menos un item en el presupuesto"];
 
     // Validar cada item
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
+    for (let i = 0; i < parsedItems.length; i++) {
+      const item = parsedItems[i];
       
       if (!item.accion?.trim()) {
         return [`Item ${i + 1}: Acción/tratamiento es requerido`];
@@ -55,7 +69,7 @@ export class SaveBudgetDto {
     }
 
     // Normalizar items
-    const normalizedItems: BudgetItemDto[] = items.map((item, index) => ({
+    const normalizedItems: BudgetItemDto[] = parsedItems.map((item, index) => ({
       pieza: item.pieza?.trim() || undefined,
       accion: item.accion.trim(),
       valor: Number(item.valor),

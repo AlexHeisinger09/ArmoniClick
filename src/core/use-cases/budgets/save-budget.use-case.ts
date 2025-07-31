@@ -6,12 +6,15 @@ export const saveBudgetUseCase = async (
   budgetData: CreateBudgetData
 ): Promise<SaveBudgetResponse> => {
   try {
+    // ✅ SOLUCIÓN: Convertir items a JSON string para que el backend pueda procesarlo
+    const dataToSend = {
+      budgetType: budgetData.budgetType,
+      items: JSON.stringify(budgetData.items) // ← Convertir array a JSON string
+    };
+
     const response = await fetcher.post<SaveBudgetResponse>(
       `/budgets/patient/${budgetData.patientId}`,
-      {
-        budgetType: budgetData.budgetType,
-        items: budgetData.items
-      }
+      dataToSend
     );
     return response;
   } catch (error) {
