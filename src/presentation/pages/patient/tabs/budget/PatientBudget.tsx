@@ -1,30 +1,25 @@
-// src/presentation/pages/patient/tabs/PatientBudget.tsx
-import React, { useState, useRef } from 'react';
+// src/presentation/pages/patient/tabs/budget/PatientBudget.tsx - COMPONENTE COMPLETO
+import React, { useState, useRef, useEffect } from 'react';
 import {
     Plus,
     Trash2,
     FileText,
     Download,
     Calculator,
-    DollarSign,
     Save,
     Edit,
     X,
     CheckCircle,
     AlertCircle,
-    ArrowLeft,
     Sparkles,
-    Stethoscope
+    Stethoscope,
+    Play,
+    RotateCcw
 } from 'lucide-react';
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
+import { useBudgetOperations } from "@/presentation/hooks/budgets/useBudgets";
 import { Patient } from "@/core/use-cases/patients";
-
-interface BudgetItem {
-    id: string;
-    pieza: string;
-    accion: string;
-    valor: number;
-}
+import { BudgetItem, BUDGET_STATUS, BUDGET_TYPE, BUDGET_STATUS_LABELS } from "@/core/use-cases/budgets";
 
 interface PatientBudgetProps {
     patient: Patient;
@@ -35,8 +30,6 @@ interface NotificationProps {
     message: string;
     onClose: () => void;
 }
-
-type BudgetType = 'odontologico' | 'estetica';
 
 const Notification: React.FC<NotificationProps> = ({ type, message, onClose }) => {
     const getIcon = () => {
@@ -71,8 +64,22 @@ const Notification: React.FC<NotificationProps> = ({ type, message, onClose }) =
 };
 
 const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
+    // Hooks para presupuestos
+    const {
+        budget,
+        canModify,
+        isLoading,
+        saveBudget,
+        updateBudgetStatus,
+        deleteBudget,
+        isLoadingSave,
+        isLoadingUpdateStatus,
+        isLoadingDelete,
+    } = useBudgetOperations(patient.id);
+
+    // Estados locales
     const [items, setItems] = useState<BudgetItem[]>([]);
-    const [budgetType, setBudgetType] = useState<BudgetType>('odontologico');
+    const [budgetType, setBudgetType] = useState<string>(BUDGET_TYPE.ODONTOLOGICO);
     const [newItem, setNewItem] = useState({
         pieza: '',
         accion: '',
@@ -89,11 +96,27 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         message: string;
     } | null>(null);
     const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
     const printRef = useRef<HTMLDivElement>(null);
 
     const { token } = useLoginMutation();
     const { queryProfile } = useProfile(token || '');
+
+    // Cargar datos del presupuesto existente
+    useEffect(() => {
+        if (budget) {
+            setItems(budget.items.map(item => ({
+                ...item,
+                valor: parseFloat(item.valor.toString())
+            })));
+            setBudgetType(budget.budget_type);
+            setHasUnsavedChanges(false);
+        } else {
+            setItems([]);
+            setHasUnsavedChanges(false);
+        }
+    }, [budget]);
 
     // Fecha actual en formato DD/MM/YYYY
     const currentDate = new Date().toLocaleDateString('es-CL');
@@ -131,20 +154,20 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
     ];
 
     const getCurrentTreatments = () => {
-        return budgetType === 'odontologico' ? odontologicoTreatments : esteticaTreatments;
+        return budgetType === BUDGET_TYPE.ODONTOLOGICO ? odontologicoTreatments : esteticaTreatments;
     };
 
     const getBudgetTitle = () => {
-        return budgetType === 'odontologico' ? 'Presupuesto Odontológico' : 'Presupuesto Estético';
+        return budgetType === BUDGET_TYPE.ODONTOLOGICO ? 'Presupuesto Odontológico' : 'Presupuesto Estético';
     };
 
     const getLogoPath = () => {
-        return budgetType === 'odontologico' ? '/logoPresupuesto.PNG' : '/logo.PNG';
+        return budgetType === BUDGET_TYPE.ODONTOLOGICO ? '/logoPresupuesto.PNG' : '/logo.PNG';
     };
 
     const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
         setNotification({ type, message });
-        setTimeout(() => setNotification(null), 3000);
+        setTimeout(() => setNotification(null), 5000);
     };
 
     const formatCurrency = (amount: number): string => {
@@ -153,6 +176,10 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
 
     const calculateTotal = (): number => {
         return items.reduce((total, item) => total + item.valor, 0);
+    };
+
+    const markAsChanged = () => {
+        setHasUnsavedChanges(true);
     };
 
     const handleAddItem = () => {
@@ -168,26 +195,29 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         }
 
         const item: BudgetItem = {
-            id: Date.now().toString(),
             pieza: newItem.pieza,
             accion: newItem.accion,
-            valor: valor
+            valor: valor,
+            orden: items.length
         };
 
         setItems([...items, item]);
         setNewItem({ pieza: '', accion: '', valor: '' });
+        markAsChanged();
         showNotification('success', 'Tratamiento agregado exitosamente');
     };
 
-    const handleDeleteItem = (id: string) => {
-        setItems(items.filter(item => item.id !== id));
+    const handleDeleteItem = (index: number) => {
+        setItems(items.filter((_, i) => i !== index));
+        markAsChanged();
         showNotification('success', 'Tratamiento eliminado');
     };
 
-    const startEditing = (item: BudgetItem) => {
-        setIsEditing(item.id);
+    const startEditing = (index: number) => {
+        const item = items[index];
+        setIsEditing(index.toString());
         setEditingItem({
-            pieza: item.pieza,
+            pieza: item.pieza || '',
             accion: item.accion,
             valor: item.valor.toString()
         });
@@ -210,14 +240,16 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
             return;
         }
 
-        setItems(items.map(item =>
-            item.id === isEditing
+        const index = parseInt(isEditing!);
+        setItems(items.map((item, i) =>
+            i === index
                 ? { ...item, pieza: editingItem.pieza, accion: editingItem.accion, valor: valor }
                 : item
         ));
 
         setIsEditing(null);
         setEditingItem({ pieza: '', accion: '', valor: '' });
+        markAsChanged();
         showNotification('success', 'Tratamiento actualizado');
     };
 
@@ -226,6 +258,85 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         const formattedValue = cleanValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
         setter((prev: any) => ({ ...prev, [field]: formattedValue }));
+    };
+
+    const handleBudgetTypeChange = (type: string) => {
+        setBudgetType(type);
+        markAsChanged();
+    };
+
+    // Guardar presupuesto
+    const handleSaveBudget = async () => {
+        if (items.length === 0) {
+            showNotification('error', 'Agrega al menos un tratamiento antes de guardar');
+            return;
+        }
+
+        try {
+            await saveBudget({
+                patientId: patient.id,
+                budgetType,
+                items: items.map((item, index) => ({
+                    pieza: item.pieza,
+                    accion: item.accion,
+                    valor: item.valor,
+                    orden: index
+                }))
+            });
+
+            setHasUnsavedChanges(false);
+            showNotification('success', 'Presupuesto guardado exitosamente');
+        } catch (error: any) {
+            showNotification('error', `Error al guardar: ${error.message}`);
+        }
+    };
+
+    // Activar presupuesto
+    const handleActivateBudget = async () => {
+        if (!budget) return;
+
+        try {
+            await updateBudgetStatus({
+                budgetId: budget.id,
+                statusData: { status: BUDGET_STATUS.ACTIVO }
+            });
+            showNotification('success', 'Presupuesto activado exitosamente');
+        } catch (error: any) {
+            showNotification('error', `Error al activar: ${error.message}`);
+        }
+    };
+
+    // Volver a borrador
+    const handleBackToDraft = async () => {
+        if (!budget) return;
+
+        try {
+            await updateBudgetStatus({
+                budgetId: budget.id,
+                statusData: { status: BUDGET_STATUS.BORRADOR }
+            });
+            showNotification('success', 'Presupuesto vuelto a borrador');
+        } catch (error: any) {
+            showNotification('error', `Error al cambiar estado: ${error.message}`);
+        }
+    };
+
+    // Eliminar presupuesto
+    const handleDeleteBudget = async () => {
+        if (!budget) return;
+
+        if (!window.confirm('¿Estás seguro de que deseas eliminar este presupuesto? Esta acción no se puede deshacer.')) {
+            return;
+        }
+
+        try {
+            await deleteBudget(patient.id);
+            setItems([]);
+            setHasUnsavedChanges(false);
+            showNotification('success', 'Presupuesto eliminado exitosamente');
+        } catch (error: any) {
+            showNotification('error', `Error al eliminar: ${error.message}`);
+        }
     };
 
     const generatePDF = () => {
@@ -444,7 +555,6 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                 padding: 15px; 
               }
               
-              /* Ocultar cualquier botón en la impresión */
               button, 
               .no-print,
               .print-controls {
@@ -456,7 +566,6 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         <body>
           ${printContent.innerHTML}
           
-          <!-- Controles de impresión que NO aparecen en el PDF final -->
           <div class="print-controls" style="position:fixed;bottom:20px;right:20px;display:flex;gap:10px;z-index:1000;">
               <button onclick="window.print()" style="padding:10px 20px;background:#0891b2;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:500;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
               📄 Imprimir
@@ -486,6 +595,21 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         }
     };
 
+    if (isLoading) {
+        return (
+            <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
+                <div className="animate-pulse">
+                    <div className="h-6 bg-gray-200 rounded w-48 mb-6"></div>
+                    <div className="space-y-4">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="h-4 bg-gray-200 rounded w-full"></div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             {notification && (
@@ -494,6 +618,60 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                     message={notification.message}
                     onClose={() => setNotification(null)}
                 />
+            )}
+
+            {/* Estado del presupuesto */}
+            {budget && (
+                <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                            <div className="bg-cyan-100 p-2 rounded-full">
+                                <FileText className="w-6 h-6 text-cyan-600" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold text-slate-700">Estado del Presupuesto</h3>
+                                <p className="text-sm text-slate-500">
+                                    {BUDGET_STATUS_LABELS[budget.status as keyof typeof BUDGET_STATUS_LABELS]} - Total: ${formatCurrency(parseFloat(budget.total_amount))}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                            {budget.status === BUDGET_STATUS.BORRADOR && (
+                                <button
+                                    onClick={handleActivateBudget}
+                                    disabled={isLoadingUpdateStatus}
+                                    className="flex items-center bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors disabled:opacity-50"
+                                >
+                                    <Play className="w-4 h-4 mr-2" />
+                                    Activar Plan
+                                </button>
+                            )}
+                            
+                            {budget.status === BUDGET_STATUS.ACTIVO && (
+                                <button
+                                    onClick={handleBackToDraft}
+                                    disabled={isLoadingUpdateStatus}
+                                    className="flex items-center bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors disabled:opacity-50"
+                                >
+                                    <RotateCcw className="w-4 h-4 mr-2" />
+                                    Volver a Borrador
+                                </button>
+                            )}
+
+                            {canModify && (
+                                <button
+                                    onClick={handleDeleteBudget}
+                                    disabled={isLoadingDelete}
+                                    className="flex items-center bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors disabled:opacity-50"
+                                >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Eliminar
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Selección del tipo de presupuesto */}
@@ -505,24 +683,30 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                         </div>
                         <div>
                             <h3 className="text-lg font-semibold text-slate-700">Tipo de Presupuesto</h3>
-                            <p className="text-sm text-slate-500">Selecciona el tipo de presupuesto a generar</p>
+                            <p className="text-sm text-slate-500">
+                                {canModify ? 'Selecciona el tipo de presupuesto a generar' : 'Tipo de presupuesto (solo lectura)'}
+                            </p>
                         </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <button
-                        onClick={() => setBudgetType('odontologico')}
-                        className={`p-4 rounded-xl border-2 transition-all duration-200 ${budgetType === 'odontologico'
-                            ? 'border-cyan-500 bg-cyan-50 shadow-md'
-                            : 'border-gray-200 hover:border-cyan-300'
-                            }`}
+                        onClick={() => handleBudgetTypeChange(BUDGET_TYPE.ODONTOLOGICO)}
+                        disabled={!canModify}
+                        className={`p-4 rounded-xl border-2 transition-all duration-200 ${
+                            budgetType === BUDGET_TYPE.ODONTOLOGICO
+                                ? 'border-cyan-500 bg-cyan-50 shadow-md'
+                                : 'border-gray-200 hover:border-cyan-300'
+                        } ${!canModify ? 'opacity-60 cursor-not-allowed' : ''}`}
                     >
                         <div className="flex items-center space-x-3">
-                            <div className={`p-2 rounded-full ${budgetType === 'odontologico' ? 'bg-cyan-500' : 'bg-gray-300'
-                                }`}>
-                                <Stethoscope className={`w-5 h-5 ${budgetType === 'odontologico' ? 'text-white' : 'text-gray-600'
-                                    }`} />
+                            <div className={`p-2 rounded-full ${
+                                budgetType === BUDGET_TYPE.ODONTOLOGICO ? 'bg-cyan-500' : 'bg-gray-300'
+                            }`}>
+                                <Stethoscope className={`w-5 h-5 ${
+                                    budgetType === BUDGET_TYPE.ODONTOLOGICO ? 'text-white' : 'text-gray-600'
+                                }`} />
                             </div>
                             <div className="text-left">
                                 <h4 className="font-semibold text-slate-700">Odontológico</h4>
@@ -532,17 +716,21 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                     </button>
 
                     <button
-                        onClick={() => setBudgetType('estetica')}
-                        className={`p-4 rounded-xl border-2 transition-all duration-200 ${budgetType === 'estetica'
-                            ? 'border-cyan-500 bg-cyan-50 shadow-md'
-                            : 'border-gray-200 hover:border-cyan-300'
-                            }`}
+                        onClick={() => handleBudgetTypeChange(BUDGET_TYPE.ESTETICA)}
+                        disabled={!canModify}
+                        className={`p-4 rounded-xl border-2 transition-all duration-200 ${
+                            budgetType === BUDGET_TYPE.ESTETICA
+                                ? 'border-cyan-500 bg-cyan-50 shadow-md'
+                                : 'border-gray-200 hover:border-cyan-300'
+                        } ${!canModify ? 'opacity-60 cursor-not-allowed' : ''}`}
                     >
                         <div className="flex items-center space-x-3">
-                            <div className={`p-2 rounded-full ${budgetType === 'estetica' ? 'bg-cyan-500' : 'bg-gray-300'
-                                }`}>
-                                <Sparkles className={`w-5 h-5 ${budgetType === 'estetica' ? 'text-white' : 'text-gray-600'
-                                    }`} />
+                            <div className={`p-2 rounded-full ${
+                                budgetType === BUDGET_TYPE.ESTETICA ? 'bg-cyan-500' : 'bg-gray-300'
+                            }`}>
+                                <Sparkles className={`w-5 h-5 ${
+                                    budgetType === BUDGET_TYPE.ESTETICA ? 'text-white' : 'text-gray-600'
+                                }`} />
                             </div>
                             <div className="text-left">
                                 <h4 className="font-semibold text-slate-700">Estética</h4>
@@ -554,75 +742,63 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
             </div>
 
             {/* Formulario para agregar tratamientos */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">  {/* Agrega items-end aquí */}
-                {/* Primer input */}
-                <div className="flex flex-col">  {/* Añade flex-col para mantener el label arriba */}
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                        {budgetType === 'odontologico' ? 'Pieza' : 'Zona'}
-                    </label>
-                    <input
-                        type="text"
-                        value={newItem.pieza}
-                        onChange={(e) => setNewItem({ ...newItem, pieza: e.target.value })}
-                        placeholder={budgetType === 'odontologico' ? "ej: 4.4, B.C, 2.6" : "ej: Sonrisa, Labios, Rostro"}
-                        className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                    />
-                </div>
+            {canModify && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div className="flex flex-col">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                            {budgetType === BUDGET_TYPE.ODONTOLOGICO ? 'Pieza' : 'Zona'}
+                        </label>
+                        <input
+                            type="text"
+                            value={newItem.valor}
+                            onChange={(e) => handleValueChange(e.target.value, setNewItem, 'valor')}
+                            placeholder="25.000"
+                            className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                        />
+                    </div>
 
-                {/* Segundo input (select) */}
-                <div className="flex flex-col">  {/* Añade flex-col aquí también */}
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Tratamiento</label>
-                    <select
-                        value={newItem.accion}
-                        onChange={(e) => setNewItem({ ...newItem, accion: e.target.value })}
-                        className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                    <button
+                        onClick={handleAddItem}
+                        className="w-full flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-xl text-sm px-4 py-2.5 transition-colors shadow-sm h-[42px]"
                     >
-                        <option value="">Seleccionar tratamiento</option>
-                        {getCurrentTreatments().map((treatment) => (
-                            <option key={treatment} value={treatment}>{treatment}</option>
-                        ))}
-                    </select>
-                    <input
-                        type="text"
-                        value={newItem.accion}
-                        onChange={(e) => setNewItem({ ...newItem, accion: e.target.value })}
-                        placeholder="O escriba un tratamiento personalizado"
-                        className="w-full px-3 py-1 mt-2 border border-cyan-100 rounded-lg text-sm text-slate-600 focus:ring-1 focus:ring-cyan-400"
-                    />
+                        <Plus className="w-4 h-4 mr-2" />
+                        Agregar
+                    </button>
                 </div>
-
-                {/* Tercer input */}
-                <div className="flex flex-col">  {/* Añade flex-col aquí también */}
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Valor ($)</label>
-                    <input
-                        type="text"
-                        value={newItem.valor}
-                        onChange={(e) => handleValueChange(e.target.value, setNewItem, 'valor')}
-                        placeholder="25.000"
-                        className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
-                    />
-                </div>
-
-                {/* Botón - Elimina el div flex que lo envolvía */}
-                <button
-                    onClick={handleAddItem}
-                    className="w-full flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-xl text-sm px-4 py-2.5 transition-colors shadow-sm h-[42px]"
-                >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Agregar
-                </button>
-            </div>
+            )}
 
             {/* Tabla de tratamientos */}
             {items.length > 0 && (
                 <div className="bg-white rounded-xl shadow-sm border border-cyan-200 overflow-hidden">
                     <div className="px-6 py-4 border-b border-cyan-200 bg-slate-50">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-slate-700">Tratamientos Agregados</h3>
+                            <h3 className="text-lg font-semibold text-slate-700">Tratamientos</h3>
                             <div className="flex items-center space-x-3">
                                 <div className="text-sm text-slate-500">
                                     {items.length} tratamiento(s)
                                 </div>
+                                
+                                {/* Botones de acción */}
+                                {canModify && hasUnsavedChanges && (
+                                    <button
+                                        onClick={handleSaveBudget}
+                                        disabled={isLoadingSave}
+                                        className="flex items-center bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors shadow-sm disabled:opacity-50"
+                                    >
+                                        {isLoadingSave ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                                Guardando...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="w-4 h-4 mr-2" />
+                                                Guardar
+                                            </>
+                                        )}
+                                    </button>
+                                )}
+                                
                                 <button
                                     onClick={generatePDF}
                                     disabled={isGeneratingPDF}
@@ -652,19 +828,21 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                             <thead className="bg-slate-50 border-b border-cyan-200">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase">
-                                        {budgetType === 'odontologico' ? 'Pieza' : 'Zona'}
+                                        {budgetType === BUDGET_TYPE.ODONTOLOGICO ? 'Pieza' : 'Zona'}
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Tratamiento</th>
                                     <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 uppercase">Valor</th>
-                                    <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 uppercase">Acciones</th>
+                                    {canModify && (
+                                        <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 uppercase">Acciones</th>
+                                    )}
                                 </tr>
                             </thead>
 
                             <tbody className="bg-white divide-y divide-cyan-100">
-                                {items.map((item) => (
-                                    <tr key={item.id} className="hover:bg-cyan-50 transition-colors">
+                                {items.map((item, index) => (
+                                    <tr key={index} className="hover:bg-cyan-50 transition-colors">
                                         <td className="px-6 py-4">
-                                            {isEditing === item.id ? (
+                                            {canModify && isEditing === index.toString() ? (
                                                 <input
                                                     type="text"
                                                     value={editingItem.pieza}
@@ -673,13 +851,13 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                                                 />
                                             ) : (
                                                 <span className="text-sm font-medium text-slate-700">
-                                                    {item.pieza}
+                                                    {item.pieza || '-'}
                                                 </span>
                                             )}
                                         </td>
 
                                         <td className="px-6 py-4">
-                                            {isEditing === item.id ? (
+                                            {canModify && isEditing === index.toString() ? (
                                                 <input
                                                     type="text"
                                                     value={editingItem.accion}
@@ -694,7 +872,7 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                                         </td>
 
                                         <td className="px-6 py-4 text-right">
-                                            {isEditing === item.id ? (
+                                            {canModify && isEditing === index.toString() ? (
                                                 <input
                                                     type="text"
                                                     value={editingItem.valor}
@@ -708,51 +886,53 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                                             )}
                                         </td>
 
-                                        <td className="px-6 py-4 text-center">
-                                            <div className="flex items-center justify-center space-x-2">
-                                                {isEditing === item.id ? (
-                                                    <>
-                                                        <button
-                                                            onClick={saveEditing}
-                                                            className="text-green-600 hover:text-green-800 transition-colors p-1"
-                                                            title="Guardar cambios"
-                                                        >
-                                                            <CheckCircle className="w-4 h-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={cancelEditing}
-                                                            className="text-slate-400 hover:text-slate-600 transition-colors p-1"
-                                                            title="Cancelar edición"
-                                                        >
-                                                            <X className="w-4 h-4" />
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <button
-                                                            onClick={() => startEditing(item)}
-                                                            className="text-cyan-600 hover:text-cyan-800 transition-colors p-1"
-                                                            title="Editar tratamiento"
-                                                        >
-                                                            <Edit className="w-4 h-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteItem(item.id)}
-                                                            className="text-red-600 hover:text-red-800 transition-colors p-1"
-                                                            title="Eliminar tratamiento"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </td>
+                                        {canModify && (
+                                            <td className="px-6 py-4 text-center">
+                                                <div className="flex items-center justify-center space-x-2">
+                                                    {isEditing === index.toString() ? (
+                                                        <>
+                                                            <button
+                                                                onClick={saveEditing}
+                                                                className="text-green-600 hover:text-green-800 transition-colors p-1"
+                                                                title="Guardar cambios"
+                                                            >
+                                                                <CheckCircle className="w-4 h-4" />
+                                                            </button>
+                                                            <button
+                                                                onClick={cancelEditing}
+                                                                className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+                                                                title="Cancelar edición"
+                                                            >
+                                                                <X className="w-4 h-4" />
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <button
+                                                                onClick={() => startEditing(index)}
+                                                                className="text-cyan-600 hover:text-cyan-800 transition-colors p-1"
+                                                                title="Editar tratamiento"
+                                                            >
+                                                                <Edit className="w-4 h-4" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteItem(index)}
+                                                                className="text-red-600 hover:text-red-800 transition-colors p-1"
+                                                                title="Eliminar tratamiento"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
 
                                 {/* FILA DEL TOTAL */}
                                 <tr className="bg-slate-50 border-t-2 border-cyan-500">
-                                    <td className="px-6 py-4 font-semibold text-slate-700" colSpan={2}>
+                                    <td className="px-6 py-4 font-semibold text-slate-700" colSpan={canModify ? 2 : 2}>
                                         TOTAL
                                     </td>
                                     <td className="px-6 py-4 text-right">
@@ -760,7 +940,7 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                                             ${formatCurrency(calculateTotal())}
                                         </span>
                                     </td>
-                                    <td></td>
+                                    {canModify && <td></td>}
                                 </tr>
                             </tbody>
                         </table>
@@ -772,7 +952,12 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                 <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-12 text-center">
                     <Calculator className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-slate-700 mb-2">Sin tratamientos agregados</h3>
-                    <p className="text-slate-500">Comienza agregando tratamientos para crear un presupuesto</p>
+                    <p className="text-slate-500">
+                        {canModify 
+                            ? 'Comienza agregando tratamientos para crear un presupuesto'
+                            : 'Este paciente no tiene presupuesto creado'
+                        }
+                    </p>
                 </div>
             )}
 
@@ -789,14 +974,15 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                                 <h2>{doctorName}</h2>
                                 <p>CIRUJANO DENTISTA</p>
                                 <p>RUT: {doctorRut}</p>
-                                <p>Especialista en {budgetType === 'odontologico' ? 'Odontología General' : 'Estética Dental'}</p>
+                                <p>Especialista en {budgetType === BUDGET_TYPE.ODONTOLOGICO ? 'Odontología General' : 'Estética Dental'}</p>
                             </div>
                         </div>
-
                     </div>
+                    
                     <div className="budget-title-section">
                         <h1 className="budget-title">{getBudgetTitle()}</h1>
                     </div>
+                    
                     {/* Información del paciente */}
                     <div className="patient-info">
                         <div className="patient-grid">
@@ -825,15 +1011,15 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                             <thead>
                                 <tr>
                                     <th style={{ width: '15%' }}>
-                                        {budgetType === 'odontologico' ? 'Piezas' : 'Zonas'}
+                                        {budgetType === BUDGET_TYPE.ODONTOLOGICO ? 'Piezas' : 'Zonas'}
                                     </th>
                                     <th style={{ width: '65%' }}>Tratamiento</th>
                                     <th style={{ width: '20%', textAlign: 'right' }}>Valor</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {items.map((item) => (
-                                    <tr key={item.id}>
+                                {items.map((item, index) => (
+                                    <tr key={index}>
                                         <td style={{ padding: '12px', borderBottom: '1px solid #e2e8f0', fontSize: '14px' }}>
                                             {item.pieza || '-'}
                                         </td>
