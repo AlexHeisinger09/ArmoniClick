@@ -1,5 +1,4 @@
-// netlify/services/budget.service.ts - VERSIÓN MEJORADA CON UPSERT
-
+// netlify/services/budget.service.ts
 import { db } from '../data/db';
 import { budgetsTable, budgetItemsTable, BUDGET_STATUS } from '../data/schemas/budget.schema';
 import { eq, and, desc, sum, sql, inArray } from "drizzle-orm";
@@ -39,11 +38,16 @@ export class BudgetService {
         items: Array<{ id?: number; pieza?: string; accion: string; valor: number; orden?: number }>
     ): Promise<BudgetWithItems> {
 
+        console.log('🔄 saveOrUpdateBudget iniciado');
+        console.log('📥 Items recibidos en service:', JSON.stringify(items, null, 2));
+
         // Calcular total
         const totalAmount = items.reduce((sum, item) => sum + item.valor, 0);
 
         // Verificar si ya existe un presupuesto para este paciente
         const existingBudget = await this.findByPatientId(patientId, userId);
+
+        console.log('📋 Presupuesto existente:', existingBudget ? `ID: ${existingBudget.id}` : 'No existe');
 
         let budgetId: number;
 
@@ -52,6 +56,8 @@ export class BudgetService {
             if (existingBudget.status !== BUDGET_STATUS.BORRADOR) {
                 throw new Error('Solo se pueden modificar presupuestos en estado borrador');
             }
+
+            console.log('🔄 Actualizando presupuesto existente ID:', existingBudget.id);
 
             // Actualizar presupuesto existente
             await db
@@ -65,10 +71,14 @@ export class BudgetService {
 
             budgetId = existingBudget.id;
 
-            // ✅ UPSERT INTELIGENTE DE ITEMS
+            // ✅ AQUÍ ESTÁ EL PROBLEMA - LLAMAR AL UPSERT, NO BORRAR TODO
+            console.log('🔄 Iniciando UPSERT de items...');
             await this.upsertBudgetItems(budgetId, items, existingBudget.items);
+            console.log('✅ UPSERT completado');
 
         } else {
+            console.log('➕ Creando nuevo presupuesto');
+
             // Crear nuevo presupuesto
             const newBudget = await db
                 .insert(budgetsTable)
@@ -93,6 +103,7 @@ export class BudgetService {
                     orden: item.orden ?? index,
                 }));
 
+                console.log('📝 Insertando items para presupuesto nuevo:', budgetItems.length);
                 await db
                     .insert(budgetItemsTable)
                     .values(budgetItems);
@@ -105,6 +116,7 @@ export class BudgetService {
             throw new Error('Error al recuperar el presupuesto actualizado');
         }
 
+        console.log('✅ saveOrUpdateBudget completado, presupuesto ID:', updatedBudget.id);
         return updatedBudget;
     }
 
@@ -115,76 +127,90 @@ export class BudgetService {
         existingItems: BudgetItemData[]
     ): Promise<void> {
 
-        console.log('🔄 upsertBudgetItems - budgetId:', budgetId);
-        console.log('📥 newItems recibidos:', JSON.stringify(newItems, null, 2));
-        console.log('📋 existingItems:', JSON.stringify(existingItems.map(i => ({ id: i.id, accion: i.accion })), null, 2));
+        console.log('🔄 upsertBudgetItems iniciado');
+        console.log('📥 newItems:', JSON.stringify(newItems, null, 2));
+        console.log('📋 existingItems:', existingItems.map(i => ({ id: i.id, accion: i.accion })));
 
-        const itemsWithId = newItems.filter(item => item.id && item.id > 0);
-        const itemsWithoutId = newItems.filter(item => !item.id || item.id <= 0);
+        // Separar items por operación
+        const itemsToUpdate = newItems.filter(item => item.id && item.id > 0);
+        const itemsToInsert = newItems.filter(item => !item.id || item.id <= 0);
+
         const existingItemIds = existingItems.map(item => item.id);
-        const providedItemIds = itemsWithId.map(item => item.id!);
+        const providedItemIds = itemsToUpdate.map(item => item.id!);
+        const itemsToDelete = existingItemIds.filter(id => !providedItemIds.includes(id));
 
-        console.log('🔍 itemsWithId:', itemsWithId.length, itemsWithId.map(i => ({ id: i.id, accion: i.accion })));
-        console.log('🔍 itemsWithoutId:', itemsWithoutId.length, itemsWithoutId.map(i => ({ accion: i.accion })));
-        console.log('🔍 existingItemIds:', existingItemIds);
-        console.log('🔍 providedItemIds:', providedItemIds);
+        console.log('🔄 Operaciones planificadas:');
+        console.log('  - Actualizar:', itemsToUpdate.length, 'items con IDs:', providedItemIds);
+        console.log('  - Insertar:', itemsToInsert.length, 'items nuevos');
+        console.log('  - Eliminar:', itemsToDelete.length, 'items con IDs:', itemsToDelete);
 
-        // 1. ACTUALIZAR items existentes que fueron modificados
-        for (const item of itemsWithId) {
-            console.log(`🔄 Actualizando item ID ${item.id}:`, item);
+        try {
+            // 1. ACTUALIZAR items existentes
+            for (const item of itemsToUpdate) {
+                console.log(`🔄 Actualizando item ID ${item.id}...`);
 
-            await db
-                .update(budgetItemsTable)
-                .set({
+                const result = await db
+                    .update(budgetItemsTable)
+                    .set({
+                        pieza: item.pieza || null,
+                        accion: item.accion,
+                        valor: item.valor.toString(),
+                        orden: item.orden,
+                    })
+                    .where(
+                        and(
+                            eq(budgetItemsTable.id, item.id!),
+                            eq(budgetItemsTable.budget_id, budgetId)
+                        )
+                    )
+                    .returning({ id: budgetItemsTable.id });
+
+                console.log(`✅ Item ID ${item.id} actualizado:`, result);
+            }
+
+            // 2. INSERTAR items nuevos
+            if (itemsToInsert.length > 0) {
+                console.log(`➕ Insertando ${itemsToInsert.length} items nuevos...`);
+
+                const budgetItems = itemsToInsert.map((item, index) => ({
+                    budget_id: budgetId,
                     pieza: item.pieza || null,
                     accion: item.accion,
                     valor: item.valor.toString(),
-                    orden: item.orden,
-                })
-                .where(
-                    and(
-                        eq(budgetItemsTable.id, item.id!),
-                        eq(budgetItemsTable.budget_id, budgetId)
+                    orden: item.orden ?? (itemsToUpdate.length + index),
+                }));
+
+                const insertResult = await db
+                    .insert(budgetItemsTable)
+                    .values(budgetItems)
+                    .returning({ id: budgetItemsTable.id });
+
+                console.log('✅ Items insertados con IDs:', insertResult.map(r => r.id));
+            }
+
+            // 3. ELIMINAR items que ya no están
+            if (itemsToDelete.length > 0) {
+                console.log(`🗑️ Eliminando ${itemsToDelete.length} items:`, itemsToDelete);
+
+                const deleteResult = await db
+                    .delete(budgetItemsTable)
+                    .where(
+                        and(
+                            eq(budgetItemsTable.budget_id, budgetId),
+                            inArray(budgetItemsTable.id, itemsToDelete)
+                        )
                     )
-                );
+                    .returning({ id: budgetItemsTable.id });
+
+                console.log('✅ Items eliminados:', deleteResult.map(r => r.id));
+            }
+
+            console.log('✅ upsertBudgetItems completado exitosamente');
+
+        } catch (error) {
+            console.error('❌ Error en upsertBudgetItems:', error);
+            throw error;
         }
-
-        // 2. INSERTAR items nuevos (sin ID)
-        if (itemsWithoutId.length > 0) {
-            console.log('➕ Insertando nuevos items:', itemsWithoutId.length);
-
-            const budgetItems = itemsWithoutId.map((item, index) => ({
-                budget_id: budgetId,
-                pieza: item.pieza || null,
-                accion: item.accion,
-                valor: item.valor.toString(),
-                orden: item.orden ?? (itemsWithId.length + index),
-            }));
-
-            console.log('📝 Items a insertar:', JSON.stringify(budgetItems, null, 2));
-
-            await db
-                .insert(budgetItemsTable)
-                .values(budgetItems);
-        }
-
-        // 3. ELIMINAR items que ya no están presentes
-        const itemsToDelete = existingItemIds.filter(id => !providedItemIds.includes(id));
-
-        console.log('🗑️ Items a eliminar:', itemsToDelete);
-
-        if (itemsToDelete.length > 0) {
-            await db
-                .delete(budgetItemsTable)
-                .where(
-                    and(
-                        eq(budgetItemsTable.budget_id, budgetId),
-                        inArray(budgetItemsTable.id, itemsToDelete)
-                    )
-                );
-        }
-
-        console.log('✅ upsertBudgetItems completado');
     }
 
     // ✅ NUEVO MÉTODO: MANEJAR ACTIVACIÓN CON PRESUPUESTOS MODIFICADOS
