@@ -103,35 +103,72 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
     const { token } = useLoginMutation();
     const { queryProfile } = useProfile(token || '');
 
+    const canEdit = (): boolean => {
+        if (!budget) return true; // Si no hay presupuesto, permitir edición
+        return budget.status === BUDGET_STATUS.BORRADOR && canModify;
+    };
     // ✅ CARGAR DATOS CON VALIDACIÓN MEJORADA
+    // 🎯 SOLUCIÓN DEFINITIVA: Maneja creación, edición Y eliminación
     useEffect(() => {
         console.log('🔄 useEffect - budget changed:', budget);
 
-        if (budget && budget.items) {
-            console.log('📋 Budget items from backend:', budget.items);
-
-            // ✅ PRESERVAR TODOS LOS CAMPOS INCLUYENDO ID
-            const formattedItems = budget.items.map(item => ({
-                id: item.id, // ✅ IMPORTANTE: Preservar el ID del backend
-                budget_id: item.budget_id,
-                pieza: item.pieza || '',
-                accion: item.accion,
-                valor: parseFloat(item.valor.toString()) || 0,
-                orden: item.orden || 0,
-                created_at: item.created_at
-            }));
-
-            console.log('📋 Formatted items with IDs:', formattedItems);
-
-            setItems(formattedItems);
-            setBudgetType(budget.budget_type);
-            setHasUnsavedChanges(false);
-        } else {
+        if (!budget) {
             console.log('📋 No budget found, resetting items');
             setItems([]);
             setHasUnsavedChanges(false);
+            return;
         }
-    }, [budget]);
+
+        console.log('📋 Budget items from backend:', budget.items);
+
+        const formattedItems = budget.items?.map(item => ({
+            id: item.id,
+            budget_id: item.budget_id,
+            pieza: item.pieza || '',
+            accion: item.accion,
+            valor: parseFloat(item.valor.toString()) || 0,
+            orden: item.orden || 0,
+            created_at: item.created_at
+        })) || [];
+
+        console.log('📋 Formatted items with IDs:', formattedItems);
+
+        // Comparación más robusta que considera eliminación
+        setItems(prevItems => {
+            // Verificar si la cantidad cambió (eliminación/adición)
+            if (prevItems.length !== formattedItems.length) {
+                console.log('📊 Item count changed:', prevItems.length, '->', formattedItems.length);
+                return formattedItems;
+            }
+
+            // Verificar si algún ID cambió (eliminación/adición)
+            const prevIds = prevItems.map(item => item.id).sort();
+            const newIds = formattedItems.map(item => item.id).sort();
+
+            if (JSON.stringify(prevIds) !== JSON.stringify(newIds)) {
+                console.log('🔄 Item IDs changed:', prevIds, '->', newIds);
+                return formattedItems;
+            }
+
+            // Verificar si el contenido cambió (edición)
+            if (JSON.stringify(prevItems) !== JSON.stringify(formattedItems)) {
+                console.log('✏️ Item content changed');
+                return formattedItems;
+            }
+
+            console.log('✅ No changes detected, keeping current items');
+            return prevItems; // No cambiar si todo es igual
+        });
+
+        setBudgetType(budget.budget_type);
+        setHasUnsavedChanges(false);
+    }, [
+        budget?.id,                    // Solo cuando cambie el ID del presupuesto
+        budget?.updated_at,            // Solo cuando se actualice
+        budget?.items?.length,         // Detecta adición/eliminación de items
+        // Opcional: También detectar cambios en IDs específicos
+        budget?.items?.map(i => i.id).join(',') // Detecta cambios en qué items existen
+    ]);
 
     // Fecha actual en formato DD/MM/YYYY
     const currentDate = new Date().toLocaleDateString('es-CL');
@@ -410,6 +447,35 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
             showNotification('error', `Error al eliminar: ${error.message}`);
         }
     };
+    // ✅ FUNCIÓN HELPER: Determinar el estado visual
+    const getEditabilityStatus = () => {
+        if (!budget) return { canEdit: true, reason: '' };
+
+        if (budget.status === BUDGET_STATUS.ACTIVO) {
+            return {
+                canEdit: false,
+                reason: 'El plan está activo. Si necesita editarlo, debe volver a borrador.'
+            };
+        }
+
+        if (budget.status === BUDGET_STATUS.COMPLETED) {
+            return {
+                canEdit: false,
+                reason: 'El plan está completado y no puede editarse.'
+            };
+        }
+
+        if (!canModify) {
+            return {
+                canEdit: false,
+                reason: 'No tienes permisos para editar este presupuesto.'
+            };
+        }
+
+        return { canEdit: true, reason: '' };
+    };
+
+    const editStatus = getEditabilityStatus();
 
     const generatePDF = () => {
         setIsGeneratingPDF(true);
@@ -705,6 +771,13 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                                 <p className="text-sm text-slate-500">
                                     {BUDGET_STATUS_LABELS[budget.status as keyof typeof BUDGET_STATUS_LABELS]} - Total: ${formatCurrency(parseFloat(budget.total_amount))}
                                 </p>
+                                {/* ✅ MOSTRAR MENSAJE DE ESTADO DE EDICIÓN */}
+                                {!editStatus.canEdit && (
+                                    <p className="text-sm text-amber-600 mt-1 flex items-center">
+                                        <AlertCircle className="w-4 h-4 mr-1" />
+                                        {editStatus.reason}
+                                    </p>
+                                )}
                             </div>
                         </div>
 
@@ -731,7 +804,7 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                                 </button>
                             )}
 
-                            {canModify && (
+                            {canModify && budget.status === BUDGET_STATUS.BORRADOR && (
                                 <button
                                     onClick={handleDeleteBudget}
                                     disabled={isLoadingDelete}
@@ -756,7 +829,7 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                         <div>
                             <h3 className="text-lg font-semibold text-slate-700">Tipo de Presupuesto</h3>
                             <p className="text-sm text-slate-500">
-                                {canModify ? 'Selecciona el tipo de presupuesto a generar' : 'Tipo de presupuesto (solo lectura)'}
+                                {editStatus.canEdit ? 'Selecciona el tipo de presupuesto a generar' : 'Tipo de presupuesto (solo lectura)'}
                             </p>
                         </div>
                     </div>
@@ -764,12 +837,13 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <button
-                        onClick={() => handleBudgetTypeChange(BUDGET_TYPE.ODONTOLOGICO)}
-                        disabled={!canModify}
+                        onClick={() => editStatus.canEdit && handleBudgetTypeChange(BUDGET_TYPE.ODONTOLOGICO)}
+                        disabled={!editStatus.canEdit}
                         className={`p-4 rounded-xl border-2 transition-all duration-200 ${budgetType === BUDGET_TYPE.ODONTOLOGICO
-                            ? 'border-cyan-500 bg-cyan-50 shadow-md'
-                            : 'border-gray-200 hover:border-cyan-300'
-                            } ${!canModify ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                ? 'border-cyan-500 bg-cyan-50 shadow-md'
+                                : 'border-gray-200 hover:border-cyan-300'
+                            } ${!editStatus.canEdit ? 'opacity-60 cursor-not-allowed' : ''
+                            }`}
                     >
                         <div className="flex items-center space-x-3">
                             <div className={`p-2 rounded-full ${budgetType === BUDGET_TYPE.ODONTOLOGICO ? 'bg-cyan-500' : 'bg-gray-300'
@@ -785,12 +859,13 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                     </button>
 
                     <button
-                        onClick={() => handleBudgetTypeChange(BUDGET_TYPE.ESTETICA)}
-                        disabled={!canModify}
+                        onClick={() => editStatus.canEdit && handleBudgetTypeChange(BUDGET_TYPE.ESTETICA)}
+                        disabled={!editStatus.canEdit}
                         className={`p-4 rounded-xl border-2 transition-all duration-200 ${budgetType === BUDGET_TYPE.ESTETICA
-                            ? 'border-cyan-500 bg-cyan-50 shadow-md'
-                            : 'border-gray-200 hover:border-cyan-300'
-                            } ${!canModify ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                ? 'border-cyan-500 bg-cyan-50 shadow-md'
+                                : 'border-gray-200 hover:border-cyan-300'
+                            } ${!editStatus.canEdit ? 'opacity-60 cursor-not-allowed' : ''
+                            }`}
                     >
                         <div className="flex items-center space-x-3">
                             <div className={`p-2 rounded-full ${budgetType === BUDGET_TYPE.ESTETICA ? 'bg-cyan-500' : 'bg-gray-300'
@@ -807,8 +882,8 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                 </div>
             </div>
 
-            {/* Formulario para agregar tratamientos */}
-            {canModify && (
+            {/* ✅ FORMULARIO PARA AGREGAR TRATAMIENTOS - SOLO SI SE PUEDE EDITAR */}
+            {editStatus.canEdit && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <div className="flex flex-col">
                         <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -865,8 +940,8 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                         <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-slate-700">Tratamientos</h3>
                             <div className="flex items-center space-x-3">
-                                {/* Botones de acción */}
-                                {canModify && hasUnsavedChanges && (
+                                {/* ✅ BOTÓN GUARDAR - SOLO SI SE PUEDE EDITAR Y HAY CAMBIOS */}
+                                {editStatus.canEdit && hasUnsavedChanges && (
                                     <button
                                         onClick={handleSaveBudget}
                                         disabled={isLoadingSave}
@@ -919,7 +994,8 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Tratamiento</th>
                                     <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 uppercase">Valor</th>
-                                    {canModify && (
+                                    {/* ✅ COLUMNA ACCIONES - SOLO SI SE PUEDE EDITAR */}
+                                    {editStatus.canEdit && (
                                         <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 uppercase">Acciones</th>
                                     )}
                                 </tr>
@@ -929,7 +1005,8 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                                 {items.map((item, index) => (
                                     <tr key={index} className="hover:bg-cyan-50 transition-colors">
                                         <td className="px-6 py-4">
-                                            {canModify && isEditing === index.toString() ? (
+                                            {/* ✅ CAMPO EDITABLE - SOLO SI SE PUEDE EDITAR Y ESTÁ EN MODO EDICIÓN */}
+                                            {editStatus.canEdit && isEditing === index.toString() ? (
                                                 <input
                                                     type="text"
                                                     value={editingItem.pieza}
@@ -944,7 +1021,7 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                                         </td>
 
                                         <td className="px-6 py-4">
-                                            {canModify && isEditing === index.toString() ? (
+                                            {editStatus.canEdit && isEditing === index.toString() ? (
                                                 <select
                                                     value={editingItem.accion}
                                                     onChange={(e) => setEditingItem({ ...editingItem, accion: e.target.value })}
@@ -963,7 +1040,7 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                                         </td>
 
                                         <td className="px-6 py-4 text-right">
-                                            {canModify && isEditing === index.toString() ? (
+                                            {editStatus.canEdit && isEditing === index.toString() ? (
                                                 <input
                                                     type="text"
                                                     value={editingItem.valor}
@@ -977,7 +1054,8 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                                             )}
                                         </td>
 
-                                        {canModify && (
+                                        {/* ✅ COLUMNA ACCIONES - SOLO SI SE PUEDE EDITAR */}
+                                        {editStatus.canEdit && (
                                             <td className="px-6 py-4 text-center">
                                                 <div className="flex items-center justify-center space-x-2">
                                                     {isEditing === index.toString() ? (
@@ -1023,7 +1101,7 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
 
                                 {/* FILA DEL TOTAL */}
                                 <tr className="bg-slate-50 border-t-2 border-cyan-500">
-                                    <td className="px-6 py-4 font-semibold text-slate-700" colSpan={canModify ? 2 : 2}>
+                                    <td className="px-6 py-4 font-semibold text-slate-700" colSpan={editStatus.canEdit ? 2 : 2}>
                                         TOTAL
                                     </td>
                                     <td className="px-6 py-4 text-right">
@@ -1031,7 +1109,7 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                                             ${formatCurrency(calculateTotal())}
                                         </span>
                                     </td>
-                                    {canModify && <td></td>}
+                                    {editStatus.canEdit && <td></td>}
                                 </tr>
                             </tbody>
                         </table>
@@ -1039,14 +1117,15 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                 </div>
             )}
 
+            {/* Estado vacío */}
             {items.length === 0 && (
                 <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-12 text-center">
                     <Calculator className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-slate-700 mb-2">Sin tratamientos agregados</h3>
                     <p className="text-slate-500">
-                        {canModify
+                        {editStatus.canEdit
                             ? 'Comienza agregando tratamientos para crear un presupuesto'
-                            : 'Este paciente no tiene presupuesto creado'
+                            : 'Este presupuesto no tiene tratamientos o no se puede editar'
                         }
                     </p>
                 </div>

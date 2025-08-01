@@ -1,6 +1,7 @@
 // netlify/functions/budgets/dtos/save-budget.dto.ts - AJUSTE BACKEND
 
 export interface BudgetItemDto {
+  id?: number;        // ✅ AGREGAR ESTA LÍNEA
   pieza?: string;
   accion: string;
   valor: number;
@@ -26,7 +27,7 @@ export class SaveBudgetDto {
       return ["Tipo de presupuesto debe ser 'odontologico' o 'estetica'"];
     }
 
-    // ✅ SOLUCIÓN: Parsear items si viene como string JSON
+    // ✅ PARSEAR items preservando IDs
     let parsedItems;
     try {
       if (typeof items === 'string') {
@@ -37,6 +38,8 @@ export class SaveBudgetDto {
     } catch (error) {
       return ["Items debe ser un JSON válido"];
     }
+
+    console.log('🔍 DTO - Items parseados:', parsedItems);
 
     if (!Array.isArray(parsedItems)) return ["Items debe ser un array"];
     if (parsedItems.length === 0) return ["Debe incluir al menos un item en el presupuesto"];
@@ -57,6 +60,11 @@ export class SaveBudgetDto {
         return [`Item ${i + 1}: Valor debe ser mayor a 0`];
       }
 
+      // ✅ VALIDAR ID si se proporciona
+      if (item.id !== undefined && isNaN(Number(item.id))) {
+        return [`Item ${i + 1}: ID debe ser un número`];
+      }
+
       // Validar pieza si se proporciona
       if (item.pieza && typeof item.pieza !== 'string') {
         return [`Item ${i + 1}: Pieza debe ser texto`];
@@ -68,13 +76,27 @@ export class SaveBudgetDto {
       }
     }
 
-    // Normalizar items
-    const normalizedItems: BudgetItemDto[] = parsedItems.map((item, index) => ({
-      pieza: item.pieza?.trim() || undefined,
-      accion: item.accion.trim(),
-      valor: Number(item.valor),
-      orden: item.orden !== undefined ? Number(item.orden) : index,
-    }));
+    // ✅ NORMALIZAR items PRESERVANDO IDs
+    const normalizedItems: BudgetItemDto[] = parsedItems.map((item, index) => {
+      const normalizedItem: BudgetItemDto = {
+        pieza: item.pieza?.trim() || undefined,
+        accion: item.accion.trim(),
+        valor: Number(item.valor),
+        orden: item.orden !== undefined ? Number(item.orden) : index,
+      };
+
+      // ✅ PRESERVAR ID si existe y es válido
+      if (item.id !== undefined && item.id !== null && !isNaN(Number(item.id)) && Number(item.id) > 0) {
+        normalizedItem.id = Number(item.id);
+        console.log(`🔍 DTO - Preservando ID ${normalizedItem.id} para item: ${normalizedItem.accion}`);
+      } else {
+        console.log(`🔍 DTO - Item sin ID (nuevo): ${normalizedItem.accion}`);
+      }
+
+      return normalizedItem;
+    });
+
+    console.log('🔍 DTO - Items normalizados finales:', normalizedItems);
 
     return [undefined, new SaveBudgetDto(
       Number(patientId),
