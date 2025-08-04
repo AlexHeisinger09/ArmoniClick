@@ -1,0 +1,91 @@
+// src/presentation/pages/patient/tabs/budget/components/BudgetItemForm.tsx
+import React from 'react';
+import { Plus } from 'lucide-react';
+import { BUDGET_TYPE } from "@/core/use-cases/budgets";
+import { BudgetFormData, ODONTOLOGICO_TREATMENTS, ESTETICA_TREATMENTS, BudgetFormUtils } from '../types/budget.types';
+
+interface BudgetItemFormProps {
+    budgetType: string;
+    newItem: BudgetFormData;
+    onItemChange: (field: keyof BudgetFormData, value: string) => void;
+    onAddItem: () => void;
+    canEdit: boolean;
+}
+
+const BudgetItemForm: React.FC<BudgetItemFormProps> = ({
+    budgetType,
+    newItem,
+    onItemChange,
+    onAddItem,
+    canEdit
+}) => {
+    const getCurrentTreatments = () => {
+        return budgetType === BUDGET_TYPE.ODONTOLOGICO ? ODONTOLOGICO_TREATMENTS : ESTETICA_TREATMENTS;
+    };
+
+    const handleValueChange = (value: string) => {
+        const formattedValue = BudgetFormUtils.formatValueInput(value);
+        onItemChange('valor', formattedValue);
+    };
+
+    if (!canEdit) return null;
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div className="flex flex-col">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                    {budgetType === BUDGET_TYPE.ODONTOLOGICO ? 'Pieza' : 'Zona'}
+                </label>
+                <input
+                    type="text"
+                    value={newItem.pieza}
+                    onChange={(e) => onItemChange('pieza', e.target.value)}
+                    placeholder={budgetType === BUDGET_TYPE.ODONTOLOGICO ? "1.1, 1.2" : "Frente, Pómulos"}
+                    className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                />
+            </div>
+
+            <div className="flex flex-col">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Tratamiento</label>
+                <select
+                    value={newItem.accion}
+                    onChange={(e) => onItemChange('accion', e.target.value)}
+                    className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                >
+                    <option value="">Seleccionar...</option>
+                    {getCurrentTreatments().map((treatment) => (
+                        <option key={treatment} value={treatment}>{treatment}</option>
+                    ))}
+                </select>
+                <input
+                    type="text"
+                    value={newItem.accion}
+                    onChange={(e) => onItemChange('accion', e.target.value)}
+                    placeholder="O escriba un tratamiento personalizado"
+                    className="w-full px-3 py-1 mt-2 border border-cyan-100 rounded-lg text-sm text-slate-600 focus:ring-1 focus:ring-cyan-400"
+                />
+            </div>
+
+            <div className="flex flex-col">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Valor</label>
+                <input
+                    type="text"
+                    value={newItem.valor}
+                    onChange={(e) => handleValueChange(e.target.value)}
+                    placeholder="25.000"
+                    className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                />
+            </div>
+
+            <button
+                onClick={onAddItem}
+                className="w-full flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-xl text-sm px-4 py-2.5 transition-colors shadow-sm h-[42px]"
+            >
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar
+            </button>
+        </div>
+    );
+};
+
+export { BudgetItemForm };

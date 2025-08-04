@@ -1,17 +1,20 @@
-// netlify/functions/budgets/budgets.ts
+// netlify/functions/budgets/budgets.ts - ENDPOINTS ACTUALIZADOS
 import type { HandlerEvent, Handler } from "@netlify/functions";
 
 import {
-  GetBudgetByPatient,
+  GetAllBudgetsByPatient,
+  GetActiveBudgetByPatient,
   SaveBudget,
-  UpdateBudgetStatus,
+  ActivateBudget,
+  CompleteBudget,
+  RevertBudgetToDraft,
   DeleteBudget,
   GetBudgetStats,
 } from "./use-cases";
 
 import {
   SaveBudgetDto,
-  UpdateBudgetStatusDto,
+  ActivateBudgetDto,
 } from "./dtos";
 
 import { fromBodyToObject, HEADERS } from "../../config/utils";
@@ -41,7 +44,7 @@ const handler: Handler = async (event: HandlerEvent) => {
   const budgetsIndex = pathParts.findIndex(part => part === 'budgets');
   
   try {
-    // GET /budgets/stats - Obtener estadísticas de presupuestos
+    // ✅ GET /budgets/stats - Obtener estadísticas de presupuestos
     if (httpMethod === "GET" && path.includes('/stats')) {
       return new GetBudgetStats()
         .execute(userId)
@@ -49,8 +52,8 @@ const handler: Handler = async (event: HandlerEvent) => {
         .catch((error) => error);
     }
 
-    // GET /budgets/patient/{patientId} - Obtener presupuesto de un paciente
-    if (httpMethod === "GET" && path.includes('/patient/')) {
+    // ✅ GET /budgets/patient/{patientId} - Obtener TODOS los presupuestos de un paciente
+    if (httpMethod === "GET" && path.includes('/patient/') && !path.includes('/active')) {
       const patientId = pathParts[budgetsIndex + 2] ? parseInt(pathParts[budgetsIndex + 2]) : null;
       
       if (!patientId || isNaN(patientId)) {
@@ -63,13 +66,33 @@ const handler: Handler = async (event: HandlerEvent) => {
         };
       }
 
-      return new GetBudgetByPatient()
+      return new GetAllBudgetsByPatient()
         .execute(patientId, userId)
         .then((res) => res)
         .catch((error) => error);
     }
 
-    // POST /budgets/patient/{patientId} - Guardar/actualizar presupuesto
+    // ✅ GET /budgets/patient/{patientId}/active - Obtener presupuesto ACTIVO de un paciente
+    if (httpMethod === "GET" && path.includes('/patient/') && path.includes('/active')) {
+      const patientId = pathParts[budgetsIndex + 2] ? parseInt(pathParts[budgetsIndex + 2]) : null;
+      
+      if (!patientId || isNaN(patientId)) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: "ID de paciente inválido",
+          }),
+          headers: HEADERS.json,
+        };
+      }
+
+      return new GetActiveBudgetByPatient()
+        .execute(patientId, userId)
+        .then((res) => res)
+        .catch((error) => error);
+    }
+
+    // ✅ POST /budgets/patient/{patientId} - Crear/actualizar presupuesto
     if (httpMethod === "POST" && path.includes('/patient/')) {
       const patientId = pathParts[budgetsIndex + 2] ? parseInt(pathParts[budgetsIndex + 2]) : null;
       
@@ -83,7 +106,6 @@ const handler: Handler = async (event: HandlerEvent) => {
         };
       }
 
-      // Agregar patientId al body para validación
       const budgetData = { ...body, patientId };
       
       const [error, saveBudgetDto] = SaveBudgetDto.create(budgetData);
@@ -104,8 +126,8 @@ const handler: Handler = async (event: HandlerEvent) => {
         .catch((error) => error);
     }
 
-    // PUT /budgets/{budgetId}/status - Actualizar estado del presupuesto
-    if (httpMethod === "PUT" && path.includes('/status')) {
+    // ✅ PUT /budgets/{budgetId}/activate - Activar presupuesto
+    if (httpMethod === "PUT" && path.includes('/activate')) {
       const budgetId = pathParts[budgetsIndex + 1] ? parseInt(pathParts[budgetsIndex + 1]) : null;
       
       if (!budgetId || isNaN(budgetId)) {
@@ -118,40 +140,68 @@ const handler: Handler = async (event: HandlerEvent) => {
         };
       }
 
-      const [error, updateStatusDto] = UpdateBudgetStatusDto.create(body);
+      return new ActivateBudget()
+        .execute(budgetId, userId)
+        .then((res) => res)
+        .catch((error) => error);
+    }
+
+    // ✅ PUT /budgets/{budgetId}/complete - Completar presupuesto
+    if (httpMethod === "PUT" && path.includes('/complete')) {
+      const budgetId = pathParts[budgetsIndex + 1] ? parseInt(pathParts[budgetsIndex + 1]) : null;
       
-      if (error) {
+      if (!budgetId || isNaN(budgetId)) {
         return {
           statusCode: 400,
           body: JSON.stringify({
-            message: error,
+            message: "ID de presupuesto inválido",
           }),
           headers: HEADERS.json,
         };
       }
 
-      return new UpdateBudgetStatus()
-        .execute(budgetId, updateStatusDto!, userId)
+      return new CompleteBudget()
+        .execute(budgetId, userId)
         .then((res) => res)
         .catch((error) => error);
     }
 
-    // DELETE /budgets/patient/{patientId} - Eliminar presupuesto
-    if (httpMethod === "DELETE" && path.includes('/patient/')) {
-      const patientId = pathParts[budgetsIndex + 2] ? parseInt(pathParts[budgetsIndex + 2]) : null;
+    // ✅ PUT /budgets/{budgetId}/revert - Volver a borrador
+    if (httpMethod === "PUT" && path.includes('/revert')) {
+      const budgetId = pathParts[budgetsIndex + 1] ? parseInt(pathParts[budgetsIndex + 1]) : null;
       
-      if (!patientId || isNaN(patientId)) {
+      if (!budgetId || isNaN(budgetId)) {
         return {
           statusCode: 400,
           body: JSON.stringify({
-            message: "ID de paciente inválido",
+            message: "ID de presupuesto inválido",
+          }),
+          headers: HEADERS.json,
+        };
+      }
+
+      return new RevertBudgetToDraft()
+        .execute(budgetId, userId)
+        .then((res) => res)
+        .catch((error) => error);
+    }
+
+    // ✅ DELETE /budgets/{budgetId} - Eliminar presupuesto específico
+    if (httpMethod === "DELETE" && !path.includes('/patient/')) {
+      const budgetId = pathParts[budgetsIndex + 1] ? parseInt(pathParts[budgetsIndex + 1]) : null;
+      
+      if (!budgetId || isNaN(budgetId)) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: "ID de presupuesto inválido",
           }),
           headers: HEADERS.json,
         };
       }
 
       return new DeleteBudget()
-        .execute(patientId, userId)
+        .execute(budgetId, userId)
         .then((res) => res)
         .catch((error) => error);
     }

@@ -2,36 +2,25 @@ import { BudgetService } from "../../../services/budget.service";
 import { HEADERS } from "../../../config/utils";
 import { HandlerResponse } from "@netlify/functions";
 
-export class DeleteBudget {
+export class RevertBudgetToDraft {
   constructor(private readonly budgetService: BudgetService = new BudgetService()) {}
 
   public async execute(budgetId: number, userId: number): Promise<HandlerResponse> {
     try {
-      await this.budgetService.deleteBudget(budgetId, userId);
+      await this.budgetService.revertToDraft(budgetId, userId);
 
       return {
         statusCode: 200,
         body: JSON.stringify({
-          message: "Presupuesto eliminado exitosamente",
+          message: "Presupuesto revertido a borrador exitosamente",
         }),
         headers: HEADERS.json,
       };
     } catch (error: any) {
-      if (error.message.includes('Solo se pueden eliminar presupuestos en estado borrador')) {
-        return {
-          statusCode: 400,
-          body: JSON.stringify({
-            message: "No se puede eliminar un presupuesto activo o completado",
-            error: error.message,
-          }),
-          headers: HEADERS.json,
-        };
-      }
-
       return {
         statusCode: 500,
         body: JSON.stringify({
-          message: "Error al eliminar el presupuesto",
+          message: "Error al revertir el presupuesto",
           error: error.message,
         }),
         headers: HEADERS.json,

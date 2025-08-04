@@ -2,26 +2,26 @@ import { BudgetService } from "../../../services/budget.service";
 import { HEADERS } from "../../../config/utils";
 import { HandlerResponse } from "@netlify/functions";
 
-export class DeleteBudget {
+export class ActivateBudget {
   constructor(private readonly budgetService: BudgetService = new BudgetService()) {}
 
   public async execute(budgetId: number, userId: number): Promise<HandlerResponse> {
     try {
-      await this.budgetService.deleteBudget(budgetId, userId);
+      await this.budgetService.activateBudget(budgetId, userId);
 
       return {
         statusCode: 200,
         body: JSON.stringify({
-          message: "Presupuesto eliminado exitosamente",
+          message: "Presupuesto activado exitosamente",
         }),
         headers: HEADERS.json,
       };
     } catch (error: any) {
-      if (error.message.includes('Solo se pueden eliminar presupuestos en estado borrador')) {
+      if (error.message.includes('Ya existe un presupuesto activo')) {
         return {
-          statusCode: 400,
+          statusCode: 409, // Conflict
           body: JSON.stringify({
-            message: "No se puede eliminar un presupuesto activo o completado",
+            message: "Conflicto de activación",
             error: error.message,
           }),
           headers: HEADERS.json,
@@ -31,7 +31,7 @@ export class DeleteBudget {
       return {
         statusCode: 500,
         body: JSON.stringify({
-          message: "Error al eliminar el presupuesto",
+          message: "Error al activar el presupuesto",
           error: error.message,
         }),
         headers: HEADERS.json,
