@@ -31,19 +31,9 @@ const TreatmentCard: React.FC<TreatmentCardProps> = ({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onView(treatment);
-            }}
-            className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
-            title="Ver detalles"
-          >
-            <Eye className="w-4 h-4" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
               onEdit(treatment);
             }}
-            className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition-colors"
+            className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
             title="Editar"
           >
             <Edit className="w-4 h-4" />

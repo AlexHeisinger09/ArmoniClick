@@ -1,13 +1,13 @@
-// src/presentation/pages/patient/tabs/budget/PatientBudget.tsx - TAB SIMPLIFICADO
+// src/presentation/pages/patient/tabs/budget/PatientBudget.tsx - ESTRUCTURA SIMPLIFICADA
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMultipleBudgetOperations } from "@/presentation/hooks/budgets/useBudgets";
 import { Patient } from "@/core/use-cases/patients";
-import { Budget, BudgetUtils } from "@/core/use-cases/budgets";
+import { Budget } from "@/core/use-cases/budgets";
+import { useMultipleBudgetOperations } from "@/presentation/hooks/budgets/useBudgets";
 
-// Importar componentes modulares
+// Componentes
+import { BudgetsList } from './components/BudgetList';
 import { Notification } from './components/Notification';
-import { BudgetCard } from './components/BudgetCard';
 import { PDFGenerator } from './utils/pdfGenerator';
 
 // Hooks para datos del doctor
@@ -50,35 +50,50 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         setTimeout(() => setNotification(null), 5000);
     };
 
-    // ✅ NAVEGACIÓN A PÁGINAS SEPARADAS
+    // Función para procesar errores de API
+    const processApiError = (error: any): string => {
+        if (!error.response) {
+            return `Error de conexión: ${error.message || 'No se pudo conectar al servidor'}`;
+        }
 
+        const status = error.response?.status;
+        const data = error.response?.data;
+
+        let errorMessage = `Error ${status}`;
+
+        if (data) {
+            if (typeof data === 'string') {
+                errorMessage += `: ${data}`;
+            } else if (data.message) {
+                errorMessage += `: ${data.message}`;
+            } else {
+                errorMessage += `: ${JSON.stringify(data)}`;
+            }
+        }
+
+        return errorMessage;
+    };
+
+    // Navegación a páginas separadas
     const handleCreateNewBudget = () => {
-        // Navegar a la página de presupuestos con el paciente preseleccionado
         navigate(`/dashboard/presupuestos?patientId=${patient.id}`);
     };
 
     const handleEditBudget = (budget: Budget) => {
-        if (!BudgetUtils.canModify(budget)) {
-            showNotification('error', 'Solo se pueden editar presupuestos en estado borrador');
-            return;
-        }
-        // Navegar a la página de presupuestos para editar
-        navigate(`/dashboard/presupuestos?patientId=${patient.id}&budgetId=${budget.id}`);
+        navigate(`/dashboard/presupuestos?patientId=${patient.id}&budgetId=${budget.id}&mode=edit`);
     };
 
     const handleViewBudget = (budget: Budget) => {
-        // Navegar a la página de presupuestos en modo solo lectura
-        navigate(`/dashboard/presupuestos?patientId=${patient.id}&budgetId=${budget.id}&readonly=true`);
+        navigate(`/dashboard/presupuestos?patientId=${patient.id}&budgetId=${budget.id}&mode=view`);
     };
 
-    // ✅ OPERACIONES DE PRESUPUESTO (mantenidas en el tab)
-
+    // Operaciones de presupuesto
     const handleActivateBudget = async (budget: Budget) => {
         try {
             await activateBudget(budget.id);
             showNotification('success', 'Presupuesto activado exitosamente');
         } catch (error: any) {
-            const errorMessage = error?.message || 'Error al activar presupuesto';
+            const errorMessage = processApiError(error);
             showNotification('error', errorMessage);
         }
     };
@@ -88,7 +103,8 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
             await completeBudget(budget.id);
             showNotification('success', 'Presupuesto completado exitosamente');
         } catch (error: any) {
-            showNotification('error', `Error al completar: ${error.message}`);
+            const errorMessage = processApiError(error);
+            showNotification('error', errorMessage);
         }
     };
 
@@ -97,16 +113,22 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
             await revertBudget(budget.id);
             showNotification('success', 'Presupuesto revertido a borrador');
         } catch (error: any) {
-            showNotification('error', `Error al revertir: ${error.message}`);
+            const errorMessage = processApiError(error);
+            showNotification('error', errorMessage);
         }
     };
 
     const handleDeleteBudget = async (budget: Budget) => {
+        if (!window.confirm('¿Estás seguro de que deseas eliminar este presupuesto? Esta acción no se puede deshacer.')) {
+            return;
+        }
+
         try {
             await deleteBudget(budget.id);
             showNotification('success', 'Presupuesto eliminado exitosamente');
         } catch (error: any) {
-            showNotification('error', `Error al eliminar: ${error.message}`);
+            const errorMessage = processApiError(error);
+            showNotification('error', errorMessage);
         }
     };
 
@@ -131,24 +153,25 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         }
     };
 
-    // Loading state
-    if (isLoadingAll) {
-        return (
-            <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
-                <div className="animate-pulse">
-                    <div className="h-6 bg-gray-200 rounded w-48 mb-6"></div>
-                    <div className="space-y-4">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="h-20 bg-gray-200 rounded"></div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="space-y-6">
+        <>
+            <BudgetsList
+                budgets={sortedBudgets}
+                loading={isLoadingAll}
+                onView={handleViewBudget}
+                onEdit={handleEditBudget}
+                onActivate={handleActivateBudget}
+                onComplete={handleCompleteBudget}
+                onRevert={handleRevertBudget}
+                onDelete={handleDeleteBudget}
+                onExportPDF={handleExportPDF}
+                onNewBudget={handleCreateNewBudget}
+                isLoadingActivate={isLoadingActivate}
+                isLoadingComplete={isLoadingComplete}
+                isLoadingRevert={isLoadingRevert}
+                isLoadingDelete={isLoadingDelete}
+            />
+
             {/* Notificaciones */}
             {notification && (
                 <Notification
@@ -172,86 +195,7 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                     </div>
                 </div>
             )}
-
-            {/* Header simplificado */}
-            <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                        <div className="bg-cyan-100 p-2 rounded-full">
-                            <svg className="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-semibold text-slate-700">
-                                Presupuestos de {patient.nombres} {patient.apellidos}
-                            </h3>
-                            <p className="text-sm text-slate-500">
-                                Visualiza y gestiona los planes de tratamiento
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                        <button
-                            onClick={handleCreateNewBudget}
-                            className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
-                        >
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                            </svg>
-                            Ir a Presupuestos
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Lista de presupuestos simplificada */}
-            {sortedBudgets.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {sortedBudgets.map((budget) => (
-                        <BudgetCard
-                            key={budget.id}
-                            budget={budget}
-                            onView={handleViewBudget}
-                            onEdit={handleEditBudget}
-                            onActivate={handleActivateBudget}
-                            onComplete={handleCompleteBudget}
-                            onRevert={handleRevertBudget}
-                            onDelete={handleDeleteBudget}
-                            onExportPDF={handleExportPDF}
-                            isLoadingActivate={isLoadingActivate}
-                            isLoadingComplete={isLoadingComplete}
-                            isLoadingRevert={isLoadingRevert}
-                            isLoadingDelete={isLoadingDelete}
-                        />
-                    ))}
-                </div>
-            ) : (
-                /* Estado vacío simplificado */
-                <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-12 text-center">
-                    <div className="bg-slate-100 p-4 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                        <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                    </div>
-                    <h3 className="text-lg font-medium text-slate-700 mb-2">Sin presupuestos creados</h3>
-                    <p className="text-slate-500 mb-6">
-                        Este paciente no tiene presupuestos aún. Crea el primer plan de tratamiento.
-                    </p>
-                    <div className="flex items-center justify-center space-x-4">
-                        <button 
-                            onClick={handleCreateNewBudget}
-                            className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg px-6 py-3 transition-colors"
-                        >
-                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                            </svg>
-                            Crear Primer Presupuesto
-                        </button>
-                    </div>
-                </div>
-            )}
-        </div>
+        </>
     );
 };
 
