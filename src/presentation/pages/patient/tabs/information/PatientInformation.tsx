@@ -38,28 +38,26 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
           <h3 className="text-xl font-semibold text-slate-700">
             Datos Personales
           </h3>
-          
-          <div className="flex space-x-3">
+
+          <div className="flex space-x-2">
             <button
               onClick={() => onEdit(patient)}
-              className="flex items-center text-slate-500 hover:text-slate-700 transition-colors"
+              className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
               title="Editar Paciente"
             >
-              <Edit className="w-4 h-4 mr-2" />
-              Editar
+              <Edit className="w-4 h-4" />
             </button>
-            
+
             <button
               onClick={() => {
                 if (window.confirm('¿Estás seguro de que deseas eliminar este paciente?')) {
                   onDelete(patient.id);
                 }
               }}
-              className="flex items-center text-red-500 hover:text-red-700 transition-colors"
+              className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
               title="Eliminar Paciente"
             >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Eliminar
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
         </div>

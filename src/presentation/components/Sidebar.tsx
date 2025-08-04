@@ -4,7 +4,8 @@ import {
   Users,
   Calendar,
   Settings,
-  Notebook
+  Notebook,
+  Calculator
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -33,6 +34,12 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
       label: 'Pacientes',
       icon: Users,
       href: '/dashboard/pacientes'
+    },
+    {
+      id: 'presupuestos',
+      label: 'Planes',
+      icon: Calculator,
+      href: '/dashboard/presupuestos'
     },
     {
       id: 'calendario',

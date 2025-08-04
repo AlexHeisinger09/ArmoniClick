@@ -11,6 +11,7 @@ import { Home } from "../pages/home/Home";
 import { Calendar }  from "../pages/calendar/Calendar";
 import { Patient }  from "../pages/patient/Patient";
 import { Configuration }  from "../pages/configuration/Configuration";
+import BudgetPage from "../pages/budgets/BudgetPage";
 
 export const router = createBrowserRouter([
   // Ruta raíz - Redirige al login
@@ -69,6 +70,10 @@ export const router = createBrowserRouter([
       {
         path: "pacientes",
         element: <Patient />,
+      },
+      {
+        path: "presupuestos",
+        element: <BudgetPage />,
       },
       {
         path: "configuracion",

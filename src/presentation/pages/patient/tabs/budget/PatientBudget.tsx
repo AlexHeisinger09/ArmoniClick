@@ -1,109 +1,60 @@
-// src/presentation/pages/patient/tabs/budget/PatientBudget.tsx - CON GENERACIÓN DE PDF
-import React, { useState, useEffect } from 'react';
-import { useLoginMutation, useProfile } from "@/presentation/hooks";
+// src/presentation/pages/patient/tabs/budget/PatientBudget.tsx - TAB SIMPLIFICADO
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useMultipleBudgetOperations } from "@/presentation/hooks/budgets/useBudgets";
-import { 
-    BudgetItem, 
-    Budget,
-    BUDGET_TYPE, 
-    BudgetUtils 
-} from "@/core/use-cases/budgets";
+import { Patient } from "@/core/use-cases/patients";
+import { Budget, BudgetUtils } from "@/core/use-cases/budgets";
 
-// Importar todos los componentes modulares
+// Importar componentes modulares
 import { Notification } from './components/Notification';
-import { BudgetList } from './components/BudgetList';
-import { BudgetEditor } from './components/BudgetEditor';
-
-// Importar tipos y utilidades
-import { 
-    PatientBudgetProps, 
-    BudgetFormData,
-    BudgetFormUtils 
-} from './types/budget.types';
-
-// ✅ IMPORTAR EL GENERADOR DE PDF
+import { BudgetCard } from './components/BudgetCard';
 import { PDFGenerator } from './utils/pdfGenerator';
 
+// Hooks para datos del doctor
+import { useLoginMutation, useProfile } from "@/presentation/hooks";
+
+interface PatientBudgetProps {
+    patient: Patient;
+}
+
 const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
-    // Hooks para presupuestos múltiples
+    const navigate = useNavigate();
+    
+    // Hooks para presupuestos
     const {
-        budgets,
         sortedBudgets,
-        activeBudget,
         isLoadingAll,
-        isLoadingActive,
-        saveBudget,
         activateBudget,
         completeBudget,
         revertBudget,
         deleteBudget,
-        isLoadingSave,
         isLoadingActivate,
         isLoadingComplete,
         isLoadingRevert,
         isLoadingDelete,
     } = useMultipleBudgetOperations(patient.id);
 
-    // Estados para la UI
-    const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
-    const [showBudgetEditor, setShowBudgetEditor] = useState(false);
-    const [showBudgetList, setShowBudgetList] = useState(true);
-    
-    // Estados del formulario
-    const [items, setItems] = useState<BudgetItem[]>([]);
-    const [budgetType, setBudgetType] = useState<string>(BUDGET_TYPE.ODONTOLOGICO);
-    const [newItem, setNewItem] = useState<BudgetFormData>({
-        pieza: '',
-        accion: '',
-        valor: ''
-    });
-    const [isEditing, setIsEditing] = useState<string | null>(null);
-    const [editingItem, setEditingItem] = useState<BudgetFormData>({
-        pieza: '',
-        accion: '',
-        valor: ''
-    });
-    
-    // Estados de notificación y guardado
+    // Hook para datos del doctor (para PDF)
+    const { token } = useLoginMutation();
+    const { queryProfile } = useProfile(token || '');
+
+    // Estados locales
     const [notification, setNotification] = useState<{
         type: 'success' | 'error' | 'info';
         message: string;
     } | null>(null);
-    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-    const [isGeneratingPDF, setIsGeneratingPDF] = useState(false); // ✅ NUEVO ESTADO
+    const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
-    // Hook para datos del doctor
-    const { token } = useLoginMutation();
-    const { queryProfile } = useProfile(token || '');
+    const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
+        setNotification({ type, message });
+        setTimeout(() => setNotification(null), 5000);
+    };
 
-    // Cargar datos del presupuesto seleccionado para edición
-    useEffect(() => {
-        if (selectedBudget && showBudgetEditor) {
-            const formattedItems = selectedBudget.items?.map(item => ({
-                id: item.id,
-                budget_id: item.budget_id,
-                pieza: item.pieza || '',
-                accion: item.accion,
-                valor: parseFloat(item.valor.toString()) || 0,
-                orden: item.orden || 0,
-                created_at: item.created_at
-            })) || [];
-
-            setItems(formattedItems);
-            setBudgetType(selectedBudget.budget_type);
-            setHasUnsavedChanges(false);
-        }
-    }, [selectedBudget, showBudgetEditor]);
-
-    // ✅ FUNCIONES DE NAVEGACIÓN
+    // ✅ NAVEGACIÓN A PÁGINAS SEPARADAS
 
     const handleCreateNewBudget = () => {
-        setSelectedBudget(null);
-        setItems([]);
-        setBudgetType(BUDGET_TYPE.ODONTOLOGICO);
-        setShowBudgetEditor(true);
-        setShowBudgetList(false);
-        setHasUnsavedChanges(false);
+        // Navegar a la página de presupuestos con el paciente preseleccionado
+        navigate(`/dashboard/presupuestos?patientId=${patient.id}`);
     };
 
     const handleEditBudget = (budget: Budget) => {
@@ -111,37 +62,16 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
             showNotification('error', 'Solo se pueden editar presupuestos en estado borrador');
             return;
         }
-        setSelectedBudget(budget);
-        setShowBudgetEditor(true);
-        setShowBudgetList(false);
+        // Navegar a la página de presupuestos para editar
+        navigate(`/dashboard/presupuestos?patientId=${patient.id}&budgetId=${budget.id}`);
     };
 
     const handleViewBudget = (budget: Budget) => {
-        setSelectedBudget(budget);
-        setItems(budget.items.map(item => ({
-            ...item,
-            valor: parseFloat(item.valor.toString())
-        })));
-        setBudgetType(budget.budget_type);
-        setShowBudgetEditor(true);
-        setShowBudgetList(false);
-        setHasUnsavedChanges(false);
+        // Navegar a la página de presupuestos en modo solo lectura
+        navigate(`/dashboard/presupuestos?patientId=${patient.id}&budgetId=${budget.id}&readonly=true`);
     };
 
-    const handleBackToList = () => {
-        if (hasUnsavedChanges) {
-            if (!window.confirm('Tienes cambios sin guardar. ¿Estás seguro de que quieres salir?')) {
-                return;
-            }
-        }
-        setShowBudgetEditor(false);
-        setShowBudgetList(true);
-        setSelectedBudget(null);
-        setItems([]);
-        setHasUnsavedChanges(false);
-    };
-
-    // ✅ FUNCIONES DE OPERACIONES DE PRESUPUESTO
+    // ✅ OPERACIONES DE PRESUPUESTO (mantenidas en el tab)
 
     const handleActivateBudget = async (budget: Budget) => {
         try {
@@ -180,7 +110,6 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         }
     };
 
-    // ✅ FUNCIÓN DE EXPORTAR PDF IMPLEMENTADA
     const handleExportPDF = async (budget: Budget) => {
         setIsGeneratingPDF(true);
         
@@ -195,209 +124,22 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
             showNotification('success', 'PDF generado exitosamente');
             
         } catch (error: any) {
-            console.error('Error generating PDF:', error);
             const errorMessage = error.message || 'Error al generar PDF';
             showNotification('error', errorMessage);
         } finally {
             setIsGeneratingPDF(false);
         }
-    };
-
-    // ✅ FUNCIÓN PARA EXPORTAR PDF DEL PRESUPUESTO ACTUAL EN EL EDITOR
-    const handleExportCurrentBudgetPDF = async () => {
-        if (!selectedBudget && items.length === 0) {
-            showNotification('error', 'No hay tratamientos para exportar');
-            return;
-        }
-
-        setIsGeneratingPDF(true);
-
-        try {
-            const doctorData = queryProfile.data ? {
-                name: queryProfile.data.name,
-                lastName: queryProfile.data.lastName,
-                rut: queryProfile.data.rut
-            } : undefined;
-
-            // Si hay un presupuesto seleccionado, usar sus datos
-            if (selectedBudget) {
-                await PDFGenerator.generateBudgetPDF(selectedBudget, patient, doctorData);
-            } else {
-                // Si es un presupuesto nuevo, crear un objeto temporal para el PDF
-                const tempBudget: Budget = {
-                    id: 0,
-                    patient_id: patient.id,
-                    user_id: 0,
-                    total_amount: BudgetFormUtils.calculateTotal(items).toString(),
-                    status: 'borrador',
-                    budget_type: budgetType,
-                    created_at: new Date().toISOString(),
-                    updated_at: null,
-                    items: items.map(item => ({
-                        ...item,
-                        valor: typeof item.valor === 'string' ? parseFloat(item.valor) : item.valor
-                    }))
-                };
-                
-                await PDFGenerator.generateBudgetPDF(tempBudget, patient, doctorData);
-            }
-
-            showNotification('success', 'PDF generado exitosamente');
-            
-        } catch (error: any) {
-            console.error('Error generating PDF:', error);
-            const errorMessage = error.message || 'Error al generar PDF';
-            showNotification('error', errorMessage);
-        } finally {
-            setIsGeneratingPDF(false);
-        }
-    };
-
-    // ✅ FUNCIONES DEL EDITOR (mantenidas igual)
-
-    const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
-        setNotification({ type, message });
-        setTimeout(() => setNotification(null), 5000);
-    };
-
-    const markAsChanged = () => setHasUnsavedChanges(true);
-
-    const handleAddItem = () => {
-        const validation = BudgetFormUtils.validateItem(newItem);
-        if (validation) {
-            showNotification('error', validation);
-            return;
-        }
-
-        const valor = BudgetFormUtils.parseValue(newItem.valor);
-        const item: BudgetItem = {
-            pieza: newItem.pieza,
-            accion: newItem.accion,
-            valor: valor,
-            orden: items.length
-        };
-
-        setItems([...items, item]);
-        setNewItem({ pieza: '', accion: '', valor: '' });
-        markAsChanged();
-        showNotification('success', 'Tratamiento agregado exitosamente');
-    };
-
-    const handleDeleteItem = (index: number) => {
-        const newItems = items.filter((_, i) => i !== index);
-        setItems(newItems);
-        markAsChanged();
-        showNotification('success', 'Tratamiento eliminado');
-    };
-
-    const handleStartEditing = (index: number) => {
-        const item = items[index];
-        setIsEditing(index.toString());
-        setEditingItem({
-            pieza: item.pieza || '',
-            accion: item.accion,
-            valor: item.valor.toString()
-        });
-    };
-
-    const handleCancelEditing = () => {
-        setIsEditing(null);
-        setEditingItem({ pieza: '', accion: '', valor: '' });
-    };
-
-    const handleSaveEditing = () => {
-        const validation = BudgetFormUtils.validateItem(editingItem);
-        if (validation) {
-            showNotification('error', validation);
-            return;
-        }
-
-        const index = parseInt(isEditing!);
-        const valor = BudgetFormUtils.parseValue(editingItem.valor);
-        
-        setItems(items.map((item, i) =>
-            i === index
-                ? {
-                    ...item,
-                    pieza: editingItem.pieza,
-                    accion: editingItem.accion,
-                    valor: valor
-                }
-                : item
-        ));
-
-        setIsEditing(null);
-        setEditingItem({ pieza: '', accion: '', valor: '' });
-        markAsChanged();
-        showNotification('success', 'Tratamiento actualizado');
-    };
-
-    const handleBudgetTypeChange = (type: string) => {
-        setBudgetType(type);
-        markAsChanged();
-    };
-
-    const handleSaveBudget = async () => {
-        if (!items || items.length === 0) {
-            showNotification('error', 'Agrega al menos un tratamiento antes de guardar');
-            return;
-        }
-
-        try {
-            const formattedItems = items.map((item, index) => {
-                const formattedItem: any = {
-                    pieza: item.pieza || '',
-                    accion: item.accion || '',
-                    valor: Number(item.valor) || 0,
-                    orden: index
-                };
-
-                if (item.id && typeof item.id === 'number' && item.id > 0) {
-                    formattedItem.id = item.id;
-                }
-
-                return formattedItem;
-            });
-
-            const budgetData = {
-                patientId: patient.id,
-                budgetType,
-                items: formattedItems
-            };
-
-            await saveBudget(budgetData);
-            setHasUnsavedChanges(false);
-            showNotification('success', 'Presupuesto guardado exitosamente');
-        } catch (error: any) {
-            const errorMessage = error?.response?.data?.message || error.message || 'Error desconocido al guardar';
-            showNotification('error', `Error al guardar: ${errorMessage}`);
-        }
-    };
-
-    // Funciones para cambios en formularios
-    const handleNewItemChange = (field: keyof BudgetFormData, value: string) => {
-        if (field === 'valor') {
-            value = BudgetFormUtils.formatValueInput(value);
-        }
-        setNewItem(prev => ({ ...prev, [field]: value }));
-    };
-
-    const handleEditingItemChange = (field: keyof BudgetFormData, value: string) => {
-        if (field === 'valor') {
-            value = BudgetFormUtils.formatValueInput(value);
-        }
-        setEditingItem(prev => ({ ...prev, [field]: value }));
     };
 
     // Loading state
-    if (isLoadingAll || isLoadingActive) {
+    if (isLoadingAll) {
         return (
             <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
                 <div className="animate-pulse">
                     <div className="h-6 bg-gray-200 rounded w-48 mb-6"></div>
                     <div className="space-y-4">
                         {[1, 2, 3].map((i) => (
-                            <div key={i} className="h-4 bg-gray-200 rounded w-full"></div>
+                            <div key={i} className="h-20 bg-gray-200 rounded"></div>
                         ))}
                     </div>
                 </div>
@@ -431,50 +173,83 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                 </div>
             )}
 
-            {/* Vista Lista de Presupuestos */}
-            {showBudgetList && (
-                <BudgetList
-                    budgets={sortedBudgets}
-                    patient={patient}
-                    onCreateNew={handleCreateNewBudget}
-                    onEdit={handleEditBudget}
-                    onView={handleViewBudget}
-                    onActivate={handleActivateBudget}
-                    onComplete={handleCompleteBudget}
-                    onRevert={handleRevertBudget}
-                    onDelete={handleDeleteBudget}
-                    onExportPDF={handleExportPDF}
-                    isLoadingActivate={isLoadingActivate}
-                    isLoadingComplete={isLoadingComplete}
-                    isLoadingRevert={isLoadingRevert}
-                    isLoadingDelete={isLoadingDelete}
-                />
-            )}
+            {/* Header simplificado */}
+            <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                        <div className="bg-cyan-100 p-2 rounded-full">
+                            <svg className="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-semibold text-slate-700">
+                                Presupuestos de {patient.nombres} {patient.apellidos}
+                            </h3>
+                            <p className="text-sm text-slate-500">
+                                Visualiza y gestiona los planes de tratamiento
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                        <button
+                            onClick={handleCreateNewBudget}
+                            className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
+                        >
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            Ir a Presupuestos
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-            {/* Vista Editor de Presupuestos */}
-            {showBudgetEditor && (
-                <BudgetEditor
-                    patient={patient}
-                    budget={selectedBudget}
-                    items={items}
-                    budgetType={budgetType}
-                    newItem={newItem}
-                    editingItem={editingItem}
-                    isEditing={isEditing}
-                    hasUnsavedChanges={hasUnsavedChanges}
-                    isLoadingSave={isLoadingSave}
-                    onBack={handleBackToList}
-                    onSave={handleSaveBudget}
-                    onBudgetTypeChange={handleBudgetTypeChange}
-                    onAddItem={handleAddItem}
-                    onDeleteItem={handleDeleteItem}
-                    onStartEditing={handleStartEditing}
-                    onCancelEditing={handleCancelEditing}
-                    onSaveEditing={handleSaveEditing}
-                    onNewItemChange={handleNewItemChange}
-                    onEditingItemChange={handleEditingItemChange}
-                    onExportPDF={handleExportCurrentBudgetPDF}
-                />
+            {/* Lista de presupuestos simplificada */}
+            {sortedBudgets.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {sortedBudgets.map((budget) => (
+                        <BudgetCard
+                            key={budget.id}
+                            budget={budget}
+                            onView={handleViewBudget}
+                            onEdit={handleEditBudget}
+                            onActivate={handleActivateBudget}
+                            onComplete={handleCompleteBudget}
+                            onRevert={handleRevertBudget}
+                            onDelete={handleDeleteBudget}
+                            onExportPDF={handleExportPDF}
+                            isLoadingActivate={isLoadingActivate}
+                            isLoadingComplete={isLoadingComplete}
+                            isLoadingRevert={isLoadingRevert}
+                            isLoadingDelete={isLoadingDelete}
+                        />
+                    ))}
+                </div>
+            ) : (
+                /* Estado vacío simplificado */
+                <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-12 text-center">
+                    <div className="bg-slate-100 p-4 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+                        <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <h3 className="text-lg font-medium text-slate-700 mb-2">Sin presupuestos creados</h3>
+                    <p className="text-slate-500 mb-6">
+                        Este paciente no tiene presupuestos aún. Crea el primer plan de tratamiento.
+                    </p>
+                    <div className="flex items-center justify-center space-x-4">
+                        <button 
+                            onClick={handleCreateNewBudget}
+                            className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg px-6 py-3 transition-colors"
+                        >
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            Crear Primer Presupuesto
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );

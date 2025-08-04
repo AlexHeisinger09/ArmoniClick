@@ -33,41 +33,7 @@ const BudgetEditor: React.FC<BudgetEditorProps> = ({
 
     return (
         <>
-            {/* Header del editor */}
-            <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                        <button
-                            onClick={onBack}
-                            className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-                            title="Volver a la lista"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-                        <div className="bg-cyan-100 p-2 rounded-full">
-                            <FileText className="w-6 h-6 text-cyan-600" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-semibold text-slate-700">
-                                {budget ? `Editando Presupuesto #${budget.id}` : 'Nuevo Presupuesto'}
-                            </h3>
-                            <p className="text-sm text-slate-500">
-                                {budget && !canEdit 
-                                    ? 'Modo solo lectura' 
-                                    : 'Modo edición'
-                                } - {patient.nombres} {patient.apellidos}
-                            </p>
-                        </div>
-                    </div>
-                    {hasUnsavedChanges && (
-                        <div className="flex items-center text-amber-600 text-sm">
-                            <AlertCircle className="w-4 h-4 mr-1" />
-                            Cambios sin guardar
-                        </div>
-                    )}
-                </div>
-            </div>
-
+            
             {/* Selector de tipo de presupuesto */}
             <BudgetTypeSelector
                 budgetType={budgetType}
