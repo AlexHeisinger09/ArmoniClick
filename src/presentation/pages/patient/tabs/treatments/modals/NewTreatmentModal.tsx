@@ -1,5 +1,5 @@
-// src/presentation/pages/patient/tabs/treatments/modals/NewTreatmentModal.tsx
-import React, { useState } from 'react';
+// src/presentation/pages/patient/tabs/treatments/modals/NewTreatmentModal.tsx - ACTUALIZADO
+import React, { useState, useEffect } from 'react';
 import {
   Plus,
   ChevronRight,
@@ -10,21 +10,25 @@ import {
   Package,
   Camera,
   Upload,
-  Trash2
+  Trash2,
+  FileText
 } from 'lucide-react';
-import { CreateTreatmentData } from "@/core/use-cases/treatments";
+import { CreateTreatmentData, BudgetSummary } from "@/core/use-cases/treatments";
 import { NewTreatmentModalProps, SERVICIOS_COMUNES } from '../shared/types';
 import { useTreatmentUpload } from '@/presentation/hooks/treatments/useTreatmentUpload';
 
 const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
   isOpen,
   patientId,
+  selectedBudgetId,
+  budgets = [],
   onClose,
   onSubmit,
   isLoading = false
 }) => {
   const [formData, setFormData] = useState<CreateTreatmentData>({
     id_paciente: patientId,
+    budget_item_id: selectedBudgetId || undefined, // ✅ NUEVO: Presupuesto preseleccionado
     fecha_control: new Date().toISOString().split('T')[0],
     hora_control: new Date().toTimeString().slice(0, 5),
     fecha_proximo_control: '',
@@ -48,11 +52,21 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
 
   const { uploadImageFromFile, validateImageFile } = useTreatmentUpload();
 
+  // ✅ ACTUALIZAR budget_item_id cuando cambie selectedBudgetId
+  useEffect(() => {
+    if (selectedBudgetId && selectedBudgetId !== formData.budget_item_id) {
+      setFormData(prev => ({
+        ...prev,
+        budget_item_id: selectedBudgetId
+      }));
+    }
+  }, [selectedBudgetId]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name === 'budget_item_id' ? (value ? parseInt(value) : undefined) : value
     }));
     
     if (formErrors[name]) {
@@ -174,6 +188,7 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
     setCurrentStep(1);
     setFormData({
       id_paciente: patientId,
+      budget_item_id: selectedBudgetId || undefined,
       fecha_control: new Date().toISOString().split('T')[0],
       hora_control: new Date().toTimeString().slice(0, 5),
       fecha_proximo_control: '',
@@ -189,6 +204,9 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
     });
     onClose();
   };
+
+  // ✅ OBTENER INFORMACIÓN DEL PRESUPUESTO SELECCIONADO
+  const selectedBudget = budgets.find(b => b.id === formData.budget_item_id);
 
   if (!isOpen) return null;
 
@@ -250,6 +268,36 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
                 <Calendar className="w-5 h-5 mr-2" />
                 Información del Control
               </h4>
+
+              {/* ✅ NUEVO: Selector de presupuesto */}
+              {budgets.length > 0 && (
+                <div className="mb-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                  <h5 className="font-medium text-purple-800 mb-3 flex items-center">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Vincular a Presupuesto (Opcional)
+                  </h5>
+                  <select
+                    name="budget_item_id"
+                    value={formData.budget_item_id || ''}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-slate-700"
+                  >
+                    <option value="">Sin vincular a presupuesto</option>
+                    {budgets.map((budget) => (
+                      <option key={budget.id} value={budget.id}>
+                        Presupuesto #{budget.id} - {budget.budget_type === 'odontologico' ? 'Odontológico' : 'Estética'} 
+                        ({budget.status}) - ${parseFloat(budget.total_amount).toLocaleString('es-CL')}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedBudget && (
+                    <div className="mt-2 text-sm text-purple-600">
+                      ✓ Vinculado al presupuesto #{selectedBudget.id} ({selectedBudget.status})
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Fecha del Control *</label>

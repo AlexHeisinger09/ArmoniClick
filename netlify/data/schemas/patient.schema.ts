@@ -1,4 +1,4 @@
-// netlify/data/schemas/patient.schema.ts - ACTUALIZADO
+// netlify/data/schemas/patient.schema.ts - CORREGIR IMPORTS
 import {
   serial,
   varchar,
@@ -8,10 +8,9 @@ import {
   integer,
   uniqueIndex,
   index,
-  ExtraConfigColumn,
 } from "drizzle-orm/pg-core";
+import { eq } from "drizzle-orm"; // ✅ AGREGAR IMPORT DE eq
 import { usersTable } from "./user.schema";
-import { ColumnBaseConfig, ColumnDataType } from "drizzle-orm";
 
 export const patientsTable = pgTable("patients", {
   id: serial("id").primaryKey(),
@@ -57,7 +56,3 @@ export const patientsTable = pgTable("patients", {
 
 export type InsertPatient = typeof patientsTable.$inferInsert;
 export type SelectPatient = typeof patientsTable.$inferSelect;
-
-function eq(isActive: ExtraConfigColumn<ColumnBaseConfig<ColumnDataType, string>>, arg1: boolean): import("drizzle-orm").SQL<unknown> {
-  throw new Error("Function not implemented.");
-}

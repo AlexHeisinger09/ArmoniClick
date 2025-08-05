@@ -1,16 +1,19 @@
-// src/presentation/pages/patient/tabs/treatments/PatientTreatments.tsx - ACTUALIZADO
-import React, { useState } from 'react';
+// src/presentation/pages/patient/tabs/treatments/PatientTreatments.tsx - ACTUALIZADO CON SELECTOR DE PRESUPUESTOS
+import React, { useState, useEffect } from 'react';
 import { Patient } from "@/core/use-cases/patients";
-import { Treatment, CreateTreatmentData, UpdateTreatmentData } from "@/core/use-cases/treatments";
+import { Treatment, CreateTreatmentData, UpdateTreatmentData, BudgetSummary } from "@/core/use-cases/treatments";
 import { 
-  useTreatments, 
+  useTreatmentsWithBudgets,
+  useTreatmentsByBudget,
   useCreateTreatment, 
   useUpdateTreatment,
-  useDeleteTreatment 
+  useDeleteTreatment,
+  useCompleteTreatment
 } from "@/presentation/hooks/treatments/useTreatments";
 
 // Componentes
 import { TreatmentsList } from './components/TreatmentsList';
+import { BudgetSelector } from './components/BudgetSelector';
 import { NewTreatmentModal } from './modals/NewTreatmentModal';
 import { EditTreatmentModal } from './modals/EditTreatmentModal';
 import { TreatmentDetailModal } from './modals/TreatmentDetailModal';
@@ -21,25 +24,50 @@ interface PatientTreatmentsProps {
 }
 
 const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
+  // Estados para modales
   const [showNewTreatmentModal, setShowNewTreatmentModal] = useState(false);
   const [showEditTreatmentModal, setShowEditTreatmentModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedTreatment, setSelectedTreatment] = useState<Treatment | null>(null);
   const [treatmentToEdit, setTreatmentToEdit] = useState<Treatment | null>(null);
+  
+  // Estados para presupuestos
+  const [selectedBudgetId, setSelectedBudgetId] = useState<number | null>(null);
+  
+  // Estados para notificaciones
   const [notification, setNotification] = useState<{
     type: 'success' | 'error' | 'info';
     title: string;
     message: string;
   } | null>(null);
 
-  // Hooks para tratamientos
-  const { queryTreatments } = useTreatments(patient.id);
+  // Hooks principales
+  const {
+    budgets,
+    activeBudget,
+    isLoadingBudgets,
+    errorBudgets
+  } = useTreatmentsWithBudgets(patient.id);
+
+  // Hook para tratamientos por presupuesto (cuando hay presupuesto seleccionado)
+  const {
+    treatments: budgetTreatments,
+    budget: selectedBudgetInfo,
+    isLoadingTreatmentsByBudget
+  } = useTreatmentsByBudget(selectedBudgetId || 0, !!selectedBudgetId);
+
+  // Hooks para operaciones
   const { createTreatmentMutation, isLoadingCreate } = useCreateTreatment();
   const { updateTreatmentMutation, isLoadingUpdate } = useUpdateTreatment();
   const { deleteTreatmentMutation, isLoadingDelete } = useDeleteTreatment();
+  const { completeTreatmentMutation, isLoadingComplete } = useCompleteTreatment();
 
-  const treatments = queryTreatments.data?.treatments || [];
-  const loading = queryTreatments.isLoading;
+  // ✅ SELECCIONAR PRESUPUESTO ACTIVO POR DEFECTO
+  useEffect(() => {
+    if (activeBudget && !selectedBudgetId) {
+      setSelectedBudgetId(activeBudget.id);
+    }
+  }, [activeBudget, selectedBudgetId]);
 
   // Función para mostrar notificación
   const showNotification = (type: 'success' | 'error' | 'info', title: string, message: string) => {
@@ -113,6 +141,21 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
     }
   };
 
+  // ✅ NUEVO: Manejar completar tratamiento
+  const handleCompleteTreatment = async (treatmentId: number) => {
+    if (!window.confirm('¿Estás seguro de marcar este tratamiento como completado?')) {
+      return;
+    }
+
+    try {
+      await completeTreatmentMutation.mutateAsync(treatmentId);
+      showNotification('success', 'Éxito', 'Tratamiento completado correctamente');
+    } catch (error: any) {
+      const errorMessage = processApiError(error);
+      showNotification('error', 'Error al completar tratamiento', errorMessage);
+    }
+  };
+
   // Manejar eliminación de tratamiento
   const handleDeleteTreatment = async (treatmentId: number) => {
     if (!window.confirm('¿Estás seguro de que deseas eliminar este tratamiento? Esta acción no se puede deshacer.')) {
@@ -147,7 +190,7 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
     setShowNewTreatmentModal(true);
   };
 
-  // Función para cerrar modales
+  // Funciones para cerrar modales
   const handleCloseNewModal = () => {
     setShowNewTreatmentModal(false);
   };
@@ -162,22 +205,46 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
     setSelectedTreatment(null);
   };
 
+  // ✅ MANEJAR CAMBIO DE PRESUPUESTO SELECCIONADO
+  const handleBudgetChange = (budgetId: number | null) => {
+    setSelectedBudgetId(budgetId);
+  };
+
+  // Determinar qué tratamientos mostrar
+  const treatments = selectedBudgetId ? budgetTreatments : [];
+  const loading = selectedBudgetId ? isLoadingTreatmentsByBudget : false;
+
   return (
     <>
+      {/* ✅ SELECTOR DE PRESUPUESTOS */}
+      <BudgetSelector
+        budgets={budgets}
+        selectedBudgetId={selectedBudgetId}
+        activeBudgetId={activeBudget?.id || null}
+        onBudgetChange={handleBudgetChange}
+        loading={isLoadingBudgets}
+      />
+
+      {/* LISTA DE TRATAMIENTOS */}
       <TreatmentsList
         treatments={treatments}
         loading={loading}
         onView={handleViewTreatment}
         onEdit={handleEditTreatment}
+        onComplete={handleCompleteTreatment}
         onDelete={handleDeleteTreatment}
         onNewTreatment={handleNewTreatment}
         isLoadingDelete={isLoadingDelete}
+        isLoadingComplete={isLoadingComplete}
+        showEmptyState={!selectedBudgetId}
       />
 
       {/* Modal para nuevo tratamiento */}
       <NewTreatmentModal
         isOpen={showNewTreatmentModal}
         patientId={patient.id}
+        selectedBudgetId={selectedBudgetId}
+        budgets={budgets}
         onClose={handleCloseNewModal}
         onSubmit={handleCreateTreatment}
         isLoading={isLoadingCreate}
@@ -198,7 +265,9 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
         treatment={selectedTreatment}
         onClose={handleCloseDetailModal}
         onEdit={handleEditTreatment}
+        onComplete={handleCompleteTreatment}
         onDelete={handleDeleteTreatment}
+        canComplete={selectedTreatment?.status === 'pending'}
       />
 
       {/* Notificaciones */}

@@ -1,4 +1,4 @@
-// netlify/data/schemas/budget.schema.ts
+// netlify/data/schemas/budget.schema.ts - CORREGIR IMPORTS
 import {
   serial,
   varchar,
@@ -10,6 +10,7 @@ import {
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm"; // ✅ MOVER IMPORT AQUÍ
 import { usersTable } from "./user.schema";
 import { patientsTable } from "./patient.schema";
 
@@ -24,14 +25,15 @@ export const budgetsTable = pgTable("budgets", {
     onUpdate: "cascade"
   }),
   total_amount: decimal("total_amount", { precision: 10, scale: 2 }).notNull().default("0"),
-  status: varchar("status", { length: 50 }).default("borrador"), // borrador, activo, completed
+  status: varchar("status", { length: 50 }).default("pendiente"), // ✅ CAMBIO: pendiente por defecto
   budget_type: varchar("budget_type", { length: 50 }).notNull().default("odontologico"), // odontologico, estetica
   created_at: timestamp("created_at").notNull().defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  // Un paciente solo puede tener un presupuesto
-  patientUniqueIdx: uniqueIndex('budgets_patient_unique')
-    .on(table.patient_id),
+  // Un paciente solo puede tener un presupuesto activo
+  patientActiveUniqueIdx: uniqueIndex('budgets_patient_active_unique')
+    .on(table.patient_id, table.status)
+    .where(sql`status = 'activo'`), // ✅ CAMBIO: Solo para presupuestos activos
   
   // Índices para búsquedas
   userIdx: index('idx_budgets_user')
@@ -72,6 +74,7 @@ export type SelectBudgetItem = typeof budgetItemsTable.$inferSelect;
 
 // Enums para estados
 export const BUDGET_STATUS = {
+  PENDIENTE: 'pendiente', // ✅ NUEVO ESTADO INICIAL
   BORRADOR: 'borrador',
   ACTIVO: 'activo', 
   COMPLETED: 'completed'

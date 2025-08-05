@@ -1,9 +1,9 @@
-// src/presentation/pages/patient/tabs/treatments/index.ts - ACTUALIZADO
 export { PatientTreatments } from './PatientTreatments';
 
 // Components
 export { TreatmentCard } from './components/TreatmentCard';
 export { TreatmentsList } from './components/TreatmentsList';
+export { BudgetSelector } from './components/BudgetSelector'; // ✅ NUEVO
 
 // Modals
 export { NewTreatmentModal } from './modals/NewTreatmentModal';

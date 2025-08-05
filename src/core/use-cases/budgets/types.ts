@@ -1,4 +1,4 @@
-// src/core/use-cases/budgets/types.ts - ACTUALIZADO PARA MÚLTIPLES PRESUPUESTOS
+// src/core/use-cases/budgets/types.ts - ACTUALIZADO CON ESTADO PENDIENTE
 export interface BudgetItem {
   id?: number;
   budget_id?: number;
@@ -31,7 +31,7 @@ export interface UpdateBudgetStatusData {
   status: string;
 }
 
-// ✅ NUEVAS INTERFACES PARA MÚLTIPLES PRESUPUESTOS
+// ✅ INTERFACES ACTUALIZADAS PARA MÚLTIPLES PRESUPUESTOS
 
 export interface GetAllBudgetsResponse {
   budgets: Budget[];
@@ -75,6 +75,7 @@ export interface DeleteBudgetResponse {
 
 export interface BudgetStats {
   total_budgets: number;
+  pendientes: number; // ✅ NUEVO ESTADO
   drafts: number;
   active: number;
   completed: number;
@@ -84,8 +85,6 @@ export interface BudgetStats {
 export interface GetBudgetStatsResponse {
   stats: BudgetStats;
 }
-
-// ✅ NUEVOS TIPOS PARA GESTIÓN DE MÚLTIPLES PRESUPUESTOS
 
 export interface BudgetListItem extends Budget {
   isActive: boolean;
@@ -101,8 +100,9 @@ export interface BudgetOperationResult {
   budget?: Budget;
 }
 
-// Constantes para estados y tipos
+// ✅ CONSTANTES ACTUALIZADAS - NUEVO ESTADO PENDIENTE
 export const BUDGET_STATUS = {
+  PENDIENTE: 'pendiente', // ✅ NUEVO ESTADO INICIAL
   BORRADOR: 'borrador',
   ACTIVO: 'activo',
   COMPLETED: 'completed'
@@ -114,6 +114,7 @@ export const BUDGET_TYPE = {
 } as const;
 
 export const BUDGET_STATUS_LABELS = {
+  [BUDGET_STATUS.PENDIENTE]: 'Pendiente', // ✅ NUEVO LABEL
   [BUDGET_STATUS.BORRADOR]: 'En edición',
   [BUDGET_STATUS.ACTIVO]: 'Plan activo',
   [BUDGET_STATUS.COMPLETED]: 'Completado'
@@ -125,6 +126,12 @@ export const BUDGET_TYPE_LABELS = {
 } as const;
 
 export const BUDGET_STATUS_COLORS = {
+  [BUDGET_STATUS.PENDIENTE]: { // ✅ NUEVOS COLORES PARA PENDIENTE
+    bg: 'bg-orange-50',
+    text: 'text-orange-800',
+    border: 'border-orange-200',
+    badge: 'bg-orange-100 text-orange-800'
+  },
   [BUDGET_STATUS.BORRADOR]: {
     bg: 'bg-yellow-50',
     text: 'text-yellow-800',
@@ -145,15 +152,15 @@ export const BUDGET_STATUS_COLORS = {
   }
 } as const;
 
-// ✅ UTILIDADES PARA MANEJO DE PRESUPUESTOS
+// ✅ UTILIDADES ACTUALIZADAS PARA MANEJO DE PRESUPUESTOS
 
 export const BudgetUtils = {
   canModify: (budget: Budget): boolean => {
-    return budget.status === BUDGET_STATUS.BORRADOR;
+    return [BUDGET_STATUS.PENDIENTE, BUDGET_STATUS.BORRADOR].includes(budget.status as any);
   },
 
   canActivate: (budget: Budget): boolean => {
-    return budget.status === BUDGET_STATUS.BORRADOR && budget.items.length > 0;
+    return [BUDGET_STATUS.PENDIENTE, BUDGET_STATUS.BORRADOR].includes(budget.status as any) && budget.items.length > 0;
   },
 
   canComplete: (budget: Budget): boolean => {
@@ -165,7 +172,7 @@ export const BudgetUtils = {
   },
 
   canDelete: (budget: Budget): boolean => {
-    return budget.status === BUDGET_STATUS.BORRADOR;
+    return [BUDGET_STATUS.PENDIENTE, BUDGET_STATUS.BORRADOR].includes(budget.status as any);
   },
 
   getStatusColor: (status: string) => {
@@ -187,7 +194,7 @@ export const BudgetUtils = {
   },
 
   sortBudgetsByPriority: (budgets: Budget[]): Budget[] => {
-    // Orden: Activo primero, luego borradores por fecha, luego completados
+    // Orden: Activo primero, luego pendientes, luego borradores por fecha, luego completados
     return budgets.sort((a, b) => {
       // Activos primero
       if (a.status === BUDGET_STATUS.ACTIVO && b.status !== BUDGET_STATUS.ACTIVO) return -1;

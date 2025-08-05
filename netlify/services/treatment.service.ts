@@ -1,8 +1,7 @@
-// Solución: Actualizar TreatmentService para asegurar siempre formato HH:MM
-// netlify/services/treatment.service.ts
-
+// netlify/services/treatment.service.ts - ACTUALIZADO PARA PRESUPUESTOS
 import { db } from '../data/db';
 import { treatmentsTable } from '../data/schemas/treatment.schema';
+import { budgetItemsTable, budgetsTable } from '../data/schemas/budget.schema';
 import { eq, and, desc, asc } from "drizzle-orm";
 
 type NewTreatment = typeof treatmentsTable.$inferInsert;
@@ -26,13 +25,36 @@ export class TreatmentService {
     return timeString;
   }
 
-  // Obtener todos los tratamientos de un paciente
-  async findByPatientId(patientId: number, doctorId: number) {
+  // ✅ NUEVO: Obtener presupuestos de un paciente para selector
+  async getBudgetsByPatient(patientId: number, doctorId: number) {
+    const budgets = await db
+      .select({
+        id: budgetsTable.id,
+        budget_type: budgetsTable.budget_type,
+        status: budgetsTable.status,
+        total_amount: budgetsTable.total_amount,
+        created_at: budgetsTable.created_at,
+      })
+      .from(budgetsTable)
+      .where(
+        and(
+          eq(budgetsTable.patient_id, patientId),
+          eq(budgetsTable.user_id, doctorId)
+        )
+      )
+      .orderBy(desc(budgetsTable.created_at));
+
+    return budgets;
+  }
+
+  // ✅ NUEVO: Obtener tratamientos por presupuesto
+  async findByBudgetId(budgetId: number, doctorId: number) {
     const treatments = await db
       .select({
         id_tratamiento: treatmentsTable.id_tratamiento,
         id_paciente: treatmentsTable.id_paciente,
         id_doctor: treatmentsTable.id_doctor,
+        budget_item_id: treatmentsTable.budget_item_id,
         fecha_control: treatmentsTable.fecha_control,
         hora_control: treatmentsTable.hora_control,
         fecha_proximo_control: treatmentsTable.fecha_proximo_control,
@@ -45,6 +67,56 @@ export class TreatmentService {
         foto1: treatmentsTable.foto1,
         foto2: treatmentsTable.foto2,
         descripcion: treatmentsTable.descripcion,
+        status: treatmentsTable.status,
+        created_at: treatmentsTable.created_at,
+        updated_at: treatmentsTable.updated_at,
+        is_active: treatmentsTable.is_active,
+        // ✅ DATOS DEL ITEM DEL PRESUPUESTO
+        budget_item_pieza: budgetItemsTable.pieza,
+        budget_item_valor: budgetItemsTable.valor,
+      })
+      .from(treatmentsTable)
+      .innerJoin(budgetItemsTable, eq(treatmentsTable.budget_item_id, budgetItemsTable.id))
+      .where(
+        and(
+          eq(budgetItemsTable.budget_id, budgetId),
+          eq(treatmentsTable.id_doctor, doctorId),
+          eq(treatmentsTable.is_active, true)
+        )
+      )
+      .orderBy(desc(treatmentsTable.fecha_control), desc(treatmentsTable.hora_control));
+
+    // Normalizar horas a formato HH:MM
+    return treatments.map(treatment => ({
+      ...treatment,
+      hora_control: this.normalizeTimeFormat(treatment.hora_control || ''),
+      hora_proximo_control: treatment.hora_proximo_control 
+        ? this.normalizeTimeFormat(treatment.hora_proximo_control) 
+        : treatment.hora_proximo_control,
+    }));
+  }
+
+  // Obtener todos los tratamientos de un paciente
+  async findByPatientId(patientId: number, doctorId: number) {
+    const treatments = await db
+      .select({
+        id_tratamiento: treatmentsTable.id_tratamiento,
+        id_paciente: treatmentsTable.id_paciente,
+        id_doctor: treatmentsTable.id_doctor,
+        budget_item_id: treatmentsTable.budget_item_id,
+        fecha_control: treatmentsTable.fecha_control,
+        hora_control: treatmentsTable.hora_control,
+        fecha_proximo_control: treatmentsTable.fecha_proximo_control,
+        hora_proximo_control: treatmentsTable.hora_proximo_control,
+        nombre_servicio: treatmentsTable.nombre_servicio,
+        producto: treatmentsTable.producto,
+        lote_producto: treatmentsTable.lote_producto,
+        fecha_venc_producto: treatmentsTable.fecha_venc_producto,
+        dilucion: treatmentsTable.dilucion,
+        foto1: treatmentsTable.foto1,
+        foto2: treatmentsTable.foto2,
+        descripcion: treatmentsTable.descripcion,
+        status: treatmentsTable.status,
         created_at: treatmentsTable.created_at,
         updated_at: treatmentsTable.updated_at,
         is_active: treatmentsTable.is_active,
@@ -76,6 +148,7 @@ export class TreatmentService {
         id_tratamiento: treatmentsTable.id_tratamiento,
         id_paciente: treatmentsTable.id_paciente,
         id_doctor: treatmentsTable.id_doctor,
+        budget_item_id: treatmentsTable.budget_item_id,
         fecha_control: treatmentsTable.fecha_control,
         hora_control: treatmentsTable.hora_control,
         fecha_proximo_control: treatmentsTable.fecha_proximo_control,
@@ -88,6 +161,7 @@ export class TreatmentService {
         foto1: treatmentsTable.foto1,
         foto2: treatmentsTable.foto2,
         descripcion: treatmentsTable.descripcion,
+        status: treatmentsTable.status,
         created_at: treatmentsTable.created_at,
         updated_at: treatmentsTable.updated_at,
         is_active: treatmentsTable.is_active,
@@ -124,6 +198,7 @@ export class TreatmentService {
         id_tratamiento: treatmentsTable.id_tratamiento,
         id_paciente: treatmentsTable.id_paciente,
         id_doctor: treatmentsTable.id_doctor,
+        budget_item_id: treatmentsTable.budget_item_id,
         fecha_control: treatmentsTable.fecha_control,
         hora_control: treatmentsTable.hora_control,
         fecha_proximo_control: treatmentsTable.fecha_proximo_control,
@@ -136,6 +211,7 @@ export class TreatmentService {
         foto1: treatmentsTable.foto1,
         foto2: treatmentsTable.foto2,
         descripcion: treatmentsTable.descripcion,
+        status: treatmentsTable.status,
         created_at: treatmentsTable.created_at,
         updated_at: treatmentsTable.updated_at,
         is_active: treatmentsTable.is_active,
@@ -185,6 +261,7 @@ export class TreatmentService {
         id_tratamiento: treatmentsTable.id_tratamiento,
         id_paciente: treatmentsTable.id_paciente,
         id_doctor: treatmentsTable.id_doctor,
+        budget_item_id: treatmentsTable.budget_item_id,
         fecha_control: treatmentsTable.fecha_control,
         hora_control: treatmentsTable.hora_control,
         fecha_proximo_control: treatmentsTable.fecha_proximo_control,
@@ -197,6 +274,7 @@ export class TreatmentService {
         foto1: treatmentsTable.foto1,
         foto2: treatmentsTable.foto2,
         descripcion: treatmentsTable.descripcion,
+        status: treatmentsTable.status,
         created_at: treatmentsTable.created_at,
         updated_at: treatmentsTable.updated_at,
         is_active: treatmentsTable.is_active,
@@ -243,6 +321,7 @@ export class TreatmentService {
         id_tratamiento: treatmentsTable.id_tratamiento,
         id_paciente: treatmentsTable.id_paciente,
         id_doctor: treatmentsTable.id_doctor,
+        budget_item_id: treatmentsTable.budget_item_id,
         fecha_control: treatmentsTable.fecha_control,
         hora_control: treatmentsTable.hora_control,
         fecha_proximo_control: treatmentsTable.fecha_proximo_control,
@@ -255,6 +334,7 @@ export class TreatmentService {
         foto1: treatmentsTable.foto1,
         foto2: treatmentsTable.foto2,
         descripcion: treatmentsTable.descripcion,
+        status: treatmentsTable.status,
         created_at: treatmentsTable.created_at,
         updated_at: treatmentsTable.updated_at,
         is_active: treatmentsTable.is_active,
@@ -318,5 +398,24 @@ export class TreatmentService {
         ? this.normalizeTimeFormat(treatment.hora_proximo_control) 
         : treatment.hora_proximo_control,
     }));
+  }
+
+  // ✅ MARCAR TRATAMIENTO COMO COMPLETADO
+  async completeTreatment(treatmentId: number, doctorId: number) {
+    const updatedTreatment = await db
+      .update(treatmentsTable)
+      .set({
+        status: 'completed',
+        updated_at: new Date(),
+      })
+      .where(
+        and(
+          eq(treatmentsTable.id_tratamiento, treatmentId),
+          eq(treatmentsTable.id_doctor, doctorId)
+        )
+      )
+      .returning({ id_tratamiento: treatmentsTable.id_tratamiento });
+
+    return updatedTreatment[0];
   }
 }

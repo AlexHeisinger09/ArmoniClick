@@ -1,10 +1,12 @@
-// netlify/services/budget.service.ts - ACTUALIZADO PARA MÚLTIPLES PRESUPUESTOS
+// netlify/services/budget.service.ts - ACTUALIZADO PARA CREAR TRATAMIENTOS
 import { db } from '../data/db';
 import { budgetsTable, budgetItemsTable, BUDGET_STATUS } from '../data/schemas/budget.schema';
+import { treatmentsTable } from '../data/schemas/treatment.schema';
 import { eq, and, desc, sum, sql, inArray } from "drizzle-orm";
 
 type NewBudget = typeof budgetsTable.$inferInsert;
 type NewBudgetItem = typeof budgetItemsTable.$inferInsert;
+type NewTreatment = typeof treatmentsTable.$inferInsert;
 
 export interface BudgetWithItems {
     id: number;
@@ -30,7 +32,7 @@ export interface BudgetItemData {
 
 export class BudgetService {
 
-    // ✅ NUEVO: Obtener TODOS los presupuestos de un paciente
+    // ✅ OBTENER TODOS los presupuestos de un paciente
     async findAllByPatientId(patientId: number, userId: number): Promise<BudgetWithItems[]> {
         const budgets = await db
             .select()
@@ -62,7 +64,7 @@ export class BudgetService {
         return budgetsWithItems;
     }
 
-    // ✅ NUEVO: Obtener solo el presupuesto ACTIVO de un paciente
+    // ✅ OBTENER solo el presupuesto ACTIVO de un paciente
     async findActiveByPatientId(patientId: number, userId: number): Promise<BudgetWithItems | null> {
         const budget = await db
             .select()
@@ -90,7 +92,7 @@ export class BudgetService {
         };
     }
 
-    // ✅ ACTUALIZADO: Crear nuevo presupuesto (siempre en borrador)
+    // ✅ CREAR nuevo presupuesto (siempre en borrador)
     async createBudget(
         patientId: number,
         userId: number,
@@ -101,14 +103,14 @@ export class BudgetService {
 
         const totalAmount = items.reduce((sum, item) => sum + item.valor, 0);
 
-        // ✅ CREAR SIEMPRE EN BORRADOR
+        // ✅ CREAR SIEMPRE EN BORRADOR (cambio: pendiente -> borrador)
         const [newBudget] = await db
             .insert(budgetsTable)
             .values({
                 patient_id: patientId,
                 user_id: userId,
                 total_amount: totalAmount.toString(),
-                status: BUDGET_STATUS.BORRADOR, // ← Siempre borrador
+                status: 'pendiente', // ← Estado inicial pendiente
                 budget_type: budgetType,
                 created_at: new Date(),
                 updated_at: new Date(),
@@ -132,7 +134,7 @@ export class BudgetService {
         return await this.findByBudgetId(newBudget.id, userId) as BudgetWithItems;
     }
 
-    // ✅ ACTUALIZADO: Actualizar presupuesto existente (solo si está en borrador)
+    // ✅ ACTUALIZAR presupuesto existente (solo si está en pendiente o borrador)
     async updateBudget(
         budgetId: number,
         userId: number,
@@ -141,14 +143,14 @@ export class BudgetService {
     ): Promise<BudgetWithItems> {
         console.log('🔄 Actualizando presupuesto existente ID:', budgetId);
 
-        // Verificar que el presupuesto exista y esté en borrador
+        // Verificar que el presupuesto exista y esté en estado modificable
         const existingBudget = await this.findByBudgetId(budgetId, userId);
         if (!existingBudget) {
             throw new Error('Presupuesto no encontrado');
         }
 
-        if (existingBudget.status !== BUDGET_STATUS.BORRADOR) {
-            throw new Error('Solo se pueden modificar presupuestos en estado borrador');
+        if (!['pendiente', 'borrador'].includes(existingBudget.status)) {
+            throw new Error('Solo se pueden modificar presupuestos en estado pendiente o borrador');
         }
 
         const totalAmount = items.reduce((sum, item) => sum + item.valor, 0);
@@ -170,18 +172,18 @@ export class BudgetService {
         return await this.findByBudgetId(budgetId, userId) as BudgetWithItems;
     }
 
-    // ✅ NUEVO: Activar presupuesto (validando unicidad)
+    // ✅ ACTIVAR presupuesto (validando unicidad) y CREAR TRATAMIENTOS
     async activateBudget(budgetId: number, userId: number): Promise<void> {
         console.log('🟢 Activando presupuesto ID:', budgetId);
 
-        // Verificar que el presupuesto existe y está en borrador
+        // Verificar que el presupuesto existe y está en pendiente o borrador
         const budget = await this.findByBudgetId(budgetId, userId);
         if (!budget) {
             throw new Error('Presupuesto no encontrado');
         }
 
-        if (budget.status !== BUDGET_STATUS.BORRADOR) {
-            throw new Error('Solo se pueden activar presupuestos en estado borrador');
+        if (!['pendiente', 'borrador'].includes(budget.status)) {
+            throw new Error('Solo se pueden activar presupuestos en estado pendiente o borrador');
         }
 
         if (budget.items.length === 0) {
@@ -194,6 +196,25 @@ export class BudgetService {
             throw new Error(`Ya existe un presupuesto activo para este paciente. Debe completar o desactivar el presupuesto #${activeBudget.id} primero.`);
         }
 
+        // ✅ CREAR TRATAMIENTOS AUTOMÁTICAMENTE
+        console.log('📝 Creando tratamientos automáticamente...');
+        
+        const currentDate = new Date();
+        const treatmentsToCreate: NewTreatment[] = budget.items.map(item => ({
+            id_paciente: budget.patient_id,
+            id_doctor: userId,
+            budget_item_id: item.id, // ✅ VINCULAR CON EL ITEM DEL PRESUPUESTO
+            fecha_control: currentDate.toISOString().split('T')[0], // Fecha actual
+            hora_control: currentDate.toTimeString().slice(0, 5), // Hora actual
+            nombre_servicio: item.accion,
+            status: 'pending', // Estado inicial pendiente
+            created_at: new Date(),
+            is_active: true,
+        }));
+
+        // Insertar tratamientos
+        await db.insert(treatmentsTable).values(treatmentsToCreate);
+
         // Activar presupuesto
         await db
             .update(budgetsTable)
@@ -203,10 +224,10 @@ export class BudgetService {
             })
             .where(eq(budgetsTable.id, budgetId));
 
-        console.log('✅ Presupuesto activado exitosamente');
+        console.log('✅ Presupuesto activado y tratamientos creados exitosamente');
     }
 
-    // ✅ NUEVO: Completar presupuesto activo
+    // ✅ COMPLETAR presupuesto activo
     async completeBudget(budgetId: number, userId: number): Promise<void> {
         console.log('🏁 Completando presupuesto ID:', budgetId);
 
@@ -230,7 +251,7 @@ export class BudgetService {
         console.log('✅ Presupuesto completado exitosamente');
     }
 
-    // ✅ ACTUALIZADO: Volver a borrador (solo si está activo y no tiene tratamientos)
+    // ✅ VOLVER a borrador (solo si está activo y no tiene tratamientos completados)
     async revertToDraft(budgetId: number, userId: number): Promise<void> {
         console.log('🔄 Revirtiendo presupuesto a borrador ID:', budgetId);
 
@@ -243,24 +264,52 @@ export class BudgetService {
             throw new Error('Solo se pueden revertir presupuestos activos');
         }
 
-        // TODO: Aquí verificar que no tenga tratamientos vinculados
-        // const hasLinkedTreatments = await this.checkLinkedTreatments(budgetId);
-        // if (hasLinkedTreatments) {
-        //     throw new Error('No se puede revertir un presupuesto que ya tiene tratamientos realizados');
-        // }
+        // ✅ VERIFICAR QUE NO TENGA TRATAMIENTOS COMPLETADOS
+        const completedTreatments = await db
+            .select({ count: sql<number>`count(*)` })
+            .from(treatmentsTable)
+            .innerJoin(budgetItemsTable, eq(treatmentsTable.budget_item_id, budgetItemsTable.id))
+            .where(
+                and(
+                    eq(budgetItemsTable.budget_id, budgetId),
+                    eq(treatmentsTable.status, 'completed'),
+                    eq(treatmentsTable.is_active, true)
+                )
+            );
+
+        if (completedTreatments[0].count > 0) {
+            throw new Error('No se puede revertir un presupuesto que ya tiene tratamientos completados');
+        }
+
+        // ✅ ELIMINAR TRATAMIENTOS PENDIENTES VINCULADOS
+        await db
+            .update(treatmentsTable)
+            .set({
+                is_active: false,
+                updated_at: new Date(),
+            })
+            .where(
+                and(
+                    inArray(
+                        treatmentsTable.budget_item_id,
+                        budget.items.map(item => item.id)
+                    ),
+                    eq(treatmentsTable.status, 'pending')
+                )
+            );
 
         await db
             .update(budgetsTable)
             .set({
-                status: BUDGET_STATUS.BORRADOR,
+                status: 'pendiente', // Volver a pendiente
                 updated_at: new Date(),
             })
             .where(eq(budgetsTable.id, budgetId));
 
-        console.log('✅ Presupuesto revertido a borrador exitosamente');
+        console.log('✅ Presupuesto revertido a pendiente y tratamientos pendientes eliminados');
     }
 
-    // ✅ ACTUALIZADO: Eliminar presupuesto (solo borradores)
+    // ✅ ELIMINAR presupuesto (solo pendientes o borradores)
     async deleteBudget(budgetId: number, userId: number): Promise<void> {
         const budget = await this.findByBudgetId(budgetId, userId);
 
@@ -268,8 +317,8 @@ export class BudgetService {
             throw new Error('Presupuesto no encontrado');
         }
 
-        if (budget.status !== BUDGET_STATUS.BORRADOR) {
-            throw new Error('Solo se pueden eliminar presupuestos en estado borrador');
+        if (!['pendiente', 'borrador'].includes(budget.status)) {
+            throw new Error('Solo se pueden eliminar presupuestos en estado pendiente o borrador');
         }
 
         await db
@@ -409,6 +458,7 @@ export class BudgetService {
     // Mantener método de estadísticas
     async getBudgetStats(userId: number): Promise<{
         total_budgets: number;
+        pendientes: number;
         drafts: number;
         active: number;
         completed: number;
@@ -426,6 +476,7 @@ export class BudgetService {
 
         const result = {
             total_budgets: 0,
+            pendientes: 0,
             drafts: 0,
             active: 0,
             completed: 0,
@@ -439,6 +490,9 @@ export class BudgetService {
             totalAmount += parseFloat(stat.total || '0');
 
             switch (stat.status) {
+                case 'pendiente':
+                    result.pendientes = stat.count;
+                    break;
                 case BUDGET_STATUS.BORRADOR:
                     result.drafts = stat.count;
                     break;
@@ -455,9 +509,9 @@ export class BudgetService {
         return result;
     }
 
-    // ✅ NUEVO: Verificar si se puede modificar un presupuesto
+    // ✅ VERIFICAR si se puede modificar un presupuesto
     async canModifyBudget(budgetId: number, userId: number): Promise<boolean> {
         const budget = await this.findByBudgetId(budgetId, userId);
-        return budget ? budget.status === BUDGET_STATUS.BORRADOR : false;
+        return budget ? ['pendiente', 'borrador'].includes(budget.status) : false;
     }
 }

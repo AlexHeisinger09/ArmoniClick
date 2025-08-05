@@ -166,12 +166,7 @@ const Calendar: React.FC = () => {
   const handleDateClick = (day: CalendarDay): void => {
     if (day.isCurrentMonth) {
       setSelectedDate(day.date);
-      if (viewMode === 'month') {
-        // En vista mensual, solo actualizar la fecha seleccionada para el panel lateral
-        // No abrir modal automáticamente
-      } else {
-        setShowModal(true);
-      }
+      setShowModal(true);
     }
   };
 
@@ -400,381 +395,235 @@ const Calendar: React.FC = () => {
 
   return (
     <div className="h-full bg-slate-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Calendario principal */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-xl shadow-lg border border-cyan-200">
-              {/* Header del calendario */}
-              <div className="flex items-center justify-between p-6 border-b border-cyan-200">
-                <div className="flex items-center space-x-4">
-                  <h2 className="text-2xl font-bold text-slate-700">
-                    {viewMode === 'month' && `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
-                    {viewMode === 'week' && getWeekRange(currentDate)}
-                    {viewMode === 'day' && currentDate.toLocaleDateString('es-CL', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </h2>
+      <div className="max-w-6xl mx-auto">
+        {/* Calendario principal - ahora ocupa todo el ancho */}
+        <div className="bg-white rounded-xl shadow-lg border border-cyan-200">
+          {/* Header del calendario */}
+          <div className="flex items-center justify-between p-6 border-b border-cyan-200">
+            <div className="flex items-center space-x-4">
+              <h2 className="text-2xl font-bold text-slate-700">
+                {viewMode === 'month' && `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
+                {viewMode === 'week' && getWeekRange(currentDate)}
+                {viewMode === 'day' && currentDate.toLocaleDateString('es-CL', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </h2>
 
-                  {/* Selector de vista */}
-                  <div className="flex bg-slate-100 rounded-lg p-1">
-                    <button
-                      onClick={() => setViewMode('day')}
-                      className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === 'day'
-                        ? 'bg-white text-slate-700 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700'
-                        }`}
-                    >
-                      Día
-                    </button>
-                    <button
-                      onClick={() => setViewMode('week')}
-                      className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === 'week'
-                        ? 'bg-white text-slate-700 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700'
-                        }`}
-                    >
-                      Semana
-                    </button>
-                    <button
-                      onClick={() => setViewMode('month')}
-                      className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === 'month'
-                        ? 'bg-white text-slate-700 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700'
-                        }`}
-                    >
-                      Mes
-                    </button>
+              {/* Selector de vista */}
+              <div className="flex bg-slate-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('day')}
+                  className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === 'day'
+                    ? 'bg-white text-slate-700 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                >
+                  Día
+                </button>
+                <button
+                  onClick={() => setViewMode('week')}
+                  className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === 'week'
+                    ? 'bg-white text-slate-700 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                >
+                  Semana
+                </button>
+                <button
+                  onClick={() => setViewMode('month')}
+                  className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === 'month'
+                    ? 'bg-white text-slate-700 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                >
+                  Mes
+                </button>
+              </div>
+            </div>
+
+            <div className="flex space-x-2">
+              <button
+                onClick={() => navigateMonth(-1)}
+                className="p-2 hover:bg-cyan-100 rounded-lg transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5 text-slate-700" />
+              </button>
+              <button
+                onClick={() => setCurrentDate(new Date())}
+                className="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-cyan-100 rounded-lg transition-colors"
+              >
+                Hoy
+              </button>
+              <button
+                onClick={() => navigateMonth(1)}
+                className="p-2 hover:bg-cyan-100 rounded-lg transition-colors"
+              >
+                <ChevronRight className="w-5 h-5 text-slate-700" />
+              </button>
+            </div>
+          </div>
+
+          {/* Vista por Mes */}
+          {viewMode === 'month' && (
+            <>
+              {/* Días de la semana */}
+              <div className="grid grid-cols-7 border-b border-cyan-200">
+                {dayNames.map(day => (
+                  <div key={day} className="p-4 text-center font-semibold text-slate-500 text-sm">
+                    {day}
                   </div>
-                </div>
-
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => navigateMonth(-1)}
-                    className="p-2 hover:bg-cyan-100 rounded-lg transition-colors"
-                  >
-                    <ChevronLeft className="w-5 h-5 text-slate-700" />
-                  </button>
-                  <button
-                    onClick={() => setCurrentDate(new Date())}
-                    className="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-cyan-100 rounded-lg transition-colors"
-                  >
-                    Hoy
-                  </button>
-                  <button
-                    onClick={() => navigateMonth(1)}
-                    className="p-2 hover:bg-cyan-100 rounded-lg transition-colors"
-                  >
-                    <ChevronRight className="w-5 h-5 text-slate-700" />
-                  </button>
-                </div>
+                ))}
               </div>
 
-              {/* Vista por Mes */}
-              {viewMode === 'month' && (
-                <>
-                  {/* Días de la semana */}
-                  <div className="grid grid-cols-7 border-b border-cyan-200">
-                    {dayNames.map(day => (
-                      <div key={day} className="p-4 text-center font-semibold text-slate-500 text-sm">
-                        {day}
+              {/* Días del mes */}
+              <div className="grid grid-cols-7">
+                {getDaysInMonth(currentDate).map((day, index) => {
+                  const dayAppointments = getAppointmentsForDate(day.date);
+                  const hasAppointments = dayAppointments.length > 0;
+
+                  return (
+                    <div
+                      key={index}
+                      onClick={() => handleDateClick(day)}
+                      className={`
+                        min-h-28 p-3 border-b border-r border-cyan-100 cursor-pointer transition-colors
+                        ${day.isCurrentMonth ? 'hover:bg-cyan-50' : 'bg-slate-100 text-slate-400'}
+                        ${isToday(day.date) ? 'bg-cyan-100' : ''}
+                      `}
+                    >
+                      <div className={`
+                        text-sm font-medium mb-2
+                        ${isToday(day.date) ? 'text-slate-700 font-bold' : ''}
+                      `}>
+                        {day.date.getDate()}
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Días del mes */}
-                  <div className="grid grid-cols-7">
-                    {getDaysInMonth(currentDate).map((day, index) => {
-                      const dayAppointments = getAppointmentsForDate(day.date);
-                      const hasAppointments = dayAppointments.length > 0;
-
-                      return (
-                        <div
-                          key={index}
-                          onClick={() => handleDateClick(day)}
-                          className={`
-                            min-h-24 p-2 border-b border-r border-cyan-100 cursor-pointer transition-colors
-                            ${day.isCurrentMonth ? 'hover:bg-cyan-50' : 'bg-slate-100 text-slate-400'}
-                            ${isToday(day.date) ? 'bg-cyan-100' : ''}
-                          `}
-                        >
-                          <div className={`
-                            text-sm font-medium mb-1
-                            ${isToday(day.date) ? 'text-slate-700 font-bold' : ''}
-                          `}>
-                            {day.date.getDate()}
-                          </div>
-                          {hasAppointments && (
-                            <div className="space-y-1">
-                              {dayAppointments.slice(0, 2).map(appointment => (
-                                <div
-                                  key={appointment.id}
-                                  className={`
-                                    text-xs px-2 py-1 rounded text-white truncate
-                                    ${appointment.status === 'confirmed' ? 'bg-cyan-600' : 'bg-cyan-400'}
-                                  `}
-                                >
-                                  {appointment.time} - {appointment.patient}
-                                </div>
-                              ))}
-                              {dayAppointments.length > 2 && (
-                                <div className="text-xs text-slate-500 text-center">
-                                  +{dayAppointments.length - 2} más
-                                </div>
-                              )}
+                      {hasAppointments && (
+                        <div className="space-y-1">
+                          {dayAppointments.slice(0, 3).map(appointment => (
+                            <div
+                              key={appointment.id}
+                              className={`
+                                text-xs px-2 py-1 rounded text-white truncate
+                                ${appointment.status === 'confirmed' ? 'bg-cyan-600' : 'bg-cyan-400'}
+                              `}
+                            >
+                              {appointment.time} - {appointment.patient}
+                            </div>
+                          ))}
+                          {dayAppointments.length > 3 && (
+                            <div className="text-xs text-slate-500 text-center">
+                              +{dayAppointments.length - 3} más
                             </div>
                           )}
                         </div>
-                      );
-                    })}
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {/* Vista por Semana */}
+          {viewMode === 'week' && (
+            <div className="flex">
+              {/* Columna de horarios */}
+              <div className="w-20 border-r border-cyan-200">
+                <div className="h-16 border-b border-cyan-200"></div>
+                {timeSlots.map(time => (
+                  <div
+                    key={time}
+                    className="px-2 py-4 text-sm text-slate-500 border-b border-cyan-100 flex items-center justify-center"
+                    style={{ height: '65px' }}
+                  >
+                    {time}
                   </div>
-                </>
-              )}
+                ))}
+              </div>
 
-              {/* Vista por Semana */}
-              {viewMode === 'week' && (
-                <div className="flex">
-                  {/* Columna de horarios */}
-                  <div className="w-20 border-r border-cyan-200">
-                    <div className="h-16 border-b border-cyan-200"></div>
-                    {timeSlots.map(time => (
-                      <div
-                        key={time}
-                        className="px-2 py-4 text-sm text-slate-500 border-b border-cyan-100 flex items-center justify-center"
-                        style={{ height: '65px' }}
-                      >
-                        {time}
+              {/* Columnas de días */}
+              {getWeekDays(currentDate).map((day, dayIndex) => {
+                const dayAppointments = getAppointmentsForDate(day);
+
+                return (
+                  <div key={dayIndex} className="flex-1 border-r border-cyan-200 last:border-r-0">
+                    {/* Header del día */}
+                    <div
+                      className={`
+                        h-16 p-3 text-center border-b border-cyan-200 font-medium cursor-pointer hover:bg-cyan-50 transition-colors
+                        ${isToday(day) ? 'bg-cyan-100 text-slate-700' : 'text-slate-500'}
+                      `}
+                      onClick={() => setSelectedDate(day)}
+                    >
+                      <div className="text-xs">{dayNames[(day.getDay() + 6) % 7]}</div>
+                      <div className={`text-lg ${isToday(day) ? 'text-slate-700 font-bold' : ''}`}>
+                        {day.getDate()}
                       </div>
-                    ))}
-                  </div>
+                    </div>
 
-                  {/* Columnas de días */}
-                  {getWeekDays(currentDate).map((day, dayIndex) => {
-                    const dayAppointments = getAppointmentsForDate(day);
-
-                    return (
-                      <div key={dayIndex} className="flex-1 border-r border-cyan-200 last:border-r-0">
-                        {/* Header del día */}
-                        <div
-                          className={`
-                            h-16 p-3 text-center border-b border-cyan-200 font-medium cursor-pointer hover:bg-cyan-50 transition-colors
-                            ${isToday(day) ? 'bg-cyan-100 text-slate-700' : 'text-slate-500'}
-                          `}
-                          onClick={() => setSelectedDate(day)}
-                        >
-                          <div className="text-xs">{dayNames[(day.getDay() + 6) % 7]}</div>
-                          <div className={`text-lg ${isToday(day) ? 'text-slate-700 font-bold' : ''}`}>
-                            {day.getDate()}
-                          </div>
-                        </div>
-
-                        {/* Timeline del día */}
-                        <div className="relative">
-                          {timeSlots.map((time, timeIndex) => (
-                            <div
-                              key={time}
-                              className="border-b border-cyan-100 hover:bg-cyan-50 cursor-pointer"
-                              style={{ height: '65px' }}
-                              onClick={() => {
-                                handleNewAppointment(time, day);
-                              }}
-                            />
-                          ))}
-
-                          {/* Citas del día */}
-                          {dayAppointments.map(appointment => renderAppointmentBlock(appointment, day, 'week'))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Vista por Día */}
-              {viewMode === 'day' && (
-                <div className="flex">
-                  {/* Columna de horarios */}
-                  <div className="w-24 border-r border-cyan-200">
-                    {timeSlots.map(time => (
-                      <div
-                        key={time}
-                        className="px-3 py-3 text-base text-slate-500 border-b border-cyan-200 flex items-center justify-center font-medium"
-                        style={{ height: '72px' }}
-                      >
-                        {time}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Columna del día */}
-                  <div className="flex-1">
+                    {/* Timeline del día */}
                     <div className="relative">
                       {timeSlots.map((time, timeIndex) => (
                         <div
                           key={time}
-                          className="border-b border-cyan-200 hover:bg-cyan-50 cursor-pointer px-6 flex items-center"
-                          style={{ height: '72px' }}
+                          className="border-b border-cyan-100 hover:bg-cyan-50 cursor-pointer"
+                          style={{ height: '65px' }}
                           onClick={() => {
-                            handleNewAppointment(time, currentDate);
+                            handleNewAppointment(time, day);
                           }}
-                        >
-                          <div className="text-sm text-slate-500">Clic para agendar cita</div>
-                        </div>
+                        />
                       ))}
 
                       {/* Citas del día */}
-                      {getAppointmentsForDate(currentDate).map(appointment => renderAppointmentBlock(appointment, currentDate, 'day'))}
+                      {dayAppointments.map(appointment => renderAppointmentBlock(appointment, day, 'week'))}
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Panel lateral - Citas del día seleccionado */}
-          <div className="bg-white rounded-xl shadow-lg border border-cyan-200">
-            <div className="p-6 border-b border-cyan-200">
-              <h3 className="text-xl font-bold text-slate-700 flex items-center">
-                <CalendarIcon className="w-5 h-5 mr-2 text-slate-700" />
-                {(() => {
-                  let displayDate: Date;
-                  if (viewMode === 'day') {
-                    displayDate = currentDate;
-                    return 'Citas de Hoy';
-                  } else if (selectedDate) {
-                    displayDate = selectedDate;
-                    return `Citas del ${selectedDate.toLocaleDateString('es-CL', {
-                      day: 'numeric',
-                      month: 'short'
-                    })}`;
-                  } else {
-                    displayDate = new Date();
-                    return `Citas del ${displayDate.toLocaleDateString('es-CL', {
-                      day: 'numeric',
-                      month: 'short'
-                    })}`;
-                  }
-                })()}
-              </h3>
-              <p className="text-sm text-slate-500 mt-1">
-                {(() => {
-                  if (viewMode === 'day') {
-                    return currentDate.toLocaleDateString('es-CL', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    });
-                  } else if (selectedDate) {
-                    return selectedDate.toLocaleDateString('es-CL', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    });
-                  } else {
-                    return 'Clic en un día para ver sus citas';
-                  }
-                })()}
-              </p>
-            </div>
-            <div className="p-6">
-              {(() => {
-                let selectedDayDate: Date;
-                if (viewMode === 'day') {
-                  selectedDayDate = currentDate;
-                } else if (selectedDate) {
-                  selectedDayDate = selectedDate;
-                } else {
-                  selectedDayDate = new Date();
-                }
-
-                const selectedDayAppointments = getAppointmentsForDate(selectedDayDate);
-
-                return (
-                  <div className="space-y-4">
-                    {selectedDayAppointments.length > 0 ? (
-                      <>
-                        <>
-                          {/* Lista de citas ordenadas por hora - Versión compacta */}
-                          {selectedDayAppointments
-                            .sort((a, b) => a.time.localeCompare(b.time))
-                            .map(appointment => (
-                              <div key={appointment.id} className="bg-slate-50 rounded-lg p-3 border-l-4 border-cyan-500 hover:shadow-sm transition-shadow mb-2">
-                                <div className="flex items-center justify-between mb-1">
-                                  <div className="flex items-center space-x-3">
-                                    <span className="text-sm font-bold text-slate-700 min-w-[50px]">
-                                      {appointment.time}
-                                    </span>
-                                    <span className="font-medium text-slate-700 text-sm">
-                                      {appointment.patient}
-                                    </span>
-                                  </div>
-                                  <span className={`
-            px-2 py-0.5 rounded-full text-xs font-medium
-            ${appointment.status === 'confirmed' ? 'bg-cyan-100 text-cyan-700' : 'bg-orange-100 text-orange-700'}
-          `}>
-                                    {appointment.status === 'confirmed' ? 'Confirmada' : 'Pendiente'}
-                                  </span>
-                                </div>
-
-                                <div className="flex items-center justify-between text-xs text-slate-500">
-                                  <div className="flex items-center space-x-4">
-                                    <span className="truncate max-w-[120px]">{appointment.service}</span>
-                                    <span className="flex items-center text-slate-500">
-                                      <Clock className="w-3 h-3 mr-1" />
-                                      {appointment.duration}min
-                                    </span>
-                                  </div>
-                                  <div className="flex space-x-1">
-                                    <button
-                                      className="text-slate-700 hover:text-slate-900 p-1 rounded hover:bg-cyan-100 transition-colors"
-                                      title="Editar cita"
-                                    >
-                                      <Edit2 className="w-3 h-3" />
-                                    </button>
-                                    <button
-                                      className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-100 transition-colors"
-                                      title="Cancelar cita"
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-
-                          {/* Botón para agregar nueva cita - más compacto */}
-                          <button
-                            onClick={() => openNewAppointmentModal(selectedDayDate)}
-                            className="w-full mt-3 bg-cyan-500 hover:bg-cyan-600 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center text-sm shadow-sm"
-                          >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Agregar nueva cita
-                          </button>
-                        </>
-                      </>
-                    ) : (
-                      <div className="text-center py-8">
-                        <CalendarIcon className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                        <p className="text-slate-500 mb-4">No hay citas programadas para este día</p>
-                        <button
-                          onClick={() => openNewAppointmentModal(selectedDayDate)}
-                          className="bg-cyan-500 hover:bg-cyan-600 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center mx-auto shadow-sm"
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Programar primera cita
-                        </button>
-                      </div>
-                    )}
-                  </div>
                 );
-              })()}
+              })}
             </div>
-          </div>
+          )}
+
+          {/* Vista por Día */}
+          {viewMode === 'day' && (
+            <div className="flex">
+              {/* Columna de horarios */}
+              <div className="w-24 border-r border-cyan-200">
+                {timeSlots.map(time => (
+                  <div
+                    key={time}
+                    className="px-3 py-3 text-base text-slate-500 border-b border-cyan-200 flex items-center justify-center font-medium"
+                    style={{ height: '72px' }}
+                  >
+                    {time}
+                  </div>
+                ))}
+              </div>
+
+              {/* Columna del día */}
+              <div className="flex-1">
+                <div className="relative">
+                  {timeSlots.map((time, timeIndex) => (
+                    <div
+                      key={time}
+                      className="border-b border-cyan-200 hover:bg-cyan-50 cursor-pointer px-6 flex items-center"
+                      style={{ height: '72px' }}
+                      onClick={() => {
+                        handleNewAppointment(time, currentDate);
+                      }}
+                    >
+                      <div className="text-sm text-slate-500">Clic para agendar cita</div>
+                    </div>
+                  ))}
+
+                  {/* Citas del día */}
+                  {getAppointmentsForDate(currentDate).map(appointment => renderAppointmentBlock(appointment, currentDate, 'day'))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Modal para ver/crear citas */}

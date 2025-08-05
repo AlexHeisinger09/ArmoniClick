@@ -1,6 +1,6 @@
-// src/presentation/pages/patient/tabs/treatments/modals/TreatmentDetailModal.tsx
+// src/presentation/pages/patient/tabs/treatments/modals/TreatmentDetailModal.tsx - ACTUALIZADO
 import React from 'react';
-import { Package, Camera, Edit, Trash2, X } from 'lucide-react';
+import { Package, Camera, Edit, Trash2, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { TreatmentDetailModalProps } from '../shared/types';
 
 const TreatmentDetailModal: React.FC<TreatmentDetailModalProps> = ({
@@ -8,7 +8,9 @@ const TreatmentDetailModal: React.FC<TreatmentDetailModalProps> = ({
   treatment,
   onClose,
   onEdit,
-  onDelete
+  onComplete,
+  onDelete,
+  canComplete = false
 }) => {
   if (!isOpen || !treatment) return null;
 
@@ -25,12 +27,39 @@ const TreatmentDetailModal: React.FC<TreatmentDetailModalProps> = ({
     return new Date(expirationDate) < new Date();
   };
 
+  const getStatusInfo = (status?: string) => {
+    switch (status) {
+      case 'completed':
+        return {
+          icon: <CheckCircle className="w-5 h-5 text-green-600" />,
+          label: 'Completado',
+          color: 'text-green-600 bg-green-50 border-green-200'
+        };
+      case 'pending':
+      default:
+        return {
+          icon: <AlertCircle className="w-5 h-5 text-orange-600" />,
+          label: 'Pendiente',
+          color: 'text-orange-600 bg-orange-50 border-orange-200'
+        };
+    }
+  };
+
+  const statusInfo = getStatusInfo(treatment.status);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full overflow-hidden">
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-900">Detalles del Tratamiento</h2>
+            <div className="flex items-center space-x-3">
+              <h2 className="text-lg font-bold text-gray-900">Detalles del Tratamiento</h2>
+              {/* ✅ NUEVO: Badge de estado */}
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${statusInfo.color}`}>
+                {statusInfo.icon}
+                <span className="ml-2">{statusInfo.label}</span>
+              </span>
+            </div>
             <button
               onClick={onClose}
               className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded transition-colors"
@@ -60,6 +89,29 @@ const TreatmentDetailModal: React.FC<TreatmentDetailModalProps> = ({
               )}
             </div>
           </div>
+
+          {/* ✅ NUEVO: Información del presupuesto asociado */}
+          {treatment.budget_item_id && (
+            <div className="bg-purple-50 p-3 rounded-md">
+              <h4 className="font-semibold text-purple-800 mb-2">Información del Presupuesto</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                {treatment.budget_item_pieza && (
+                  <div>
+                    <span className="text-gray-600">Pieza/Zona:</span>
+                    <p className="font-medium">{treatment.budget_item_pieza}</p>
+                  </div>
+                )}
+                {treatment.budget_item_valor && (
+                  <div>
+                    <span className="text-gray-600">Valor presupuestado:</span>
+                    <p className="font-medium text-green-600">
+                      ${parseFloat(treatment.budget_item_valor).toLocaleString('es-CL')}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Producto */}
           {(treatment.producto || treatment.lote_producto || treatment.dilucion || treatment.fecha_venc_producto) && (
@@ -146,9 +198,57 @@ const TreatmentDetailModal: React.FC<TreatmentDetailModalProps> = ({
             </div>
           )}
         </div>
+
+        {/* ✅ NUEVO: Footer con botones de acción */}
+        <div className="flex justify-between items-center p-4 border-t border-gray-200 bg-slate-50">
+          <div className="text-sm text-slate-500">
+            Creado: {formatDate(treatment.created_at)}
+            {treatment.updated_at && (
+              <span className="ml-4">Actualizado: {formatDate(treatment.updated_at)}</span>
+            )}
+          </div>
+          
+          <div className="flex space-x-3">
+            <button
+              onClick={() => onEdit(treatment)}
+              className="flex items-center bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Editar
+            </button>
+
+            {/* ✅ NUEVO: Botón completar (solo si está pendiente) */}
+            {canComplete && treatment.status === 'pending' && (
+              <button
+                onClick={() => {
+                  if (window.confirm('¿Marcar este tratamiento como completado?')) {
+                    onComplete(treatment.id_tratamiento);
+                    onClose();
+                  }
+                }}
+                className="flex items-center bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Completar
+              </button>
+            )}
+
+            <button
+              onClick={() => {
+                if (window.confirm('¿Eliminar este tratamiento? Esta acción no se puede deshacer.')) {
+                  onDelete(treatment.id_tratamiento);
+                  onClose();
+                }
+              }}
+              className="flex items-center bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Eliminar
+            </button>
+          </div>
+        </div>
       </div>
     </div>
-
   );
 };
 
