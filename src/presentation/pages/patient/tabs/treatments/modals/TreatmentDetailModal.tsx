@@ -93,7 +93,7 @@ const TreatmentDetailModal: React.FC<TreatmentDetailModalProps> = ({
           {/* ✅ NUEVO: Información del presupuesto asociado */}
           {treatment.budget_item_id && (
             <div className="bg-purple-50 p-3 rounded-md">
-              <h4 className="font-semibold text-purple-800 mb-2">Información del Presupuesto</h4>
+              <h4 className="font-semibold text-purple-800 mb-2">Información del Tratamiento</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                 {treatment.budget_item_pieza && (
                   <div>
@@ -206,45 +206,6 @@ const TreatmentDetailModal: React.FC<TreatmentDetailModalProps> = ({
             {treatment.updated_at && (
               <span className="ml-4">Actualizado: {formatDate(treatment.updated_at)}</span>
             )}
-          </div>
-          
-          <div className="flex space-x-3">
-            <button
-              onClick={() => onEdit(treatment)}
-              className="flex items-center bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              Editar
-            </button>
-
-            {/* ✅ NUEVO: Botón completar (solo si está pendiente) */}
-            {canComplete && treatment.status === 'pending' && (
-              <button
-                onClick={() => {
-                  if (window.confirm('¿Marcar este tratamiento como completado?')) {
-                    onComplete(treatment.id_tratamiento);
-                    onClose();
-                  }
-                }}
-                className="flex items-center bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
-              >
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Completar
-              </button>
-            )}
-
-            <button
-              onClick={() => {
-                if (window.confirm('¿Eliminar este tratamiento? Esta acción no se puede deshacer.')) {
-                  onDelete(treatment.id_tratamiento);
-                  onClose();
-                }
-              }}
-              className="flex items-center bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Eliminar
-            </button>
           </div>
         </div>
       </div>

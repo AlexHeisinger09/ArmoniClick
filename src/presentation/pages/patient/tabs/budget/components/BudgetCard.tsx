@@ -37,7 +37,7 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
         switch (status) {
             case 'activo':
                 return 'text-green-600 bg-green-50 border-green-200';
-            case 'completado':
+            case 'completed':
                 return 'text-blue-600 bg-blue-50 border-blue-200';
             case 'borrador':
             default:

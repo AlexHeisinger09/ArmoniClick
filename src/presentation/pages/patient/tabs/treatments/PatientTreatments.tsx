@@ -2,10 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { Patient } from "@/core/use-cases/patients";
 import { Treatment, CreateTreatmentData, UpdateTreatmentData, BudgetSummary } from "@/core/use-cases/treatments";
-import { 
+import {
   useTreatmentsWithBudgets,
   useTreatmentsByBudget,
-  useCreateTreatment, 
+  useCreateTreatment,
   useUpdateTreatment,
   useDeleteTreatment,
   useCompleteTreatment
@@ -30,10 +30,10 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedTreatment, setSelectedTreatment] = useState<Treatment | null>(null);
   const [treatmentToEdit, setTreatmentToEdit] = useState<Treatment | null>(null);
-  
+
   // Estados para presupuestos
   const [selectedBudgetId, setSelectedBudgetId] = useState<number | null>(null);
-  
+
   // Estados para notificaciones
   const [notification, setNotification] = useState<{
     type: 'success' | 'error' | 'info';
@@ -108,7 +108,7 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
         patientId: patient.id,
         treatmentData
       });
-      
+
       setShowNewTreatmentModal(false);
       showNotification('success', 'Éxito', 'Tratamiento creado correctamente');
     } catch (error: any) {
@@ -124,16 +124,16 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
         treatmentId,
         treatmentData
       });
-      
+
       setShowEditTreatmentModal(false);
       setTreatmentToEdit(null);
-      
+
       // Si el tratamiento está siendo visualizado, cerrar el modal de detalles
       if (selectedTreatment && selectedTreatment.id_tratamiento === treatmentId) {
         setShowDetailModal(false);
         setSelectedTreatment(null);
       }
-      
+
       showNotification('success', 'Éxito', 'Tratamiento actualizado correctamente');
     } catch (error: any) {
       const errorMessage = processApiError(error);
@@ -218,11 +218,8 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
     <>
       {/* ✅ SELECTOR DE PRESUPUESTOS */}
       <BudgetSelector
-        budgets={budgets}
-        selectedBudgetId={selectedBudgetId}
-        activeBudgetId={activeBudget?.id || null}
-        onBudgetChange={handleBudgetChange}
-        loading={isLoadingBudgets}
+        activeBudget={activeBudget}
+        loading={loading}
       />
 
       {/* LISTA DE TRATAMIENTOS */}

@@ -43,7 +43,7 @@ const Dashboard = () => {
     switch (status) {
       case 'confirmed': return 'bg-clinic-500 text-white';
       case 'pending': return 'bg-amber-400 text-white';
-      case 'completed': return 'bg-green-500 text-white';
+      case 'completed': return 'bg-blue-500 text-white';
       default: return 'bg-gray-400 text-white';
     }
   };

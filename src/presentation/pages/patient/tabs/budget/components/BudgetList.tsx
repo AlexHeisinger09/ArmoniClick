@@ -65,13 +65,19 @@ const BudgetsList: React.FC<BudgetsListProps> = ({
                 <h3 className="text-lg font-semibold text-slate-700">
                     Presupuestos del Paciente
                 </h3>
-                <button 
+                <button
                     onClick={onNewBudget}
                     className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
                 >
                     <Plus className="w-4 h-4 mr-2" />
                     Nuevo Presupuesto
                 </button>
+            </div>
+            {/* Mensaje informativo */}
+            <div className="mb-4">
+                <p className="text-xs text-slate-600">
+                    💡 <strong>Info:</strong> Solo puede existir un presupuesto activo a la vez.
+                </p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -99,7 +105,7 @@ const BudgetsList: React.FC<BudgetsListProps> = ({
                             <FileText className="w-16 h-16 mx-auto text-gray-300" />
                         </div>
                         <p className="text-slate-500 mb-4">No hay presupuestos registrados para este paciente</p>
-                        <button 
+                        <button
                             onClick={onNewBudget}
                             className="flex items-center mx-auto bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
                         >

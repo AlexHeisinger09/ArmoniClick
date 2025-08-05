@@ -67,11 +67,8 @@ const TreatmentsList: React.FC<TreatmentsListProps> = ({
           <div className="mb-4">
             <FileText className="w-16 h-16 mx-auto text-gray-300" />
           </div>
-          <h4 className="text-lg font-medium text-slate-700 mb-2">
-            Selecciona un Presupuesto
-          </h4>
           <p className="text-slate-500 mb-4">
-            Para ver los tratamientos, primero selecciona un presupuesto de la lista superior
+            No hay tratamientos generados
           </p>
           <p className="text-sm text-slate-400">
             Los tratamientos se generan automáticamente al activar un presupuesto
@@ -95,15 +92,15 @@ const TreatmentsList: React.FC<TreatmentsListProps> = ({
           </h3>
           {selectedBudget && (
             <p className="text-sm text-slate-500 mt-1">
-              Estado: <span className="font-medium">{selectedBudget.status}</span> • 
+              Estado: <span className="font-medium">{selectedBudget.status}</span> •
               Total: <span className="font-medium">${parseFloat(selectedBudget.total_amount).toLocaleString('es-CL')}</span>
             </p>
           )}
         </div>
-        
+
         {/* Solo mostrar botón de nuevo tratamiento si hay presupuesto seleccionado y está activo */}
         {selectedBudget && selectedBudget.status === 'activo' && (
-          <button 
+          <button
             onClick={onNewTreatment}
             className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
           >
@@ -138,7 +135,7 @@ const TreatmentsList: React.FC<TreatmentsListProps> = ({
                 <AlertCircle className="w-16 h-16 mx-auto text-gray-300" />
               )}
             </div>
-            
+
             {selectedBudget.status === 'activo' ? (
               <>
                 <h4 className="text-lg font-medium text-slate-700 mb-2">
@@ -147,7 +144,7 @@ const TreatmentsList: React.FC<TreatmentsListProps> = ({
                 <p className="text-slate-500 mb-4">
                   Los tratamientos de este presupuesto aún no han sido registrados
                 </p>
-                <button 
+                <button
                   onClick={onNewTreatment}
                   className="flex items-center mx-auto bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
                 >

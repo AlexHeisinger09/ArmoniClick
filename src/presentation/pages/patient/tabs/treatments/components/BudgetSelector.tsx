@@ -1,21 +1,15 @@
 // src/presentation/pages/patient/tabs/treatments/components/BudgetSelector.tsx
 import React from 'react';
-import { FileText, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { FileText, AlertCircle, CheckCircle,Clock } from 'lucide-react';
 import { BudgetSummary } from "@/core/use-cases/treatments";
 
 interface BudgetSelectorProps {
-  budgets: BudgetSummary[];
-  selectedBudgetId: number | null;
-  activeBudgetId: number | null;
-  onBudgetChange: (budgetId: number | null) => void;
+  activeBudget: BudgetSummary | null;
   loading: boolean;
 }
 
 const BudgetSelector: React.FC<BudgetSelectorProps> = ({
-  budgets,
-  selectedBudgetId,
-  activeBudgetId,
-  onBudgetChange,
+  activeBudget,
   loading
 }) => {
   const getStatusIcon = (status: string) => {
@@ -82,7 +76,7 @@ const BudgetSelector: React.FC<BudgetSelectorProps> = ({
     );
   }
 
-  if (budgets.length === 0) {
+  if (!activeBudget) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6 mb-6">
         <div className="flex items-center space-x-3 mb-4">
@@ -93,9 +87,9 @@ const BudgetSelector: React.FC<BudgetSelectorProps> = ({
         </div>
         <div className="text-center py-8">
           <AlertCircle className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-          <p className="text-slate-500 mb-2">No hay presupuestos creados</p>
+          <p className="text-slate-500 mb-2">No hay presupuestos creados activos</p>
           <p className="text-sm text-slate-400">
-            Crea un presupuesto primero para poder generar tratamientos
+            Crea y activa un presupuesto
           </p>
         </div>
       </div>
@@ -104,65 +98,46 @@ const BudgetSelector: React.FC<BudgetSelectorProps> = ({
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6 mb-6">
-      <div className="flex items-center space-x-3 mb-4">
-        <div className="bg-cyan-100 p-2 rounded-full">
-          <FileText className="w-5 h-5 text-cyan-600" />
-        </div>
-        <h3 className="text-lg font-semibold text-slate-700">
-          Seleccionar Presupuesto
-        </h3>
-      </div>
-
       <div className="space-y-3">
-        {/* Lista de presupuestos */}
-        {budgets.map((budget) => (
-          <div
-            key={budget.id}
-            onClick={() => onBudgetChange(budget.id)}
-            className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-              selectedBudgetId === budget.id
-                ? 'border-cyan-500 bg-cyan-50'
-                : 'border-gray-200 hover:border-cyan-300'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center space-x-3 mb-2">
-                  <h4 className="font-medium text-slate-700">
-                    Presupuesto #{budget.id}
-                  </h4>
-                  
-                  {/* Badge de estado */}
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(budget.status)}`}>
-                    {getStatusIcon(budget.status)}
-                    <span className="ml-1">{getStatusLabel(budget.status)}</span>
-                  </span>
-                </div>
+        {/* Presupuesto activo */}
+        <div className="p-4 rounded-lg border-2 border-cyan-500 bg-cyan-50">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center space-x-3 mb-2">
+                <h4 className="font-medium text-slate-700">
+                  Presupuesto #{activeBudget.id}
+                </h4>
                 
-                <div className="flex items-center space-x-4 text-sm text-slate-500">
-                  <span>
-                    {budget.budget_type === 'odontologico' ? 'Odontológico' : 'Estética'}
-                  </span>
-                  <span>•</span>
-                  <span>{formatDate(budget.created_at)}</span>
-                </div>
+                {/* Badge de estado */}
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(activeBudget.status)}`}>
+                  {getStatusIcon(activeBudget.status)}
+                  <span className="ml-1">{getStatusLabel(activeBudget.status)}</span>
+                </span>
               </div>
               
-              <div className="text-right">
-                <div className="text-lg font-bold text-slate-700">
-                  ${formatCurrency(budget.total_amount)}
-                </div>
+              <div className="flex items-center space-x-4 text-sm text-slate-500">
+                <span>
+                  {activeBudget.budget_type === 'odontologico' ? 'Odontológico' : 'Estética'}
+                </span>
+                <span>•</span>
+                <span>{formatDate(activeBudget.created_at)}</span>
+              </div>
+            </div>
+            
+            <div className="text-right">
+              <div className="text-lg font-bold text-slate-700">
+                ${formatCurrency(activeBudget.total_amount)}
               </div>
             </div>
           </div>
-        ))}
+        </div>
       </div>
 
       {/* Información adicional */}
       <div className="mt-4 p-3 bg-slate-50 rounded-lg">
         <p className="text-xs text-slate-600">
           💡 <strong>Tip:</strong> Los tratamientos se generan automáticamente al activar un presupuesto. 
-          Solo los presupuestos activos pueden generar nuevos tratamientos.
+          Solo los presupuestos activos pueden editar tratamientos.
         </p>
       </div>
     </div>

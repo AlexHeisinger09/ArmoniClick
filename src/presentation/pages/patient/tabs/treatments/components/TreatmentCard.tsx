@@ -37,10 +37,10 @@ const TreatmentCard: React.FC<TreatmentCardProps> = ({
   const getStatusIcon = (status?: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
+        return <CheckCircle className="w-4 h-4 text-blue-600" />;
       case 'pending':
       default:
-        return <AlertCircle className="w-4 h-4 text-orange-600" />;
+        return <AlertCircle className="w-4 h-4 text-yellow-600" />;
     }
   };
 
@@ -57,7 +57,7 @@ const TreatmentCard: React.FC<TreatmentCardProps> = ({
   const getStatusColor = (status?: string) => {
     switch (status) {
       case 'completed':
-        return 'text-green-600 bg-green-50 border-green-200';
+        return 'text-blue-600 bg-green-50 border-blue-200';
       case 'pending':
       default:
         return 'text-orange-600 bg-orange-50 border-orange-200';

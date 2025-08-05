@@ -114,7 +114,7 @@ export const BUDGET_TYPE = {
 } as const;
 
 export const BUDGET_STATUS_LABELS = {
-  [BUDGET_STATUS.PENDIENTE]: 'Pendiente', // ✅ NUEVO LABEL
+  [BUDGET_STATUS.PENDIENTE]: 'Borrador', // ✅ NUEVO LABEL
   [BUDGET_STATUS.BORRADOR]: 'En edición',
   [BUDGET_STATUS.ACTIVO]: 'Plan activo',
   [BUDGET_STATUS.COMPLETED]: 'Completado'
