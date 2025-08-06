@@ -706,7 +706,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                           <ChevronRight className="w-5 h-5 text-slate-400 ml-2 flex-shrink-0" />
                         </div>
 
-                        <div className="space-y-2">
+                        {/* <div className="space-y-2">
                           <div className="flex items-center text-sm text-slate-600">
                             <div className="w-2 h-2 bg-cyan-500 rounded-full mr-2 flex-shrink-0"></div>
                             <span className="truncate">{patient.email}</span>
@@ -719,7 +719,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                             <div className="w-2 h-2 bg-orange-500 rounded-full mr-2 flex-shrink-0"></div>
                             <span className="truncate">{patient.direccion}, {patient.ciudad}</span>
                           </div>
-                        </div>
+                        </div> */}
                       </div>
                     ))}
                   </div>
