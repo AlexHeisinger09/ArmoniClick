@@ -363,9 +363,6 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                 <h3 className="font-medium text-slate-700 sm:text-lg">
                   Gestión de Pacientes
                 </h3>
-                <p className="mt-0.5 text-slate-500">
-                  Gestión integral de pacientes. Buscar, crear, editar y administrar la información médica de tus pacientes de forma rápida.
-                </p>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-4">

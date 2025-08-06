@@ -1,4 +1,3 @@
-// src/presentation/pages/patient/tabs/budget/components/BudgetsList.tsx
 import React from 'react';
 import { Plus, FileText } from 'lucide-react';
 import { Budget } from "@/core/use-cases/budgets";
@@ -39,11 +38,11 @@ const BudgetsList: React.FC<BudgetsListProps> = ({
 }) => {
     if (loading) {
         return (
-            <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
+            <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-4 sm:p-6">
                 <div className="animate-pulse">
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 space-y-3 sm:space-y-0">
                         <div className="h-6 bg-gray-200 rounded w-48"></div>
-                        <div className="h-10 bg-gray-200 rounded w-32"></div>
+                        <div className="h-10 bg-gray-200 rounded w-full sm:w-32"></div>
                     </div>
                     <div className="space-y-4">
                         {[1, 2, 3].map((i) => (
@@ -60,27 +59,30 @@ const BudgetsList: React.FC<BudgetsListProps> = ({
     }
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
-            <div className="flex items-center justify-between mb-6">
+        <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-4 sm:p-6">
+            {/* Header responsivo */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 space-y-3 sm:space-y-0">
                 <h3 className="text-lg font-semibold text-slate-700">
                     Presupuestos del Paciente
                 </h3>
                 <button
                     onClick={onNewBudget}
-                    className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
+                    className="w-full sm:w-auto flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
                 >
                     <Plus className="w-4 h-4 mr-2" />
                     Nuevo Presupuesto
                 </button>
             </div>
-            {/* Mensaje informativo */}
+            
+            {/* Mensaje informativo responsivo */}
             <div className="mb-4">
                 <p className="text-xs text-slate-600">
                     💡 <strong>Info:</strong> Solo puede existir un presupuesto activo a la vez.
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Grid responsivo */}
+            <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
                 {budgets.map((budget) => (
                     <BudgetCard
                         key={budget.id}
@@ -100,14 +102,14 @@ const BudgetsList: React.FC<BudgetsListProps> = ({
                 ))}
 
                 {budgets.length === 0 && (
-                    <div className="text-center py-8">
+                    <div className="col-span-full text-center py-8">
                         <div className="mb-4">
                             <FileText className="w-16 h-16 mx-auto text-gray-300" />
                         </div>
                         <p className="text-slate-500 mb-4">No hay presupuestos registrados para este paciente</p>
                         <button
                             onClick={onNewBudget}
-                            className="flex items-center mx-auto bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
+                            className="w-full sm:w-auto flex items-center justify-center mx-auto bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
                         >
                             <Plus className="w-4 h-4 mr-2" />
                             Crear Primer Presupuesto
