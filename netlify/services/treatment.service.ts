@@ -1,4 +1,4 @@
-// netlify/services/treatment.service.ts - ACTUALIZADO PARA PRESUPUESTOS
+// netlify/services/treatment.service.ts - CORREGIDO PARA SOLO CONSIDERAR TRATAMIENTOS ACTIVOS
 import { db } from '../data/db';
 import { treatmentsTable } from '../data/schemas/treatment.schema';
 import { budgetItemsTable, budgetsTable } from '../data/schemas/budget.schema';
@@ -25,7 +25,7 @@ export class TreatmentService {
     return timeString;
   }
 
-  // ✅ NUEVO: Obtener presupuestos de un paciente para selector
+  // ✅ CORREGIDO: Obtener presupuestos de un paciente para selector
   async getBudgetsByPatient(patientId: number, doctorId: number) {
     const budgets = await db
       .select({
@@ -47,8 +47,10 @@ export class TreatmentService {
     return budgets;
   }
 
-  // ✅ NUEVO: Obtener tratamientos por presupuesto
+  // ✅ CORREGIDO: Obtener tratamientos por presupuesto - SOLO ACTIVOS
   async findByBudgetId(budgetId: number, doctorId: number) {
+    console.log(`🔍 Buscando tratamientos del presupuesto ${budgetId} para doctor ${doctorId}`);
+    
     const treatments = await db
       .select({
         id_tratamiento: treatmentsTable.id_tratamiento,
@@ -81,10 +83,17 @@ export class TreatmentService {
         and(
           eq(budgetItemsTable.budget_id, budgetId),
           eq(treatmentsTable.id_doctor, doctorId),
-          eq(treatmentsTable.is_active, true)
+          eq(treatmentsTable.is_active, true) // ✅ CRÍTICO: Solo tratamientos activos
         )
       )
       .orderBy(desc(treatmentsTable.fecha_control), desc(treatmentsTable.hora_control));
+
+    console.log(`✅ Encontrados ${treatments.length} tratamientos activos para presupuesto ${budgetId}`);
+    
+    // Log de cada tratamiento para depuración
+    treatments.forEach(t => {
+      console.log(`📋 Tratamiento ${t.id_tratamiento}: status=${t.status}, valor=${t.budget_item_valor}, activo=${t.is_active}`);
+    });
 
     // Normalizar horas a formato HH:MM
     return treatments.map(treatment => ({
@@ -96,7 +105,7 @@ export class TreatmentService {
     }));
   }
 
-  // Obtener todos los tratamientos de un paciente
+  // ✅ CORREGIDO: Obtener todos los tratamientos de un paciente - SOLO ACTIVOS
   async findByPatientId(patientId: number, doctorId: number) {
     const treatments = await db
       .select({
@@ -126,7 +135,7 @@ export class TreatmentService {
         and(
           eq(treatmentsTable.id_paciente, patientId),
           eq(treatmentsTable.id_doctor, doctorId),
-          eq(treatmentsTable.is_active, true)
+          eq(treatmentsTable.is_active, true) // ✅ CRÍTICO: Solo tratamientos activos
         )
       )
       .orderBy(desc(treatmentsTable.fecha_control), desc(treatmentsTable.hora_control));
@@ -141,7 +150,7 @@ export class TreatmentService {
     }));
   }
 
-  // Obtener un tratamiento específico por ID
+  // ✅ CORREGIDO: Obtener un tratamiento específico por ID - SOLO ACTIVOS
   async findById(treatmentId: number, doctorId: number) {
     const treatment = await db
       .select({
@@ -171,7 +180,7 @@ export class TreatmentService {
         and(
           eq(treatmentsTable.id_tratamiento, treatmentId),
           eq(treatmentsTable.id_doctor, doctorId),
-          eq(treatmentsTable.is_active, true)
+          eq(treatmentsTable.is_active, true) // ✅ CRÍTICO: Solo tratamientos activos
         )
       );
 
@@ -191,7 +200,7 @@ export class TreatmentService {
     return null;
   }
 
-  // Obtener todos los tratamientos de un doctor (para dashboard)
+  // ✅ CORREGIDO: Obtener todos los tratamientos de un doctor - SOLO ACTIVOS
   async findByDoctorId(doctorId: number, limit?: number) {
     let query = db
       .select({
@@ -220,7 +229,7 @@ export class TreatmentService {
       .where(
         and(
           eq(treatmentsTable.id_doctor, doctorId),
-          eq(treatmentsTable.is_active, true)
+          eq(treatmentsTable.is_active, true) // ✅ CRÍTICO: Solo tratamientos activos
         )
       )
       .orderBy(desc(treatmentsTable.fecha_control), desc(treatmentsTable.hora_control));
@@ -243,6 +252,8 @@ export class TreatmentService {
 
   // Crear un nuevo tratamiento
   async create(treatmentData: NewTreatment) {
+    console.log('🆕 Creando nuevo tratamiento:', treatmentData);
+    
     // Normalizar las horas antes de insertar
     const normalizedData = {
       ...treatmentData,
@@ -251,7 +262,8 @@ export class TreatmentService {
         ? this.normalizeTimeFormat(treatmentData.hora_proximo_control) 
         : undefined,
       created_at: new Date(),
-      is_active: true,
+      is_active: true, // ✅ ASEGURAR que se crea como activo
+      status: treatmentData.status || 'pending' // ✅ Estado por defecto
     };
 
     const newTreatment = await db
@@ -282,6 +294,8 @@ export class TreatmentService {
 
     const result = newTreatment[0];
     
+    console.log('✅ Tratamiento creado exitosamente:', result);
+    
     // Normalizar horas en la respuesta
     return {
       ...result,
@@ -294,6 +308,8 @@ export class TreatmentService {
 
   // Actualizar un tratamiento
   async update(treatmentId: number, treatmentData: Partial<NewTreatment>, doctorId: number) {
+    console.log(`🔄 Actualizando tratamiento ${treatmentId}:`, treatmentData);
+    
     // Normalizar las horas antes de actualizar
     const normalizedData = { ...treatmentData };
     
@@ -314,7 +330,8 @@ export class TreatmentService {
       .where(
         and(
           eq(treatmentsTable.id_tratamiento, treatmentId),
-          eq(treatmentsTable.id_doctor, doctorId)
+          eq(treatmentsTable.id_doctor, doctorId),
+          eq(treatmentsTable.is_active, true) // ✅ CRÍTICO: Solo actualizar si está activo
         )
       )
       .returning({
@@ -342,6 +359,8 @@ export class TreatmentService {
 
     const result = updatedTreatment[0];
     
+    console.log('✅ Tratamiento actualizado exitosamente:', result);
+    
     // Normalizar horas en la respuesta
     return {
       ...result,
@@ -352,26 +371,35 @@ export class TreatmentService {
     };
   }
 
-  // Eliminar un tratamiento (soft delete)
+  // ✅ CRÍTICO: Eliminar un tratamiento (soft delete)
   async delete(treatmentId: number, doctorId: number) {
+    console.log(`🗑️ Eliminando tratamiento ${treatmentId} (soft delete)`);
+    
     const deletedTreatment = await db
       .update(treatmentsTable)
       .set({
-        is_active: false,
+        is_active: false, // ✅ SOFT DELETE
         updated_at: new Date(),
       })
       .where(
         and(
           eq(treatmentsTable.id_tratamiento, treatmentId),
           eq(treatmentsTable.id_doctor, doctorId)
+          // ✅ NO VERIFICAR is_active aquí porque queremos poder eliminar tratamientos activos
         )
       )
-      .returning({ id_tratamiento: treatmentsTable.id_tratamiento });
+      .returning({ 
+        id_tratamiento: treatmentsTable.id_tratamiento,
+        is_active: treatmentsTable.is_active 
+      });
 
-    return deletedTreatment[0];
+    const result = deletedTreatment[0];
+    console.log('✅ Tratamiento marcado como eliminado:', result);
+    
+    return result;
   }
 
-  // Obtener próximos controles (para dashboard)
+  // ✅ CORREGIDO: Obtener próximos controles - SOLO ACTIVOS
   async getUpcomingControls(doctorId: number, limit: number = 10) {
     const treatments = await db
       .select({
@@ -385,7 +413,7 @@ export class TreatmentService {
       .where(
         and(
           eq(treatmentsTable.id_doctor, doctorId),
-          eq(treatmentsTable.is_active, true)
+          eq(treatmentsTable.is_active, true) // ✅ CRÍTICO: Solo tratamientos activos
         )
       )
       .orderBy(asc(treatmentsTable.fecha_proximo_control), asc(treatmentsTable.hora_proximo_control))
@@ -402,6 +430,8 @@ export class TreatmentService {
 
   // ✅ MARCAR TRATAMIENTO COMO COMPLETADO
   async completeTreatment(treatmentId: number, doctorId: number) {
+    console.log(`✅ Completando tratamiento ${treatmentId}`);
+    
     const updatedTreatment = await db
       .update(treatmentsTable)
       .set({
@@ -411,11 +441,19 @@ export class TreatmentService {
       .where(
         and(
           eq(treatmentsTable.id_tratamiento, treatmentId),
-          eq(treatmentsTable.id_doctor, doctorId)
+          eq(treatmentsTable.id_doctor, doctorId),
+          eq(treatmentsTable.is_active, true) // ✅ CRÍTICO: Solo completar si está activo
         )
       )
-      .returning({ id_tratamiento: treatmentsTable.id_tratamiento });
+      .returning({ 
+        id_tratamiento: treatmentsTable.id_tratamiento,
+        status: treatmentsTable.status,
+        is_active: treatmentsTable.is_active 
+      });
 
-    return updatedTreatment[0];
+    const result = updatedTreatment[0];
+    console.log('✅ Tratamiento marcado como completado:', result);
+    
+    return result;
   }
 }

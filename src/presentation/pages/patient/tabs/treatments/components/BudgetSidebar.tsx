@@ -1,6 +1,6 @@
-// src/presentation/pages/patient/tabs/treatments/components/BudgetSidebar.tsx
-import React from 'react';
-import { FileText, CheckCircle, Clock, AlertCircle, Edit } from 'lucide-react';
+// src/presentation/pages/patient/tabs/treatments/components/BudgetSidebar.tsx - LIMPIO Y CORREGIDO
+import React, { useMemo } from 'react';
+import { FileText, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { BudgetSummary, Treatment } from "@/core/use-cases/treatments";
 
 interface BudgetSidebarProps {
@@ -9,7 +9,7 @@ interface BudgetSidebarProps {
   selectedBudgetId: number | null;
   onBudgetChange: (budgetId: number | null) => void;
   loading: boolean;
-  treatments?: Treatment[]; // ✅ NUEVO: Para calcular estadísticas reales
+  treatments?: Treatment[];
 }
 
 const BudgetSidebar: React.FC<BudgetSidebarProps> = ({
@@ -74,39 +74,51 @@ const BudgetSidebar: React.FC<BudgetSidebarProps> = ({
     }
   };
 
-  // ✅ CALCULAR ESTADÍSTICAS REALES DE TRATAMIENTOS
-  const calculateTreatmentStats = () => {
-    if (!activeBudget || !treatments.length) {
+  // ✅ CÁLCULOS CORREGIDOS - SOLO TRATAMIENTOS ACTIVOS
+  const stats = useMemo(() => {
+    if (!activeBudget) {
       return {
-        totalBudget: activeBudget ? parseFloat(activeBudget.total_amount) : 0,
+        totalBudget: 0,
         completed: 0,
-        pending: 0
+        pending: 0,
+        totalTreatments: 0,
+        completedTreatments: 0
       };
     }
 
     const totalBudget = parseFloat(activeBudget.total_amount);
+
+    // ✅ FILTRAR EXPLÍCITAMENTE SOLO TRATAMIENTOS ACTIVOS
+    const activeTreatments = treatments.filter(t => t.is_active !== false);
     
-    // Calcular valor de tratamientos completados
-    const completed = treatments
-      .filter(t => t.status === 'completed' && t.budget_item_valor)
+    // ✅ DE LOS ACTIVOS, FILTRAR LOS COMPLETADOS
+    const completedActiveTreatments = activeTreatments.filter(t => t.status === 'completed');
+    
+    // ✅ CALCULAR VALOR COMPLETADO SOLO DE TRATAMIENTOS ACTIVOS Y COMPLETADOS
+    const completed = completedActiveTreatments
+      .filter(t => t.budget_item_valor && parseFloat(t.budget_item_valor) > 0)
       .reduce((sum, t) => sum + parseFloat(t.budget_item_valor || '0'), 0);
     
-    // Calcular valor de tratamientos no realizados (pendientes)
-    const pending = totalBudget - completed;
+    const pending = Math.max(0, totalBudget - completed);
 
     return {
       totalBudget,
       completed,
-      pending: Math.max(0, pending) // No puede ser negativo
+      pending,
+      totalTreatments: activeTreatments.length,
+      completedTreatments: completedActiveTreatments.length
     };
-  };
+  }, [activeBudget, treatments]);
 
-  const stats = calculateTreatmentStats();
+  // ✅ PROGRESO CALCULADO CORRECTAMENTE
+  const progressPercentage = useMemo(() => {
+    if (stats.totalBudget <= 0) return 0;
+    return Math.min(100, Math.round((stats.completed / stats.totalBudget) * 100));
+  }, [stats.totalBudget, stats.completed]);
 
   if (loading) {
     return (
       <div className="bg-white h-full rounded-xl border border-cyan-200">
-        {/* Header */}
         <div className="p-4 border-b border-cyan-200 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-t-xl">
           <div className="animate-pulse">
             <div className="h-6 bg-gray-200 rounded w-48 mb-2"></div>
@@ -114,7 +126,6 @@ const BudgetSidebar: React.FC<BudgetSidebarProps> = ({
           </div>
         </div>
         
-        {/* Content */}
         <div className="p-4">
           <div className="animate-pulse space-y-4">
             <div className="h-32 bg-gray-200 rounded-lg"></div>
@@ -152,32 +163,27 @@ const BudgetSidebar: React.FC<BudgetSidebarProps> = ({
           </div>
         ) : (
           <div className="p-4">
-            {/* ✅ SOLO PRESUPUESTO ACTIVO */}
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-cyan-100/50 to-blue-100/50 rounded-xl"></div>
               <div className="relative p-4 border-2 border-cyan-300 rounded-xl bg-white/80 backdrop-blur-sm">
-                {/* Nuevo Plan de tratamiento */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                    
-                    
-                  </div>
-                </div>
-
+                
                 {/* Presupuesto total */}
-                <div className="mb-3">
+                <div className="mb-4">
                   <div className="text-xs text-slate-500">Presupuesto total</div>
                   <div className="text-2xl font-bold text-slate-700">
                     ${formatCurrency(stats.totalBudget)}
                   </div>
                 </div>
 
-                {/* ✅ ESTADÍSTICAS REALES */}
-                <div className="grid grid-cols-2 gap-3 mb-3">
+                {/* ✅ ESTADÍSTICAS CORREGIDAS - SOLO TRATAMIENTOS ACTIVOS */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="text-center p-2 bg-slate-50 rounded-lg">
                     <div className="text-xs text-slate-500">Realizado</div>
                     <div className="text-sm font-semibold text-green-600">
                       ${formatCurrency(stats.completed)}
+                    </div>
+                    <div className="text-xs text-slate-400 mt-1">
+                      {stats.completedTreatments} de {stats.totalTreatments} tratamientos
                     </div>
                   </div>
                   <div className="text-center p-2 bg-slate-50 rounded-lg">
@@ -185,11 +191,14 @@ const BudgetSidebar: React.FC<BudgetSidebarProps> = ({
                     <div className="text-sm font-semibold text-orange-600">
                       ${formatCurrency(stats.pending)}
                     </div>
+                    <div className="text-xs text-slate-400 mt-1">
+                      {stats.totalTreatments - stats.completedTreatments} pendientes
+                    </div>
                   </div>
                 </div>
 
                 {/* Badge de estado */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-4">
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(activeBudget.status)}`}>
                     {getStatusIcon(activeBudget.status)}
                     <span className="ml-1">{getStatusLabel(activeBudget.status)}</span>
@@ -199,19 +208,36 @@ const BudgetSidebar: React.FC<BudgetSidebarProps> = ({
                   </div>
                 </div>
 
-                {/* ✅ INFORMACIÓN DE PROGRESO */}
+                {/* ✅ BARRA DE PROGRESO CORREGIDA */}
                 <div className="mt-3">
-                  <div className="flex justify-between items-center text-xs text-slate-500 mb-1">
-                    <span>Progreso</span>
-                    <span>{stats.totalBudget > 0 ? Math.round((stats.completed / stats.totalBudget) * 100) : 0}%</span>
+                  <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
+                    <span>Progreso del tratamiento</span>
+                    <span className="font-medium">{progressPercentage}%</span>
                   </div>
-                  <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
                     <div 
-                      className="bg-gradient-to-r from-cyan-500 to-green-500 h-2 rounded-full transition-all duration-300"
-                      style={{ 
-                        width: `${stats.totalBudget > 0 ? Math.min(100, (stats.completed / stats.totalBudget) * 100) : 0}%` 
-                      }}
-                    ></div>
+                      className="bg-gradient-to-r from-cyan-500 to-green-500 h-3 rounded-full transition-all duration-700 ease-out"
+                      style={{ width: `${progressPercentage}%` }}
+                    >
+                      {progressPercentage > 0 && (
+                        <div className="w-full h-full bg-white/30 animate-pulse"></div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Mensaje de estado del progreso */}
+                  <div className="text-xs text-slate-600 mt-2">
+                    {progressPercentage === 100 ? (
+                      <span className="text-green-600 font-medium">✅ Tratamiento completado al 100%</span>
+                    ) : progressPercentage >= 75 ? (
+                      <span className="text-blue-600">🎯 Cerca de completar el tratamiento</span>
+                    ) : progressPercentage >= 50 ? (
+                      <span className="text-yellow-600">⚡ Tratamiento en progreso</span>
+                    ) : progressPercentage > 0 ? (
+                      <span className="text-orange-600">🚀 Tratamiento iniciado</span>
+                    ) : (
+                      <span className="text-slate-500">⏳ Tratamiento sin iniciar</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -223,7 +249,7 @@ const BudgetSidebar: React.FC<BudgetSidebarProps> = ({
       {/* Footer con tip */}
       <div className="p-4 border-t border-slate-200 bg-slate-50 flex-shrink-0">
         <div className="text-xs text-slate-600">
-          💡 <strong>Tip:</strong> Los tratamientos se generan automáticamente al activar un presupuesto.
+          💡 <strong>Tip:</strong> Los valores se actualizan automáticamente cuando completas o eliminas tratamientos.
         </div>
       </div>
     </div>

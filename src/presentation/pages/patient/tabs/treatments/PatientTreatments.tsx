@@ -1,4 +1,4 @@
-// src/presentation/pages/patient/tabs/treatments/PatientTreatments.tsx - ACTUALIZADO CON INVALIDACIÓN
+// src/presentation/pages/patient/tabs/treatments/PatientTreatments.tsx - ACTUALIZADO CON DEPURACIÓN Y MEJOR INVALIDACIÓN
 import React, { useState, useEffect } from 'react';
 import { Patient } from "@/core/use-cases/patients";
 import { Treatment, CreateTreatmentData, UpdateTreatmentData, BudgetSummary } from "@/core/use-cases/treatments";
@@ -10,6 +10,7 @@ import {
   useDeleteTreatment,
   useCompleteTreatment
 } from "@/presentation/hooks/treatments/useTreatments";
+//import { useDebugTreatments } from "@/presentation/hooks/treatments/useDebugTreatments";
 
 // Componentes
 import { TreatmentsList } from './components/TreatmentsList';
@@ -62,9 +63,13 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   const { deleteTreatmentMutation, isLoadingDelete } = useDeleteTreatment();
   const { completeTreatmentMutation, isLoadingComplete } = useCompleteTreatment();
 
+  // ✅ DEPURACIÓN TEMPORAL - REMOVER EN PRODUCCIÓN
+  //useDebugTreatments(budgets, budgetTreatments, activeBudget, patient.id);
+
   // ✅ SELECCIONAR PRESUPUESTO ACTIVO POR DEFECTO
   useEffect(() => {
     if (activeBudget && !selectedBudgetId) {
+      console.log(`🎯 Seleccionando presupuesto activo automáticamente: ${activeBudget.id}`);
       setSelectedBudgetId(activeBudget.id);
     }
   }, [activeBudget, selectedBudgetId]);
@@ -101,13 +106,17 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
     return errorMessage;
   };
 
-  // Manejar creación de tratamiento
+  // ✅ MANEJAR CREACIÓN DE TRATAMIENTO CON LOGGING
   const handleCreateTreatment = async (treatmentData: CreateTreatmentData) => {
     try {
+      console.log('🆕 Iniciando creación de tratamiento:', treatmentData);
+      
       const response = await createTreatmentMutation.mutateAsync({
         patientId: patient.id,
         treatmentData
       });
+
+      console.log('✅ Tratamiento creado exitosamente:', response);
 
       setShowNewTreatmentModal(false);
       
@@ -120,18 +129,23 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
       showNotification('success', 'Éxito', finalMessage);
       
     } catch (error: any) {
+      console.error('❌ Error al crear tratamiento:', error);
       const errorMessage = processApiError(error);
       showNotification('error', 'Error al crear tratamiento', errorMessage);
     }
   };
 
-  // Manejar actualización de tratamiento
+  // ✅ MANEJAR ACTUALIZACIÓN DE TRATAMIENTO CON LOGGING
   const handleUpdateTreatment = async (treatmentId: number, treatmentData: UpdateTreatmentData) => {
     try {
+      console.log('🔄 Actualizando tratamiento:', { treatmentId, treatmentData });
+      
       await updateTreatmentMutation.mutateAsync({
         treatmentId,
         treatmentData
       });
+
+      console.log('✅ Tratamiento actualizado exitosamente');
 
       setShowEditTreatmentModal(false);
       setTreatmentToEdit(null);
@@ -143,21 +157,37 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
 
       showNotification('success', 'Éxito', 'Tratamiento actualizado correctamente');
     } catch (error: any) {
+      console.error('❌ Error al actualizar tratamiento:', error);
       const errorMessage = processApiError(error);
       showNotification('error', 'Error al actualizar tratamiento', errorMessage);
     }
   };
 
-  // Manejar completar tratamiento
+  // ✅ MANEJAR COMPLETAR TRATAMIENTO CON LOGGING Y CONFIRMACIÓN
   const handleCompleteTreatment = async (treatmentId: number) => {
-    if (!window.confirm('¿Estás seguro de marcar este tratamiento como completado?')) {
+    const treatment = budgetTreatments.find(t => t.id_tratamiento === treatmentId);
+    const confirmMessage = treatment?.budget_item_valor 
+      ? `¿Estás seguro de marcar este tratamiento como completado?\n\nSe registrará un avance de $${parseFloat(treatment.budget_item_valor).toLocaleString('es-CL')} en el presupuesto.`
+      : '¿Estás seguro de marcar este tratamiento como completado?';
+      
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
     try {
+      console.log('✅ Completando tratamiento:', { treatmentId, treatment });
+      
       await completeTreatmentMutation.mutateAsync(treatmentId);
-      showNotification('success', 'Éxito', 'Tratamiento completado correctamente');
+      
+      console.log('✅ Tratamiento completado exitosamente');
+
+      const successMessage = treatment?.budget_item_valor 
+        ? `Tratamiento completado correctamente. Se registró un avance de $${parseFloat(treatment.budget_item_valor).toLocaleString('es-CL')} en el presupuesto.`
+        : 'Tratamiento completado correctamente';
+        
+      showNotification('success', 'Éxito', successMessage);
     } catch (error: any) {
+      console.error('❌ Error al completar tratamiento:', error);
       const errorMessage = processApiError(error);
       showNotification('error', 'Error al completar tratamiento', errorMessage);
     }
@@ -170,11 +200,17 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
     }
 
     try {
+      console.log('🗑️ Eliminando tratamiento:', treatmentId);
+      
       await deleteTreatmentMutation.mutateAsync(treatmentId);
+      
+      console.log('✅ Tratamiento eliminado exitosamente');
+      
       setShowDetailModal(false);
       setSelectedTreatment(null);
       showNotification('success', 'Éxito', 'Tratamiento eliminado correctamente');
     } catch (error: any) {
+      console.error('❌ Error al eliminar tratamiento:', error);
       const errorMessage = processApiError(error);
       showNotification('error', 'Error al eliminar tratamiento', errorMessage);
     }
@@ -214,12 +250,26 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
 
   // Manejar cambio de presupuesto seleccionado
   const handleBudgetChange = (budgetId: number | null) => {
+    console.log('🔄 Cambiando presupuesto seleccionado:', { from: selectedBudgetId, to: budgetId });
     setSelectedBudgetId(budgetId);
   };
 
   // Determinar qué tratamientos mostrar
   const treatments = selectedBudgetId ? budgetTreatments : [];
   const loading = selectedBudgetId ? isLoadingTreatmentsByBudget : false;
+
+  // ✅ LOG DE ESTADO ACTUAL
+  useEffect(() => {
+    console.log('📊 Estado actual del componente:', {
+      patientId: patient.id,
+      budgetsCount: budgets.length,
+      activeBudgetId: activeBudget?.id,
+      selectedBudgetId,
+      treatmentsCount: treatments.length,
+      isLoadingBudgets,
+      isLoadingTreatmentsByBudget
+    });
+  }, [patient.id, budgets.length, activeBudget?.id, selectedBudgetId, treatments.length, isLoadingBudgets, isLoadingTreatmentsByBudget]);
 
   return (
     <div className="h-full">

@@ -1,4 +1,4 @@
-// src/presentation/hooks/treatments/useTreatments.tsx - ACTUALIZADO PARA PRESUPUESTOS
+// src/presentation/hooks/treatments/useTreatments.tsx - ACTUALIZADO CON INVALIDACIÓN COMPLETA
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetcher } from '@/config/adapters/api.adapter';
@@ -8,15 +8,15 @@ import {
   createTreatmentUseCase,
   updateTreatmentUseCase,
   deleteTreatmentUseCase,
-  getBudgetsByPatientUseCase, // ✅ NUEVO
-  getTreatmentsByBudgetUseCase, // ✅ NUEVO
-  completeTreatmentUseCase, // ✅ NUEVO
+  getBudgetsByPatientUseCase,
+  getTreatmentsByBudgetUseCase,
+  completeTreatmentUseCase,
   type CreateTreatmentData,
   type UpdateTreatmentData,
   type GetTreatmentsResponse,
   type GetTreatmentByIdResponse,
-  type GetBudgetSummariesResponse, // ✅ NUEVO
-  type GetTreatmentsByBudgetResponse, // ✅ NUEVO
+  type GetBudgetSummariesResponse,
+  type GetTreatmentsByBudgetResponse,
 } from '@/core/use-cases/treatments';
 
 // Hook para obtener la lista de tratamientos de un paciente
@@ -25,7 +25,7 @@ export const useTreatments = (patientId: number, enabled = true) => {
     queryKey: ['treatments', patientId],
     queryFn: () => getTreatmentsUseCase(apiFetcher, patientId),
     enabled: enabled && !!patientId,
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 2 * 60 * 1000, // ✅ REDUCIDO: 2 minutos para más frescura
   });
 
   return {
@@ -33,13 +33,13 @@ export const useTreatments = (patientId: number, enabled = true) => {
   };
 };
 
-// ✅ NUEVO: Hook para obtener presupuestos de un paciente
+// ✅ Hook para obtener presupuestos de un paciente
 export const useBudgetsByPatient = (patientId: number, enabled = true) => {
   const queryBudgets = useQuery({
     queryKey: ['treatments', 'budgets', patientId],
     queryFn: () => getBudgetsByPatientUseCase(apiFetcher, patientId),
     enabled: enabled && !!patientId,
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 1 * 60 * 1000, // ✅ REDUCIDO: 1 minuto para presupuestos
   });
 
   return {
@@ -51,13 +51,13 @@ export const useBudgetsByPatient = (patientId: number, enabled = true) => {
   };
 };
 
-// ✅ NUEVO: Hook para obtener tratamientos de un presupuesto específico
+// Hook para obtener tratamientos de un presupuesto específico
 export const useTreatmentsByBudget = (budgetId: number, enabled = true) => {
   const queryTreatmentsByBudget = useQuery({
     queryKey: ['treatments', 'budget', budgetId],
     queryFn: () => getTreatmentsByBudgetUseCase(apiFetcher, budgetId),
     enabled: enabled && !!budgetId,
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 2 * 60 * 1000, // ✅ REDUCIDO: 2 minutos
   });
 
   return {
@@ -75,7 +75,7 @@ export const useTreatment = (treatmentId: number, enabled = true) => {
     queryKey: ['treatment', treatmentId],
     queryFn: () => getTreatmentByIdUseCase(apiFetcher, treatmentId),
     enabled: enabled && !!treatmentId,
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 5 * 60 * 1000,
   });
 
   return {
@@ -83,7 +83,26 @@ export const useTreatment = (treatmentId: number, enabled = true) => {
   };
 };
 
-// Hook para crear tratamiento
+// ✅ FUNCIÓN HELPER PARA INVALIDAR TODAS LAS QUERIES RELACIONADAS
+const invalidateAllTreatmentQueries = (queryClient: any, patientId: number) => {
+  // Invalidar tratamientos del paciente
+  queryClient.invalidateQueries({ queryKey: ['treatments', patientId] });
+  
+  // Invalidar presupuestos del paciente
+  queryClient.invalidateQueries({ queryKey: ['treatments', 'budgets', patientId] });
+  
+  // Invalidar todos los tratamientos por presupuesto
+  queryClient.invalidateQueries({ queryKey: ['treatments', 'budget'] });
+  
+  // ✅ TAMBIÉN INVALIDAR QUERIES DE PRESUPUESTOS GENERALES (si existen)
+  queryClient.invalidateQueries({ queryKey: ['budgets'] });
+  queryClient.invalidateQueries({ queryKey: ['budgets', 'patient', patientId] });
+  
+  // ✅ INVALIDAR ESTADÍSTICAS DE PRESUPUESTOS
+  queryClient.invalidateQueries({ queryKey: ['budgets', 'stats'] });
+};
+
+// Hook para crear tratamiento - ✅ MEJORADO
 export const useCreateTreatment = () => {
   const [isLoadingCreate, setIsLoadingCreate] = useState(false);
   const queryClient = useQueryClient();
@@ -97,12 +116,24 @@ export const useCreateTreatment = () => {
     },
     onSuccess: (data, variables) => {
       setIsLoadingCreate(false);
-      // Invalidar las queries para refrescar la lista
-      queryClient.invalidateQueries({ queryKey: ['treatments', variables.patientId] });
-
-      // ✅ INVALIDAR TAMBIÉN QUERIES DE PRESUPUESTOS SI EL TRATAMIENTO ESTÁ VINCULADO
-      if (variables.treatmentData.budget_item_id) {
-        queryClient.invalidateQueries({ queryKey: ['treatments', 'budget'] });
+      
+      console.log('🔄 Invalidando queries después de crear tratamiento...');
+      
+      // ✅ INVALIDAR TODAS LAS QUERIES RELACIONADAS
+      invalidateAllTreatmentQueries(queryClient, variables.patientId);
+      
+      // ✅ REFRESCAR INMEDIATAMENTE las queries críticas
+      queryClient.refetchQueries({ 
+        queryKey: ['treatments', 'budgets', variables.patientId],
+        type: 'active' 
+      });
+      
+      // Si se vinculó a un presupuesto, refrescar específicamente ese presupuesto
+      if (variables.treatmentData.selectedBudgetId) {
+        queryClient.refetchQueries({ 
+          queryKey: ['treatments', 'budget', variables.treatmentData.selectedBudgetId],
+          type: 'active' 
+        });
       }
     },
     onError: () => {
@@ -116,7 +147,7 @@ export const useCreateTreatment = () => {
   };
 };
 
-// Hook para actualizar tratamiento - ACTUALIZADO
+// Hook para actualizar tratamiento - ✅ MEJORADO
 export const useUpdateTreatment = () => {
   const [isLoadingUpdate, setIsLoadingUpdate] = useState(false);
   const queryClient = useQueryClient();
@@ -131,11 +162,11 @@ export const useUpdateTreatment = () => {
     onSuccess: (data, variables) => {
       setIsLoadingUpdate(false);
 
-      // ✅ INVALIDAR MÚLTIPLES QUERIES
+      console.log('🔄 Invalidando queries después de actualizar tratamiento...');
+
+      // ✅ INVALIDAR TODAS LAS QUERIES RELACIONADAS
       queryClient.invalidateQueries({ queryKey: ['treatments'] });
       queryClient.invalidateQueries({ queryKey: ['treatment', variables.treatmentId] });
-
-      // ✅ TAMBIÉN INVALIDAR PRESUPUESTOS por si se cambió algo relacionado
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },
     onError: () => {
@@ -149,7 +180,7 @@ export const useUpdateTreatment = () => {
   };
 };
 
-// Hook para completar tratamiento - ACTUALIZADO
+// Hook para completar tratamiento - ✅ MEJORADO CON INVALIDACIÓN ESPECÍFICA
 export const useCompleteTreatment = () => {
   const [isLoadingComplete, setIsLoadingComplete] = useState(false);
   const queryClient = useQueryClient();
@@ -164,11 +195,21 @@ export const useCompleteTreatment = () => {
     onSuccess: () => {
       setIsLoadingComplete(false);
 
-      // ✅ INVALIDAR TODAS LAS QUERIES RELACIONADAS
-      queryClient.invalidateQueries({ queryKey: ['treatments'] });
+      console.log('🔄 Invalidando queries después de completar tratamiento...');
 
-      // ✅ COMPLETAR UN TRATAMIENTO AFECTA EL PROGRESO DEL PRESUPUESTO
+      // ✅ INVALIDAR TODAS LAS QUERIES RELACIONADAS (esto es crítico para completar tratamientos)
+      queryClient.invalidateQueries({ queryKey: ['treatments'] });
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      
+      // ✅ FORZAR REFETCH INMEDIATO para datos críticos
+      queryClient.refetchQueries({ 
+        queryKey: ['treatments', 'budgets'],
+        type: 'active' 
+      });
+      queryClient.refetchQueries({ 
+        queryKey: ['treatments', 'budget'],
+        type: 'active' 
+      });
     },
     onError: () => {
       setIsLoadingComplete(false);
@@ -180,7 +221,8 @@ export const useCompleteTreatment = () => {
     isLoadingComplete,
   };
 };
-// Hook para eliminar tratamiento - ACTUALIZADO  
+
+// Hook para eliminar tratamiento - ✅ MEJORADO
 export const useDeleteTreatment = () => {
   const [isLoadingDelete, setIsLoadingDelete] = useState(false);
   const queryClient = useQueryClient();
@@ -195,10 +237,10 @@ export const useDeleteTreatment = () => {
     onSuccess: () => {
       setIsLoadingDelete(false);
       
+      console.log('🔄 Invalidando queries después de eliminar tratamiento...');
+      
       // ✅ INVALIDAR TODAS LAS QUERIES RELACIONADAS
       queryClient.invalidateQueries({ queryKey: ['treatments'] });
-      
-      // ✅ ELIMINAR UN TRATAMIENTO PUEDE AFECTAR EL PROGRESO DEL PRESUPUESTO
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },
     onError: () => {
@@ -212,7 +254,7 @@ export const useDeleteTreatment = () => {
   };
 };
 
-// ✅ NUEVO: Hook combinado mejorado con mejor invalidación
+// ✅ Hook combinado mejorado con invalidación específica por paciente
 export const useTreatmentsWithBudgets = (patientId: number) => {
   const treatments = useTreatments(patientId);
   const budgets = useBudgetsByPatient(patientId);
