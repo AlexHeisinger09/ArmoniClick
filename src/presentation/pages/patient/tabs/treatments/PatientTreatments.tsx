@@ -110,7 +110,7 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   const handleCreateTreatment = async (treatmentData: CreateTreatmentData) => {
     try {
       console.log('🆕 Iniciando creación de tratamiento:', treatmentData);
-      
+
       const response = await createTreatmentMutation.mutateAsync({
         patientId: patient.id,
         treatmentData
@@ -119,15 +119,15 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
       console.log('✅ Tratamiento creado exitosamente:', response);
 
       setShowNewTreatmentModal(false);
-      
+
       // ✅ MENSAJE MEJORADO según si se vinculó a presupuesto
       const baseMessage = 'Tratamiento creado correctamente';
-      const finalMessage = response.budgetItemCreated 
+      const finalMessage = response.budgetItemCreated
         ? `${baseMessage}. Se agregó al presupuesto y se actualizó el total.`
         : baseMessage;
-        
+
       showNotification('success', 'Éxito', finalMessage);
-      
+
     } catch (error: any) {
       console.error('❌ Error al crear tratamiento:', error);
       const errorMessage = processApiError(error);
@@ -139,7 +139,7 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   const handleUpdateTreatment = async (treatmentId: number, treatmentData: UpdateTreatmentData) => {
     try {
       console.log('🔄 Actualizando tratamiento:', { treatmentId, treatmentData });
-      
+
       await updateTreatmentMutation.mutateAsync({
         treatmentId,
         treatmentData
@@ -166,25 +166,25 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   // ✅ MANEJAR COMPLETAR TRATAMIENTO CON LOGGING Y CONFIRMACIÓN
   const handleCompleteTreatment = async (treatmentId: number) => {
     const treatment = budgetTreatments.find(t => t.id_tratamiento === treatmentId);
-    const confirmMessage = treatment?.budget_item_valor 
+    const confirmMessage = treatment?.budget_item_valor
       ? `¿Estás seguro de marcar este tratamiento como completado?\n\nSe registrará un avance de $${parseFloat(treatment.budget_item_valor).toLocaleString('es-CL')} en el presupuesto.`
       : '¿Estás seguro de marcar este tratamiento como completado?';
-      
+
     if (!window.confirm(confirmMessage)) {
       return;
     }
 
     try {
       console.log('✅ Completando tratamiento:', { treatmentId, treatment });
-      
+
       await completeTreatmentMutation.mutateAsync(treatmentId);
-      
+
       console.log('✅ Tratamiento completado exitosamente');
 
-      const successMessage = treatment?.budget_item_valor 
+      const successMessage = treatment?.budget_item_valor
         ? `Tratamiento completado correctamente. Se registró un avance de $${parseFloat(treatment.budget_item_valor).toLocaleString('es-CL')} en el presupuesto.`
         : 'Tratamiento completado correctamente';
-        
+
       showNotification('success', 'Éxito', successMessage);
     } catch (error: any) {
       console.error('❌ Error al completar tratamiento:', error);
@@ -195,22 +195,45 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
 
   // Manejar eliminación de tratamiento
   const handleDeleteTreatment = async (treatmentId: number) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar este tratamiento? Esta acción no se puede deshacer.')) {
+    const treatment = budgetTreatments.find(t => t.id_tratamiento === treatmentId);
+
+    // ✅ MENSAJE DE CONFIRMACIÓN MÁS INFORMATIVO
+    let confirmMessage = '¿Estás seguro de que deseas eliminar este tratamiento?';
+
+    if (treatment?.budget_item_valor) {
+      const valor = parseFloat(treatment.budget_item_valor);
+      confirmMessage += `\n\n⚠️ IMPORTANTE: Este tratamiento está vinculado a un presupuesto.\n\n`;
+      confirmMessage += `• Se eliminará el item del presupuesto (valor: $${valor.toLocaleString('es-CL')})\n`;
+      confirmMessage += `• Se recalculará automáticamente el total del presupuesto\n`;
+      confirmMessage += `• Esta acción no se puede deshacer\n\n`;
+      confirmMessage += `¿Deseas continuar?`;
+    } else {
+      confirmMessage += '\n\nEsta acción no se puede deshacer.';
+    }
+
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
     try {
-      console.log('🗑️ Eliminando tratamiento:', treatmentId);
-      
+      console.log('🗑️ Eliminando tratamiento completo:', { treatmentId, treatment });
+
       await deleteTreatmentMutation.mutateAsync(treatmentId);
-      
-      console.log('✅ Tratamiento eliminado exitosamente');
-      
+
+      console.log('✅ Tratamiento y budget item eliminados exitosamente');
+
       setShowDetailModal(false);
       setSelectedTreatment(null);
-      showNotification('success', 'Éxito', 'Tratamiento eliminado correctamente');
+
+      // ✅ MENSAJE DE ÉXITO MÁS INFORMATIVO
+      const successMessage = treatment?.budget_item_valor
+        ? `Tratamiento eliminado correctamente. Se eliminó el item del presupuesto y se recalculó el total automáticamente.`
+        : 'Tratamiento eliminado correctamente';
+
+      showNotification('success', 'Éxito', successMessage);
+
     } catch (error: any) {
-      console.error('❌ Error al eliminar tratamiento:', error);
+      console.error('❌ Error al eliminar tratamiento completo:', error);
       const errorMessage = processApiError(error);
       showNotification('error', 'Error al eliminar tratamiento', errorMessage);
     }

@@ -32,6 +32,74 @@ export interface BudgetItemData {
 
 export class BudgetService {
 
+    async removeBudgetItemAndRecalculate(budgetItemId: number, userId: number): Promise<void> {
+        console.log('🗑️ Eliminando budget item y recalculando total:', budgetItemId);
+
+        try {
+            // 1. Obtener información del item antes de eliminarlo
+            const itemInfo = await db
+                .select({
+                    id: budgetItemsTable.id,
+                    budget_id: budgetItemsTable.budget_id,
+                    valor: budgetItemsTable.valor,
+                    accion: budgetItemsTable.accion
+                })
+                .from(budgetItemsTable)
+                .innerJoin(budgetsTable, eq(budgetItemsTable.budget_id, budgetsTable.id))
+                .where(
+                    and(
+                        eq(budgetItemsTable.id, budgetItemId),
+                        eq(budgetsTable.user_id, userId)
+                    )
+                );
+
+            if (!itemInfo[0]) {
+                throw new Error('Budget item no encontrado o no autorizado');
+            }
+
+            const item = itemInfo[0];
+            console.log('📋 Budget item encontrado:', item);
+
+            // 2. Verificar que el presupuesto se pueda modificar
+            const budget = await this.findByBudgetId(item.budget_id, userId);
+            if (!budget) {
+                throw new Error('Presupuesto no encontrado');
+            }
+
+            // 3. Eliminar el item
+            await db
+                .delete(budgetItemsTable)
+                .where(eq(budgetItemsTable.id, budgetItemId));
+
+            console.log('✅ Budget item eliminado');
+
+            // 4. Recalcular el total del presupuesto
+            const remainingItems = await db
+                .select({
+                    valor: budgetItemsTable.valor
+                })
+                .from(budgetItemsTable)
+                .where(eq(budgetItemsTable.budget_id, item.budget_id));
+
+            const newTotal = remainingItems.reduce((sum, item) => sum + parseFloat(item.valor), 0);
+
+            // 5. Actualizar el total del presupuesto
+            await db
+                .update(budgetsTable)
+                .set({
+                    total_amount: newTotal.toString(),
+                    updated_at: new Date(),
+                })
+                .where(eq(budgetsTable.id, item.budget_id));
+
+            console.log(`💰 Total recalculado: $${newTotal.toLocaleString('es-CL')}`);
+
+        } catch (error) {
+            console.error('❌ Error eliminando budget item:', error);
+            throw error;
+        }
+    }
+
     async addTreatmentToBudget(
         budgetId: number,
         userId: number,
@@ -97,10 +165,16 @@ export class BudgetService {
         const budgetsWithItems: BudgetWithItems[] = [];
 
         for (const budget of budgets) {
+            // ✅ SOLO ITEMS ACTIVOS
             const items = await db
                 .select()
                 .from(budgetItemsTable)
-                .where(eq(budgetItemsTable.budget_id, budget.id))
+                .where(
+                    and(
+                        eq(budgetItemsTable.budget_id, budget.id),
+                        eq(budgetItemsTable.is_active, true) // ✅ FILTRO CRÍTICO
+                    )
+                )
                 .orderBy(budgetItemsTable.orden, budgetItemsTable.created_at);
 
             budgetsWithItems.push({
@@ -128,10 +202,16 @@ export class BudgetService {
 
         if (!budget[0]) return null;
 
+        // ✅ SOLO ITEMS ACTIVOS
         const items = await db
             .select()
             .from(budgetItemsTable)
-            .where(eq(budgetItemsTable.budget_id, budget[0].id))
+            .where(
+                and(
+                    eq(budgetItemsTable.budget_id, budget[0].id),
+                    eq(budgetItemsTable.is_active, true) // ✅ FILTRO CRÍTICO
+                )
+            )
             .orderBy(budgetItemsTable.orden, budgetItemsTable.created_at);
 
         return {
@@ -396,10 +476,16 @@ export class BudgetService {
 
         if (!budget[0]) return null;
 
+        // ✅ SOLO OBTENER ITEMS ACTIVOS
         const items = await db
             .select()
             .from(budgetItemsTable)
-            .where(eq(budgetItemsTable.budget_id, budget[0].id))
+            .where(
+                and(
+                    eq(budgetItemsTable.budget_id, budget[0].id),
+                    eq(budgetItemsTable.is_active, true) // ✅ FILTRO CRÍTICO
+                )
+            )
             .orderBy(budgetItemsTable.orden, budgetItemsTable.created_at);
 
         return {
@@ -408,6 +494,7 @@ export class BudgetService {
             items: items
         };
     }
+
 
     // ✅ MÉTODO WRAPPER para compatibilidad con frontend actual
     async saveOrUpdateBudget(

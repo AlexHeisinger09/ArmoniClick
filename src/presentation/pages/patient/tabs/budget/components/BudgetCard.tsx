@@ -12,10 +12,10 @@ import {
     Stethoscope,
     Sparkles
 } from 'lucide-react';
-import { 
-    BUDGET_STATUS_LABELS, 
-    BUDGET_TYPE, 
-    BudgetUtils 
+import {
+    BUDGET_STATUS_LABELS,
+    BUDGET_TYPE,
+    BudgetUtils
 } from "@/core/use-cases/budgets";
 import { BudgetCardProps, BudgetFormUtils } from '../types/budget.types';
 
@@ -84,7 +84,7 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
                         </div>
                     </div>
                 </div>
-                
+
                 {/* Status badge minimalista */}
                 <div className="flex items-center justify-between">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(budget.status)}`}>
@@ -124,7 +124,7 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
                 <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                     {/* Acciones de vista */}
                     <div className="flex space-x-2">
-                        
+
                         {BudgetUtils.canModify(budget) && (
                             <button
                                 onClick={(e) => handleActionClick(e, () => onEdit(budget))}
@@ -194,9 +194,7 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
                         {BudgetUtils.canDelete(budget) && (
                             <button
                                 onClick={(e) => handleActionClick(e, () => {
-                                    if (window.confirm('¿Estás seguro de eliminar este presupuesto?')) {
-                                        onDelete(budget);
-                                    }
+                                    onDelete(budget);
                                 })}
                                 disabled={isLoadingDelete}
                                 className="flex items-center bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"

@@ -52,18 +52,25 @@ export const budgetItemsTable = pgTable("budget_items", {
     onDelete: "cascade",
     onUpdate: "cascade"
   }),
-  pieza: varchar("pieza", { length: 100 }), // Pieza dental o zona estética
-  accion: varchar("accion", { length: 255 }).notNull(), // Tratamiento
-  valor: decimal("valor", { precision: 10, scale: 2 }).notNull(), // Precio
-  orden: integer("orden").default(0), // Para ordenar items
+  pieza: varchar("pieza", { length: 100 }),
+  accion: varchar("accion", { length: 255 }).notNull(),
+  valor: decimal("valor", { precision: 10, scale: 2 }).notNull(),
+  orden: integer("orden").default(0),
   created_at: timestamp("created_at").notNull().defaultNow(),
+  
+  // ✅ AGREGAR CAMPO PARA SOFT DELETE
+  is_active: boolean("is_active").default(true),
+  updated_at: timestamp("updated_at"),
 }, (table) => ({
-  // Índices para búsquedas
   budgetIdx: index('idx_budget_items_budget')
     .on(table.budget_id),
     
   ordenIdx: index('idx_budget_items_orden')
     .on(table.budget_id, table.orden),
+    
+  // ✅ NUEVO ÍNDICE PARA FILTRAR ITEMS ACTIVOS
+  activeIdx: index('idx_budget_items_active')
+    .on(table.is_active),
 }));
 
 // Tipos para TypeScript

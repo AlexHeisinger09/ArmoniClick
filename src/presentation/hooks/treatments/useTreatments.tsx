@@ -87,17 +87,17 @@ export const useTreatment = (treatmentId: number, enabled = true) => {
 const invalidateAllTreatmentQueries = (queryClient: any, patientId: number) => {
   // Invalidar tratamientos del paciente
   queryClient.invalidateQueries({ queryKey: ['treatments', patientId] });
-  
+
   // Invalidar presupuestos del paciente
   queryClient.invalidateQueries({ queryKey: ['treatments', 'budgets', patientId] });
-  
+
   // Invalidar todos los tratamientos por presupuesto
   queryClient.invalidateQueries({ queryKey: ['treatments', 'budget'] });
-  
+
   // ✅ TAMBIÉN INVALIDAR QUERIES DE PRESUPUESTOS GENERALES (si existen)
   queryClient.invalidateQueries({ queryKey: ['budgets'] });
   queryClient.invalidateQueries({ queryKey: ['budgets', 'patient', patientId] });
-  
+
   // ✅ INVALIDAR ESTADÍSTICAS DE PRESUPUESTOS
   queryClient.invalidateQueries({ queryKey: ['budgets', 'stats'] });
 };
@@ -116,23 +116,23 @@ export const useCreateTreatment = () => {
     },
     onSuccess: (data, variables) => {
       setIsLoadingCreate(false);
-      
+
       console.log('🔄 Invalidando queries después de crear tratamiento...');
-      
+
       // ✅ INVALIDAR TODAS LAS QUERIES RELACIONADAS
       invalidateAllTreatmentQueries(queryClient, variables.patientId);
-      
+
       // ✅ REFRESCAR INMEDIATAMENTE las queries críticas
-      queryClient.refetchQueries({ 
+      queryClient.refetchQueries({
         queryKey: ['treatments', 'budgets', variables.patientId],
-        type: 'active' 
+        type: 'active'
       });
-      
+
       // Si se vinculó a un presupuesto, refrescar específicamente ese presupuesto
       if (variables.treatmentData.selectedBudgetId) {
-        queryClient.refetchQueries({ 
+        queryClient.refetchQueries({
           queryKey: ['treatments', 'budget', variables.treatmentData.selectedBudgetId],
-          type: 'active' 
+          type: 'active'
         });
       }
     },
@@ -200,15 +200,15 @@ export const useCompleteTreatment = () => {
       // ✅ INVALIDAR TODAS LAS QUERIES RELACIONADAS (esto es crítico para completar tratamientos)
       queryClient.invalidateQueries({ queryKey: ['treatments'] });
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
-      
+
       // ✅ FORZAR REFETCH INMEDIATO para datos críticos
-      queryClient.refetchQueries({ 
+      queryClient.refetchQueries({
         queryKey: ['treatments', 'budgets'],
-        type: 'active' 
+        type: 'active'
       });
-      queryClient.refetchQueries({ 
+      queryClient.refetchQueries({
         queryKey: ['treatments', 'budget'],
-        type: 'active' 
+        type: 'active'
       });
     },
     onError: () => {
@@ -222,7 +222,6 @@ export const useCompleteTreatment = () => {
   };
 };
 
-// Hook para eliminar tratamiento - ✅ MEJORADO
 export const useDeleteTreatment = () => {
   const [isLoadingDelete, setIsLoadingDelete] = useState(false);
   const queryClient = useQueryClient();
@@ -234,14 +233,34 @@ export const useDeleteTreatment = () => {
     onMutate: () => {
       setIsLoadingDelete(true);
     },
-    onSuccess: () => {
+    onSuccess: (data, treatmentId) => {
       setIsLoadingDelete(false);
-      
-      console.log('🔄 Invalidando queries después de eliminar tratamiento...');
-      
-      // ✅ INVALIDAR TODAS LAS QUERIES RELACIONADAS
+
+      console.log('🔄 Invalidando queries después de eliminar tratamiento con budget item:', treatmentId);
+
+      // ✅ INVALIDACIÓN COMPLETA - CRÍTICA PARA REFLEJAR CAMBIOS EN PRESUPUESTOS
+
+      // 1. Invalidar todas las queries de tratamientos
       queryClient.invalidateQueries({ queryKey: ['treatments'] });
+
+      // 2. Invalidar todas las queries de presupuestos (CRÍTICO)
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+
+      // 3. Forzar refetch inmediato de queries activas
+      queryClient.refetchQueries({
+        queryKey: ['treatments', 'budgets'],
+        type: 'active'
+      });
+
+      queryClient.refetchQueries({
+        queryKey: ['treatments', 'budget'],
+        type: 'active'
+      });
+
+      // 4. Invalidar estadísticas de presupuestos
+      queryClient.invalidateQueries({ queryKey: ['budget', 'stats'] });
+
+      console.log('✅ Invalidación completa realizada');
     },
     onError: () => {
       setIsLoadingDelete(false);
@@ -267,19 +286,19 @@ export const useTreatmentsWithBudgets = (patientId: number) => {
     // Datos
     ...treatments,
     ...budgets,
-    
+
     // Operaciones con invalidación mejorada
     createTreatment: createTreatment.createTreatmentMutation.mutateAsync,
     updateTreatment: updateTreatment.updateTreatmentMutation.mutateAsync,
     completeTreatment: completeTreatment.completeTreatmentMutation.mutateAsync,
     deleteTreatment: deleteTreatment.deleteTreatmentMutation.mutateAsync,
-    
+
     // Estados de carga
     isLoadingCreate: createTreatment.isLoadingCreate,
     isLoadingUpdate: updateTreatment.isLoadingUpdate,
     isLoadingComplete: completeTreatment.isLoadingComplete,
     isLoadingDelete: deleteTreatment.isLoadingDelete,
-    
+
     // Mutaciones para manejo de errores
     createTreatmentMutation: createTreatment.createTreatmentMutation,
     updateTreatmentMutation: updateTreatment.updateTreatmentMutation,

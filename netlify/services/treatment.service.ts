@@ -7,21 +7,21 @@ import { eq, and, desc, asc } from "drizzle-orm";
 type NewTreatment = typeof treatmentsTable.$inferInsert;
 
 export class TreatmentService {
-  
+
   // Función auxiliar para asegurar formato HH:MM (sin segundos)
   private normalizeTimeFormat(timeString: string): string {
     if (!timeString) return timeString;
-    
+
     // Si está en formato HH:MM:SS, convertir a HH:MM
     if (/^\d{2}:\d{2}:\d{2}$/.test(timeString)) {
       return timeString.slice(0, 5);
     }
-    
+
     // Si ya está en formato HH:MM, retornarlo tal como está
     if (/^\d{2}:\d{2}$/.test(timeString)) {
       return timeString;
     }
-    
+
     return timeString;
   }
 
@@ -50,7 +50,7 @@ export class TreatmentService {
   // ✅ CORREGIDO: Obtener tratamientos por presupuesto - SOLO ACTIVOS
   async findByBudgetId(budgetId: number, doctorId: number) {
     console.log(`🔍 Buscando tratamientos del presupuesto ${budgetId} para doctor ${doctorId}`);
-    
+
     const treatments = await db
       .select({
         id_tratamiento: treatmentsTable.id_tratamiento,
@@ -89,7 +89,7 @@ export class TreatmentService {
       .orderBy(desc(treatmentsTable.fecha_control), desc(treatmentsTable.hora_control));
 
     console.log(`✅ Encontrados ${treatments.length} tratamientos activos para presupuesto ${budgetId}`);
-    
+
     // Log de cada tratamiento para depuración
     treatments.forEach(t => {
       console.log(`📋 Tratamiento ${t.id_tratamiento}: status=${t.status}, valor=${t.budget_item_valor}, activo=${t.is_active}`);
@@ -99,8 +99,8 @@ export class TreatmentService {
     return treatments.map(treatment => ({
       ...treatment,
       hora_control: this.normalizeTimeFormat(treatment.hora_control || ''),
-      hora_proximo_control: treatment.hora_proximo_control 
-        ? this.normalizeTimeFormat(treatment.hora_proximo_control) 
+      hora_proximo_control: treatment.hora_proximo_control
+        ? this.normalizeTimeFormat(treatment.hora_proximo_control)
         : treatment.hora_proximo_control,
     }));
   }
@@ -144,8 +144,8 @@ export class TreatmentService {
     return treatments.map(treatment => ({
       ...treatment,
       hora_control: this.normalizeTimeFormat(treatment.hora_control || ''),
-      hora_proximo_control: treatment.hora_proximo_control 
-        ? this.normalizeTimeFormat(treatment.hora_proximo_control) 
+      hora_proximo_control: treatment.hora_proximo_control
+        ? this.normalizeTimeFormat(treatment.hora_proximo_control)
         : treatment.hora_proximo_control,
     }));
   }
@@ -185,18 +185,18 @@ export class TreatmentService {
       );
 
     const result = treatment[0] || null;
-    
+
     if (result) {
       // Normalizar horas a formato HH:MM
       return {
         ...result,
         hora_control: this.normalizeTimeFormat(result.hora_control || ''),
-        hora_proximo_control: result.hora_proximo_control 
-          ? this.normalizeTimeFormat(result.hora_proximo_control) 
+        hora_proximo_control: result.hora_proximo_control
+          ? this.normalizeTimeFormat(result.hora_proximo_control)
           : result.hora_proximo_control,
       };
     }
-    
+
     return null;
   }
 
@@ -239,13 +239,13 @@ export class TreatmentService {
     }
 
     const treatments = await query;
-    
+
     // Normalizar horas a formato HH:MM
     return treatments.map(treatment => ({
       ...treatment,
       hora_control: this.normalizeTimeFormat(treatment.hora_control || ''),
-      hora_proximo_control: treatment.hora_proximo_control 
-        ? this.normalizeTimeFormat(treatment.hora_proximo_control) 
+      hora_proximo_control: treatment.hora_proximo_control
+        ? this.normalizeTimeFormat(treatment.hora_proximo_control)
         : treatment.hora_proximo_control,
     }));
   }
@@ -253,13 +253,13 @@ export class TreatmentService {
   // Crear un nuevo tratamiento
   async create(treatmentData: NewTreatment) {
     console.log('🆕 Creando nuevo tratamiento:', treatmentData);
-    
+
     // Normalizar las horas antes de insertar
     const normalizedData = {
       ...treatmentData,
       hora_control: this.normalizeTimeFormat(treatmentData.hora_control || ''),
-      hora_proximo_control: treatmentData.hora_proximo_control 
-        ? this.normalizeTimeFormat(treatmentData.hora_proximo_control) 
+      hora_proximo_control: treatmentData.hora_proximo_control
+        ? this.normalizeTimeFormat(treatmentData.hora_proximo_control)
         : undefined,
       created_at: new Date(),
       is_active: true, // ✅ ASEGURAR que se crea como activo
@@ -293,15 +293,15 @@ export class TreatmentService {
       });
 
     const result = newTreatment[0];
-    
+
     console.log('✅ Tratamiento creado exitosamente:', result);
-    
+
     // Normalizar horas en la respuesta
     return {
       ...result,
       hora_control: this.normalizeTimeFormat(result.hora_control || ''),
-      hora_proximo_control: result.hora_proximo_control 
-        ? this.normalizeTimeFormat(result.hora_proximo_control) 
+      hora_proximo_control: result.hora_proximo_control
+        ? this.normalizeTimeFormat(result.hora_proximo_control)
         : result.hora_proximo_control,
     };
   }
@@ -309,14 +309,14 @@ export class TreatmentService {
   // Actualizar un tratamiento
   async update(treatmentId: number, treatmentData: Partial<NewTreatment>, doctorId: number) {
     console.log(`🔄 Actualizando tratamiento ${treatmentId}:`, treatmentData);
-    
+
     // Normalizar las horas antes de actualizar
     const normalizedData = { ...treatmentData };
-    
+
     if (normalizedData.hora_control) {
       normalizedData.hora_control = this.normalizeTimeFormat(normalizedData.hora_control);
     }
-    
+
     if (normalizedData.hora_proximo_control) {
       normalizedData.hora_proximo_control = this.normalizeTimeFormat(normalizedData.hora_proximo_control);
     }
@@ -358,47 +358,135 @@ export class TreatmentService {
       });
 
     const result = updatedTreatment[0];
-    
+
     console.log('✅ Tratamiento actualizado exitosamente:', result);
-    
+
     // Normalizar horas en la respuesta
     return {
       ...result,
       hora_control: this.normalizeTimeFormat(result.hora_control || ''),
-      hora_proximo_control: result.hora_proximo_control 
-        ? this.normalizeTimeFormat(result.hora_proximo_control) 
+      hora_proximo_control: result.hora_proximo_control
+        ? this.normalizeTimeFormat(result.hora_proximo_control)
         : result.hora_proximo_control,
     };
   }
 
-  // ✅ CRÍTICO: Eliminar un tratamiento (soft delete)
   async delete(treatmentId: number, doctorId: number) {
-    console.log(`🗑️ Eliminando tratamiento ${treatmentId} (soft delete)`);
-    
-    const deletedTreatment = await db
-      .update(treatmentsTable)
-      .set({
-        is_active: false, // ✅ SOFT DELETE
-        updated_at: new Date(),
-      })
-      .where(
-        and(
-          eq(treatmentsTable.id_tratamiento, treatmentId),
-          eq(treatmentsTable.id_doctor, doctorId)
-          // ✅ NO VERIFICAR is_active aquí porque queremos poder eliminar tratamientos activos
+    console.log(`🗑️ Eliminando tratamiento ${treatmentId} (soft delete + budget item)`);
+
+    try {
+      // 1. Obtener información del tratamiento
+      const treatmentQuery = await db
+        .select({
+          id_tratamiento: treatmentsTable.id_tratamiento,
+          budget_item_id: treatmentsTable.budget_item_id,
+          nombre_servicio: treatmentsTable.nombre_servicio,
+          is_active: treatmentsTable.is_active
+        })
+        .from(treatmentsTable)
+        .where(
+          and(
+            eq(treatmentsTable.id_tratamiento, treatmentId),
+            eq(treatmentsTable.id_doctor, doctorId)
+          )
+        );
+
+      const treatment = treatmentQuery[0];
+      if (!treatment) {
+        throw new Error('Tratamiento no encontrado');
+      }
+
+      console.log('📋 Tratamiento encontrado:', treatment);
+
+      // 2. Si tiene budget_item vinculado, marcarlo como inactivo también
+      if (treatment.budget_item_id) {
+        console.log(`🔗 Desactivando budget_item vinculado: ${treatment.budget_item_id}`);
+
+        await db
+          .update(budgetItemsTable)
+          .set({
+            is_active: false,
+            updated_at: new Date(),
+          })
+          .where(eq(budgetItemsTable.id, treatment.budget_item_id));
+
+        console.log('✅ Budget item desactivado');
+
+        // 3. Recalcular total del presupuesto (solo items activos)
+        const budgetId = await db
+          .select({ budget_id: budgetItemsTable.budget_id })
+          .from(budgetItemsTable)
+          .where(eq(budgetItemsTable.id, treatment.budget_item_id))
+          .limit(1);
+
+        if (budgetId[0]) {
+          await this.recalculateBudgetTotal(budgetId[0].budget_id);
+        }
+      }
+
+      // 4. Marcar el tratamiento como inactivo (soft delete)
+      const deletedTreatment = await db
+        .update(treatmentsTable)
+        .set({
+          is_active: false,
+          updated_at: new Date(),
+        })
+        .where(
+          and(
+            eq(treatmentsTable.id_tratamiento, treatmentId),
+            eq(treatmentsTable.id_doctor, doctorId)
+          )
         )
-      )
-      .returning({ 
-        id_tratamiento: treatmentsTable.id_tratamiento,
-        is_active: treatmentsTable.is_active 
-      });
+        .returning({
+          id_tratamiento: treatmentsTable.id_tratamiento,
+          is_active: treatmentsTable.is_active
+        });
 
-    const result = deletedTreatment[0];
-    console.log('✅ Tratamiento marcado como eliminado:', result);
-    
-    return result;
+      const result = deletedTreatment[0];
+      console.log('✅ Tratamiento desactivado:', result);
+
+      return result;
+
+    } catch (error: any) {
+      console.error('❌ Error en soft delete:', error);
+      throw error;
+    }
   }
+  private async recalculateBudgetTotal(budgetId: number): Promise<void> {
+    console.log(`💰 Recalculando total del presupuesto ${budgetId}`);
 
+    try {
+      // Sumar solo los items activos
+      const activeItems = await db
+        .select({
+          valor: budgetItemsTable.valor
+        })
+        .from(budgetItemsTable)
+        .where(
+          and(
+            eq(budgetItemsTable.budget_id, budgetId),
+            eq(budgetItemsTable.is_active, true) // ✅ SOLO ITEMS ACTIVOS
+          )
+        );
+
+      const newTotal = activeItems.reduce((sum, item) => sum + parseFloat(item.valor), 0);
+
+      // Actualizar el total del presupuesto
+      await db
+        .update(budgetsTable)
+        .set({
+          total_amount: newTotal.toString(),
+          updated_at: new Date(),
+        })
+        .where(eq(budgetsTable.id, budgetId));
+
+      console.log(`✅ Total recalculado: $${newTotal.toLocaleString('es-CL')}`);
+
+    } catch (error: any) {
+      console.error('❌ Error recalculando total:', error);
+      throw error;
+    }
+  }
   // ✅ CORREGIDO: Obtener próximos controles - SOLO ACTIVOS
   async getUpcomingControls(doctorId: number, limit: number = 10) {
     const treatments = await db
@@ -422,8 +510,8 @@ export class TreatmentService {
     // Normalizar horas en la respuesta
     return treatments.map(treatment => ({
       ...treatment,
-      hora_proximo_control: treatment.hora_proximo_control 
-        ? this.normalizeTimeFormat(treatment.hora_proximo_control) 
+      hora_proximo_control: treatment.hora_proximo_control
+        ? this.normalizeTimeFormat(treatment.hora_proximo_control)
         : treatment.hora_proximo_control,
     }));
   }
@@ -431,7 +519,7 @@ export class TreatmentService {
   // ✅ MARCAR TRATAMIENTO COMO COMPLETADO
   async completeTreatment(treatmentId: number, doctorId: number) {
     console.log(`✅ Completando tratamiento ${treatmentId}`);
-    
+
     const updatedTreatment = await db
       .update(treatmentsTable)
       .set({
@@ -445,15 +533,15 @@ export class TreatmentService {
           eq(treatmentsTable.is_active, true) // ✅ CRÍTICO: Solo completar si está activo
         )
       )
-      .returning({ 
+      .returning({
         id_tratamiento: treatmentsTable.id_tratamiento,
         status: treatmentsTable.status,
-        is_active: treatmentsTable.is_active 
+        is_active: treatmentsTable.is_active
       });
 
     const result = updatedTreatment[0];
     console.log('✅ Tratamiento marcado como completado:', result);
-    
+
     return result;
   }
 }
