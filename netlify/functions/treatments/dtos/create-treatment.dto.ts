@@ -1,3 +1,4 @@
+// netlify/functions/treatments/dtos/create-treatment.dto.ts - ACTUALIZADO
 export class CreateTreatmentDto {
   private constructor(
     public readonly id_paciente: number,
@@ -13,6 +14,10 @@ export class CreateTreatmentDto {
     public readonly foto1: string | undefined,
     public readonly foto2: string | undefined,
     public readonly descripcion: string | undefined,
+    // ✅ NUEVOS CAMPOS para crear budget item automáticamente
+    public readonly selectedBudgetId: number | undefined,
+    public readonly pieza: string | undefined,
+    public readonly valor: number | undefined,
   ) {}
 
   static create(object: { [key: string]: any }): [string?, CreateTreatmentDto?] {
@@ -29,10 +34,14 @@ export class CreateTreatmentDto {
       dilucion,
       foto1,
       foto2,
-      descripcion
+      descripcion,
+      // ✅ NUEVOS CAMPOS
+      selectedBudgetId,
+      pieza,
+      valor
     } = object;
 
-    // Validaciones requeridas
+    // Validaciones requeridas básicas
     if (!id_paciente) return ["ID del paciente es requerido"];
     if (isNaN(Number(id_paciente))) return ["ID del paciente debe ser un número"];
     
@@ -40,7 +49,17 @@ export class CreateTreatmentDto {
     if (!hora_control?.trim()) return ["Hora de control es requerida"];
     if (!nombre_servicio?.trim()) return ["Nombre del servicio es requerido"];
 
-    // Validaciones de formato
+    // ✅ VALIDACIONES para presupuesto si se proporciona
+    if (selectedBudgetId) {
+      if (isNaN(Number(selectedBudgetId))) return ["ID del presupuesto debe ser un número"];
+      
+      // Si hay presupuesto seleccionado, el valor es obligatorio
+      if (!valor || isNaN(Number(valor)) || Number(valor) <= 0) {
+        return ["El valor es requerido y debe ser mayor a 0 cuando se vincula a un presupuesto"];
+      }
+    }
+
+    // Validaciones de formato existentes
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     const timeRegex = /^\d{2}:\d{2}$/;
 
@@ -98,6 +117,10 @@ export class CreateTreatmentDto {
       foto1?.trim() || undefined,
       foto2?.trim() || undefined,
       descripcion?.trim() || undefined,
+      // ✅ NUEVOS CAMPOS
+      selectedBudgetId ? Number(selectedBudgetId) : undefined,
+      pieza?.trim() || undefined,
+      valor ? Number(valor) : undefined,
     )];
   }
 }

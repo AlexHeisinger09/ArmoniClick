@@ -99,7 +99,7 @@ export const useCreateTreatment = () => {
       setIsLoadingCreate(false);
       // Invalidar las queries para refrescar la lista
       queryClient.invalidateQueries({ queryKey: ['treatments', variables.patientId] });
-      
+
       // ✅ INVALIDAR TAMBIÉN QUERIES DE PRESUPUESTOS SI EL TRATAMIENTO ESTÁ VINCULADO
       if (variables.treatmentData.budget_item_id) {
         queryClient.invalidateQueries({ queryKey: ['treatments', 'budget'] });
@@ -116,7 +116,7 @@ export const useCreateTreatment = () => {
   };
 };
 
-// Hook para actualizar tratamiento
+// Hook para actualizar tratamiento - ACTUALIZADO
 export const useUpdateTreatment = () => {
   const [isLoadingUpdate, setIsLoadingUpdate] = useState(false);
   const queryClient = useQueryClient();
@@ -130,9 +130,13 @@ export const useUpdateTreatment = () => {
     },
     onSuccess: (data, variables) => {
       setIsLoadingUpdate(false);
-      // Invalidar las queries para refrescar los datos
+
+      // ✅ INVALIDAR MÚLTIPLES QUERIES
       queryClient.invalidateQueries({ queryKey: ['treatments'] });
       queryClient.invalidateQueries({ queryKey: ['treatment', variables.treatmentId] });
+
+      // ✅ TAMBIÉN INVALIDAR PRESUPUESTOS por si se cambió algo relacionado
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },
     onError: () => {
       setIsLoadingUpdate(false);
@@ -145,7 +149,7 @@ export const useUpdateTreatment = () => {
   };
 };
 
-// ✅ NUEVO: Hook para completar tratamiento
+// Hook para completar tratamiento - ACTUALIZADO
 export const useCompleteTreatment = () => {
   const [isLoadingComplete, setIsLoadingComplete] = useState(false);
   const queryClient = useQueryClient();
@@ -159,8 +163,12 @@ export const useCompleteTreatment = () => {
     },
     onSuccess: () => {
       setIsLoadingComplete(false);
-      // Invalidar las queries para refrescar los datos
+
+      // ✅ INVALIDAR TODAS LAS QUERIES RELACIONADAS
       queryClient.invalidateQueries({ queryKey: ['treatments'] });
+
+      // ✅ COMPLETAR UN TRATAMIENTO AFECTA EL PROGRESO DEL PRESUPUESTO
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },
     onError: () => {
       setIsLoadingComplete(false);
@@ -172,8 +180,7 @@ export const useCompleteTreatment = () => {
     isLoadingComplete,
   };
 };
-
-// Hook para eliminar tratamiento
+// Hook para eliminar tratamiento - ACTUALIZADO  
 export const useDeleteTreatment = () => {
   const [isLoadingDelete, setIsLoadingDelete] = useState(false);
   const queryClient = useQueryClient();
@@ -187,8 +194,12 @@ export const useDeleteTreatment = () => {
     },
     onSuccess: () => {
       setIsLoadingDelete(false);
-      // Invalidar las queries para refrescar la lista
+      
+      // ✅ INVALIDAR TODAS LAS QUERIES RELACIONADAS
       queryClient.invalidateQueries({ queryKey: ['treatments'] });
+      
+      // ✅ ELIMINAR UN TRATAMIENTO PUEDE AFECTAR EL PROGRESO DEL PRESUPUESTO
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },
     onError: () => {
       setIsLoadingDelete(false);
@@ -201,7 +212,7 @@ export const useDeleteTreatment = () => {
   };
 };
 
-// ✅ NUEVO: Hook combinado para manejar tratamientos con presupuestos
+// ✅ NUEVO: Hook combinado mejorado con mejor invalidación
 export const useTreatmentsWithBudgets = (patientId: number) => {
   const treatments = useTreatments(patientId);
   const budgets = useBudgetsByPatient(patientId);
@@ -215,7 +226,7 @@ export const useTreatmentsWithBudgets = (patientId: number) => {
     ...treatments,
     ...budgets,
     
-    // Operaciones
+    // Operaciones con invalidación mejorada
     createTreatment: createTreatment.createTreatmentMutation.mutateAsync,
     updateTreatment: updateTreatment.updateTreatmentMutation.mutateAsync,
     completeTreatment: completeTreatment.completeTreatmentMutation.mutateAsync,

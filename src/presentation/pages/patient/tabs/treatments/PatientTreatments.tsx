@@ -1,4 +1,4 @@
-// src/presentation/pages/patient/tabs/treatments/PatientTreatments.tsx - ACTUALIZADO CON NUEVO LAYOUT
+// src/presentation/pages/patient/tabs/treatments/PatientTreatments.tsx - ACTUALIZADO CON INVALIDACIÓN
 import React, { useState, useEffect } from 'react';
 import { Patient } from "@/core/use-cases/patients";
 import { Treatment, CreateTreatmentData, UpdateTreatmentData, BudgetSummary } from "@/core/use-cases/treatments";
@@ -104,13 +104,21 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   // Manejar creación de tratamiento
   const handleCreateTreatment = async (treatmentData: CreateTreatmentData) => {
     try {
-      await createTreatmentMutation.mutateAsync({
+      const response = await createTreatmentMutation.mutateAsync({
         patientId: patient.id,
         treatmentData
       });
 
       setShowNewTreatmentModal(false);
-      showNotification('success', 'Éxito', 'Tratamiento creado correctamente');
+      
+      // ✅ MENSAJE MEJORADO según si se vinculó a presupuesto
+      const baseMessage = 'Tratamiento creado correctamente';
+      const finalMessage = response.budgetItemCreated 
+        ? `${baseMessage}. Se agregó al presupuesto y se actualizó el total.`
+        : baseMessage;
+        
+      showNotification('success', 'Éxito', finalMessage);
+      
     } catch (error: any) {
       const errorMessage = processApiError(error);
       showNotification('error', 'Error al crear tratamiento', errorMessage);
@@ -215,9 +223,9 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
 
   return (
     <div className="h-full">
-      {/* ✅ NUEVO LAYOUT RESPONSIVO: Sidebar + Main Content */}
+      {/* Layout responsivo: Sidebar + Main Content */}
       <div className="flex flex-col lg:flex-row h-full gap-4 lg:gap-6 treatments-layout">
-        {/* Sidebar del presupuesto - Arriba en móvil, Izquierda en desktop */}
+        {/* Sidebar del presupuesto */}
         <div className="w-full lg:w-80 flex-shrink-0 budget-sidebar">
           <BudgetSidebar
             budgets={budgets}
@@ -225,11 +233,11 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
             selectedBudgetId={selectedBudgetId}
             onBudgetChange={handleBudgetChange}
             loading={isLoadingBudgets}
-            treatments={treatments} // ✅ PASAR TRATAMIENTOS PARA CALCULAR ESTADÍSTICAS
+            treatments={treatments}
           />
         </div>
 
-        {/* Contenido principal - Abajo en móvil, Derecha en desktop */}
+        {/* Contenido principal */}
         <div className="flex-1 min-w-0">
           <TreatmentsList
             treatments={treatments}

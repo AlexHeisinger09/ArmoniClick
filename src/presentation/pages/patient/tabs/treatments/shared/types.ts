@@ -1,5 +1,6 @@
-// src/presentation/pages/patient/tabs/treatments/shared/types.ts - ACTUALIZADO
+// src/presentation/pages/patient/tabs/treatments/shared/types.ts - ACTUALIZADO CON BUDGET ITEMS
 import { Treatment, CreateTreatmentData, UpdateTreatmentData, BudgetSummary } from "@/core/use-cases/treatments";
+import { BudgetItem } from "@/core/use-cases/budgets";
 
 export interface NotificationProps {
   type: 'success' | 'error' | 'info';
@@ -13,10 +14,11 @@ export interface TreatmentModalProps {
   onClose: () => void;
 }
 
+// ✅ SIMPLIFICADO: Solo necesitamos budgets, no budgetItems
 export interface NewTreatmentModalProps extends TreatmentModalProps {
   patientId: number;
-  selectedBudgetId?: number | null; // ✅ NUEVO
-  budgets?: BudgetSummary[]; // ✅ NUEVO
+  selectedBudgetId?: number | null;
+  budgets?: BudgetSummary[];
   onSubmit: (treatmentData: CreateTreatmentData) => void;
   isLoading?: boolean;
 }
@@ -30,38 +32,37 @@ export interface EditTreatmentModalProps extends TreatmentModalProps {
 export interface TreatmentDetailModalProps extends TreatmentModalProps {
   treatment: Treatment | null;
   onEdit: (treatment: Treatment) => void;
-  onComplete: (treatmentId: number) => void; // ✅ NUEVO
+  onComplete: (treatmentId: number) => void;
   onDelete: (treatmentId: number) => void;
-  canComplete?: boolean; // ✅ NUEVO
+  canComplete?: boolean;
 }
 
 export interface TreatmentCardProps {
   treatment: Treatment;
   onView: (treatment: Treatment) => void;
   onEdit: (treatment: Treatment) => void;
-  onComplete: (treatmentId: number) => void; // ✅ NUEVO
+  onComplete: (treatmentId: number) => void;
   onDelete: (treatmentId: number) => void;
   isLoadingDelete?: boolean;
-  isLoadingComplete?: boolean; // ✅ NUEVO
-  canComplete?: boolean; // ✅ NUEVO
-  showBudgetInfo?: boolean; // ✅ NUEVO
+  isLoadingComplete?: boolean;
+  canComplete?: boolean;
+  showBudgetInfo?: boolean;
 }
 
 export interface TreatmentsListProps {
   treatments: Treatment[];
   loading: boolean;
-  selectedBudget?: BudgetSummary | null; // ✅ NUEVO
+  selectedBudget?: BudgetSummary | null;
   onView: (treatment: Treatment) => void;
   onEdit: (treatment: Treatment) => void;
-  onComplete: (treatmentId: number) => void; // ✅ NUEVO
+  onComplete: (treatmentId: number) => void;
   onDelete: (treatmentId: number) => void;
   onNewTreatment: () => void;
   isLoadingDelete?: boolean;
-  isLoadingComplete?: boolean; // ✅ NUEVO
-  showEmptyState?: boolean; // ✅ NUEVO
+  isLoadingComplete?: boolean;
+  showEmptyState?: boolean;
 }
 
-// ✅ NUEVA INTERFACE para BudgetSelector
 export interface BudgetSelectorProps {
   budgets: BudgetSummary[];
   selectedBudgetId: number | null;
@@ -69,6 +70,9 @@ export interface BudgetSelectorProps {
   onBudgetChange: (budgetId: number | null) => void;
   loading: boolean;
 }
+
+// ✅ ELIMINAR interfaces que ya no necesitamos
+// export interface BudgetItemSelectorProps - YA NO SE NECESITA
 
 export const SERVICIOS_COMUNES = [
   'Botox',

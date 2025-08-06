@@ -192,11 +192,11 @@ const TreatmentCard: React.FC<TreatmentCardProps> = ({
           <div className="text-xs">
             {new Date(treatment.fecha_venc_producto) < new Date() ? (
               <span className="text-red-600 bg-red-50 px-2 py-1 rounded-full border border-red-200">
-                ⚠️ Vencido
+                ⚠️ Producto Vencido
               </span>
             ) : (
               <span className="text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-200">
-                ✓ Vigente
+                ✓ Producto Vigente
               </span>
             )}
           </div>

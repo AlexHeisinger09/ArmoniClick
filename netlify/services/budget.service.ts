@@ -32,6 +32,55 @@ export interface BudgetItemData {
 
 export class BudgetService {
 
+    async addTreatmentToBudget(
+        budgetId: number,
+        userId: number,
+        treatmentItem: {
+            pieza?: string;
+            accion: string;
+            valor: number;
+        }
+    ): Promise<number> {
+        console.log('🆕 Agregando tratamiento a presupuesto activo ID:', budgetId);
+
+        // Verificar que el presupuesto existe y está activo
+        const budget = await this.findByBudgetId(budgetId, userId);
+        if (!budget) {
+            throw new Error('Presupuesto no encontrado');
+        }
+
+        // ✅ CAMBIO CLAVE: Permitir agregar tratamientos a presupuestos ACTIVOS
+        if (budget.status == BUDGET_STATUS.COMPLETED) {
+            throw new Error(`No se pueden agregar tratamientos a presupuestos completados. Estado actual: ${budget.status}`);
+        }
+
+        // Crear el nuevo item
+        const newItemData = {
+            budget_id: budgetId,
+            pieza: treatmentItem.pieza || null,
+            accion: treatmentItem.accion,
+            valor: treatmentItem.valor.toString(),
+            orden: budget.items.length, // Agregar al final
+        };
+
+        // Insertar el nuevo item directamente en la base de datos
+        const [newItem] = await db.insert(budgetItemsTable).values(newItemData).returning();
+
+        // Actualizar el total del presupuesto
+        const newTotal = parseFloat(budget.total_amount) + treatmentItem.valor;
+        await db
+            .update(budgetsTable)
+            .set({
+                total_amount: newTotal.toString(),
+                updated_at: new Date(),
+            })
+            .where(eq(budgetsTable.id, budgetId));
+
+        console.log('✅ Tratamiento agregado al presupuesto. Nuevo item ID:', newItem.id);
+        console.log('✅ Total del presupuesto actualizado a:', newTotal);
+
+        return newItem.id;
+    }
     // ✅ OBTENER TODOS los presupuestos de un paciente
     async findAllByPatientId(patientId: number, userId: number): Promise<BudgetWithItems[]> {
         const budgets = await db
@@ -198,7 +247,7 @@ export class BudgetService {
 
         // ✅ CREAR TRATAMIENTOS AUTOMÁTICAMENTE
         console.log('📝 Creando tratamientos automáticamente...');
-        
+
         const currentDate = new Date();
         const treatmentsToCreate: NewTreatment[] = budget.items.map(item => ({
             id_paciente: budget.patient_id,
@@ -327,7 +376,7 @@ export class BudgetService {
     }
 
     // ✅ MANTENER MÉTODOS EXISTENTES (para compatibilidad)
-    
+
     // Método legacy - ahora retorna el primer presupuesto encontrado
     async findByPatientId(patientId: number, userId: number): Promise<BudgetWithItems | null> {
         const budgets = await this.findAllByPatientId(patientId, userId);
@@ -367,10 +416,10 @@ export class BudgetService {
         budgetType: string,
         items: Array<{ id?: number; pieza?: string; accion: string; valor: number; orden?: number }>
     ): Promise<BudgetWithItems> {
-        
+
         // Si hay un ID en los items, significa que es una actualización
         const hasExistingItems = items.some(item => item.id && item.id > 0);
-        
+
         if (hasExistingItems) {
             // Buscar el presupuesto por el ID del primer item
             const firstItemWithId = items.find(item => item.id && item.id > 0);
@@ -379,7 +428,7 @@ export class BudgetService {
                     .select({ budget_id: budgetItemsTable.budget_id })
                     .from(budgetItemsTable)
                     .where(eq(budgetItemsTable.id, firstItemWithId.id!));
-                
+
                 if (existingItem[0]) {
                     return this.updateBudget(existingItem[0].budget_id, userId, budgetType, items);
                 }

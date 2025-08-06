@@ -1,4 +1,4 @@
-// src/presentation/pages/patient/tabs/treatments/modals/NewTreatmentModal.tsx - ACTUALIZADO
+// src/presentation/pages/patient/tabs/treatments/modals/NewTreatmentModal.tsx - SIMPLIFICADO
 import React, { useState, useEffect } from 'react';
 import {
   Plus,
@@ -28,7 +28,6 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
 }) => {
   const [formData, setFormData] = useState<CreateTreatmentData>({
     id_paciente: patientId,
-    budget_item_id: selectedBudgetId || undefined, // ✅ NUEVO: Presupuesto preseleccionado
     fecha_control: new Date().toISOString().split('T')[0],
     hora_control: new Date().toTimeString().slice(0, 5),
     fecha_proximo_control: '',
@@ -41,7 +40,13 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
     foto1: '',
     foto2: '',
     descripcion: '',
+    // ✅ NUEVOS CAMPOS para crear budget_item automáticamente
+    pieza: '', // Pieza dental o zona
+    valor: 0, // Valor del tratamiento
   });
+
+  // Estados para presupuesto seleccionado
+  const [selectedBudget, setSelectedBudget] = useState<number | undefined>(selectedBudgetId || undefined);
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -52,22 +57,31 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
 
   const { uploadImageFromFile, validateImageFile } = useTreatmentUpload();
 
-  // ✅ ACTUALIZAR budget_item_id cuando cambie selectedBudgetId
+  // Actualizar presupuesto seleccionado
   useEffect(() => {
-    if (selectedBudgetId && selectedBudgetId !== formData.budget_item_id) {
-      setFormData(prev => ({
-        ...prev,
-        budget_item_id: selectedBudgetId
-      }));
+    if (selectedBudgetId && selectedBudgetId !== selectedBudget) {
+      setSelectedBudget(selectedBudgetId);
     }
   }, [selectedBudgetId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'budget_item_id' ? (value ? parseInt(value) : undefined) : value
-    }));
+    
+    // Manejar campo de valor (formato numérico)
+    if (name === 'valor') {
+      const numericValue = parseFloat(value) || 0;
+      setFormData(prev => ({
+        ...prev,
+        [name]: numericValue
+      }));
+    } else if (name === 'selectedBudget') {
+      setSelectedBudget(value ? parseInt(value) : undefined);
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
     
     if (formErrors[name]) {
       setFormErrors(prev => ({
@@ -81,7 +95,6 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validar archivo
     const validationError = validateImageFile(file);
     if (validationError) {
       alert(validationError);
@@ -91,7 +104,7 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
     setUploadingImages(prev => ({ ...prev, [imageField]: true }));
     
     try {
-      const response = await uploadImageFromFile(file, 0, 'before'); // Temporal ID 0
+      const response = await uploadImageFromFile(file, 0, 'before');
       setFormData(prev => ({
         ...prev,
         [imageField]: response.imageUrl
@@ -117,8 +130,12 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
     if (!formData.fecha_control) errors.fecha_control = 'Fecha de control es requerida';
     if (!formData.hora_control) errors.hora_control = 'Hora de control es requerida';
     if (!formData.nombre_servicio) errors.nombre_servicio = 'Nombre del servicio es requerido';
+    
+    // ✅ VALIDAR CAMPOS DE PRESUPUESTO si hay presupuesto seleccionado
+    if (selectedBudget) {
+      if (!formData.valor || formData.valor <= 0) errors.valor = 'El valor debe ser mayor a 0';
+    }
 
-    // Validar que la fecha de control no sea futura
     if (formData.fecha_control) {
       const controlDate = new Date(formData.fecha_control);
       const today = new Date();
@@ -136,7 +153,6 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
   const validateStep2 = (): boolean => {
     const errors: Record<string, string> = {};
     
-    // Validar fecha próximo control si se proporciona
     if (formData.fecha_proximo_control && formData.fecha_control) {
       const proximoControlDate = new Date(formData.fecha_proximo_control);
       const controlDate = new Date(formData.fecha_control);
@@ -146,7 +162,6 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
       }
     }
 
-    // Validar fecha de vencimiento si se proporciona
     if (formData.fecha_venc_producto) {
       const vencDate = new Date(formData.fecha_venc_producto);
       const today = new Date();
@@ -170,15 +185,28 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
 
   const handleSubmit = () => {
     if (validateStep1() && validateStep2()) {
-      // Limpiar campos vacíos antes de enviar
+      // Limpiar campos vacíos y preparar datos
       const cleanData = Object.entries(formData).reduce((acc, [key, value]) => {
-        if (value !== '' && value !== undefined) {
+        if (value !== '' && value !== undefined && value !== 0) {
           acc[key as keyof CreateTreatmentData] = value;
         }
         return acc;
       }, {} as Partial<CreateTreatmentData>);
 
-      onSubmit(cleanData as CreateTreatmentData);
+      // ✅ AGREGAR INFORMACIÓN DEL PRESUPUESTO SELECCIONADO
+      const finalData = {
+        ...cleanData,
+        // Pasar información adicional para crear el budget_item
+        selectedBudgetId: selectedBudget,
+        pieza: formData.pieza || undefined,
+        valor: selectedBudget && (formData.valor ?? 0) > 0 ? (formData.valor ?? 0) : undefined,
+      } as CreateTreatmentData & { 
+        selectedBudgetId?: number; 
+        pieza?: string; 
+        valor?: number; 
+      };
+
+      onSubmit(finalData);
       handleClose();
     }
   };
@@ -186,9 +214,9 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
   const handleClose = () => {
     setFormErrors({});
     setCurrentStep(1);
+    setSelectedBudget(selectedBudgetId || undefined);
     setFormData({
       id_paciente: patientId,
-      budget_item_id: selectedBudgetId || undefined,
       fecha_control: new Date().toISOString().split('T')[0],
       hora_control: new Date().toTimeString().slice(0, 5),
       fecha_proximo_control: '',
@@ -201,12 +229,16 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
       foto1: '',
       foto2: '',
       descripcion: '',
+      pieza: '',
+      valor: 0,
     });
     onClose();
   };
 
-  // ✅ OBTENER INFORMACIÓN DEL PRESUPUESTO SELECCIONADO
-  const selectedBudget = budgets.find(b => b.id === formData.budget_item_id);
+  const formatCurrency = (amount: string | number): string => {
+    const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return numericAmount.toLocaleString('es-CL');
+  };
 
   if (!isOpen) return null;
 
@@ -263,36 +295,98 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
         {/* Form content */}
         <div className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto">
           {currentStep === 1 && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h4 className="text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-cyan-200 flex items-center">
                 <Calendar className="w-5 h-5 mr-2" />
                 Información del Control
               </h4>
 
-              {/* ✅ NUEVO: Selector de presupuesto */}
+              {/* ✅ SELECTOR SIMPLIFICADO DE PRESUPUESTO */}
               {budgets.length > 0 && (
-                <div className="mb-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
-                  <h5 className="font-medium text-purple-800 mb-3 flex items-center">
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h5 className="font-medium text-blue-800 mb-3 flex items-center">
                     <FileText className="w-4 h-4 mr-2" />
                     Vincular a Presupuesto (Opcional)
                   </h5>
-                  <select
-                    name="budget_item_id"
-                    value={formData.budget_item_id || ''}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-slate-700"
-                  >
-                    <option value="">Sin vincular a presupuesto</option>
-                    {budgets.map((budget) => (
-                      <option key={budget.id} value={budget.id}>
-                        Presupuesto #{budget.id} - {budget.budget_type === 'odontologico' ? 'Odontológico' : 'Estética'} 
-                        ({budget.status}) - ${parseFloat(budget.total_amount).toLocaleString('es-CL')}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-blue-700 mb-2">Presupuesto</label>
+                      <select
+                        name="selectedBudget"
+                        value={selectedBudget || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-700"
+                      >
+                        <option value="">Tratamiento independiente</option>
+                        {budgets.filter(b => b.status === 'activo').map((budget) => (
+                          <option key={budget.id} value={budget.id}>
+                            Presupuesto #{budget.id} - {budget.budget_type === 'odontologico' ? 'Odontológico' : 'Estética'} 
+                            - ${formatCurrency(budget.total_amount)}
+                          </option>
+                        ))}
+                      </select>
+                      
+                      {/* ✅ MENSAJE INFORMATIVO si no hay presupuestos activos */}
+                      {budgets.filter(b => b.status === 'activo').length === 0 && budgets.length > 0 && (
+                        <p className="text-sm text-amber-600 mt-2 bg-amber-50 p-2 rounded border border-amber-200">
+                          ⚠️ Solo los presupuestos activos pueden recibir nuevos tratamientos.
+                          {budgets.length > 0 && (
+                            <span className="block mt-1">
+                              Tienes {budgets.length} presupuesto{budgets.length > 1 ? 's' : ''} en otros estados.
+                            </span>
+                          )}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* ✅ CAMPOS ADICIONALES SI HAY PRESUPUESTO SELECCIONADO */}
+                    {selectedBudget && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium text-blue-700 mb-2">
+                            Pieza/Zona {selectedBudget ? '*' : '(Opcional)'}
+                          </label>
+                          <input
+                            type="text"
+                            name="pieza"
+                            value={formData.pieza || ''}
+                            onChange={handleInputChange}
+                            placeholder="Ej: 1.1, 1.2 o Frente, Pómulos"
+                            className="w-full px-3 py-2 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-700"
+                          />
+                        </div>
+                        
+                        <div className="lg:col-span-2">
+                          <label className="block text-sm font-medium text-blue-700 mb-2">Valor del Tratamiento *</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
+                            <input
+                              type="number"
+                              name="valor"
+                              value={formData.valor || ''}
+                              onChange={handleInputChange}
+                              placeholder="25000"
+                              min="0"
+                              step="1000"
+                              className={`w-full pl-8 pr-3 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-700 ${
+                                formErrors.valor ? 'border-red-300' : 'border-blue-200'
+                              }`}
+                            />
+                          </div>
+                          {formErrors.valor && <p className="text-red-600 text-xs mt-1">{formErrors.valor}</p>}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  
                   {selectedBudget && (
-                    <div className="mt-2 text-sm text-purple-600">
-                      ✓ Vinculado al presupuesto #{selectedBudget.id} ({selectedBudget.status})
+                    <div className="mt-3 p-3 bg-white rounded-lg border border-blue-200">
+                      <div className="text-sm text-blue-600 font-medium">
+                        ✓ Se creará un nuevo item en el presupuesto #{selectedBudget}
+                      </div>
+                      <div className="mt-1 text-xs text-blue-500">
+                        El tratamiento quedará vinculado automáticamente al presupuesto
+                      </div>
                     </div>
                   )}
                 </div>
