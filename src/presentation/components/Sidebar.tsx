@@ -46,13 +46,14 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
       label: 'Agenda',
       icon: Calendar,
       href: '/dashboard/calendario'
-    },
-    {
-      id: 'configuracion',
-      label: 'Config',
-      icon: Settings,
-      href: '/dashboard/configuracion'
     }
+    //,
+    // {
+    //   id: 'configuracion',
+    //   label: 'Config',
+    //   icon: Settings,
+    //   href: '/dashboard/configuracion'
+    // }
   ];
 
   const renderDesktopMenuItem = (item: MenuItem) => {

@@ -1,15 +1,43 @@
-import React from 'react';
-import { LogOut } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { LogOut, Settings, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useLoginMutation, useProfile } from '@/presentation/hooks';
 
 const Header: React.FC = () => {
   const { token, logout } = useLoginMutation();
   const { queryProfile } = useProfile(token || '');
+  const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const userData = queryProfile.data;
 
+  // Cerrar menú al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const handleLogout = () => {
     logout();
+    setIsMenuOpen(false);
+  };
+
+  const handleGoToConfiguration = () => {
+    navigate('/dashboard/configuracion');
+    setIsMenuOpen(false);
+  };
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
   };
 
   return (
@@ -28,7 +56,7 @@ const Header: React.FC = () => {
             </div>
           </div>
 
-          {/* Perfil del usuario y logout */}
+          {/* Perfil del usuario y menú de opciones */}
           <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
             {/* Información del usuario - oculta en móvil */}
             <div className="text-right hidden md:block">
@@ -61,14 +89,42 @@ const Header: React.FC = () => {
               <div className="absolute bottom-0 right-0 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 border-2 border-white rounded-full shadow-sm"></div>
             </div>
             
-            {/* Botón de cerrar sesión más compacto en móvil */}
-            <button
-              onClick={handleLogout}
-              className="group p-2 sm:p-3 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-all duration-200 border border-transparent hover:border-red-200 shadow-sm hover:shadow-md flex-shrink-0"
-              title="Cerrar sesión"
-            >
-              <LogOut className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform duration-200" />
-            </button>
+            {/* Menú de configuración */}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={toggleMenu}
+                className="group p-2 sm:p-3 text-slate-500 hover:text-cyan-600 hover:bg-cyan-50 rounded-full transition-all duration-200 border border-transparent hover:border-cyan-200 shadow-sm hover:shadow-md flex-shrink-0"
+                title="Opciones"
+              >
+                <Settings className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300" />
+              </button>
+
+              {/* Menú desplegable */}
+              {isMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-200">
+                  {/* Opción de configuración */}
+                  <button
+                    onClick={handleGoToConfiguration}
+                    className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-cyan-700 transition-colors duration-200"
+                  >
+                    <User className="w-4 h-4" />
+                    <span>Configuración</span>
+                  </button>
+                  
+                  {/* Separador */}
+                  <div className="my-1 h-px bg-slate-200"></div>
+                  
+                  {/* Opción de cerrar sesión */}
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-slate-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-200"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Cerrar sesión</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
