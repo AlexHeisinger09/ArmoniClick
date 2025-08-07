@@ -1,12 +1,12 @@
-// src/presentation/pages/patient/tabs/budget/PatientBudget.tsx - ESTRUCTURA SIMPLIFICADA
+// src/presentation/pages/patient/tabs/budget/PatientBudget.tsx - ACTUALIZADO CON MODAL
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Patient } from "@/core/use-cases/patients";
 import { Budget } from "@/core/use-cases/budgets";
 import { useMultipleBudgetOperations } from "@/presentation/hooks/budgets/useBudgets";
 
 // Componentes
 import { BudgetsList } from './components/BudgetList';
+import { BudgetModal } from './components/BudgetModal';
 import { Notification } from './components/Notification';
 import { PDFGenerator } from './utils/pdfGenerator';
 
@@ -18,8 +18,6 @@ interface PatientBudgetProps {
 }
 
 const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
-    const navigate = useNavigate();
-    
     // Hooks para presupuestos
     const {
         sortedBudgets,
@@ -38,7 +36,18 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
     const { token } = useLoginMutation();
     const { queryProfile } = useProfile(token || '');
 
-    // Estados locales
+    // Estados del modal
+    const [modalState, setModalState] = useState<{
+        isOpen: boolean;
+        budget: Budget | null;
+        mode: 'create' | 'edit' | 'view';
+    }>({
+        isOpen: false,
+        budget: null,
+        mode: 'create'
+    });
+
+    // Estados locales para notificaciones
     const [notification, setNotification] = useState<{
         type: 'success' | 'error' | 'info';
         message: string;
@@ -74,20 +83,40 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         return errorMessage;
     };
 
-    // Navegación a páginas separadas
+    // ✅ FUNCIONES DEL MODAL
     const handleCreateNewBudget = () => {
-        navigate(`/dashboard/presupuestos?patientId=${patient.id}`);
+        setModalState({
+            isOpen: true,
+            budget: null,
+            mode: 'create'
+        });
     };
 
     const handleEditBudget = (budget: Budget) => {
-        navigate(`/dashboard/presupuestos?patientId=${patient.id}&budgetId=${budget.id}&mode=edit`);
+        setModalState({
+            isOpen: true,
+            budget: budget,
+            mode: 'edit'
+        });
     };
 
     const handleViewBudget = (budget: Budget) => {
-        navigate(`/dashboard/presupuestos?patientId=${patient.id}&budgetId=${budget.id}&mode=view`);
+        setModalState({
+            isOpen: true,
+            budget: budget,
+            mode: 'view'
+        });
     };
 
-    // Operaciones de presupuesto
+    const handleCloseModal = () => {
+        setModalState({
+            isOpen: false,
+            budget: null,
+            mode: 'create'
+        });
+    };
+
+    // ✅ OPERACIONES DE PRESUPUESTO (mantienen la misma lógica)
     const handleActivateBudget = async (budget: Budget) => {
         try {
             await activateBudget(budget.id);
@@ -155,6 +184,7 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
 
     return (
         <>
+            {/* Lista de presupuestos */}
             <BudgetsList
                 budgets={sortedBudgets}
                 loading={isLoadingAll}
@@ -170,6 +200,15 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                 isLoadingComplete={isLoadingComplete}
                 isLoadingRevert={isLoadingRevert}
                 isLoadingDelete={isLoadingDelete}
+            />
+
+            {/* Modal de presupuesto */}
+            <BudgetModal
+                isOpen={modalState.isOpen}
+                onClose={handleCloseModal}
+                patient={patient}
+                budget={modalState.budget}
+                mode={modalState.mode}
             />
 
             {/* Notificaciones */}
