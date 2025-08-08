@@ -21,6 +21,7 @@ export const usersTable = pgTable("users", {
   zipCode: varchar("zipCode"),
   city: varchar("city"),
   img: varchar("img"),
+  signature: varchar("signature"), // ✅ NUEVO CAMPO PARA LA FIRMA
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt"),
   isActive: boolean("isActive").default(true),

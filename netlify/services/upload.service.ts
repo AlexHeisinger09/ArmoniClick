@@ -66,6 +66,54 @@ export class UploadService {
   }
 
   /**
+   * ✅ NUEVA FUNCIÓN: Sube una firma a Cloudinary
+   * @param base64Data - Datos de la firma en base64
+   * @param userId - ID del usuario
+   * @param folder - Carpeta en Cloudinary donde guardar la firma
+   * @returns Promise con la información de la firma subida
+   */
+  static async uploadSignature(
+    base64Data: string,
+    userId: number,
+    folder = 'signatures'
+  ): Promise<UploadResult> {
+    try {
+      // Generar un public_id único para la firma del usuario
+      const publicId = `${folder}/user_${userId}_signature_${Date.now()}`;
+
+      const uploadResponse = await cloudinary.uploader.upload(
+        `data:image/png;base64,${base64Data}`,
+        {
+          public_id: publicId,
+          folder: folder,
+          transformation: [
+            {
+              width: 300,
+              height: 150,
+              crop: 'fit',
+              background: 'transparent',
+              quality: 'auto',
+              format: 'png'
+            }
+          ],
+          overwrite: true,
+          invalidate: true,
+        }
+      );
+
+      return {
+        url: uploadResponse.secure_url,
+        publicId: uploadResponse.public_id,
+        width: uploadResponse.width,
+        height: uploadResponse.height,
+      };
+    } catch (error) {
+      console.error('Error uploading signature to Cloudinary:', error);
+      throw new Error('Error al subir la firma');
+    }
+  }
+
+  /**
    * Elimina una imagen de Cloudinary
    * @param publicId - ID público de la imagen a eliminar
    * @returns Promise<boolean>
@@ -94,5 +142,4 @@ export class UploadService {
       return null;
     }
   }
-  
 }

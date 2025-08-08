@@ -1,4 +1,4 @@
-// netlify/services/user.service.ts - VERIFICAR findOne
+// netlify/services/user.service.ts - COMPLETO CON SIGNATURE
 import { db } from '../data/db';
 import { usersTable } from '../data/schemas/user.schema';
 
@@ -26,6 +26,7 @@ export class UserService {
       zipCode: usersTable.zipCode,
       city: usersTable.city,
       img: usersTable.img,
+      signature: usersTable.signature,         // ✅ INCLUIR SIGNATURE POR DEFECTO
       createdAt: usersTable.createdAt,
       updatedAt: usersTable.updatedAt,
       isActive: usersTable.isActive,

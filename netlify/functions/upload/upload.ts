@@ -7,7 +7,7 @@ import { UserService } from "../../services";
 import { usersTable } from "../../data/schemas/user.schema";
 
 const handler: Handler = async (event: HandlerEvent) => {
-  const { httpMethod } = event;
+  const { httpMethod, path } = event;
   const body = event.body ? fromBodyToObject(event.body) : {};
 
   // Manejar preflight CORS
@@ -25,6 +25,162 @@ const handler: Handler = async (event: HandlerEvent) => {
   const userData = JSON.parse(user.body);
   const userId = userData.id;
 
+  // ✅ NUEVO ENDPOINT: POST /upload/signature
+  if (httpMethod === "POST" && path?.includes("/signature")) {
+    try {
+      const { signature } = body;
+
+      // Validaciones
+      if (!signature) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: "No se proporcionó ninguna firma",
+          }),
+          headers: HEADERS.json,
+        };
+      }
+
+      // Validar formato de imagen base64
+      let base64Data: string;
+      if (signature.startsWith('data:image/')) {
+        // Extraer solo la parte base64 (después de la coma)
+        const base64Index = signature.indexOf(',');
+        if (base64Index === -1) {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({
+              message: "Formato de firma inválido",
+            }),
+            headers: HEADERS.json,
+          };
+        }
+        base64Data = signature.substring(base64Index + 1);
+      } else {
+        base64Data = signature;
+      }
+
+      // Validar tamaño (aproximadamente)
+      const sizeInBytes = (base64Data.length * 3) / 4;
+      const maxSizeInBytes = 2 * 1024 * 1024; // 2MB para firmas
+
+      if (sizeInBytes > maxSizeInBytes) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: "La firma es demasiado grande. Máximo 2MB permitido.",
+          }),
+          headers: HEADERS.json,
+        };
+      }
+
+      // Subir firma a Cloudinary
+      const uploadResult = await UploadService.uploadSignature(
+        base64Data,
+        userId,
+        'signatures'
+      );
+
+      // Actualizar la URL de la firma en la base de datos
+      const userService = new UserService();
+      
+      // Si el usuario ya tenía una firma, eliminarla de Cloudinary
+      if (userData.signature && userData.signature.includes('cloudinary.com')) {
+        try {
+          // Extraer public_id de la URL de Cloudinary
+          const urlParts = userData.signature.split('/');
+          const filename = urlParts[urlParts.length - 1];
+          const publicId = `signatures/${filename.split('.')[0]}`;
+          await UploadService.deleteImage(publicId);
+        } catch (error) {
+          console.warn('No se pudo eliminar la firma anterior:', error);
+        }
+      }
+
+      await userService.update(
+        { 
+          signature: uploadResult.url,
+          updatedAt: new Date(),
+        },
+        usersTable.id,
+        userId
+      );
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Firma actualizada correctamente",
+          signatureUrl: uploadResult.url,
+          signatureInfo: {
+            width: uploadResult.width,
+            height: uploadResult.height,
+            publicId: uploadResult.publicId,
+          }
+        }),
+        headers: HEADERS.json,
+      };
+
+    } catch (error: any) {
+      console.error('Error uploading signature:', error);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          message: error.message || "Error interno del servidor al subir la firma",
+        }),
+        headers: HEADERS.json,
+      };
+    }
+  }
+
+  // ✅ NUEVO ENDPOINT: DELETE /upload/signature
+  if (httpMethod === "DELETE" && path?.includes("/signature")) {
+    try {
+      const userService = new UserService();
+
+      // Si el usuario tiene una firma, eliminarla de Cloudinary
+      if (userData.signature && userData.signature.includes('cloudinary.com')) {
+        try {
+          // Extraer public_id de la URL de Cloudinary
+          const urlParts = userData.signature.split('/');
+          const filename = urlParts[urlParts.length - 1];
+          const publicId = `signatures/${filename.split('.')[0]}`;
+          await UploadService.deleteImage(publicId);
+        } catch (error) {
+          console.warn('No se pudo eliminar la firma de Cloudinary:', error);
+        }
+      }
+
+      // Eliminar la URL de la firma en la base de datos
+      await userService.update(
+        { 
+          signature: null,
+          updatedAt: new Date(),
+        },
+        usersTable.id,
+        userId
+      );
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Firma eliminada correctamente",
+        }),
+        headers: HEADERS.json,
+      };
+
+    } catch (error: any) {
+      console.error('Error deleting signature:', error);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          message: error.message || "Error interno del servidor al eliminar la firma",
+        }),
+        headers: HEADERS.json,
+      };
+    }
+  }
+
+  // POST: Subir imagen de perfil (código existente)
   if (httpMethod === "POST") {
     try {
       const { image, imageType } = body;
@@ -131,7 +287,7 @@ const handler: Handler = async (event: HandlerEvent) => {
     }
   }
 
-  // DELETE: Eliminar imagen de perfil
+  // DELETE: Eliminar imagen de perfil (código existente)
   if (httpMethod === "DELETE") {
     try {
       const userService = new UserService();

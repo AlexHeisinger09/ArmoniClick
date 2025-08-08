@@ -5,7 +5,7 @@ export interface AuthResponse {
 
 export interface UserResponse {
   id: number;
-  rut?: string; // ✅ NUEVO CAMPO RUT
+  rut?: string;
   email: string;
   emailValidated: boolean;
   lastName: string;
@@ -13,6 +13,7 @@ export interface UserResponse {
   name: string;
   role: string[];
   img: string | null;
+  signature: string | null; // ✅ NUEVO CAMPO PARA LA FIRMA
   country: string;
 }
 
