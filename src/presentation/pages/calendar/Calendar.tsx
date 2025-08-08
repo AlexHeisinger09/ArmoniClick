@@ -1,4 +1,4 @@
-// Calendar.tsx
+// Calendar.tsx - Diseño moderno con colores cyan
 import React from 'react';
 import { useCalendar } from './hooks/useCalendar';
 import { CalendarHeader } from './components/CalendarHeader';
@@ -73,10 +73,10 @@ const Calendar: React.FC = () => {
   };
 
   return (
-    <div className="h-full bg-slate-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-xl shadow-lg border border-slate-200">
-          {/* Usar el nuevo CalendarHeader */}
+    <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+          {/* Header del calendario con diseño moderno */}
           <CalendarHeader
             currentDate={currentDate}
             viewMode={viewMode}

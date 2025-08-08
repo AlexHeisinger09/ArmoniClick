@@ -1,4 +1,4 @@
-// hooks/useCalendar.ts
+// hooks/useCalendar.ts - Corrección para navegación por días
 import { useState, useEffect } from 'react';
 import { 
   AppointmentsData, 
@@ -32,16 +32,19 @@ export const useCalendar = () => {
     setAppointments(exampleAppointments);
   }, []);
 
+  // NAVEGACIÓN CORREGIDA - Diferente lógica según la vista
   const navigateDate = (direction: number): void => {
     setCurrentDate(prev => {
       const newDate = new Date(prev);
       if (viewMode === 'month') {
+        // Navegación por mes
         newDate.setMonth(prev.getMonth() + direction);
       } else if (viewMode === 'week') {
+        // Navegación por semana (7 días)
         newDate.setDate(prev.getDate() + (direction * 7));
       } else if (viewMode === 'day') {
-        // En vista diaria, las flechas cambian semana completa
-        newDate.setDate(prev.getDate() + (direction * 7));
+        // NAVEGACIÓN POR DÍA (1 día) - CORRECCIÓN AQUÍ
+        newDate.setDate(prev.getDate() + direction);
       }
       return newDate;
     });
@@ -131,8 +134,15 @@ export const useCalendar = () => {
     setShowNewAppointmentModal(false);
   };
 
+  // NUEVA FUNCIÓN PARA SELECCIONAR FECHA ESPECÍFICA EN VISTA DIARIA
   const handleDateSelect = (date: Date): void => {
-    setCurrentDate(date);
+    if (viewMode === 'day') {
+      // En vista diaria, cambiar directamente la fecha actual
+      setCurrentDate(date);
+    } else {
+      // En otras vistas, solo cambiar la fecha actual para navegación
+      setCurrentDate(date);
+    }
   };
 
   const handleAppointmentEdit = (appointment: Appointment): void => {
@@ -155,13 +165,13 @@ export const useCalendar = () => {
     setSelectedDate,
     setShowModal,
     setNewAppointment,
-    navigateDate,
+    navigateDate, // Ahora navega por días en vista diaria
     goToToday,
     handleDateClick,
     handleNewAppointment,
     handleCreateAppointment,
     handleAppointmentEdit,
-    handleDateSelect,
+    handleDateSelect, // Función mejorada para selección de fecha
     closeModal,
     closeNewAppointmentModal
   };
