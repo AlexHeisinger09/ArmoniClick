@@ -11,7 +11,7 @@ export class UserMapper {
       name: response.name,
       email: response.email,
       img: response.img,
-      signature: response.signature, // ✅ MAPEAR CAMPO SIGNATURE
+      signature: response.signature || null,
       country: response.country,
       city: response.city || '',
       zipCode: response.zipCode || '',

@@ -281,7 +281,8 @@ const BudgetPage: React.FC = () => {
             const doctorData = queryProfile.data ? {
                 name: queryProfile.data.name,
                 lastName: queryProfile.data.lastName,
-                rut: queryProfile.data.rut
+                rut: queryProfile.data.rut,
+                signature: queryProfile.data.signature
             } : undefined;
 
             // Crear objeto temporal del presupuesto para PDF

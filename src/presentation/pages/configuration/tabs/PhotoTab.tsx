@@ -241,22 +241,47 @@ const PhotoTab: React.FC<PhotoTabProps> = ({ showMessage }) => {
     return null;
   };
 
-  const handleSignatureFileSelect = (file: File) => {
+  const handleSignatureFileSelect = async (file: File) => {
     const validationError = validateSignatureFile(file);
     if (validationError) {
       showMessage(validationError, 'error');
       return;
     }
 
-    // Subir firma
-    uploadSignatureFileMutation.mutate(file, {
-      onSuccess: () => {
-        showMessage('Firma actualizada correctamente', 'success');
-      },
-      onError: (error: any) => {
-        showMessage(error.message || 'Error al subir la firma', 'error');
-      }
-    });
+    try {
+      // 🎯 PROCESAR LA FIRMA AUTOMÁTICAMENTE (GRATIS)
+      showMessage('Procesando firma para remover fondo...', 'success');
+      
+      // Importar dinámicamente el procesador
+      const { SignatureProcessor } = await import('@/presentation/pages/configuration/utils/signatureProcessor');
+      const processedFile = await SignatureProcessor.processSignature(file);
+      
+      showMessage('Subiendo firma procesada...', 'success');
+      
+      // Subir firma procesada
+      uploadSignatureFileMutation.mutate(processedFile, {
+        onSuccess: () => {
+          showMessage('¡Firma actualizada con fondo transparente!', 'success');
+        },
+        onError: (error: any) => {
+          showMessage(error.message || 'Error al subir la firma', 'error');
+        }
+      });
+
+    } catch (error) {
+      console.error('Error procesando la firma:', error);
+      showMessage('Error al procesar. Subiendo imagen original...', 'error');
+      
+      // Si falla el procesamiento, subir la imagen original como fallback
+      uploadSignatureFileMutation.mutate(file, {
+        onSuccess: () => {
+          showMessage('Firma actualizada (sin procesamiento)', 'success');
+        },
+        onError: (error: any) => {
+          showMessage(error.message || 'Error al subir la firma', 'error');
+        }
+      });
+    }
   };
 
   const handleSignatureFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

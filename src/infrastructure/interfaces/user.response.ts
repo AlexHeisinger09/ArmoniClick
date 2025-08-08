@@ -13,7 +13,7 @@ export interface UserResponse {
   name: string;
   role: string[];
   img: string | null;
-  signature: string | null; // ✅ NUEVO CAMPO PARA LA FIRMA
+  signature?: string | null; // ✅ HACER OPCIONAL CON undefined O null
   country: string;
 }
 

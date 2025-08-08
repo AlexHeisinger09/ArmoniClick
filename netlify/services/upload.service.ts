@@ -66,7 +66,7 @@ export class UploadService {
   }
 
   /**
-   * ✅ NUEVA FUNCIÓN: Sube una firma a Cloudinary
+   * ✅ VERSIÓN SIMPLE: Para plan gratuito de Cloudinary
    * @param base64Data - Datos de la firma en base64
    * @param userId - ID del usuario
    * @param folder - Carpeta en Cloudinary donde guardar la firma
@@ -88,10 +88,10 @@ export class UploadService {
           folder: folder,
           transformation: [
             {
+              // Solo transformaciones básicas disponibles en plan gratuito
               width: 300,
               height: 150,
               crop: 'fit',
-              background: 'transparent',
               quality: 'auto',
               format: 'png'
             }

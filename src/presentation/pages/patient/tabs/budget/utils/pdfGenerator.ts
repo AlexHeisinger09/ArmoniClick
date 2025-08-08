@@ -7,6 +7,7 @@ interface DoctorData {
     name: string;
     lastName: string;
     rut?: string;
+    signature?: string | null; // ✅ AGREGAR CAMPO SIGNATURE
 }
 
 interface PDFGeneratorOptions {
@@ -36,8 +37,49 @@ export class PDFGenerator {
         return doctorData?.rut ? doctorData.rut : "Sin Rut";
     }
 
+    // ✅ NUEVA FUNCIÓN: Obtener firma del doctor
+    private static getDoctorSignature(doctorData?: DoctorData): string | null {
+        return doctorData?.signature || null;
+    }
+
     private static getSpecialty(budgetType: string): string {
         return budgetType === 'odontologico' ? 'Odontología General' : 'Estética Dental';
+    }
+
+    // ✅ NUEVA FUNCIÓN: Generar HTML para la sección de firma
+    private static generateSignatureSection(doctorData?: DoctorData): string {
+        const doctorName = this.getDoctorName(doctorData);
+        const doctorRut = this.getDoctorRut(doctorData);
+        const doctorSignature = this.getDoctorSignature(doctorData);
+
+        if (doctorSignature) {
+            // Si tiene firma digital, mostrarla
+            return `
+                <div class="signature-section">
+                    <img
+                        src="${doctorSignature}"
+                        alt="Firma del doctor"
+                        class="signature-img"
+                        style="max-height: 100px; max-width: 250px; object-fit: contain;"
+                    />
+                    <div class="signature-line"></div>
+                    <p><strong>${doctorName}</strong></p>
+                    <p>RUT: ${doctorRut}</p>
+                </div>
+            `;
+        } else {
+            // Si no tiene firma digital, mostrar línea para firma manual
+            return `
+                <div class="signature-section">
+                    <div class="signature-placeholder">
+                        <div class="signature-space"></div>
+                    </div>
+                    <div class="signature-line"></div>
+                    <p><strong>${doctorName}</strong></p>
+                    <p>RUT: ${doctorRut}</p>
+                </div>
+            `;
+        }
     }
 
     private static generatePDFContent(options: PDFGeneratorOptions): string {
@@ -48,6 +90,7 @@ export class PDFGenerator {
         const budgetTitle = this.getBudgetTitle(budget.budget_type);
         const logoPath = this.getLogoPath(budget.budget_type);
         const specialty = this.getSpecialty(budget.budget_type);
+        const signatureSection = this.generateSignatureSection(doctorData); // ✅ USAR FUNCIÓN DINÁMICA
 
         return `
 <!DOCTYPE html>
@@ -236,6 +279,31 @@ export class PDFGenerator {
             display: block;
         }
         
+        /* ✅ NUEVOS ESTILOS: Para cuando no hay firma digital */
+        .signature-placeholder {
+            margin: 20px auto;
+            text-align: center;
+        }
+        
+        .signature-space {
+            height: 80px;
+            width: 250px;
+            margin: 0 auto;
+            border: 1px dashed #cbd5e1;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 14px;
+            background: #f8fafc;
+        }
+        
+        .signature-space::before {
+            content: "Espacio para firma manual";
+            font-style: italic;
+        }
+        
         .footer-logo {
             text-align: center;
             margin-top: 40px;
@@ -258,6 +326,16 @@ export class PDFGenerator {
             .no-print,
             .print-controls {
                 display: none !important;
+            }
+            
+            /* ✅ En impresión, no mostrar el mensaje de firma manual */
+            .signature-space::before {
+                content: "";
+            }
+            
+            .signature-space {
+                border: none;
+                background: transparent;
             }
         }
     </style>
@@ -344,17 +422,8 @@ export class PDFGenerator {
         *Queda sujeto a modificaciones según evaluación clínica
     </div>
 
-    <!-- Sección de firma -->
-    <div class="signature-section">
-        <img
-            src="/firmaDraCamila.png"
-            alt="Firma Dra. Camila"
-            class="signature-img"
-        />
-        <div class="signature-line"></div>
-        <p><strong>${doctorName}</strong></p>
-        <p>RUT: ${doctorRut}</p>
-    </div>
+    <!-- ✅ Sección de firma dinámica -->
+    ${signatureSection}
 
     <div class="date-section">
         <p>Fecha de emisión: ${currentDate}</p>
