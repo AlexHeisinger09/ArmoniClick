@@ -5,7 +5,8 @@ import {
   Calendar,
   Settings,
   Notebook,
-  Calculator
+  Calculator,
+  FileText 
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -46,7 +47,13 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
       label: 'Agenda',
       icon: Calendar,
       href: '/dashboard/calendario'
-    }
+    },
+    {
+    id: 'documentos',  // ← NUEVO
+    label: 'Documentos',
+    icon: FileText,
+    href: '/dashboard/documentos'
+  }
     //,
     // {
     //   id: 'configuracion',

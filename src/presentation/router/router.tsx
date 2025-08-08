@@ -8,10 +8,11 @@ import { ConfirmAccount } from "../pages/auth/ConfirmAccount";
 
 import { HomeLayout } from "../layouts/HomeLayout";
 import { Home } from "../pages/home/Home";
-import { Calendar }  from "../pages/calendar/Calendar";
-import { Patient }  from "../pages/patient/Patient";
-import { Configuration }  from "../pages/configuration/Configuration";
+import { Calendar } from "../pages/calendar/Calendar";
+import { Patient } from "../pages/patient/Patient";
+import { Configuration } from "../pages/configuration/Configuration";
 import BudgetPage from "../pages/budgets/BudgetPage";
+import DocumentsPage from "../pages/documents/DocumentsPage";
 
 export const router = createBrowserRouter([
   // Ruta raíz - Redirige al login
@@ -25,7 +26,7 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  
+
   // Rutas de autenticación con prefijo /auth y AuthLayout
   {
     path: "/auth",
@@ -53,7 +54,7 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  
+
   // Rutas protegidas con HomeLayout
   {
     path: "/dashboard",
@@ -74,6 +75,10 @@ export const router = createBrowserRouter([
       {
         path: "presupuestos",
         element: <BudgetPage />,
+      },
+      {
+        path: "documentos",
+        element: <DocumentsPage />,
       },
       {
         path: "configuracion",
