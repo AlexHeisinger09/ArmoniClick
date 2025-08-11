@@ -1,5 +1,5 @@
 // src/presentation/pages/configuration/tabs/PhotoTab.tsx
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Camera, PenTool, Upload, Trash2, X } from "lucide-react";
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
 import { useUploadProfileImage } from "@/presentation/hooks/user/useUploadProfileImage";
@@ -9,48 +9,112 @@ interface PhotoTabProps {
   showMessage: (message: string, type: 'success' | 'error') => void;
 }
 
-// Componente para el Canvas de Firma
+// Componente para el Canvas de Firma con soporte táctil mejorado
 const SignatureCanvas: React.FC<{
   onSave: (dataUrl: string) => void;
   onCancel: () => void;
 }> = ({ onSave, onCancel }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [lastPosition, setLastPosition] = useState<{ x: number; y: number } | null>(null);
 
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // Prevenir scroll en el body cuando el modal está abierto
+  useEffect(() => {
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = 'hidden';
+    
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, []);
+
+  // Función para obtener coordenadas de mouse o touch
+  const getCoordinates = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    setIsDrawing(true);
-    ctx.beginPath();
-    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    
+    if ('touches' in e) {
+      // Evento táctil
+      const touch = e.touches[0];
+      return {
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top
+      };
+    } else {
+      // Evento de mouse
+      return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      };
+    }
   };
 
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return;
-
+  // Configurar contexto del canvas
+  const setupCanvas = () => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return null;
 
-    const rect = canvas.getBoundingClientRect();
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) return null;
 
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.strokeStyle = '#000000';
-    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+    
+    return ctx;
+  };
+
+  // Iniciar dibujo
+  const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const coords = getCoordinates(e);
+    const ctx = setupCanvas();
+    if (!ctx) return;
+
+    setIsDrawing(true);
+    setLastPosition(coords);
+    
+    ctx.beginPath();
+    ctx.moveTo(coords.x, coords.y);
+  };
+
+  // Dibujar línea
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!isDrawing || !lastPosition) return;
+
+    const coords = getCoordinates(e);
+    const ctx = setupCanvas();
+    if (!ctx) return;
+
+    // Dibujar línea suave entre la última posición y la actual
+    ctx.beginPath();
+    ctx.moveTo(lastPosition.x, lastPosition.y);
+    ctx.lineTo(coords.x, coords.y);
     ctx.stroke();
+    
+    setLastPosition(coords);
   };
 
-  const stopDrawing = () => {
+  // Terminar dibujo
+  const stopDrawing = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     setIsDrawing(false);
+    setLastPosition(null);
   };
 
+  // Limpiar canvas
   const clearCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -61,6 +125,7 @@ const SignatureCanvas: React.FC<{
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
+  // Guardar firma
   const saveSignature = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -69,54 +134,105 @@ const SignatureCanvas: React.FC<{
     onSave(dataUrl);
   };
 
+  // Prevenir eventos de fondo en el modal
+  const handleModalClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onCancel();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Crear Firma Digital</h3>
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={handleBackdropClick}
+      style={{ touchAction: 'none' }}
+    >
+      <div 
+        className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-auto"
+        onClick={handleModalClick}
+      >
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 border-b border-gray-200">
+          <div>
+            <h3 className="text-xl font-semibold text-gray-900">Crear Firma Digital</h3>
+            <p className="text-sm text-gray-500 mt-1">Dibuja tu firma en el área de abajo</p>
+          </div>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600">
-            Dibuja tu firma en el área de abajo usando el mouse o tu dedo en dispositivos táctiles.
-          </p>
-
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-            <canvas
-              ref={canvasRef}
-              width={400}
-              height={150}
-              className="w-full border border-gray-200 rounded cursor-crosshair bg-white"
-              onMouseDown={startDrawing}
-              onMouseMove={draw}
-              onMouseUp={stopDrawing}
-              onMouseLeave={stopDrawing}
-            />
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Instrucciones */}
+          <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <PenTool className="w-5 h-5 text-cyan-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-cyan-800">Instrucciones:</p>
+                <ul className="text-sm text-cyan-700 mt-1 space-y-1">
+                  <li>• Usa tu dedo o stylus para dibujar</li>
+                  <li>• Mantén presionado mientras dibujas</li>
+                  <li>• Puedes limpiar y empezar de nuevo</li>
+                </ul>
+              </div>
+            </div>
           </div>
 
-          <div className="flex justify-between space-x-3">
+          {/* Canvas Container */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white border-2 border-gray-300 rounded-lg overflow-hidden">
+              <canvas
+                ref={canvasRef}
+                width={400}
+                height={150}
+                className="w-full touch-none"
+                style={{ 
+                  touchAction: 'none',
+                  maxWidth: '100%',
+                  height: 'auto'
+                }}
+                // Eventos de mouse
+                onMouseDown={startDrawing}
+                onMouseMove={draw}
+                onMouseUp={stopDrawing}
+                onMouseLeave={stopDrawing}
+                // Eventos táctiles
+                onTouchStart={startDrawing}
+                onTouchMove={draw}
+                onTouchEnd={stopDrawing}
+                onTouchCancel={stopDrawing}
+              />
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={clearCanvas}
-              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-center px-4 py-3 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
             >
+              <Trash2 className="w-4 h-4 mr-2" />
               Limpiar
             </button>
-            <div className="flex space-x-2">
+            
+            <div className="flex gap-3 flex-1">
               <button
                 onClick={onCancel}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-3 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={saveSignature}
-                className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors"
+                className="flex-1 px-4 py-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors font-medium"
               >
                 Guardar Firma
               </button>
@@ -341,13 +457,16 @@ const PhotoTab: React.FC<PhotoTabProps> = ({ showMessage }) => {
   return (
     <div className="space-y-8">
       {/* Sección de Foto de Perfil */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Foto de Perfil</h3>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+          <Camera className="w-5 h-5 mr-2 text-cyan-500" />
+          Foto de Perfil
+        </h3>
 
         <div className="flex items-start space-x-6">
           {/* Imagen con ícono de cámara clickeable */}
-          <div className="relative cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-            <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200 hover:border-cyan-300 transition-colors">
+          <div className="relative cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
+            <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200 group-hover:border-cyan-300 transition-all duration-200">
               {imagePreview ? (
                 <img
                   src={imagePreview}
@@ -361,14 +480,14 @@ const PhotoTab: React.FC<PhotoTabProps> = ({ showMessage }) => {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500 font-medium text-lg">
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-cyan-100 to-cyan-200 text-cyan-700 font-semibold text-lg">
                   {userData?.name?.[0]?.toUpperCase() || ''}{userData?.lastName?.[0]?.toUpperCase() || ''}
                 </div>
               )}
             </div>
 
             {/* Ícono de cámara clickeable */}
-            <div className="absolute bottom-0 right-0 bg-cyan-500 hover:bg-cyan-600 rounded-full p-2 border-2 border-white transition-colors">
+            <div className="absolute bottom-0 right-0 bg-cyan-500 group-hover:bg-cyan-600 rounded-full p-2 border-2 border-white transition-all duration-200 shadow-lg">
               <Camera className="w-4 h-4 text-white" />
             </div>
           </div>
@@ -380,7 +499,10 @@ const PhotoTab: React.FC<PhotoTabProps> = ({ showMessage }) => {
                 Cambiar foto de perfil
               </h4>
               <p className="text-sm text-gray-500 leading-relaxed">
-                Nuestra aplicación detecta y centra automáticamente tu rostro para obtener la mejor foto de perfil. Tamaño máximo: 5MB. Formatos aceptados: JPG, PNG.
+                Haz clic en la imagen para subir una nueva foto. Nuestra aplicación detecta y centra automáticamente tu rostro para obtener la mejor foto de perfil.
+              </p>
+              <p className="text-xs text-gray-400 mt-2">
+                Tamaño máximo: 5MB • Formatos: JPG, PNG, WebP
               </p>
             </div>
 
@@ -399,6 +521,17 @@ const PhotoTab: React.FC<PhotoTabProps> = ({ showMessage }) => {
                 </div>
               </div>
             )}
+
+            {/* Botón para eliminar imagen si existe */}
+            {userData?.img && !isLoadingProfileUpload && (
+              <button
+                onClick={handleDeleteImage}
+                className="flex items-center px-3 py-2 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Eliminar foto
+              </button>
+            )}
           </div>
         </div>
 
@@ -414,8 +547,11 @@ const PhotoTab: React.FC<PhotoTabProps> = ({ showMessage }) => {
       </div>
 
       {/* Sección de Firma Digital */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Firma Digital</h3>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+          <PenTool className="w-5 h-5 mr-2 text-cyan-500" />
+          Firma Digital
+        </h3>
 
         <div className="flex items-start space-x-6">
           {/* Área de firma */}
@@ -441,7 +577,10 @@ const PhotoTab: React.FC<PhotoTabProps> = ({ showMessage }) => {
                 Administrar firma digital
               </h4>
               <p className="text-sm text-gray-500">
-                Puedes crear una firma dibujándola o subir una imagen existente. Máximo 2MB.
+                Puedes crear una firma dibujándola directamente o subir una imagen existente.
+              </p>
+              <p className="text-xs text-gray-400 mt-2">
+                Tamaño máximo: 2MB • Formatos: JPG, PNG, WebP
               </p>
             </div>
 
