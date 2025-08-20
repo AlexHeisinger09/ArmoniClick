@@ -1,5 +1,5 @@
-// components/AppointmentBlock.tsx - Posicionamiento corregido y minimalista
-import React from 'react';
+// components/AppointmentBlock.tsx - Posicionamiento responsive corregido
+import React, { useEffect, useState } from 'react';
 import { Appointment, AppointmentsData } from '../types/calendar';
 import { formatDateKey } from '../utils/calendar';
 
@@ -18,6 +18,18 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
   viewType = 'week',
   onEdit
 }) => {
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const dateKey = formatDateKey(date);
   const dayAppointments = appointments[dateKey] || [];
   const sameTimeAppointments = dayAppointments.filter(app => app.time === appointment.time);
@@ -31,35 +43,28 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 
   const slotIndex = getSlotIndex(appointment.time);
   
-  // Configuración unificada de alturas para consistencia
+  // Configuración de alturas exactas para cada vista y dispositivo
   const SLOT_HEIGHTS = {
     week: {
-      desktop: 64, // h-16 = 64px (4rem)
-      mobile: 48   // h-12 = 48px (3rem)
+      desktop: 64, // h-16 = 64px
+      mobile: 48   // h-12 = 48px
     },
     day: {
-      desktop: 80, // h-20 = 80px (5rem)
-      mobile: 64   // h-16 = 64px (4rem)
+      desktop: 80, // h-20 = 80px
+      mobile: 64   // h-16 = 64px (no usado actualmente, pero preparado)
     }
   };
 
-  // Cálculo de posición corregido
+  // Cálculo de posición completamente responsive
   const getPositionStyle = (): React.CSSProperties => {
-    const slotHeight = viewType === 'day' 
-      ? SLOT_HEIGHTS.day.desktop 
-      : SLOT_HEIGHTS.week.desktop;
+    const heights = SLOT_HEIGHTS[viewType];
+    const slotHeight = isMobile ? heights.mobile : heights.desktop;
     
-    const slotHeightMobile = viewType === 'day'
-      ? SLOT_HEIGHTS.day.mobile
-      : SLOT_HEIGHTS.week.mobile;
-
     const baseStyle: React.CSSProperties = {
       position: 'absolute',
-      // Posición top corregida - debe coincidir exactamente con los slots
-      top: `${slotIndex * slotHeight + 2}px`, // +2px para el border
+      top: `${slotIndex * slotHeight + 2}px`, // +2px para border
+      height: `${slotHeight - 4}px`, // -4px para spacing
       overflow: 'hidden',
-      // Altura responsive usando calc para mayor precisión
-      height: `${slotHeight - 4}px`, // -4px para borders y spacing
     };
 
     // Ancho y posición según overlap
@@ -124,7 +129,7 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
       onClick={() => onEdit?.(appointment)}
     >
       {isOverbook && appointmentIndex > 0 ? (
-        // Vista compacta para sobrecupos - Ultra minimalista
+        // Vista compacta para sobrecupos
         <div className="text-xs h-full flex flex-col justify-center items-center space-y-0.5">
           <div className="font-bold truncate w-full text-center">
             {appointment.patient.split(' ')[0]}

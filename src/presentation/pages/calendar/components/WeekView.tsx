@@ -56,7 +56,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
                         ? 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100 hover:shadow-sm'
                         : 'text-slate-700 hover:bg-slate-100'
                   }`}
-                  onClick={() => onDateSelect(day)}
+                  onClick={() => onTimeSlotClick('09:00', day)}
                 >
                   {day.getDate()}
                 </div>
@@ -183,7 +183,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
                               ? 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100'
                               : 'text-slate-700 hover:bg-slate-100'
                         }`}
-                        onClick={() => onDateSelect(day)}
+                        onClick={() => onTimeSlotClick('09:00', day)}
                       >
                         {day.getDate()}
                       </div>
