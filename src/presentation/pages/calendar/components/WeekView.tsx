@@ -1,4 +1,4 @@
-// components/WeekView.tsx - Solo mejoras para móvil, escritorio intacto
+// components/WeekView.tsx - Alturas corregidas para alineación perfecta
 import React from 'react';
 import { AppointmentsData, Appointment } from '../types/calendar';
 import { timeSlots, dayNames } from '../constants/calendar';
@@ -86,7 +86,8 @@ export const WeekView: React.FC<WeekViewProps> = ({
             {timeSlots.map((time) => (
               <div
                 key={time}
-                className="h-14 md:h-16 flex items-center justify-center text-sm font-medium text-slate-500 border-b border-slate-50"
+                // ALTURA CORREGIDA: exactamente 64px (h-16) para perfecta alineación
+                className="h-16 flex items-center justify-center text-sm font-medium text-slate-500 border-b border-slate-50"
               >
                 {time}
               </div>
@@ -109,7 +110,8 @@ export const WeekView: React.FC<WeekViewProps> = ({
                     return (
                       <div
                         key={time}
-                        className="h-14 md:h-16 border-b border-slate-50 hover:bg-cyan-25 cursor-pointer transition-colors group relative"
+                        // ALTURA CORREGIDA: exactamente 64px (h-16) para perfecta alineación
+                        className="h-16 border-b border-slate-50 hover:bg-cyan-25 cursor-pointer transition-colors group relative"
                         onClick={() => onTimeSlotClick(time, day)}
                       >
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -206,6 +208,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
                 {timeSlots.map((time) => (
                   <div
                     key={time}
+                    // ALTURA MÓVIL CORREGIDA: exactamente 48px (h-12) para perfecta alineación
                     className="h-12 flex items-center justify-center text-xs font-medium text-slate-500 border-b border-slate-50"
                   >
                     {time.split(':')[0]}h
@@ -227,6 +230,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
                       return (
                         <div
                           key={time}
+                          // ALTURA MÓVIL CORREGIDA: exactamente 48px (h-12) para perfecta alineación
                           className="h-12 border-b border-slate-50 hover:bg-cyan-25 cursor-pointer transition-colors group relative"
                           onClick={() => onTimeSlotClick(time, day)}
                         >

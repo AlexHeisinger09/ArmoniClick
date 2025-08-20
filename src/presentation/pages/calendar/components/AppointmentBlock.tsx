@@ -1,4 +1,4 @@
-// components/AppointmentBlock.tsx - Optimizado para móviles con diseño minimalista
+// components/AppointmentBlock.tsx - Posicionamiento corregido y minimalista
 import React from 'react';
 import { Appointment, AppointmentsData } from '../types/calendar';
 import { formatDateKey } from '../utils/calendar';
@@ -24,61 +24,43 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
   const appointmentIndex = sameTimeAppointments.findIndex(app => app.id === appointment.id);
   const isOverbook = sameTimeAppointments.length > 1;
 
-  // Configuración responsive según la vista
-  const config = viewType === 'day' ? {
-    slotHeight: {
-      mobile: 48, // 12 * 4 (h-12)
-      desktop: 80  // 20 * 4 (h-20)
-    },
-    leftOffset: {
-      mobile: 4,
-      desktop: 8
-    },
-    rightOffset: {
-      mobile: 4,
-      desktop: 8
-    },
-    textSize: 'text-xs sm:text-sm',
-    padding: 'p-2 sm:p-3'
-  } : {
-    slotHeight: {
-      mobile: 48, // 12 * 4 (h-12)
-      tablet: 56, // 14 * 4 (h-14)
-      desktop: 64  // 16 * 4 (h-16)
-    },
-    leftOffset: {
-      mobile: 2,
-      desktop: 4
-    },
-    rightOffset: {
-      mobile: 2,
-      desktop: 4
-    },
-    textSize: 'text-xs',
-    padding: 'p-1 sm:p-2'
-  };
-
   const getSlotIndex = (time: string) => {
     const [hour] = time.split(':').map(Number);
-    return hour - 9;
+    return hour - 9; // Los slots empiezan a las 9:00
   };
 
   const slotIndex = getSlotIndex(appointment.time);
   
-  // Cálculo responsive de posición
+  // Configuración unificada de alturas para consistencia
+  const SLOT_HEIGHTS = {
+    week: {
+      desktop: 64, // h-16 = 64px (4rem)
+      mobile: 48   // h-12 = 48px (3rem)
+    },
+    day: {
+      desktop: 80, // h-20 = 80px (5rem)
+      mobile: 64   // h-16 = 64px (4rem)
+    }
+  };
+
+  // Cálculo de posición corregido
   const getPositionStyle = (): React.CSSProperties => {
+    const slotHeight = viewType === 'day' 
+      ? SLOT_HEIGHTS.day.desktop 
+      : SLOT_HEIGHTS.week.desktop;
+    
+    const slotHeightMobile = viewType === 'day'
+      ? SLOT_HEIGHTS.day.mobile
+      : SLOT_HEIGHTS.week.mobile;
+
     const baseStyle: React.CSSProperties = {
       position: 'absolute',
-      top: `${slotIndex * (viewType === 'day' ? 64 : 56) + 2}px`, // Ajuste general
-      overflow: 'hidden'
+      // Posición top corregida - debe coincidir exactamente con los slots
+      top: `${slotIndex * slotHeight + 2}px`, // +2px para el border
+      overflow: 'hidden',
+      // Altura responsive usando calc para mayor precisión
+      height: `${slotHeight - 4}px`, // -4px para borders y spacing
     };
-
-    // Altura responsive usando CSS calc y variables CSS
-    if (viewType === 'day') {
-      baseStyle.height = 'calc(5rem - 8px)'; // h-20 - 8px en desktop
-    } else {
-      baseStyle.height = 'calc(3.5rem - 4px)'; // h-14 - 4px en tablet/desktop
-    }
 
     // Ancho y posición según overlap
     if (isOverbook) {
@@ -113,19 +95,36 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
     }
   };
 
+  // Configuración responsive de texto y padding
+  const getTextConfig = () => {
+    if (viewType === 'day') {
+      return {
+        textSize: 'text-xs sm:text-sm',
+        padding: isOverbook && appointmentIndex > 0 ? 'p-1' : 'p-2 sm:p-3'
+      };
+    } else {
+      return {
+        textSize: 'text-xs',
+        padding: isOverbook && appointmentIndex > 0 ? 'p-1' : 'p-1 sm:p-2'
+      };
+    }
+  };
+
+  const { textSize, padding } = getTextConfig();
+
   return (
     <div
       className={`
         rounded-lg text-white shadow-md cursor-pointer transition-all duration-200
         border border-opacity-50 hover:shadow-lg active:scale-95
         ${getAppointmentStyles()}
-        ${isOverbook && appointmentIndex > 0 ? 'p-1' : config.padding}
+        ${padding}
       `}
       style={getPositionStyle()}
       onClick={() => onEdit?.(appointment)}
     >
       {isOverbook && appointmentIndex > 0 ? (
-        // Vista compacta para sobrecupos - Ultra minimalista en móvil
+        // Vista compacta para sobrecupos - Ultra minimalista
         <div className="text-xs h-full flex flex-col justify-center items-center space-y-0.5">
           <div className="font-bold truncate w-full text-center">
             {appointment.patient.split(' ')[0]}
@@ -140,7 +139,7 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
         <div className="h-full flex flex-col justify-between">
           <div className="flex-1 flex flex-col justify-center space-y-1">
             {/* Nombre del paciente - Responsive */}
-            <div className={`font-bold truncate ${config.textSize}`}>
+            <div className={`font-bold truncate ${textSize}`}>
               <span className="sm:hidden">{appointment.patient.split(' ')[0]}</span>
               <span className="hidden sm:inline">{appointment.patient}</span>
             </div>

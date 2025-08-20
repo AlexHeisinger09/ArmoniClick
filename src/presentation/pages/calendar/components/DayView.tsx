@@ -1,4 +1,4 @@
-// components/DayView.tsx - Diseño moderno con colores cyan
+// components/DayView.tsx - Alturas corregidas para alineación perfecta
 import React from 'react';
 import { AppointmentsData, Appointment } from '../types/calendar';
 import { timeSlots } from '../constants/calendar';
@@ -21,23 +21,17 @@ export const DayView: React.FC<DayViewProps> = ({
 }) => {
   const dayAppointments = getAppointmentsForDate(appointments, currentDate);
   const isCurrentDay = isToday(currentDate);
-  const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-  const monthNames = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-  ];
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      {/* Header del día - Diseño elegante y minimalista */}
-      {/* Cuerpo del día */}
       <div className="flex">
         {/* Columna de horas - Diseño limpio */}
         <div className="w-20 sm:w-24 bg-slate-50 border-r border-slate-100 flex-shrink-0">
           {timeSlots.map((time, index) => (
             <div
               key={time}
-              className="h-16 sm:h-20 flex items-center justify-center text-sm font-medium text-slate-500 border-b border-slate-50"
+              // ALTURA CORREGIDA: debe ser exactamente 80px (h-20) para coincidir con AppointmentBlock
+              className="h-20 flex items-center justify-center text-sm font-medium text-slate-500 border-b border-slate-50"
             >
               <span className="text-center">{time}</span>
             </div>
@@ -56,7 +50,8 @@ export const DayView: React.FC<DayViewProps> = ({
             return (
               <div
                 key={time}
-                className="h-16 sm:h-20 border-b border-slate-50 hover:bg-cyan-25 cursor-pointer transition-colors group px-4 sm:px-6 flex items-center relative"
+                // ALTURA CORREGIDA: exactamente 80px (h-20) para perfecta alineación
+                className="h-20 border-b border-slate-50 hover:bg-cyan-25 cursor-pointer transition-colors group px-4 sm:px-6 flex items-center relative"
                 onClick={() => onTimeSlotClick(time, currentDate)}
               >
                 {/* Indicador de hover elegante */}
