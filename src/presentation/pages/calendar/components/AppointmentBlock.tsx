@@ -1,4 +1,4 @@
-// components/AppointmentBlock.tsx - Posicionamiento responsive corregido
+// components/AppointmentBlock.tsx - Paleta de colores mejorada por estado
 import React, { useEffect, useState } from 'react';
 import { Appointment, AppointmentsData } from '../types/calendar';
 import { formatDateKey } from '../utils/calendar';
@@ -51,7 +51,7 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
     },
     day: {
       desktop: 80, // h-20 = 80px
-      mobile: 80   // h-20 = 80px (CORREGIDO: también 80px en móvil para vista diaria)
+      mobile: 80   // h-20 = 80px
     }
   };
 
@@ -91,12 +91,44 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
     }
   };
 
-  // Estilos de color minimalistas
+  // PALETA SUAVE Y ELEGANTE - Colores distintivos pero no agresivos
   const getAppointmentStyles = () => {
-    if (appointment.status === 'confirmed') {
-      return 'bg-cyan-500 hover:bg-cyan-600 border-cyan-600 shadow-cyan-100';
-    } else {
-      return 'bg-cyan-400 hover:bg-cyan-500 border-cyan-500 shadow-cyan-50';
+    switch (appointment.status) {
+      case 'confirmed':
+        return {
+          background: 'bg-teal-300 hover:bg-teal-400',
+          border: 'border-teal-400',
+          text: 'text-teal-900',
+          shadow: 'shadow-teal-100'
+        };
+      case 'pending':
+        return {
+          background: 'bg-sky-300 hover:bg-sky-400',
+          border: 'border-sky-400',
+          text: 'text-sky-900',
+          shadow: 'shadow-sky-100'
+        };
+      case 'cancelled':
+        return {
+          background: 'bg-rose-200 hover:bg-rose-300',
+          border: 'border-rose-300',
+          text: 'text-rose-800',
+          shadow: 'shadow-rose-100'
+        };
+      case 'no-show':
+        return {
+          background: 'bg-slate-200 hover:bg-slate-300',
+          border: 'border-slate-300',
+          text: 'text-slate-700',
+          shadow: 'shadow-slate-100'
+        };
+      default:
+        return {
+          background: 'bg-indigo-300 hover:bg-indigo-400',
+          border: 'border-indigo-400',
+          text: 'text-indigo-900',
+          shadow: 'shadow-indigo-100'
+        };
     }
   };
 
@@ -116,13 +148,46 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
   };
 
   const { textSize, padding } = getTextConfig();
+  const colors = getAppointmentStyles();
+
+  // Etiquetas de estado en español
+  const getStatusLabel = () => {
+    switch (appointment.status) {
+      case 'confirmed':
+        return 'confirmada';
+      case 'pending':
+        return 'pendiente';
+      case 'cancelled':
+        return 'cancelada';
+      case 'no-show':
+        return 'no asistió';
+      default:
+        return 'pendiente';
+    }
+  };
+
+  // Indicadores suaves de estado
+  const getStatusBadge = () => {
+    switch (appointment.status) {
+      case 'confirmed':
+        return { label: 'Confirmada', bgColor: 'bg-teal-500' };
+      case 'pending':
+        return { label: 'Pendiente', bgColor: 'bg-sky-500' };
+      case 'cancelled':
+        return { label: 'Cancelada', bgColor: 'bg-rose-400' };
+      case 'no-show':
+        return { label: 'No asistió', bgColor: 'bg-slate-400' };
+      default:
+        return { label: 'Sobrecupo', bgColor: 'bg-orange-400' };
+    }
+  };
 
   return (
     <div
       className={`
-        rounded-lg text-white shadow-md cursor-pointer transition-all duration-200
-        border border-opacity-50 hover:shadow-lg active:scale-95
-        ${getAppointmentStyles()}
+        rounded-lg shadow-md cursor-pointer transition-all duration-200
+        border border-opacity-60 hover:shadow-lg active:scale-95
+        ${colors.background} ${colors.border} ${colors.text} ${colors.shadow}
         ${padding}
       `}
       style={getPositionStyle()}
@@ -134,10 +199,10 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
           <div className="font-bold truncate w-full text-center">
             {appointment.patient.split(' ')[0]}
           </div>
-          <div className="text-[10px] opacity-90 bg-orange-400 px-1 rounded text-center whitespace-nowrap">
-            Sobrecupo
+          <div className={`text-[10px] text-white px-1 rounded text-center whitespace-nowrap ${getStatusBadge().bgColor}`}>
+            {isOverbook ? 'Sobrecupo' : getStatusLabel()}
           </div>
-          <div className="text-[10px] opacity-75 text-center">{appointment.time}</div>
+          <div className="text-[10px] opacity-75 text-center">{getStatusLabel()}</div>
         </div>
       ) : (
         // Vista normal - Responsive y minimalista
@@ -155,16 +220,13 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
             </div>
           </div>
           
-          {/* Footer - Información minimal */}
+          {/* Footer - Solo estado */}
           <div className="text-xs opacity-75 flex justify-between items-center">
-            <span className="text-xs">{appointment.time}</span>
-            <span className="bg-white bg-opacity-20 px-1 py-0.5 rounded text-xs hidden sm:inline">
-              {appointment.duration}min
-            </span>
-            {/* Solo duración en móvil */}
-            <span className="bg-white bg-opacity-20 px-1 py-0.5 rounded text-xs sm:hidden">
-              {appointment.duration}'
-            </span>
+            {/* Estado de la cita */}
+            <div className="flex items-center space-x-1">
+              <div className={`w-2 h-2 rounded-full ${getStatusBadge().bgColor}`}></div>
+              <span className="text-xs capitalize">{getStatusLabel()}</span>
+            </div>
           </div>
         </div>
       )}

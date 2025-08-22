@@ -15,6 +15,22 @@ export const MonthView: React.FC<MonthViewProps> = ({
   appointments,
   onDateClick
 }) => {
+  // Colores suaves para vista mensual
+  const getAppointmentStatusStyle = (status: string) => {
+    switch (status) {
+      case 'confirmed':
+        return 'bg-teal-100 text-teal-800 border-teal-200';
+      case 'pending':
+        return 'bg-sky-100 text-sky-800 border-sky-200';
+      case 'cancelled':
+        return 'bg-rose-100 text-rose-700 border-rose-200';
+      case 'no-show':
+        return 'bg-slate-100 text-slate-600 border-slate-200';
+      default:
+        return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+    }
+  };
+
   return (
     <>
       {/* Días de la semana */}
@@ -54,8 +70,8 @@ export const MonthView: React.FC<MonthViewProps> = ({
                     <div
                       key={appointment.id}
                       className={`
-                        text-xs px-2 py-1 rounded text-white truncate
-                        ${appointment.status === 'confirmed' ? 'bg-cyan-600' : 'bg-cyan-400'}
+                        text-xs px-2 py-1 rounded truncate border
+                        ${getAppointmentStatusStyle(appointment.status)}
                       `}
                     >
                       {appointment.time} - {appointment.patient}

@@ -5,7 +5,7 @@ export interface Appointment {
   duration: 30 | 60;
   patient: string;
   service: string;
-  status: 'confirmed' | 'pending';
+  status: 'confirmed' | 'pending' | 'cancelled' | 'no-show';
 }
 
 export interface AppointmentsData {
