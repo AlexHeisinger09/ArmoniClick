@@ -51,7 +51,7 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
     },
     day: {
       desktop: 80, // h-20 = 80px
-      mobile: 64   // h-16 = 64px (no usado actualmente, pero preparado)
+      mobile: 80   // h-20 = 80px (CORREGIDO: también 80px en móvil para vista diaria)
     }
   };
 
