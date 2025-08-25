@@ -1,14 +1,14 @@
-// components/AppointmentBlock.tsx - Paleta de colores mejorada por estado
+// components/AppointmentBlock.tsx - TIPOS CORREGIDOS
 import React, { useEffect, useState } from 'react';
-import { Appointment, AppointmentsData } from '../types/calendar';
+import { CalendarAppointment, AppointmentsData } from '../types/calendar';
 import { formatDateKey } from '../utils/calendar';
 
 interface AppointmentBlockProps {
-  appointment: Appointment;
+  appointment: CalendarAppointment; // ✅ Usar CalendarAppointment
   date: Date;
   appointments: AppointmentsData;
   viewType?: 'week' | 'day';
-  onEdit?: (appointment: Appointment) => void;
+  onEdit?: (appointment: CalendarAppointment) => void; // ✅ Usar CalendarAppointment
 }
 
 export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
@@ -33,7 +33,7 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
   const dateKey = formatDateKey(date);
   const dayAppointments = appointments[dateKey] || [];
   const sameTimeAppointments = dayAppointments.filter(app => app.time === appointment.time);
-  const appointmentIndex = sameTimeAppointments.findIndex(app => app.id === appointment.id);
+  const appointmentIndex = sameTimeAppointments.findIndex(app => app.id === appointment.id); // ✅ Ahora ambos son string
   const isOverbook = sameTimeAppointments.length > 1;
 
   const getSlotIndex = (time: string) => {
@@ -122,6 +122,13 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
           text: 'text-slate-700',
           shadow: 'shadow-slate-100'
         };
+      case 'completed':
+        return {
+          background: 'bg-green-200 hover:bg-green-300',
+          border: 'border-green-300',
+          text: 'text-green-800',
+          shadow: 'shadow-green-100'
+        };
       default:
         return {
           background: 'bg-indigo-300 hover:bg-indigo-400',
@@ -161,6 +168,8 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
         return 'cancelada';
       case 'no-show':
         return 'no asistió';
+      case 'completed':
+        return 'completada';
       default:
         return 'pendiente';
     }
@@ -177,6 +186,8 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
         return { label: 'Cancelada', bgColor: 'bg-rose-400' };
       case 'no-show':
         return { label: 'No asistió', bgColor: 'bg-slate-400' };
+      case 'completed':
+        return { label: 'Completada', bgColor: 'bg-green-500' };
       default:
         return { label: 'Sobrecupo', bgColor: 'bg-orange-400' };
     }

@@ -1,3 +1,4 @@
+// src/presentation/hooks/index.ts - ACTUALIZADO
 export * from "./auth/useRegisterMutation";
 export * from "./auth/useConfirmAccount";
 export * from "./auth/useResetPasswordMutation";
@@ -14,4 +15,15 @@ export * from "./treatments/useTreatments";
 export * from "./treatments/useTreatmentUpload"; 
 
 export * from './budgets/useBudgets';
-export * from './appointments/useCalendarAppointments';
+
+// Hooks de citas - exportaciones individuales
+export * from './appointments/useAppointment';
+export * from './appointments/useAppointments';
+export * from './appointments/useAppointmentsCalendar';
+// Explicitly re-export to avoid ambiguity
+export { useCalendarAppointments } from './appointments/useCalendarAppointments';
+export * from './appointments/useCheckAvailability';
+export * from './appointments/useCreateAppointment';
+export * from './appointments/useDeleteAppointment';
+export * from './appointments/useUpdateAppointment';
+export * from './appointments/useUpdateAppointmentStatus';

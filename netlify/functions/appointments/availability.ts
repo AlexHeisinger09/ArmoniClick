@@ -1,9 +1,10 @@
+// netlify/functions/appointments/availability.ts - CORREGIDO
 import { Handler, HandlerEvent } from "@netlify/functions";
 import { validateJWT } from "../../middlewares";
 import { HEADERS } from "../../config/utils";
 import { AppointmentService } from "../../services/appointment.service";
 
-// 🔥 DEFINIR EL TIPO PARA LAS CITAS CONFLICTIVAS
+// Definir el tipo para las citas conflictivas
 interface ConflictingAppointment {
   id: number;
   title: string;
@@ -15,6 +16,12 @@ interface ConflictingAppointment {
 
 const handler: Handler = async (event: HandlerEvent) => {
   const { httpMethod, queryStringParameters } = event;
+
+  console.log('🔍 Availability function called:', {
+    httpMethod,
+    queryStringParameters,
+    path: event.path
+  });
 
   // Manejar preflight OPTIONS
   if (event.httpMethod === "OPTIONS") {
@@ -59,6 +66,13 @@ const handler: Handler = async (event: HandlerEvent) => {
     const appointmentDuration = duration ? parseInt(duration) : 60;
     const excludeAppointmentId = excludeId ? parseInt(excludeId) : undefined;
 
+    console.log('📅 Checking availability:', {
+      date,
+      appointmentDate,
+      appointmentDuration,
+      excludeAppointmentId
+    });
+
     // Validar que la fecha sea válida
     if (isNaN(appointmentDate.getTime())) {
       return {
@@ -78,12 +92,14 @@ const handler: Handler = async (event: HandlerEvent) => {
       excludeAppointmentId
     );
 
-    // 🔥 DEFINIR TIPO EXPLÍCITAMENTE
+    // Definir tipo explícitamente
     let conflictingAppointments: ConflictingAppointment[] = [];
     
     if (!isAvailable) {
       const startTime = new Date(appointmentDate);
       const endTime = new Date(appointmentDate.getTime() + appointmentDuration * 60000);
+      
+      console.log('🔍 Looking for conflicts between:', startTime, 'and', endTime);
       
       const conflicts = await AppointmentService.findByDateRange(
         userData.id,
@@ -96,11 +112,16 @@ const handler: Handler = async (event: HandlerEvent) => {
         id: apt.id,
         title: apt.title,
         appointmentDate: apt.appointmentDate.toISOString(),
-        duration: apt.duration || 60, // 🔥 Proveer valor por defecto si es null
-        patientName: apt.patientName || 'Paciente sin nombre', // 🔥 Proveer valor por defecto si es null
-        status: apt.status || 'pending' // 🔥 Proveer valor por defecto si es null
+        duration: apt.duration || 60, // Proveer valor por defecto si es null
+        patientName: apt.patientName || 'Paciente sin nombre', // Proveer valor por defecto si es null
+        status: apt.status || 'pending' // Proveer valor por defecto si es null
       }));
     }
+
+    console.log('✅ Availability check result:', {
+      isAvailable,
+      conflictingAppointments: conflictingAppointments.length
+    });
 
     return {
       statusCode: 200,
@@ -114,7 +135,7 @@ const handler: Handler = async (event: HandlerEvent) => {
     };
 
   } catch (error: any) {
-    console.error("Error checking availability:", error);
+    console.error("❌ Error checking availability:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({

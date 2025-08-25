@@ -1,5 +1,5 @@
-// constants/calendar.ts
-import { AppointmentsData, Service } from '../types/calendar';
+// src/presentation/pages/calendar/constants/calendar.ts - TIPOS CORREGIDOS
+import { AppointmentsCalendarData, Service } from '../types/calendar';
 
 export const monthNames: string[] = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -22,31 +22,35 @@ export const services: Service[] = [
   { name: 'Pedicura', duration: 60, price: '$25.000' }
 ];
 
-export const exampleAppointments: AppointmentsData = {
+// Datos de ejemplo - ahora usando el tipo correcto con IDs string
+export const exampleAppointments: AppointmentsCalendarData = {
   '2025-08-10': [
-    { id: 1, time: '09:00', duration: 60, patient: 'María García', service: 'Limpieza facial', status: 'confirmed' },
-    { id: 2, time: '11:00', duration: 30, patient: 'Ana López', service: 'Depilación cejas', status: 'pending' },
-    { id: 3, time: '14:30', duration: 60, patient: 'Carmen Silva', service: 'Tratamiento anti-edad', status: 'confirmed' }
+    { 
+      id: '1', time: '09:00', duration: 60, patient: 'María García', service: 'Limpieza facial', 
+      status: 'confirmed', title: 'María García - Limpieza facial', 
+      start: new Date('2025-08-10T09:00:00'), end: new Date('2025-08-10T10:00:00'), allDay: false 
+    },
+    { 
+      id: '2', time: '11:00', duration: 30, patient: 'Ana López', service: 'Depilación cejas', 
+      status: 'pending', title: 'Ana López - Depilación cejas',
+      start: new Date('2025-08-10T11:00:00'), end: new Date('2025-08-10T11:30:00'), allDay: false 
+    },
+    { 
+      id: '3', time: '14:00', duration: 60, patient: 'Carmen Silva', service: 'Tratamiento anti-edad', 
+      status: 'confirmed', title: 'Carmen Silva - Tratamiento anti-edad',
+      start: new Date('2025-08-10T14:00:00'), end: new Date('2025-08-10T15:00:00'), allDay: false 
+    }
   ],
   '2025-08-11': [
-    { id: 4, time: '10:00', duration: 30, patient: 'Laura Martín', service: 'Manicura', status: 'confirmed' },
-    { id: 5, time: '15:00', duration: 60, patient: 'Patricia Ruiz', service: 'Masaje facial', status: 'cancelled' }
-  ],
-  '2025-08-17': [
-    { id: 6, time: '09:00', duration: 60, patient: 'Isabel Torres', service: 'Depilación', status: 'pending' },
-    { id: 7, time: '10:00', duration: 60, patient: 'Sofía Mendoza', service: 'Tratamiento facial', status: 'confirmed' },
-    { id: 13, time: '16:00', duration: 60, patient: 'Carla Vega', service: 'Depilación cejas', status: 'confirmed' },
-    { id: 14, time: '17:00', duration: 60, patient: 'Andrea Luna', service: 'Manicura', status: 'no-show' }
-  ],
-  '2025-08-18': [
-    { id: 15, time: '10:30', duration: 60, patient: 'Rosa Jiménez', service: 'Limpieza profunda', status: 'confirmed' },
-    { id: 16, time: '14:00', duration: 30, patient: 'Elena Castro', service: 'Manicura', status: 'pending' },
-    { id: 17, time: '15:00', duration: 60, patient: 'Marta Flores', service: 'Tratamiento facial', status: 'cancelled' }
-  ],
-  '2025-08-19': [
-    { id: 18, time: '09:00', duration: 30, patient: 'Andrea Morales', service: 'Pedicura', status: 'confirmed' },
-    { id: 19, time: '11:30', duration: 60, patient: 'Lucía Herrera', service: 'Masaje relajante', status: 'pending' },
-    { id: 20, time: '14:00', duration: 60, patient: 'Carmen Díaz', service: 'Limpieza facial', status: 'no-show' },
-    { id: 21, time: '16:00', duration: 30, patient: 'Valeria Soto', service: 'Depilación cejas', status: 'confirmed' }
+    { 
+      id: '4', time: '10:00', duration: 30, patient: 'Laura Martín', service: 'Manicura', 
+      status: 'confirmed', title: 'Laura Martín - Manicura',
+      start: new Date('2025-08-11T10:00:00'), end: new Date('2025-08-11T10:30:00'), allDay: false 
+    },
+    { 
+      id: '5', time: '15:00', duration: 60, patient: 'Patricia Ruiz', service: 'Masaje facial', 
+      status: 'cancelled', title: 'Patricia Ruiz - Masaje facial',
+      start: new Date('2025-08-11T15:00:00'), end: new Date('2025-08-11T16:00:00'), allDay: false 
+    }
   ]
 };

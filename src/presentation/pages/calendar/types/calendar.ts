@@ -1,6 +1,5 @@
-// Tipos base y utilidades ligeras de fecha
-
-export type CalendarView = 'month';
+// src/presentation/pages/calendar/types/calendar.ts - TIPOS CORREGIDOS
+export type AppointmentStatus = 'confirmed' | 'pending' | 'cancelled' | 'no-show' | 'completed';
 
 export interface Appointment {
   id: string;
@@ -9,11 +8,72 @@ export interface Appointment {
   end: Date;
   allDay?: boolean;
   meta?: Record<string, unknown>;
+  
+  // Propiedades adicionales necesarias para el calendario
+  time: string;
+  duration: number; // ✅ Mantener como number para flexibilidad
+  patient: string;
+  service: string;
+  status: AppointmentStatus;
+  type?: 'consultation' | 'treatment' | 'follow-up' | 'emergency';
+  notes?: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface CalendarAppointment {
+  id: string;
+  time: string;
+  duration: number; // ✅ Cambiado a number para compatibilidad
+  patient: string;
+  service: string;
+  status: AppointmentStatus;
+  type?: 'consultation' | 'treatment' | 'follow-up' | 'emergency';
+  notes?: string;
+  email?: string;
+  phone?: string;
+  
+  // Propiedades adicionales para compatibilidad con Appointment
+  title: string;
+  start: Date;
+  end: Date;
+  allDay?: boolean;
+  meta?: Record<string, unknown>;
+}
+
+export interface AppointmentsData {
+  [key: string]: CalendarAppointment[];
+}
+
+export interface AppointmentsCalendarData {
+  [key: string]: CalendarAppointment[];
+}
+
+export interface CalendarDay {
+  date: Date;
+  isCurrentMonth: boolean;
+}
+
+export interface NewAppointmentForm {
+  patient: string;
+  service: string;
+  description: string;
+  time: string;
+  duration: number;
+  date: Date | null;
+}
+
+export type ViewMode = 'month' | 'week' | 'day';
+
+export interface Service {
+  name: string;
+  duration: number;
+  price: string;
 }
 
 export interface CalendarRange {
-  start: Date; // inclusive
-  end: Date;   // inclusive
+  start: Date;
+  end: Date;
 }
 
 export interface DayCell {
@@ -23,12 +83,11 @@ export interface DayCell {
 }
 
 export interface CalendarState {
-  view: CalendarView;
-  cursor: Date; // punto de referencia (primer día del mes en vista 'month')
+  view: ViewMode;
+  cursor: Date;
 }
 
-// ----- Utils pequeñas (sin dependencias) -----
-
+// Utils de fecha
 export function startOfDay(d: Date): Date {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
@@ -50,9 +109,8 @@ export function endOfMonth(d: Date): Date {
 }
 
 export function startOfWeek(d: Date, weekStartsOn: 0 | 1 = 1): Date {
-  // Por defecto lunes = 1
   const date = startOfDay(d);
-  const day = date.getDay(); // 0 = domingo
+  const day = date.getDay();
   const diff = (day < weekStartsOn ? 7 : 0) + day - weekStartsOn;
   date.setDate(date.getDate() - diff);
   return date;
@@ -81,7 +139,6 @@ export function isSameMonth(a: Date, b: Date): boolean {
 }
 
 export function clampToDay(date: Date): string {
-  // YYYY-MM-DD (útil para agrupar por día)
   const y = date.getFullYear();
   const m = `${date.getMonth() + 1}`.padStart(2, '0');
   const d = `${date.getDate()}`.padStart(2, '0');

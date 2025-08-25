@@ -1,4 +1,4 @@
-// netlify/functions/appointments/appointments.ts
+// netlify/functions/appointments/appointments.ts - CORREGIDO
 import { Handler, HandlerEvent } from "@netlify/functions";
 import { validateJWT } from "../../middlewares";
 import { HEADERS, fromBodyToObject } from "../../config/utils";
@@ -23,9 +23,35 @@ const handler: Handler = async (event: HandlerEvent) => {
   const userData = JSON.parse(user.body);
 
   try {
-    // GET /appointments - Obtener todas las citas del doctor
-    if (httpMethod === "GET" && !path.includes("/")) {
+    // 🔥 FUNCIÓN AUXILIAR para extraer ID de la URL
+    const extractAppointmentId = (path: string): number | null => {
+      // Ejemplo: "/.netlify/functions/appointments/123" -> 123
+      const pathSegments = path.split('/').filter(segment => segment && segment !== '.netlify' && segment !== 'functions' && segment !== 'appointments');
+      const lastSegment = pathSegments[pathSegments.length - 1];
+      
+      if (lastSegment && !isNaN(parseInt(lastSegment))) {
+        return parseInt(lastSegment);
+      }
+      return null;
+    };
+
+    // 🔥 DETECTAR SI LA PETICIÓN TIENE ID EN LA URL
+    const appointmentId = extractAppointmentId(path);
+    const hasAppointmentId = appointmentId !== null;
+
+    console.log('🔍 Debug info:', {
+      httpMethod,
+      path,
+      hasAppointmentId,
+      appointmentId,
+      queryStringParameters
+    });
+
+    // GET /appointments - Obtener todas las citas del doctor (SIN ID)
+    if (httpMethod === "GET" && !hasAppointmentId) {
       const { startDate, endDate, upcoming } = queryStringParameters || {};
+
+      console.log('📅 Getting appointments with params:', { startDate, endDate, upcoming });
 
       if (upcoming === "true") {
         const appointments = await AppointmentService.getUpcomingAppointments(userData.id);
@@ -39,7 +65,19 @@ const handler: Handler = async (event: HandlerEvent) => {
       if (startDate && endDate) {
         const start = new Date(startDate);
         const end = new Date(endDate);
+        
+        // 🔥 VALIDAR FECHAS
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({ message: "Fechas inválidas" }),
+            headers: HEADERS.json,
+          };
+        }
+
+        console.log('🔍 Searching appointments between:', start, 'and', end);
         const appointments = await AppointmentService.findByDateRange(userData.id, start, end);
+        
         return {
           statusCode: 200,
           body: JSON.stringify(appointments),
@@ -47,6 +85,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         };
       }
 
+      // Todas las citas sin filtro
       const appointments = await AppointmentService.findByDoctor(userData.id);
       return {
         statusCode: 200,
@@ -55,11 +94,9 @@ const handler: Handler = async (event: HandlerEvent) => {
       };
     }
 
-    // GET /appointments/:id - Obtener cita específica
-    if (httpMethod === "GET" && path.includes("/")) {
-      const appointmentId = parseInt(path.split("/").pop() || "0");
-      
-      if (!appointmentId) {
+    // GET /appointments/:id - Obtener cita específica (CON ID)
+    if (httpMethod === "GET" && hasAppointmentId) {
+      if (!appointmentId || appointmentId <= 0) {
         return {
           statusCode: 400,
           body: JSON.stringify({ message: "ID de cita inválido" }),
@@ -152,7 +189,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         };
       }
 
-      // 🔥 CONVERTIR CORRECTAMENTE LOS DATOS
+      // Crear datos de la cita
       const appointmentData: CreateAppointmentData = {
         doctorId: userData.id,
         patientId: patientId ? parseInt(patientId) : null,
@@ -180,11 +217,9 @@ const handler: Handler = async (event: HandlerEvent) => {
       };
     }
 
-    // PUT /appointments/:id - Actualizar cita
-    if (httpMethod === "PUT" && path.includes("/")) {
-      const appointmentId = parseInt(path.split("/").pop() || "0");
-      
-      if (!appointmentId) {
+    // PUT /appointments/:id - Actualizar cita (CON ID)
+    if (httpMethod === "PUT" && hasAppointmentId) {
+      if (!appointmentId || appointmentId <= 0) {
         return {
           statusCode: 400,
           body: JSON.stringify({ message: "ID de cita inválido" }),
@@ -203,7 +238,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         cancellationReason
       } = body;
 
-      // 🔥 CREAR OBJETO CON TIPOS CORRECTOS
+      // Crear objeto con tipos correctos
       const updateData: UpdateAppointmentData = {};
       
       if (title) updateData.title = title;
@@ -265,11 +300,9 @@ const handler: Handler = async (event: HandlerEvent) => {
       };
     }
 
-    // DELETE /appointments/:id - Eliminar cita
-    if (httpMethod === "DELETE" && path.includes("/")) {
-      const appointmentId = parseInt(path.split("/").pop() || "0");
-      
-      if (!appointmentId) {
+    // DELETE /appointments/:id - Eliminar cita (CON ID)
+    if (httpMethod === "DELETE" && hasAppointmentId) {
+      if (!appointmentId || appointmentId <= 0) {
         return {
           statusCode: 400,
           body: JSON.stringify({ message: "ID de cita inválido" }),
@@ -305,7 +338,7 @@ const handler: Handler = async (event: HandlerEvent) => {
     };
 
   } catch (error: any) {
-    console.error("Error in appointments handler:", error);
+    console.error("❌ Error in appointments handler:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({

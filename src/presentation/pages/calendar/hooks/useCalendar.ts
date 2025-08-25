@@ -1,23 +1,23 @@
-// hooks/useCalendar.ts - Corrección para navegación por días
-import { useState, useEffect } from 'react';
+// src/presentation/pages/calendar/hooks/useCalendar.ts - CON DEBUG MEJORADO
+import { useState, useEffect, useMemo } from 'react';
 import { 
-  AppointmentsData, 
-  Appointment, 
+  AppointmentsCalendarData, 
+  CalendarAppointment, 
   NewAppointmentForm, 
   ViewMode, 
   CalendarDay 
 } from '../types/calendar';
-import { exampleAppointments } from '../constants/calendar';
 import { formatDateKey } from '../utils/calendar';
+import { useCalendarAppointments } from '@/presentation/hooks/appointments/useCalendarAppointments';
 
 export const useCalendar = () => {
+  // Estados locales para la UI
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [showNewAppointmentModal, setShowNewAppointmentModal] = useState<boolean>(false);
-  const [appointments, setAppointments] = useState<AppointmentsData>({});
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('week');
+  const [viewMode, setViewMode] = useState<ViewMode>('day'); // ✅ Cambiar a 'day' por defecto para debugging
 
   const [newAppointment, setNewAppointment] = useState<NewAppointmentForm>({
     patient: '',
@@ -28,35 +28,77 @@ export const useCalendar = () => {
     date: null
   });
 
-  useEffect(() => {
-    setAppointments(exampleAppointments);
-  }, []);
+  // Hook del backend - datos reales
+  const {
+    appointments,
+    isLoading,
+    error,
+    isCreating,
+    isUpdatingStatus,
+    createAppointment,
+    updateAppointmentStatus,
+    refetch
+  } = useCalendarAppointments(currentDate, viewMode);
 
-  // NAVEGACIÓN CORREGIDA - Diferente lógica según la vista
+  // 🔥 DEBUG: Log de appointments cada vez que cambian
+  useEffect(() => {
+    console.log('🔍 useCalendar - appointments changed:', {
+      currentDate: currentDate.toISOString(),
+      viewMode,
+      appointmentsKeys: Object.keys(appointments),
+      appointmentsCount: Object.keys(appointments).reduce((total, key) => total + appointments[key].length, 0),
+      appointments: appointments
+    });
+
+    // Debug específico para el día actual
+    const todayKey = formatDateKey(currentDate);
+    const todayAppointments = appointments[todayKey];
+    console.log('📅 Today appointments:', {
+      todayKey,
+      todayAppointments,
+      count: todayAppointments?.length || 0
+    });
+
+    // Debug para todos los días con citas
+    Object.keys(appointments).forEach(dateKey => {
+      const dayAppts = appointments[dateKey];
+      console.log(`📆 ${dateKey}:`, dayAppts.length, 'appointments');
+    });
+  }, [appointments, currentDate, viewMode]);
+
+  // Navegación por fechas
   const navigateDate = (direction: number): void => {
     setCurrentDate(prev => {
       const newDate = new Date(prev);
       if (viewMode === 'month') {
-        // Navegación por mes
         newDate.setMonth(prev.getMonth() + direction);
       } else if (viewMode === 'week') {
-        // Navegación por semana (7 días)
         newDate.setDate(prev.getDate() + (direction * 7));
       } else if (viewMode === 'day') {
-        // NAVEGACIÓN POR DÍA (1 día) - CORRECCIÓN AQUÍ
         newDate.setDate(prev.getDate() + direction);
       }
+      
+      console.log('🔄 Date navigation:', {
+        direction,
+        viewMode,
+        oldDate: prev.toISOString(),
+        newDate: newDate.toISOString(),
+        newDateKey: formatDateKey(newDate)
+      });
+      
       return newDate;
     });
   };
 
   const goToToday = (): void => {
-    setCurrentDate(new Date());
+    const today = new Date();
+    console.log('🏠 Go to today:', today.toISOString());
+    setCurrentDate(today);
   };
 
   const handleDateClick = (day: CalendarDay): void => {
     if (day.isCurrentMonth) {
-      // En vista mensual, ir directo al modal de nueva cita
+      console.log('📅 Date clicked:', day.date.toISOString());
       if (viewMode === 'month') {
         setSelectedDate(day.date);
         setNewAppointment({
@@ -66,7 +108,6 @@ export const useCalendar = () => {
         });
         setShowNewAppointmentModal(true);
       } else {
-        // En otras vistas, mostrar el modal de horarios
         setSelectedDate(day.date);
         setShowModal(true);
       }
@@ -74,8 +115,16 @@ export const useCalendar = () => {
   };
 
   const handleNewAppointment = (timeSlot: string, targetDate?: Date): void => {
-    setSelectedTimeSlot(timeSlot);
     const dateToUse = targetDate || selectedDate || currentDate;
+    console.log('📝 New appointment:', {
+      timeSlot,
+      targetDate: targetDate?.toISOString(),
+      selectedDate: selectedDate?.toISOString(),
+      currentDate: currentDate.toISOString(),
+      dateToUse: dateToUse.toISOString()
+    });
+    
+    setSelectedTimeSlot(timeSlot);
     setNewAppointment({
       ...newAppointment,
       time: timeSlot,
@@ -85,45 +134,32 @@ export const useCalendar = () => {
     setShowNewAppointmentModal(true);
   };
 
-  const handleCreateAppointment = (): void => {
+  const handleCreateAppointment = async (): Promise<void> => {
     if (!newAppointment.patient || !newAppointment.service || !newAppointment.time || !newAppointment.date) {
       alert('Por favor complete todos los campos obligatorios');
       return;
     }
 
-    const dateKey = formatDateKey(newAppointment.date);
-    const newId = Math.max(...Object.values(appointments).flat().map(a => a.id), 0) + 1;
+    console.log('✍️ Creating appointment:', newAppointment);
 
-    const existingAppointments = appointments[dateKey] || [];
-    const conflictingAppointments = existingAppointments.filter(appointment => appointment.time === newAppointment.time);
-    const isOverbook = conflictingAppointments.length >= 1;
-
-    const appointment: Appointment = {
-      id: newId,
-      time: newAppointment.time,
-      duration: isOverbook ? 30 : 60,
-      patient: newAppointment.patient,
-      service: newAppointment.service,
-      status: 'pending'
-    };
-
-    setAppointments(prev => ({
-      ...prev,
-      [dateKey]: [...(prev[dateKey] || []), appointment]
-    }));
-
-    // Limpiar formulario y cerrar modal
-    setNewAppointment({
-      patient: '',
-      service: '',
-      description: '',
-      time: '',
-      duration: 60,
-      date: null
-    });
-    setShowNewAppointmentModal(false);
-
-    alert(`Cita creada exitosamente para ${newAppointment.patient} el ${newAppointment.date.toLocaleDateString('es-CL')} a las ${newAppointment.time}`);
+    try {
+      await createAppointment(newAppointment);
+      
+      console.log('✅ Appointment created successfully');
+      
+      // Limpiar formulario y cerrar modal
+      setNewAppointment({
+        patient: '',
+        service: '',
+        description: '',
+        time: '',
+        duration: 60,
+        date: null
+      });
+      setShowNewAppointmentModal(false);
+    } catch (error: any) {
+      console.error('❌ Error creating appointment:', error);
+    }
   };
 
   const closeModal = (): void => {
@@ -134,19 +170,17 @@ export const useCalendar = () => {
     setShowNewAppointmentModal(false);
   };
 
-  // NUEVA FUNCIÓN PARA SELECCIONAR FECHA ESPECÍFICA EN VISTA DIARIA
   const handleDateSelect = (date: Date): void => {
+    console.log('📆 Date selected:', date.toISOString());
     if (viewMode === 'day') {
-      // En vista diaria, cambiar directamente la fecha actual
       setCurrentDate(date);
     } else {
-      // En otras vistas, solo cambiar la fecha actual para navegación
       setCurrentDate(date);
     }
   };
 
-  const handleAppointmentEdit = (appointment: Appointment): void => {
-    console.log('Editar cita:', appointment);
+  const handleAppointmentEdit = (appointment: CalendarAppointment): void => {
+    console.log('✏️ Edit appointment:', appointment);
   };
 
   return {
@@ -159,20 +193,30 @@ export const useCalendar = () => {
     selectedTimeSlot,
     viewMode,
     newAppointment,
+    
+    // Estados del backend
+    isLoading,
+    error,
+    isCreating,
+    isUpdatingStatus,
 
     // Acciones
     setViewMode,
     setSelectedDate,
     setShowModal,
     setNewAppointment,
-    navigateDate, // Ahora navega por días en vista diaria
+    navigateDate,
     goToToday,
     handleDateClick,
     handleNewAppointment,
     handleCreateAppointment,
     handleAppointmentEdit,
-    handleDateSelect, // Función mejorada para selección de fecha
+    handleDateSelect,
     closeModal,
-    closeNewAppointmentModal
+    closeNewAppointmentModal,
+    
+    // Funciones del backend
+    updateAppointmentStatus,
+    refetch
   };
 };

@@ -1,8 +1,8 @@
-// components/DayView.tsx - Alturas corregidas para alineación perfecta
+// components/DayView.tsx - TIPOS CORREGIDOS
 import React from 'react';
-import { AppointmentsData, Appointment } from '../types/calendar';
+import { AppointmentsData, CalendarAppointment } from '../types/calendar'; // ✅ Usar CalendarAppointment
 import { timeSlots } from '../constants/calendar';
-import { getAppointmentsForDate, isToday } from '../utils/calendar';
+import { formatDateKey, getAppointmentsForDate, isToday } from '../utils/calendar';
 import { AppointmentBlock } from './AppointmentBlock';
 import { Plus } from 'lucide-react';
 
@@ -10,7 +10,7 @@ interface DayViewProps {
   currentDate: Date;
   appointments: AppointmentsData;
   onTimeSlotClick: (time: string, date: Date) => void;
-  onAppointmentEdit?: (appointment: Appointment) => void;
+  onAppointmentEdit?: (appointment: CalendarAppointment) => void; // ✅ Usar CalendarAppointment
 }
 
 export const DayView: React.FC<DayViewProps> = ({
@@ -22,6 +22,19 @@ export const DayView: React.FC<DayViewProps> = ({
   const dayAppointments = getAppointmentsForDate(appointments, currentDate);
   const isCurrentDay = isToday(currentDate);
 
+  // 🔥 DEBUG: Log para ver qué appointments llegan
+  React.useEffect(() => {
+    const dateKey = formatDateKey(currentDate);
+    console.log('🔍 DayView - appointments for date:', {
+      currentDate: currentDate.toISOString(),
+      dateKey,
+      dayAppointments,
+      dayAppointmentsCount: dayAppointments.length,
+      allAppointments: appointments,
+      allAppointmentsKeys: Object.keys(appointments)
+    });
+  }, [currentDate, appointments, dayAppointments]);
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
       <div className="flex">
@@ -30,7 +43,6 @@ export const DayView: React.FC<DayViewProps> = ({
           {timeSlots.map((time, index) => (
             <div
               key={time}
-              // ALTURA CORREGIDA: debe ser exactamente 80px (h-20) para coincidir con AppointmentBlock
               className="h-20 flex items-center justify-center text-sm font-medium text-slate-500 border-b border-slate-50"
             >
               <span className="text-center">{time}</span>
@@ -50,7 +62,6 @@ export const DayView: React.FC<DayViewProps> = ({
             return (
               <div
                 key={time}
-                // ALTURA CORREGIDA: exactamente 80px (h-20) para perfecta alineación
                 className="h-20 border-b border-slate-50 hover:bg-cyan-25 cursor-pointer transition-colors group px-4 sm:px-6 flex items-center relative"
                 onClick={() => onTimeSlotClick(time, currentDate)}
               >

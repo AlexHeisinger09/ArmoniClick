@@ -1,4 +1,4 @@
-// netlify/functions/appointments/status.ts
+// netlify/functions/appointments/status.ts - CORREGIDO
 import { Handler, HandlerEvent } from "@netlify/functions";
 import { validateJWT } from "../../middlewares";
 import { HEADERS, fromBodyToObject } from "../../config/utils";
@@ -7,6 +7,12 @@ import { AppointmentService } from "../../services/appointment.service";
 const handler: Handler = async (event: HandlerEvent) => {
   const { httpMethod, path } = event;
   const body = event.body ? fromBodyToObject(event.body) : {};
+
+  console.log('🔍 Status function called:', {
+    httpMethod,
+    path,
+    body
+  });
 
   // Manejar preflight OPTIONS
   if (event.httpMethod === "OPTIONS") {
@@ -34,10 +40,32 @@ const handler: Handler = async (event: HandlerEvent) => {
   }
 
   try {
-    // Extraer ID de la cita del path
-    const appointmentId = parseInt(path.split("/").slice(-2, -1)[0] || "0");
+    // 🔥 FUNCIÓN MEJORADA para extraer ID del appointment
+    const extractAppointmentId = (path: string): number | null => {
+      // Ejemplo: "/.netlify/functions/appointments/123/status" -> 123
+      const pathSegments = path.split('/').filter(segment => 
+        segment && 
+        segment !== '.netlify' && 
+        segment !== 'functions' && 
+        segment !== 'appointments' && 
+        segment !== 'status'
+      );
+      
+      // Buscar el segmento numérico
+      for (const segment of pathSegments) {
+        const id = parseInt(segment);
+        if (!isNaN(id) && id > 0) {
+          return id;
+        }
+      }
+      return null;
+    };
+
+    const appointmentId = extractAppointmentId(path);
     
-    if (!appointmentId) {
+    console.log('📝 Extracted appointment ID:', appointmentId);
+    
+    if (!appointmentId || appointmentId <= 0) {
       return {
         statusCode: 400,
         body: JSON.stringify({ message: "ID de cita inválido" }),
@@ -81,6 +109,12 @@ const handler: Handler = async (event: HandlerEvent) => {
       };
     }
 
+    console.log('🔄 Updating appointment status:', {
+      appointmentId,
+      status,
+      reason
+    });
+
     const updatedAppointment = await AppointmentService.updateStatus(
       appointmentId,
       userData.id,
@@ -112,6 +146,8 @@ const handler: Handler = async (event: HandlerEvent) => {
         break;
     }
 
+    console.log('✅ Status updated successfully:', message);
+
     return {
       statusCode: 200,
       body: JSON.stringify({
@@ -122,7 +158,7 @@ const handler: Handler = async (event: HandlerEvent) => {
     };
 
   } catch (error: any) {
-    console.error("Error updating appointment status:", error);
+    console.error("❌ Error updating appointment status:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({

@@ -19,4 +19,3 @@ export * from "./appointments/update-appointment.use-case";
 export * from "./appointments/delete-appointment.use-case";
 export * from "./appointments/update-appointment-status.use-case";
 export * from "./appointments/check-availability.use-case";
-

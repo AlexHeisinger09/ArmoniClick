@@ -1,4 +1,4 @@
-// src/presentation/pages/calendar/Calendar.tsx - ACTUALIZADO CON BACKEND
+// src/presentation/pages/calendar/Calendar.tsx - CORREGIDO
 import React from 'react';
 import { useCalendar } from './hooks/useCalendar';
 import { CalendarHeader } from './components/CalendarHeader';
@@ -40,13 +40,27 @@ const Calendar: React.FC = () => {
     closeNewAppointmentModal
   } = useCalendar();
 
+  // Función para obtener mensaje de error de forma segura
+  const getErrorMessage = (error: unknown): string => {
+    if (error instanceof Error) {
+      return error.message;
+    }
+    if (typeof error === 'string') {
+      return error;
+    }
+    if (error && typeof error === 'object' && 'message' in error) {
+      return String((error as any).message);
+    }
+    return 'Error desconocido';
+  };
+
   const renderCalendarView = () => {
     // 🔥 MOSTRAR SPINNER MIENTRAS CARGA
     if (isLoading) {
       return (
         <div className="flex items-center justify-center py-20">
           <div className="flex flex-col items-center space-y-4">
-            <Spinner size="large" />
+            <Spinner />
             <div className="text-center">
               <p className="text-slate-600 font-medium">Cargando citas...</p>
               <p className="text-slate-400 text-sm">Conectando con el servidor</p>
@@ -65,7 +79,7 @@ const Calendar: React.FC = () => {
             <AlertDescription className="flex items-center justify-between">
               <div>
                 <p className="font-medium">Error al cargar las citas</p>
-                <p className="text-sm mt-1">{error.message}</p>
+                <p className="text-sm mt-1">{getErrorMessage(error)}</p>
               </div>
               <WifiOff className="h-5 w-5 ml-4" />
             </AlertDescription>
@@ -153,7 +167,7 @@ const Calendar: React.FC = () => {
           {(isCreating || isUpdatingStatus) && (
             <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50 backdrop-blur-sm">
               <div className="bg-white rounded-2xl shadow-2xl p-6 flex items-center space-x-4 border border-cyan-200">
-                <Spinner size="medium" className="text-cyan-500" />
+                <Spinner className="text-cyan-500" />
                 <div className="text-left">
                   <p className="text-slate-800 font-semibold">
                     {isCreating && 'Creando cita...'}

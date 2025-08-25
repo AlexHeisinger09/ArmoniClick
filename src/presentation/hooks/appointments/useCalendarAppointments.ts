@@ -1,4 +1,4 @@
-// src/presentation/hooks/appointments/useCalendarAppointments.ts
+// src/presentation/hooks/appointments/useCalendarAppointments.ts - CON DEBUG MEJORADO
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetcher } from '@/config/adapters/api.adapter';
 import { 
@@ -8,7 +8,7 @@ import {
 } from '@/core/use-cases';
 import { AppointmentMapper } from '@/infrastructure/mappers/appointment.mapper';
 import { 
-  AppointmentsData,
+  AppointmentsCalendarData,
   NewAppointmentForm,
   ViewMode 
 } from '@/presentation/pages/calendar/types/calendar';
@@ -21,38 +21,82 @@ export const useCalendarAppointments = (currentDate: Date, viewMode: ViewMode) =
 
   // Calcular el rango de fechas basado en la vista actual
   const dateRange = useMemo(() => {
-    return AppointmentMapper.getDateRangeForCalendarView(currentDate, viewMode);
+    const range = AppointmentMapper.getDateRangeForCalendarView(currentDate, viewMode);
+    console.log('🔍 useCalendarAppointments - dateRange calculated:', range);
+    return range;
   }, [currentDate, viewMode]);
 
   // Query para obtener las citas
   const appointmentsQuery = useQuery({
     queryKey: ['calendar-appointments', dateRange.startDate, dateRange.endDate],
-    queryFn: () => getAppointmentsUseCase(apiFetcher, {
-      startDate: dateRange.startDate,
-      endDate: dateRange.endDate
-    }),
+    queryFn: async () => {
+      console.log('🌐 Fetching appointments with params:', {
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate
+      });
+      
+      try {
+        const result = await getAppointmentsUseCase(apiFetcher, {
+          startDate: dateRange.startDate,
+          endDate: dateRange.endDate
+        });
+        
+        console.log('📦 Raw appointments from backend:', {
+          count: result?.length || 0,
+          result
+        });
+        
+        return result;
+      } catch (error) {
+        console.error('❌ Error fetching appointments:', error);
+        throw error;
+      }
+    },
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
+  // Log de estados de la query
+  console.log('🔍 Query states:', {
+    isLoading: appointmentsQuery.isLoading,
+    isError: appointmentsQuery.isError,
+    error: appointmentsQuery.error,
+    data: appointmentsQuery.data,
+    dataLength: appointmentsQuery.data?.length
+  });
+
   // Convertir datos del backend al formato que usa tu Calendar
-  const appointments: AppointmentsData = useMemo(() => {
-    if (!appointmentsQuery.data) return {};
-    return AppointmentMapper.fromBackendToCalendarData(appointmentsQuery.data);
+  const appointments: AppointmentsCalendarData = useMemo(() => {
+    if (!appointmentsQuery.data) {
+      console.log('⚠️ No data from appointments query');
+      return {};
+    }
+    
+    console.log('🔄 Starting mapping process with data:', appointmentsQuery.data);
+    const mapped = AppointmentMapper.fromBackendToCalendarData(appointmentsQuery.data);
+    console.log('✅ Mapping completed:', mapped);
+    return mapped;
   }, [appointmentsQuery.data]);
 
   // Mutación para crear citas
   const createAppointmentMutation = useMutation({
-    mutationFn: (appointmentData: NewAppointmentForm) => {
+    mutationFn: async (appointmentData: NewAppointmentForm) => {
+      console.log('📝 Creating appointment:', appointmentData);
       const backendData = AppointmentMapper.fromCalendarFormToBackendRequest(appointmentData);
-      return createAppointmentUseCase(apiFetcher, backendData);
+      console.log('🔄 Mapped to backend format:', backendData);
+      
+      const result = await createAppointmentUseCase(apiFetcher, backendData);
+      console.log('✅ Appointment created:', result);
+      return result;
     },
     onSuccess: (data) => {
+      console.log('🎉 Create success, invalidating queries...');
       // Invalidar y refetch las queries del calendario
       queryClient.invalidateQueries({ queryKey: ['calendar-appointments'] });
       toast.success('Cita creada exitosamente');
     },
     onError: (error: any) => {
+      console.error('❌ Create error:', error);
       const message = error.message || 'Error al crear la cita';
       toast.error(message);
       throw error; // Re-throw para que el componente pueda manejarlo

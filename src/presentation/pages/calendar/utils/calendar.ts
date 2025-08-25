@@ -1,5 +1,5 @@
-// utils/calendar.ts
-import { CalendarDay, AppointmentsData, Appointment } from '../types/calendar';
+// src/presentation/pages/calendar/utils/calendar.ts - TIPOS CORREGIDOS
+import { CalendarDay, AppointmentsCalendarData, CalendarAppointment } from '../types/calendar';
 import { monthNames } from '../constants/calendar';
 
 export const formatDateKey = (date: Date): string => {
@@ -72,31 +72,31 @@ export const isToday = (date: Date): boolean => {
 };
 
 export const isTimeSlotAvailable = (
-  appointments: AppointmentsData,
+  appointments: AppointmentsCalendarData,
   date: Date,
   time: string
 ): boolean => {
   const dateKey = formatDateKey(date);
   const dayAppointments = appointments[dateKey] || [];
-  const conflictingAppointments = dayAppointments.filter(appointment => appointment.time === time);
+  const conflictingAppointments = dayAppointments.filter((appointment: CalendarAppointment) => appointment.time === time);
   return conflictingAppointments.length < 2;
 };
 
 export const hasOverlap = (
-  appointments: AppointmentsData,
+  appointments: AppointmentsCalendarData,
   date: Date,
   time: string
 ): boolean => {
   const dateKey = formatDateKey(date);
   const dayAppointments = appointments[dateKey] || [];
-  const conflictingAppointments = dayAppointments.filter(appointment => appointment.time === time);
+  const conflictingAppointments = dayAppointments.filter((appointment: CalendarAppointment) => appointment.time === time);
   return conflictingAppointments.length >= 1;
 };
 
 export const getAppointmentsForDate = (
-  appointments: AppointmentsData,
+  appointments: AppointmentsCalendarData,
   date: Date
-): Appointment[] => {
+): CalendarAppointment[] => {
   const dateKey = formatDateKey(date);
   return appointments[dateKey] || [];
 };
