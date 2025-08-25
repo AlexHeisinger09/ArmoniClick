@@ -12,3 +12,11 @@ export * from "./user/upload-profile-image.use-case";
 
 export * from "./patients";
 
+export * from "./appointments/get-appointments.use-case";
+export * from "./appointments/get-appointment-by-id.use-case";
+export * from "./appointments/create-appointment.use-case";
+export * from "./appointments/update-appointment.use-case";
+export * from "./appointments/delete-appointment.use-case";
+export * from "./appointments/update-appointment-status.use-case";
+export * from "./appointments/check-availability.use-case";
+

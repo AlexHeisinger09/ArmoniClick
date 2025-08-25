@@ -34,6 +34,29 @@
   from = "/api/upload"
   to = "/.netlify/functions/upload"
   status = 200
+[[redirects]]
+  from = "/api/appointments"
+  to = "/.netlify/functions/appointments/appointments"
+  status = 200
+  methods = ["GET", "POST", "OPTIONS"]
+
+[[redirects]]
+  from = "/api/appointments/*"
+  to = "/.netlify/functions/appointments/appointments"
+  status = 200
+  methods = ["GET", "PUT", "DELETE", "OPTIONS"]
+
+[[redirects]]
+  from = "/api/appointments/*/status"
+  to = "/.netlify/functions/appointments/status"
+  status = 200
+  methods = ["PUT", "OPTIONS"]
+
+[[redirects]]
+  from = "/api/appointments/availability"
+  to = "/.netlify/functions/appointments/availability"
+  status = 200
+  methods = ["GET", "OPTIONS"]
 
 # Ruta por defecto para SPA
 [[redirects]]

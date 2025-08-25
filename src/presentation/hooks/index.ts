@@ -14,3 +14,4 @@ export * from "./treatments/useTreatments";
 export * from "./treatments/useTreatmentUpload"; 
 
 export * from './budgets/useBudgets';
+export * from './appointments/useCalendarAppointments';
