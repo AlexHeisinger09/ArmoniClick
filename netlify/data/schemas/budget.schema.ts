@@ -91,8 +91,3 @@ export const BUDGET_TYPE = {
   ODONTOLOGICO: 'odontologico',
   ESTETICA: 'estetica'
 } as const;
-
-export const TREATMENT_STATUS = {
-  PENDING: 'pending',
-  COMPLETED: 'completed'
-} as const;
