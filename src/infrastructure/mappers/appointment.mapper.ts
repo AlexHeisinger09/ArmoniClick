@@ -1,4 +1,4 @@
-// src/infrastructure/mappers/appointment.mapper.ts - ACTUALIZADO
+// src/infrastructure/mappers/appointment.mapper.ts - CORREGIDO PARA INVITADOS
 import { AppointmentResponse, CreateAppointmentRequest } from '@/infrastructure/interfaces/appointment.response';
 import { 
   Appointment, 
@@ -20,20 +20,36 @@ export class AppointmentMapper {
       const dateKey = this.formatDateKey(date);
       const endDate = new Date(date.getTime() + (apt.duration * 60000));
       
+      // 🔥 CORREGIDO - Obtener nombre del paciente correctamente
+      const patientName = this.getPatientName(apt);
+      const patientEmail = this.getPatientEmail(apt);
+      const patientPhone = this.getPatientPhone(apt);
+      
+      console.log('🔍 Mapping appointment:', {
+        id: apt.id,
+        title: apt.title,
+        patientName: apt.patientName,
+        patientLastName: apt.patientLastName,
+        guestName: apt.guestName,
+        finalPatientName: patientName,
+        patientEmail,
+        patientPhone
+      });
+      
       const calendarAppointment: CalendarAppointment = {
         id: apt.id.toString(),
         time: this.formatTime(date),
         duration: apt.duration as number,
-        patient: this.getPatientName(apt),
+        patient: patientName, // 🔥 USAR FUNCIÓN MEJORADA
         service: apt.title,
         status: this.mapStatus(apt.status),
         type: apt.type,
         notes: apt.notes || undefined,
-        email: this.getPatientEmail(apt),
-        phone: this.getPatientPhone(apt),
+        email: patientEmail,
+        phone: patientPhone,
         
         // Propiedades adicionales para compatibilidad
-        title: `${this.getPatientName(apt)} - ${apt.title}`,
+        title: `${patientName} - ${apt.title}`, // 🔥 USAR NOMBRE CORRECTO
         start: date,
         end: endDate,
         allDay: false,
@@ -61,7 +77,7 @@ export class AppointmentMapper {
     const appointmentDateTime = new Date(form.date);
     appointmentDateTime.setHours(hours, minutes, 0, 0);
     
-    // ✅ NUEVO - Crear request con campos correctos según tipo de paciente
+    // ✅ ACTUALIZADO - Crear request con campos correctos según tipo de paciente
     const request: CreateAppointmentRequest = {
       title: form.service,
       description: form.description || undefined,
@@ -74,6 +90,7 @@ export class AppointmentMapper {
     // Si es paciente registrado
     if (form.patientId) {
       request.patientId = form.patientId;
+      console.log('🔍 Creating appointment for registered patient:', form.patientId);
     }
     // Si es paciente invitado
     else if (form.guestName) {
@@ -81,10 +98,17 @@ export class AppointmentMapper {
       request.guestEmail = form.guestEmail;
       request.guestPhone = form.guestPhone;
       request.guestRut = form.guestRut;
+      console.log('🔍 Creating appointment for guest:', {
+        guestName: form.guestName,
+        guestEmail: form.guestEmail,
+        guestPhone: form.guestPhone,
+        guestRut: form.guestRut
+      });
     }
     // Fallback para compatibilidad (si solo viene el nombre)
     else if (form.patient) {
       request.guestName = form.patient;
+      console.log('🔍 Creating appointment with fallback guest name:', form.patient);
     }
 
     return request;
@@ -136,10 +160,11 @@ export class AppointmentMapper {
     return appointments.map(apt => {
       const startDate = new Date(apt.appointmentDate);
       const endDate = new Date(startDate.getTime() + (apt.duration * 60000));
+      const patientName = this.getPatientName(apt); // 🔥 USAR FUNCIÓN MEJORADA
       
       return {
         id: apt.id.toString(),
-        title: `${this.getPatientName(apt)} - ${apt.title}`,
+        title: `${patientName} - ${apt.title}`, // 🔥 USAR NOMBRE CORRECTO
         start: startDate,
         end: endDate,
         allDay: false,
@@ -147,7 +172,7 @@ export class AppointmentMapper {
         // Propiedades adicionales para compatibilidad
         time: this.formatTime(startDate),
         duration: apt.duration,
-        patient: this.getPatientName(apt),
+        patient: patientName, // 🔥 USAR NOMBRE CORRECTO
         service: apt.title,
         status: this.mapStatus(apt.status),
         type: apt.type,
@@ -172,19 +197,37 @@ export class AppointmentMapper {
     return `${hours}:${minutes}`;
   }
   
-  // ✅ MEJORADO - Obtener nombre del paciente con mejor lógica
+  // 🔥 CORREGIDO - Obtener nombre del paciente con prioridad correcta
   private static getPatientName(apt: AppointmentResponse): string {
-    // Prioridad: Paciente registrado > Invitado > Fallback
+    console.log('🔍 Getting patient name from appointment:', {
+      patientName: apt.patientName,
+      patientLastName: apt.patientLastName,
+      guestName: apt.guestName
+    });
+
+    // Prioridad 1: Paciente registrado (nombres + apellidos)
     if (apt.patientName && apt.patientLastName) {
-      return `${apt.patientName} ${apt.patientLastName}`;
+      const fullName = `${apt.patientName} ${apt.patientLastName}`;
+      console.log('✅ Using registered patient full name:', fullName);
+      return fullName;
     }
+    
+    // Prioridad 2: Solo nombre del paciente registrado
     if (apt.patientName) {
+      console.log('✅ Using registered patient name only:', apt.patientName);
       return apt.patientName;
     }
+    
+    // Prioridad 3: Paciente invitado
     if (apt.guestName) {
+      console.log('✅ Using guest name:', apt.guestName);
       return apt.guestName;
     }
-    return 'Paciente sin nombre';
+    
+    // Fallback
+    const fallback = 'Paciente sin nombre';
+    console.log('⚠️ Using fallback name:', fallback);
+    return fallback;
   }
   
   private static getPatientEmail(apt: AppointmentResponse): string | undefined {

@@ -1,8 +1,9 @@
-// components/CalendarHeader.tsx - Diseño moderno con carrusel de días
+// components/CalendarHeader.tsx - Con leyenda de estados sutil
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { ViewMode } from '../types/calendar';
 import { monthNames } from '../constants/calendar';
+import { StatusLegend } from './StatusLegend';
 
 interface CalendarHeaderProps {
   currentDate: Date;
@@ -208,6 +209,11 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
             </div>
           )}
         </div>
+      </div>
+
+      {/* 🎨 LEYENDA DE ESTADOS SUTIL */}
+      <div className="px-4 sm:px-6 py-3 bg-slate-50 border-b border-slate-100">
+        <StatusLegend compact className="justify-center" />
       </div>
 
       {/* Navegación específica para vista diaria */}

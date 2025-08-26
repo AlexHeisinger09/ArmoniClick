@@ -1,4 +1,4 @@
-// netlify/services/appointment.service.ts
+// netlify/services/appointment.service.ts - CORREGIDO PARA INVITADOS
 import { eq, and, between, sql } from "drizzle-orm";
 import { db } from "../data/db";
 import { appointmentsTable } from "../data/schemas/appointment.schema";
@@ -8,28 +8,28 @@ import { patientsTable } from "../data/schemas/patient.schema";
 // Tipos para las respuestas del servicio
 export interface CreateAppointmentData {
   doctorId: number;
-  patientId?: number | null;  // 🔥 Permitir null
-  guestName?: string | null;  // 🔥 Permitir null
-  guestEmail?: string | null; // 🔥 Permitir null
-  guestPhone?: string | null; // 🔥 Permitir null
-  guestRut?: string | null;   // 🔥 Permitir null
+  patientId?: number | null;
+  guestName?: string | null;
+  guestEmail?: string | null;
+  guestPhone?: string | null;
+  guestRut?: string | null;
   title: string;
-  description?: string | null; // 🔥 Permitir null
+  description?: string | null;
   appointmentDate: Date;
-  duration?: number | null;    // 🔥 Permitir null
-  type?: string | null;        // 🔥 Permitir null
-  notes?: string | null;       // 🔥 Permitir null
+  duration?: number | null;
+  type?: string | null;
+  notes?: string | null;
 }
 
 export interface UpdateAppointmentData {
   title?: string;
-  description?: string | null;        // 🔥 Permitir null
+  description?: string | null;
   appointmentDate?: Date;
-  duration?: number | null;           // 🔥 Permitir null
-  type?: string | null;               // 🔥 Permitir null
-  notes?: string | null;              // 🔥 Permitir null
-  status?: string | null;             // 🔥 Permitir null
-  cancellationReason?: string | null; // 🔥 Permitir null
+  duration?: number | null;
+  type?: string | null;
+  notes?: string | null;
+  status?: string | null;
+  cancellationReason?: string | null;
 }
 
 export interface AppointmentWithDetails {
@@ -81,12 +81,14 @@ export class AppointmentService {
   // Crear nueva cita
   static async create(data: CreateAppointmentData) {
     try {
+      console.log('🔍 Creating appointment with data:', data);
+
       const [appointment] = await db
         .insert(appointmentsTable)
         .values({
           doctorId: data.doctorId,
           patientId: data.patientId || null,
-          guestName: data.guestName || null,
+          guestName: data.guestName || null, // 🔥 ASEGURAR QUE SE GUARDE
           guestEmail: data.guestEmail || null,
           guestPhone: data.guestPhone || null,
           guestRut: data.guestRut || null,
@@ -102,9 +104,10 @@ export class AppointmentService {
         })
         .returning();
 
+      console.log('✅ Appointment created successfully:', appointment);
       return appointment;
     } catch (error) {
-      console.error("Error creating appointment:", error);
+      console.error("❌ Error creating appointment:", error);
       throw new Error("Error al crear la cita");
     }
   }
@@ -137,7 +140,7 @@ export class AppointmentService {
           patientPhone: patientsTable.telefono,
           patientRut: patientsTable.rut,
           
-          // Datos del invitado
+          // 🔥 DATOS DEL INVITADO - ASEGURAR QUE SE INCLUYAN
           guestName: appointmentsTable.guestName,
           guestEmail: appointmentsTable.guestEmail,
           guestPhone: appointmentsTable.guestPhone,
@@ -156,7 +159,22 @@ export class AppointmentService {
         ))
         .limit(1);
 
-      return result[0] || null;
+      const appointment = result[0] || null;
+      
+      if (appointment) {
+        console.log('🔍 Found appointment by ID:', {
+          id: appointment.id,
+          title: appointment.title,
+          patientName: appointment.patientName,
+          patientLastName: appointment.patientLastName,
+          guestName: appointment.guestName,
+          finalName: appointment.patientName 
+            ? `${appointment.patientName} ${appointment.patientLastName}` 
+            : appointment.guestName
+        });
+      }
+
+      return appointment;
     } catch (error) {
       console.error("Error finding appointment by ID:", error);
       throw new Error("Error al buscar la cita");
@@ -184,12 +202,17 @@ export class AppointmentService {
           duration: appointmentsTable.duration,
           status: appointmentsTable.status,
           type: appointmentsTable.type,
+          // 🔥 MEJORAR EL SQL PARA MOSTRAR NOMBRES DE INVITADOS
           patientName: sql<string>`
-            COALESCE(
-              CONCAT(${patientsTable.nombres}, ' ', ${patientsTable.apellidos}),
-              ${appointmentsTable.guestName},
-              'Sin nombre'
-            )
+            CASE 
+              WHEN ${patientsTable.nombres} IS NOT NULL AND ${patientsTable.apellidos} IS NOT NULL 
+              THEN CONCAT(${patientsTable.nombres}, ' ', ${patientsTable.apellidos})
+              WHEN ${patientsTable.nombres} IS NOT NULL 
+              THEN ${patientsTable.nombres}
+              WHEN ${appointmentsTable.guestName} IS NOT NULL 
+              THEN ${appointmentsTable.guestName}
+              ELSE 'Sin nombre'
+            END
           `,
           patientEmail: sql<string>`
             COALESCE(
@@ -203,6 +226,17 @@ export class AppointmentService {
         .leftJoin(patientsTable, eq(appointmentsTable.patientId, patientsTable.id))
         .where(and(...conditions))
         .orderBy(appointmentsTable.appointmentDate);
+
+      console.log('🔍 Found appointments by doctor:', {
+        doctorId,
+        count: result.length,
+        appointments: result.map(apt => ({
+          id: apt.id,
+          title: apt.title,
+          patientName: apt.patientName,
+          appointmentDate: apt.appointmentDate
+        }))
+      });
 
       return result;
     } catch (error) {
@@ -218,6 +252,8 @@ export class AppointmentService {
     data: UpdateAppointmentData
   ) {
     try {
+      console.log('🔍 Updating appointment:', { id, doctorId, data });
+
       const [appointment] = await db
         .update(appointmentsTable)
         .set({
@@ -230,6 +266,7 @@ export class AppointmentService {
         ))
         .returning();
 
+      console.log('✅ Appointment updated successfully:', appointment);
       return appointment;
     } catch (error) {
       console.error("Error updating appointment:", error);
@@ -270,12 +307,17 @@ export class AppointmentService {
           duration: appointmentsTable.duration,
           status: appointmentsTable.status,
           type: appointmentsTable.type,
+          // 🔥 MEJORAR EL SQL PARA MOSTRAR NOMBRES DE INVITADOS
           patientName: sql<string>`
-            COALESCE(
-              CONCAT(${patientsTable.nombres}, ' ', ${patientsTable.apellidos}),
-              ${appointmentsTable.guestName},
-              'Sin nombre'
-            )
+            CASE 
+              WHEN ${patientsTable.nombres} IS NOT NULL AND ${patientsTable.apellidos} IS NOT NULL 
+              THEN CONCAT(${patientsTable.nombres}, ' ', ${patientsTable.apellidos})
+              WHEN ${patientsTable.nombres} IS NOT NULL 
+              THEN ${patientsTable.nombres}
+              WHEN ${appointmentsTable.guestName} IS NOT NULL 
+              THEN ${appointmentsTable.guestName}
+              ELSE 'Sin nombre'
+            END
           `,
           patientEmail: sql<string>`
             COALESCE(
@@ -292,6 +334,18 @@ export class AppointmentService {
           between(appointmentsTable.appointmentDate, startDate, endDate)
         ))
         .orderBy(appointmentsTable.appointmentDate);
+
+      console.log('🔍 Found appointments in date range:', {
+        doctorId,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        count: result.length,
+        appointments: result.map(apt => ({
+          id: apt.id,
+          patientName: apt.patientName,
+          appointmentDate: apt.appointmentDate
+        }))
+      });
 
       return result;
     } catch (error) {
@@ -389,12 +443,17 @@ export class AppointmentService {
           duration: appointmentsTable.duration,
           status: appointmentsTable.status,
           type: appointmentsTable.type,
+          // 🔥 MEJORAR EL SQL PARA MOSTRAR NOMBRES DE INVITADOS
           patientName: sql<string>`
-            COALESCE(
-              CONCAT(${patientsTable.nombres}, ' ', ${patientsTable.apellidos}),
-              ${appointmentsTable.guestName},
-              'Sin nombre'
-            )
+            CASE 
+              WHEN ${patientsTable.nombres} IS NOT NULL AND ${patientsTable.apellidos} IS NOT NULL 
+              THEN CONCAT(${patientsTable.nombres}, ' ', ${patientsTable.apellidos})
+              WHEN ${patientsTable.nombres} IS NOT NULL 
+              THEN ${patientsTable.nombres}
+              WHEN ${appointmentsTable.guestName} IS NOT NULL 
+              THEN ${appointmentsTable.guestName}
+              ELSE 'Sin nombre'
+            END
           `,
           patientEmail: sql<string>`
             COALESCE(

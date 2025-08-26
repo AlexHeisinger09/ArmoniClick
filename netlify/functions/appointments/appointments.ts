@@ -1,4 +1,4 @@
-// netlify/functions/appointments/appointments.ts - CORREGIDO
+// netlify/functions/appointments/appointments.ts - CORREGIDO PARA DEBUG
 import { Handler, HandlerEvent } from "@netlify/functions";
 import { validateJWT } from "../../middlewares";
 import { HEADERS, fromBodyToObject } from "../../config/utils";
@@ -23,9 +23,8 @@ const handler: Handler = async (event: HandlerEvent) => {
   const userData = JSON.parse(user.body);
 
   try {
-    // 🔥 FUNCIÓN AUXILIAR para extraer ID de la URL
+    // Función auxiliar para extraer ID de la URL
     const extractAppointmentId = (path: string): number | null => {
-      // Ejemplo: "/.netlify/functions/appointments/123" -> 123
       const pathSegments = path.split('/').filter(segment => segment && segment !== '.netlify' && segment !== 'functions' && segment !== 'appointments');
       const lastSegment = pathSegments[pathSegments.length - 1];
       
@@ -35,7 +34,6 @@ const handler: Handler = async (event: HandlerEvent) => {
       return null;
     };
 
-    // 🔥 DETECTAR SI LA PETICIÓN TIENE ID EN LA URL
     const appointmentId = extractAppointmentId(path);
     const hasAppointmentId = appointmentId !== null;
 
@@ -44,7 +42,8 @@ const handler: Handler = async (event: HandlerEvent) => {
       path,
       hasAppointmentId,
       appointmentId,
-      queryStringParameters
+      queryStringParameters,
+      body
     });
 
     // GET /appointments - Obtener todas las citas del doctor (SIN ID)
@@ -66,7 +65,6 @@ const handler: Handler = async (event: HandlerEvent) => {
         const start = new Date(startDate);
         const end = new Date(endDate);
         
-        // 🔥 VALIDAR FECHAS
         if (isNaN(start.getTime()) || isNaN(end.getTime())) {
           return {
             statusCode: 400,
@@ -77,6 +75,16 @@ const handler: Handler = async (event: HandlerEvent) => {
 
         console.log('🔍 Searching appointments between:', start, 'and', end);
         const appointments = await AppointmentService.findByDateRange(userData.id, start, end);
+        
+        console.log('📦 Appointments found:', {
+          count: appointments.length,
+          appointments: appointments.map(apt => ({
+            id: apt.id,
+            title: apt.title,
+            patientName: apt.patientName,
+            appointmentDate: apt.appointmentDate
+          }))
+        });
         
         return {
           statusCode: 200,
@@ -137,6 +145,22 @@ const handler: Handler = async (event: HandlerEvent) => {
         notes
       } = body;
 
+      // 🔥 DEBUG: Log de datos recibidos
+      console.log('📝 Creating appointment with data:', {
+        patientId,
+        guestName,
+        guestEmail,
+        guestPhone,
+        guestRut,
+        title,
+        description,
+        appointmentDate,
+        duration,
+        type,
+        notes,
+        doctorId: userData.id
+      });
+
       // Validaciones básicas
       if (!title || !appointmentDate) {
         return {
@@ -189,7 +213,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         };
       }
 
-      // Crear datos de la cita
+      // 🔥 ASEGURAR QUE LOS DATOS DE INVITADO SE PASEN CORRECTAMENTE
       const appointmentData: CreateAppointmentData = {
         doctorId: userData.id,
         patientId: patientId ? parseInt(patientId) : null,
@@ -205,7 +229,11 @@ const handler: Handler = async (event: HandlerEvent) => {
         notes: notes || null
       };
 
+      console.log('🔍 Final appointment data to save:', appointmentData);
+
       const newAppointment = await AppointmentService.create(appointmentData);
+
+      console.log('✅ Appointment created successfully:', newAppointment);
 
       return {
         statusCode: 201,

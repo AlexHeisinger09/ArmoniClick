@@ -135,16 +135,6 @@ const Calendar: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Indicador de estado de conexión */}
-        {!isLoading && !error && (
-          <div className="mb-4 flex justify-end">
-            <div className="flex items-center space-x-2 text-xs text-slate-500">
-              <Wifi className="w-3 h-3 text-green-500" />
-              <span>Conectado</span>
-            </div>
-          </div>
-        )}
-
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden relative">
           {/* Header del calendario */}
           <CalendarHeader
