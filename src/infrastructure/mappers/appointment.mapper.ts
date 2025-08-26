@@ -1,4 +1,4 @@
-// src/infrastructure/mappers/appointment.mapper.ts - MAPPER COMPLETO
+// src/infrastructure/mappers/appointment.mapper.ts - ACTUALIZADO
 import { AppointmentResponse, CreateAppointmentRequest } from '@/infrastructure/interfaces/appointment.response';
 import { 
   Appointment, 
@@ -21,12 +21,12 @@ export class AppointmentMapper {
       const endDate = new Date(date.getTime() + (apt.duration * 60000));
       
       const calendarAppointment: CalendarAppointment = {
-        id: apt.id.toString(), // ✅ Convertir a string
+        id: apt.id.toString(),
         time: this.formatTime(date),
-        duration: apt.duration as number, // ✅ Asegurar que es number
+        duration: apt.duration as number,
         patient: this.getPatientName(apt),
         service: apt.title,
-        status: this.mapStatus(apt.status), // ✅ Mapear status
+        status: this.mapStatus(apt.status),
         type: apt.type,
         notes: apt.notes || undefined,
         email: this.getPatientEmail(apt),
@@ -37,7 +37,7 @@ export class AppointmentMapper {
         start: date,
         end: endDate,
         allDay: false,
-        meta: apt as unknown as Record<string, unknown> // ✅ Cast doble para evitar el error
+        meta: apt as unknown as Record<string, unknown>
       };
       
       if (!calendarData[dateKey]) {
@@ -50,7 +50,7 @@ export class AppointmentMapper {
     return calendarData;
   }
   
-  // Convertir de formulario del calendario a request del backend
+  // ✅ ACTUALIZADO - Convertir de formulario del calendario a request del backend
   static fromCalendarFormToBackendRequest(form: NewAppointmentForm): CreateAppointmentRequest {
     if (!form.date) {
       throw new Error('La fecha es obligatoria');
@@ -61,15 +61,33 @@ export class AppointmentMapper {
     const appointmentDateTime = new Date(form.date);
     appointmentDateTime.setHours(hours, minutes, 0, 0);
     
-    return {
+    // ✅ NUEVO - Crear request con campos correctos según tipo de paciente
+    const request: CreateAppointmentRequest = {
       title: form.service,
       description: form.description || undefined,
       appointmentDate: appointmentDateTime.toISOString(),
       duration: form.duration,
       type: 'consultation',
-      guestName: form.patient, // Usando como invitado por simplicidad
       notes: form.description || undefined
     };
+
+    // Si es paciente registrado
+    if (form.patientId) {
+      request.patientId = form.patientId;
+    }
+    // Si es paciente invitado
+    else if (form.guestName) {
+      request.guestName = form.guestName;
+      request.guestEmail = form.guestEmail;
+      request.guestPhone = form.guestPhone;
+      request.guestRut = form.guestRut;
+    }
+    // Fallback para compatibilidad (si solo viene el nombre)
+    else if (form.patient) {
+      request.guestName = form.patient;
+    }
+
+    return request;
   }
   
   // Obtener rango de fechas para vista del calendario
@@ -77,25 +95,21 @@ export class AppointmentMapper {
     const start = new Date(currentDate);
     const end = new Date(currentDate);
     
-    // Establecer hora al inicio del día para start
     start.setHours(0, 0, 0, 0);
     
     switch (viewMode) {
       case 'month':
-        // Primer día del mes al último día del mes
         start.setDate(1);
         end.setMonth(end.getMonth() + 1, 0);
         end.setHours(23, 59, 59, 999);
         break;
       case 'week':
-        // Lunes de la semana actual al domingo
-        const dayOfWeek = (start.getDay() + 6) % 7; // Ajustar para que lunes = 0
+        const dayOfWeek = (start.getDay() + 6) % 7;
         start.setDate(start.getDate() - dayOfWeek);
         end.setDate(start.getDate() + 6);
         end.setHours(23, 59, 59, 999);
         break;
       case 'day':
-        // Solo el día actual - desde 00:00 hasta 23:59
         end.setHours(23, 59, 59, 999);
         break;
     }
@@ -129,13 +143,13 @@ export class AppointmentMapper {
         start: startDate,
         end: endDate,
         allDay: false,
-        meta: apt as unknown as Record<string, unknown>, // ✅ Cast doble
+        meta: apt as unknown as Record<string, unknown>,
         // Propiedades adicionales para compatibilidad
         time: this.formatTime(startDate),
         duration: apt.duration,
         patient: this.getPatientName(apt),
         service: apt.title,
-        status: this.mapStatus(apt.status), // ✅ Mapear status
+        status: this.mapStatus(apt.status),
         type: apt.type,
         notes: apt.notes || undefined,
         email: this.getPatientEmail(apt),
@@ -158,7 +172,9 @@ export class AppointmentMapper {
     return `${hours}:${minutes}`;
   }
   
+  // ✅ MEJORADO - Obtener nombre del paciente con mejor lógica
   private static getPatientName(apt: AppointmentResponse): string {
+    // Prioridad: Paciente registrado > Invitado > Fallback
     if (apt.patientName && apt.patientLastName) {
       return `${apt.patientName} ${apt.patientLastName}`;
     }
@@ -168,7 +184,7 @@ export class AppointmentMapper {
     if (apt.guestName) {
       return apt.guestName;
     }
-    return 'Sin nombre';
+    return 'Paciente sin nombre';
   }
   
   private static getPatientEmail(apt: AppointmentResponse): string | undefined {
@@ -179,9 +195,8 @@ export class AppointmentMapper {
     return apt.patientPhone || apt.guestPhone || undefined;
   }
   
-  // ✅ Nueva función para mapear status
+  // Función para mapear status
   private static mapStatus(status: any): AppointmentStatus {
-    // Mapear todos los status posibles del backend a los del frontend
     switch (status) {
       case 'completed':
       case 'confirmed':
@@ -190,7 +205,7 @@ export class AppointmentMapper {
       case 'no-show':
         return status;
       default:
-        return 'pending'; // Valor por defecto
+        return 'pending';
     }
   }
 }

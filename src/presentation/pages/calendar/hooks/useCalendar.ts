@@ -1,4 +1,4 @@
-// src/presentation/pages/calendar/hooks/useCalendar.ts - CON DEBUG MEJORADO
+// src/presentation/pages/calendar/hooks/useCalendar.ts - ACTUALIZADO
 import { useState, useEffect, useMemo } from 'react';
 import { 
   AppointmentsCalendarData, 
@@ -17,15 +17,22 @@ export const useCalendar = () => {
   const [showModal, setShowModal] = useState<boolean>(false);
   const [showNewAppointmentModal, setShowNewAppointmentModal] = useState<boolean>(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('day'); // ✅ Cambiar a 'day' por defecto para debugging
+  const [viewMode, setViewMode] = useState<ViewMode>('day');
 
+  // ✅ ACTUALIZADO - Formulario con nuevos campos
   const [newAppointment, setNewAppointment] = useState<NewAppointmentForm>({
     patient: '',
     service: '',
     description: '',
     time: '',
     duration: 60,
-    date: null
+    date: null,
+    // Nuevos campos
+    patientId: undefined,
+    guestName: undefined,
+    guestEmail: undefined,
+    guestPhone: undefined,
+    guestRut: undefined
   });
 
   // Hook del backend - datos reales
@@ -40,7 +47,7 @@ export const useCalendar = () => {
     refetch
   } = useCalendarAppointments(currentDate, viewMode);
 
-  // 🔥 DEBUG: Log de appointments cada vez que cambian
+  // Debug logs
   useEffect(() => {
     console.log('🔍 useCalendar - appointments changed:', {
       currentDate: currentDate.toISOString(),
@@ -50,19 +57,12 @@ export const useCalendar = () => {
       appointments: appointments
     });
 
-    // Debug específico para el día actual
     const todayKey = formatDateKey(currentDate);
     const todayAppointments = appointments[todayKey];
     console.log('📅 Today appointments:', {
       todayKey,
       todayAppointments,
       count: todayAppointments?.length || 0
-    });
-
-    // Debug para todos los días con citas
-    Object.keys(appointments).forEach(dateKey => {
-      const dayAppts = appointments[dateKey];
-      console.log(`📆 ${dateKey}:`, dayAppts.length, 'appointments');
     });
   }, [appointments, currentDate, viewMode]);
 
@@ -101,10 +101,19 @@ export const useCalendar = () => {
       console.log('📅 Date clicked:', day.date.toISOString());
       if (viewMode === 'month') {
         setSelectedDate(day.date);
+        // ✅ ACTUALIZADO - Reset completo del formulario
         setNewAppointment({
-          ...newAppointment,
+          patient: '',
+          service: '',
+          description: '',
+          time: '',
+          duration: 60,
           date: day.date,
-          time: ''
+          patientId: undefined,
+          guestName: undefined,
+          guestEmail: undefined,
+          guestPhone: undefined,
+          guestRut: undefined
         });
         setShowNewAppointmentModal(true);
       } else {
@@ -125,17 +134,21 @@ export const useCalendar = () => {
     });
     
     setSelectedTimeSlot(timeSlot);
-    setNewAppointment({
-      ...newAppointment,
+    // ✅ ACTUALIZADO - Mantener campos existentes al cambiar tiempo
+    setNewAppointment(prev => ({
+      ...prev,
       time: timeSlot,
       date: dateToUse
-    });
+    }));
     setSelectedDate(dateToUse);
     setShowNewAppointmentModal(true);
   };
 
   const handleCreateAppointment = async (): Promise<void> => {
-    if (!newAppointment.patient || !newAppointment.service || !newAppointment.time || !newAppointment.date) {
+    // ✅ ACTUALIZADO - Validaciones mejoradas
+    const hasPatient = newAppointment.patientId || newAppointment.guestName || newAppointment.patient;
+    
+    if (!hasPatient || !newAppointment.service || !newAppointment.time || !newAppointment.date) {
       alert('Por favor complete todos los campos obligatorios');
       return;
     }
@@ -147,14 +160,19 @@ export const useCalendar = () => {
       
       console.log('✅ Appointment created successfully');
       
-      // Limpiar formulario y cerrar modal
+      // ✅ ACTUALIZADO - Limpiar formulario completo
       setNewAppointment({
         patient: '',
         service: '',
         description: '',
         time: '',
         duration: 60,
-        date: null
+        date: null,
+        patientId: undefined,
+        guestName: undefined,
+        guestEmail: undefined,
+        guestPhone: undefined,
+        guestRut: undefined
       });
       setShowNewAppointmentModal(false);
     } catch (error: any) {
@@ -168,6 +186,20 @@ export const useCalendar = () => {
 
   const closeNewAppointmentModal = (): void => {
     setShowNewAppointmentModal(false);
+    // ✅ ACTUALIZADO - Reset completo al cerrar
+    setNewAppointment({
+      patient: '',
+      service: '',
+      description: '',
+      time: '',
+      duration: 60,
+      date: null,
+      patientId: undefined,
+      guestName: undefined,
+      guestEmail: undefined,
+      guestPhone: undefined,
+      guestRut: undefined
+    });
   };
 
   const handleDateSelect = (date: Date): void => {
@@ -181,6 +213,7 @@ export const useCalendar = () => {
 
   const handleAppointmentEdit = (appointment: CalendarAppointment): void => {
     console.log('✏️ Edit appointment:', appointment);
+    // TODO: Implementar lógica de edición
   };
 
   return {

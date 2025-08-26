@@ -1,4 +1,4 @@
-// src/presentation/pages/calendar/Calendar.tsx - CORREGIDO
+// src/presentation/pages/calendar/Calendar.tsx - ACTUALIZADO CON NUEVO MODAL
 import React from 'react';
 import { useCalendar } from './hooks/useCalendar';
 import { CalendarHeader } from './components/CalendarHeader';
@@ -6,6 +6,7 @@ import { MonthView } from './components/MonthView';
 import { WeekView } from './components/WeekView';
 import { DayView } from './components/DayView';
 import { AppointmentModal } from './components/AppointmentModal';
+// ✅ ACTUALIZADO - Importar nuevo modal
 import { NewAppointmentModal } from './components/NewAppointmentModal';
 import { Spinner } from '@/presentation/components/ui/spinner';
 import { Alert, AlertDescription } from '@/presentation/components/ui/alert';
@@ -55,7 +56,6 @@ const Calendar: React.FC = () => {
   };
 
   const renderCalendarView = () => {
-    // 🔥 MOSTRAR SPINNER MIENTRAS CARGA
     if (isLoading) {
       return (
         <div className="flex items-center justify-center py-20">
@@ -70,7 +70,6 @@ const Calendar: React.FC = () => {
       );
     }
 
-    // 🔥 MOSTRAR ERROR SI HAY PROBLEMAS DE CONEXIÓN
     if (error) {
       return (
         <div className="p-6">
@@ -85,7 +84,6 @@ const Calendar: React.FC = () => {
             </AlertDescription>
           </Alert>
           
-          {/* Mostrar calendario vacío cuando hay error para que siga siendo funcional */}
           <div className="mt-4 opacity-50">
             {renderCalendarContent()}
           </div>
@@ -137,7 +135,7 @@ const Calendar: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* 🔥 INDICADOR DE ESTADO DE CONEXIÓN */}
+        {/* Indicador de estado de conexión */}
         {!isLoading && !error && (
           <div className="mb-4 flex justify-end">
             <div className="flex items-center space-x-2 text-xs text-slate-500">
@@ -148,7 +146,7 @@ const Calendar: React.FC = () => {
         )}
 
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden relative">
-          {/* Header del calendario con diseño moderno - SIN CAMBIOS */}
+          {/* Header del calendario */}
           <CalendarHeader
             currentDate={currentDate}
             viewMode={viewMode}
@@ -163,7 +161,7 @@ const Calendar: React.FC = () => {
             {renderCalendarView()}
           </div>
 
-          {/* 🔥 OVERLAY DE CARGA PARA OPERACIONES EN CURSO */}
+          {/* Overlay de carga para operaciones en curso */}
           {(isCreating || isUpdatingStatus) && (
             <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50 backdrop-blur-sm">
               <div className="bg-white rounded-2xl shadow-2xl p-6 flex items-center space-x-4 border border-cyan-200">
@@ -183,7 +181,7 @@ const Calendar: React.FC = () => {
           )}
         </div>
 
-        {/* Modal para ver citas - SIN CAMBIOS */}
+        {/* Modal para ver citas */}
         {showModal && selectedDate && (
           <AppointmentModal
             selectedDate={selectedDate}
@@ -193,7 +191,7 @@ const Calendar: React.FC = () => {
           />
         )}
 
-        {/* Modal para crear nueva cita - SIN CAMBIOS */}
+        {/* ✅ ACTUALIZADO - Nuevo modal mejorado para crear citas */}
         <NewAppointmentModal
           isOpen={showNewAppointmentModal}
           newAppointment={newAppointment}

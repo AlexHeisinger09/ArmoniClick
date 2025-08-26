@@ -1,4 +1,4 @@
-// src/presentation/pages/calendar/types/calendar.ts - TIPOS CORREGIDOS
+// src/presentation/pages/calendar/types/calendar.ts - ACTUALIZADO CON NUEVOS CAMPOS
 export type AppointmentStatus = 'confirmed' | 'pending' | 'cancelled' | 'no-show' | 'completed';
 
 export interface Appointment {
@@ -11,7 +11,7 @@ export interface Appointment {
   
   // Propiedades adicionales necesarias para el calendario
   time: string;
-  duration: number; // ✅ Mantener como number para flexibilidad
+  duration: number;
   patient: string;
   service: string;
   status: AppointmentStatus;
@@ -24,7 +24,7 @@ export interface Appointment {
 export interface CalendarAppointment {
   id: string;
   time: string;
-  duration: number; // ✅ Cambiado a number para compatibilidad
+  duration: number;
   patient: string;
   service: string;
   status: AppointmentStatus;
@@ -54,13 +54,24 @@ export interface CalendarDay {
   isCurrentMonth: boolean;
 }
 
+// ✅ ACTUALIZADO - Nuevo formulario con campos para pacientes registrados e invitados
 export interface NewAppointmentForm {
+  // Datos básicos
   patient: string;
   service: string;
   description: string;
   time: string;
   duration: number;
   date: Date | null;
+  
+  // ✅ NUEVOS CAMPOS - Para paciente registrado
+  patientId?: number;
+  
+  // ✅ NUEVOS CAMPOS - Para paciente invitado
+  guestName?: string;
+  guestEmail?: string;
+  guestPhone?: string;
+  guestRut?: string;
 }
 
 export type ViewMode = 'month' | 'week' | 'day';
