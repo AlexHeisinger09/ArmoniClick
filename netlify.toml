@@ -20,7 +20,7 @@
 # ✅ Ruta "bonita" para probar el cron manualmente
 [[redirects]]
   from = "/api/cron/"
-  to = "/.netlify/functions/cron/daily-reminders"
+  to = "/.netlify/functions/cron/"
   status = 200
 
 # --- Tus redirects existentes (los dejo tal cual) ---
