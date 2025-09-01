@@ -1,13 +1,29 @@
-# netlify.toml - ACTUALIZADO CON CRON Y NUEVAS RUTAS
+# netlify.toml
 
 [build]
-  functions = "netlify/functions"
+  # Si ya configuras build/publish en la UI, puedes omitir estos dos.
+  # Los dejo comentados por si los necesitas.
+  # command = "npm run build"
+  # publish = "dist"
 
-# ✅ NUEVO - CRON JOB para recordatorios diarios a las 10:00 AM Chile
-[functions."cron/daily-reminders"]
-  schedule = "0 13 * * *"  # 13:00 UTC = 10:00 AM Chile (UTC-3)
+# 👇 Esta es la forma correcta de declarar el directorio de funciones
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
 
-# ✅ NUEVAS RUTAS - Confirmación y cancelación de citas
+# 🕒 Scheduled Function (formato recomendado por Netlify)
+# path es la RUTA DE ARCHIVO relativa a [functions].directory (sin .ts)
+[[scheduled.functions]]
+  path = "cron/daily-reminders"
+  schedule = "0 13 * * *"  # 13:00 UTC = 10:00 Chile (UTC-3)
+
+# ✅ Ruta "bonita" para probar el cron manualmente
+[[redirects]]
+  from = "/api/cron/daily-reminders"
+  to = "/.netlify/functions/cron-daily-reminders"
+  status = 200
+
+# --- Tus redirects existentes (los dejo tal cual) ---
 [[redirects]]
   from = "/api/appointments/confirm/:token"
   to = "/.netlify/functions/appointments/confirm-appointment"
@@ -18,13 +34,6 @@
   to = "/.netlify/functions/appointments/cancel-appointment"
   status = 200
 
-# ✅ NUEVA RUTA - CRON manual para testing
-[[redirects]]
-  from = "/api/cron/daily-reminders"
-  to = "/.netlify/functions/cron-daily-reminders"
-  status = 200
-
-# Rutas existentes para tratamientos
 [[redirects]]
   from = "/api/treatments/patient/:patientId"
   to = "/.netlify/functions/treatments"
@@ -35,7 +44,6 @@
   to = "/.netlify/functions/treatments"
   status = 200
 
-# Otras rutas existentes...
 [[redirects]]
   from = "/api/auth/*"
   to = "/.netlify/functions/auth"
@@ -80,7 +88,7 @@
   status = 200
   methods = ["GET", "OPTIONS"]
 
-# Ruta por defecto para SPA
+# SPA fallback
 [[redirects]]
   from = "/*"
   to = "/index.html"
