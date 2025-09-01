@@ -1,9 +1,9 @@
 // netlify/functions/cron/daily-reminders.ts
-import { Handler, HandlerEvent, HandlerContext } from "@netlify/functions";
+import { Handler, HandlerEvent } from "@netlify/functions";
 import { AppointmentService } from "../../services/appointment.service";
 import { HEADERS } from "../../config/utils";
 
-const handler: Handler = async (event: HandlerEvent, _context: HandlerContext) => {
+const handler: Handler = async (event: HandlerEvent) => {
   // Permitir ejecución por Netlify Scheduler o manual con token
   const userAgent = event.headers["user-agent"] || "";
   const isCronJob = userAgent.includes("Netlify") || !!event.headers["x-netlify-scheduled"];
