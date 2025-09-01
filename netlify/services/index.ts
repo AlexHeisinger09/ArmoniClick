@@ -6,3 +6,5 @@ export * from "./treatment.service";
 export * from "./treatment-upload.service";
 export * from "./budget.service";
 export * from "./appointment.service"; 
+export * from "./notification.service";
+export * from "./token.service";
