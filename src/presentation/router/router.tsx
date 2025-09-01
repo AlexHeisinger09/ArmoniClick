@@ -14,6 +14,10 @@ import { Configuration } from "../pages/configuration/Configuration";
 import BudgetPage from "../pages/budgets/BudgetPage";
 import DocumentsPage from "../pages/documents/DocumentsPage";
 
+// ✅ NUEVAS IMPORTACIONES para confirmación/cancelación de citas
+import  ConfirmAppointment  from "../pages/appointment/ConfirmAppointment";
+import  CancelAppointment  from "../pages/appointment/CancelAppointment";
+
 export const router = createBrowserRouter([
   // Ruta raíz - Redirige al login
   {
@@ -25,6 +29,17 @@ export const router = createBrowserRouter([
         element: <Login />,
       },
     ],
+  },
+
+  // ✅ NUEVAS RUTAS PÚBLICAS para confirmación/cancelación de citas
+  // Estas rutas NO requieren autenticación
+  {
+    path: "/confirm-appointment/:token",
+    element: <ConfirmAppointment />,
+  },
+  {
+    path: "/cancel-appointment/:token", 
+    element: <CancelAppointment />,
   },
 
   // Rutas de autenticación con prefijo /auth y AuthLayout
