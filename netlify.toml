@@ -7,7 +7,7 @@
   # publish = "dist"
 
 # 👇 Esta es la forma correcta de declarar el directorio de funciones
-[functions]
+  [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
@@ -19,8 +19,8 @@
 
 # ✅ Ruta "bonita" para probar el cron manualmente
 [[redirects]]
-  from = "/api/cron/daily-reminders"
-  to = "/.netlify/functions/cron-daily-reminders"
+  from = "/api/cron/"
+  to = "/.netlify/functions/cron/daily-reminders"
   status = 200
 
 # --- Tus redirects existentes (los dejo tal cual) ---
