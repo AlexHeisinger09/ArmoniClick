@@ -1,7 +1,7 @@
 // netlify/functions/cron/daily-reminders.ts
 import { Handler, HandlerEvent } from "@netlify/functions";
-import { AppointmentService } from "../../services/appointment.service";
-import { HEADERS } from "../../config/utils";
+import { AppointmentService } from "../services/appointment.service";
+import { HEADERS } from "../config/utils";
 
 const handler: Handler = async (event: HandlerEvent) => {
   // Permitir ejecución por Netlify Scheduler o manual con token
