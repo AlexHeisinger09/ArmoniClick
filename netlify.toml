@@ -17,9 +17,10 @@
   path = "daily-reminders" 
   schedule = "0 13 * * *"  # 13:00 UTC = 10:00 Chile (UTC-3)
 
+# ----- RUTA BONITA: deja que el SPA (React Router) la maneje -----
 [[redirects]]
   from = "/confirm-appointment/:token"
-  to = "/.netlify/functions/appointments-confirm-appointment/:token"
+  to = "/index.html"
   status = 200
   force = true
 
@@ -36,7 +37,6 @@
   to = "/.netlify/functions/appointments-cancel-appointment/:token"
   status = 200
   force = true
-
 
 [[redirects]]
   from = "/api/treatments/patient/:patientId"
@@ -92,7 +92,13 @@
   status = 200
   methods = ["GET", "OPTIONS"]
 
-# SPA fallback
+# ✅ Protege el namespace de Functions para que el fallback del SPA no lo intercepte
+[[redirects]]
+  from = "/.netlify/functions/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# SPA fallback (dejar al final)
 [[redirects]]
   from = "/*"
   to = "/index.html"
