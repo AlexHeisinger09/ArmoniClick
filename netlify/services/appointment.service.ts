@@ -1,9 +1,11 @@
-// netlify/services/appointment.service.ts - CORREGIDO PARA INVITADOS
+// netlify/services/appointment.service.ts - COMPLETO CON NOTIFICACIONES
 import { eq, and, between, sql } from "drizzle-orm";
 import { db } from "../data/db";
 import { appointmentsTable } from "../data/schemas/appointment.schema";
 import { usersTable } from "../data/schemas/user.schema";
 import { patientsTable } from "../data/schemas/patient.schema";
+import { TokenService } from "./token.service";
+import { NotificationService } from "./notification.service";
 
 // Tipos para las respuestas del servicio
 export interface CreateAppointmentData {
@@ -46,7 +48,8 @@ export interface AppointmentWithDetails {
   reminderSent: boolean | null;
   createdAt: Date | null;
   updatedAt: Date | null;
-  
+  confirmationToken: string | null;
+
   // Datos del paciente
   patientId: number | null;
   patientName: string | null;
@@ -54,13 +57,13 @@ export interface AppointmentWithDetails {
   patientEmail: string | null;
   patientPhone: string | null;
   patientRut: string | null;
-  
+
   // Datos del invitado
   guestName: string | null;
   guestEmail: string | null;
   guestPhone: string | null;
   guestRut: string | null;
-  
+
   // Datos del doctor
   doctorName: string | null;
   doctorLastName: string | null;
@@ -78,17 +81,44 @@ export interface AppointmentSummary {
 }
 
 export class AppointmentService {
-  // Crear nueva cita
+  private static notificationService = new NotificationService();
+
+  // Crear nueva cita CON NOTIFICACIÓN
   static async create(data: CreateAppointmentData) {
     try {
       console.log('🔍 Creating appointment with data:', data);
 
+      // 1. Verificar disponibilidad CON MEJOR LOGGING
+      console.log('📅 Checking availability before creating appointment...');
+      const isAvailable = await this.checkAvailability(
+        data.doctorId,
+        data.appointmentDate,
+        data.duration || 60
+      );
+
+      console.log('📊 Availability check result:', {
+        isAvailable,
+        doctorId: data.doctorId,
+        appointmentDate: data.appointmentDate.toISOString(),
+        duration: data.duration || 60
+      });
+
+      if (!isAvailable) {
+        // ✅ CORREGIDO - Permitir sobrecupos pero informar al usuario
+        console.log('⚠️ Time slot not available, but allowing overbook');
+        // No lanzar error, solo continuar con la creación
+      }
+
+      // 2. Generar token de confirmación
+      const confirmationToken = TokenService.generateConfirmationToken();
+
+      // 3. Crear la cita en la base de datos
       const [appointment] = await db
         .insert(appointmentsTable)
         .values({
           doctorId: data.doctorId,
           patientId: data.patientId || null,
-          guestName: data.guestName || null, // 🔥 ASEGURAR QUE SE GUARDE
+          guestName: data.guestName || null,
           guestEmail: data.guestEmail || null,
           guestPhone: data.guestPhone || null,
           guestRut: data.guestRut || null,
@@ -99,16 +129,108 @@ export class AppointmentService {
           type: data.type || 'consultation',
           notes: data.notes || null,
           status: 'pending',
+          confirmationToken: confirmationToken,
           createdAt: new Date(),
           updatedAt: new Date()
         })
         .returning();
 
-      console.log('✅ Appointment created successfully:', appointment);
+      console.log('✅ Appointment created successfully:', {
+        id: appointment.id,
+        appointmentDate: appointment.appointmentDate.toISOString(),
+        title: appointment.title,
+        isOverbook: !isAvailable
+      });
+
+      // 4. Obtener datos completos para el email (doctor + paciente)
+      try {
+        const appointmentDetails = await this.getAppointmentDetailsForEmail(appointment.id);
+
+        if (appointmentDetails) {
+          console.log('📧 Sending confirmation email...');
+
+          // 5. Enviar email de confirmación
+          await this.notificationService.sendAppointmentConfirmation({
+            appointmentId: appointment.id,
+            patientName: appointmentDetails.patientName,
+            patientEmail: appointmentDetails.patientEmail,
+            doctorName: appointmentDetails.doctorName,
+            appointmentDate: appointment.appointmentDate,
+            service: appointment.title,
+            duration: appointment.duration || 60,
+            notes: appointment.notes || undefined,
+            confirmationToken: confirmationToken
+          });
+        }
+      } catch (emailError) {
+        console.error('⚠️ Error sending confirmation email (appointment created successfully):', emailError);
+        // No fallar la creación de la cita por un error de email
+      }
+
       return appointment;
     } catch (error) {
       console.error("❌ Error creating appointment:", error);
       throw new Error("Error al crear la cita");
+    }
+  }
+
+  // Método helper para obtener datos completos del appointment para email
+  private static async getAppointmentDetailsForEmail(appointmentId: number) {
+    try {
+      const result = await db
+        .select({
+          id: appointmentsTable.id,
+          title: appointmentsTable.title,
+          appointmentDate: appointmentsTable.appointmentDate,
+          duration: appointmentsTable.duration,
+          notes: appointmentsTable.notes,
+          confirmationToken: appointmentsTable.confirmationToken,
+
+          // Datos del paciente registrado
+          patientName: patientsTable.nombres,
+          patientLastName: patientsTable.apellidos,
+          patientEmail: patientsTable.email,
+
+          // Datos del invitado
+          guestName: appointmentsTable.guestName,
+          guestEmail: appointmentsTable.guestEmail,
+
+          // Datos del doctor
+          doctorName: usersTable.name,
+          doctorLastName: usersTable.lastName
+        })
+        .from(appointmentsTable)
+        .leftJoin(patientsTable, eq(appointmentsTable.patientId, patientsTable.id))
+        .innerJoin(usersTable, eq(appointmentsTable.doctorId, usersTable.id))
+        .where(eq(appointmentsTable.id, appointmentId))
+        .limit(1);
+
+      const appointment = result[0];
+
+      if (!appointment) {
+        throw new Error(`Appointment ${appointmentId} not found`);
+      }
+
+      // Determinar nombre y email del paciente (registrado o invitado)
+      const patientName = appointment.patientName
+        ? `${appointment.patientName} ${appointment.patientLastName || ''}`.trim()
+        : appointment.guestName || 'Paciente';
+
+      const patientEmail = appointment.patientEmail || appointment.guestEmail;
+
+      if (!patientEmail) {
+        console.warn('⚠️ No email found for patient in appointment:', appointmentId);
+        return null;
+      }
+
+      return {
+        patientName,
+        patientEmail,
+        doctorName: `${appointment.doctorName} ${appointment.doctorLastName || ''}`.trim()
+      };
+    } catch (error) {
+      console.error('❌ Error getting appointment details for email:', error);
+      return null;
     }
   }
 
@@ -131,7 +253,8 @@ export class AppointmentService {
           reminderSent: appointmentsTable.reminderSent,
           createdAt: appointmentsTable.createdAt,
           updatedAt: appointmentsTable.updatedAt,
-          
+          confirmationToken: appointmentsTable.confirmationToken,
+
           // Datos del paciente registrado
           patientId: patientsTable.id,
           patientName: patientsTable.nombres,
@@ -139,13 +262,13 @@ export class AppointmentService {
           patientEmail: patientsTable.email,
           patientPhone: patientsTable.telefono,
           patientRut: patientsTable.rut,
-          
-          // 🔥 DATOS DEL INVITADO - ASEGURAR QUE SE INCLUYAN
+
+          // Datos del invitado
           guestName: appointmentsTable.guestName,
           guestEmail: appointmentsTable.guestEmail,
           guestPhone: appointmentsTable.guestPhone,
           guestRut: appointmentsTable.guestRut,
-          
+
           // Datos del doctor
           doctorName: usersTable.name,
           doctorLastName: usersTable.lastName
@@ -160,7 +283,7 @@ export class AppointmentService {
         .limit(1);
 
       const appointment = result[0] || null;
-      
+
       if (appointment) {
         console.log('🔍 Found appointment by ID:', {
           id: appointment.id,
@@ -168,8 +291,8 @@ export class AppointmentService {
           patientName: appointment.patientName,
           patientLastName: appointment.patientLastName,
           guestName: appointment.guestName,
-          finalName: appointment.patientName 
-            ? `${appointment.patientName} ${appointment.patientLastName}` 
+          finalName: appointment.patientName
+            ? `${appointment.patientName} ${appointment.patientLastName}`
             : appointment.guestName
         });
       }
@@ -183,13 +306,13 @@ export class AppointmentService {
 
   // Buscar citas por doctor con filtros opcionales
   static async findByDoctor(
-    doctorId: number, 
-    startDate?: Date, 
+    doctorId: number,
+    startDate?: Date,
     endDate?: Date
   ): Promise<AppointmentSummary[]> {
     try {
       const conditions = [eq(appointmentsTable.doctorId, doctorId)];
-      
+
       if (startDate && endDate) {
         conditions.push(between(appointmentsTable.appointmentDate, startDate, endDate));
       }
@@ -202,7 +325,6 @@ export class AppointmentService {
           duration: appointmentsTable.duration,
           status: appointmentsTable.status,
           type: appointmentsTable.type,
-          // 🔥 MEJORAR EL SQL PARA MOSTRAR NOMBRES DE INVITADOS
           patientName: sql<string>`
             CASE 
               WHEN ${patientsTable.nombres} IS NOT NULL AND ${patientsTable.apellidos} IS NOT NULL 
@@ -247,8 +369,8 @@ export class AppointmentService {
 
   // Actualizar cita
   static async update(
-    id: number, 
-    doctorId: number, 
+    id: number,
+    doctorId: number,
     data: UpdateAppointmentData
   ) {
     try {
@@ -294,8 +416,8 @@ export class AppointmentService {
 
   // Buscar citas por rango de fechas (para disponibilidad)
   static async findByDateRange(
-    doctorId: number, 
-    startDate: Date, 
+    doctorId: number,
+    startDate: Date,
     endDate: Date
   ): Promise<AppointmentSummary[]> {
     try {
@@ -307,7 +429,6 @@ export class AppointmentService {
           duration: appointmentsTable.duration,
           status: appointmentsTable.status,
           type: appointmentsTable.type,
-          // 🔥 MEJORAR EL SQL PARA MOSTRAR NOMBRES DE INVITADOS
           patientName: sql<string>`
             CASE 
               WHEN ${patientsTable.nombres} IS NOT NULL AND ${patientsTable.apellidos} IS NOT NULL 
@@ -335,18 +456,6 @@ export class AppointmentService {
         ))
         .orderBy(appointmentsTable.appointmentDate);
 
-      console.log('🔍 Found appointments in date range:', {
-        doctorId,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        count: result.length,
-        appointments: result.map(apt => ({
-          id: apt.id,
-          patientName: apt.patientName,
-          appointmentDate: apt.appointmentDate
-        }))
-      });
-
       return result;
     } catch (error) {
       console.error("Error finding appointments by date range:", error);
@@ -356,45 +465,114 @@ export class AppointmentService {
 
   // Verificar disponibilidad de horario
   static async checkAvailability(
-    doctorId: number, 
-    appointmentDate: Date, 
-    duration: number = 60, 
+    doctorId: number,
+    appointmentDate: Date,
+    duration: number = 60,
     excludeId?: number
   ): Promise<boolean> {
     try {
-      const startTime = appointmentDate;
+      console.log('🔍 Checking availability for:', {
+        doctorId,
+        appointmentDate: appointmentDate.toISOString(),
+        duration,
+        excludeId
+      });
+
+      const startTime = new Date(appointmentDate);
       const endTime = new Date(appointmentDate.getTime() + duration * 60000);
 
-      const conditions = [
-        eq(appointmentsTable.doctorId, doctorId),
-        sql`${appointmentsTable.status} != 'cancelled'`,
-        sql`(
-          ${appointmentsTable.appointmentDate} < ${endTime} AND 
-          (${appointmentsTable.appointmentDate} + INTERVAL '1 minute' * COALESCE(${appointmentsTable.duration}, 60)) > ${startTime}
-        )`
-      ];
+      console.log('🕐 Time range to check:', {
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString()
+      });
 
-      if (excludeId) {
-        conditions.push(sql`${appointmentsTable.id} != ${excludeId}`);
+      // ✅ CORREGIDA - Query más precisa para detectar conflictos reales
+      const conflictQuery = await db
+        .select({
+          id: appointmentsTable.id,
+          appointmentDate: appointmentsTable.appointmentDate,
+          duration: appointmentsTable.duration,
+          status: appointmentsTable.status,
+          title: appointmentsTable.title
+        })
+        .from(appointmentsTable)
+        .where(and(
+          eq(appointmentsTable.doctorId, doctorId),
+          // Solo citas no canceladas
+          sql`${appointmentsTable.status} != 'cancelled'`,
+          // ✅ CORREGIDA - Lógica de solapamiento más precisa
+          sql`${appointmentsTable.appointmentDate} < ${endTime}`,
+          sql`(${appointmentsTable.appointmentDate} + INTERVAL '1 minute' * COALESCE(${appointmentsTable.duration}, 60)) > ${startTime}`,
+          // Excluir cita específica si se proporciona
+          ...(excludeId ? [sql`${appointmentsTable.id} != ${excludeId}`] : [])
+        ));
+
+      console.log('📋 Found potential conflicts:', {
+        count: conflictQuery.length,
+        conflicts: conflictQuery.map(apt => ({
+          id: apt.id,
+          appointmentDate: apt.appointmentDate.toISOString(),
+          duration: apt.duration,
+          status: apt.status,
+          title: apt.title
+        }))
+      });
+
+      // ✅ VERIFICACIÓN ADICIONAL - Analizar cada conflicto potencial
+      let realConflicts = 0;
+
+      for (const conflict of conflictQuery) {
+        const conflictStart = new Date(conflict.appointmentDate);
+        const conflictEnd = new Date(conflictStart.getTime() + (conflict.duration || 60) * 60000);
+
+        console.log('🔍 Analyzing conflict:', {
+          conflictId: conflict.id,
+          conflictStart: conflictStart.toISOString(),
+          conflictEnd: conflictEnd.toISOString(),
+          newStart: startTime.toISOString(),
+          newEnd: endTime.toISOString()
+        });
+
+        // Verificar solapamiento real
+        const hasRealOverlap = (
+          startTime < conflictEnd && endTime > conflictStart
+        );
+
+        if (hasRealOverlap) {
+          console.log('❌ Real conflict found:', {
+            conflictId: conflict.id,
+            title: conflict.title,
+            conflictStart: conflictStart.toISOString(),
+            conflictEnd: conflictEnd.toISOString()
+          });
+          realConflicts++;
+        } else {
+          console.log('✅ No real overlap with conflict:', conflict.id);
+        }
       }
 
-      const conflicts = await db
-        .select({ id: appointmentsTable.id })
-        .from(appointmentsTable)
-        .where(and(...conditions));
+      const isAvailable = realConflicts === 0;
 
-      return conflicts.length === 0;
+      console.log('📊 Availability result:', {
+        isAvailable,
+        realConflicts,
+        totalPotentialConflicts: conflictQuery.length
+      });
+
+      return isAvailable;
+
     } catch (error) {
-      console.error("Error checking availability:", error);
-      throw new Error("Error al verificar disponibilidad");
+      console.error("❌ Error checking availability:", error);
+      // En caso de error, permitir la cita para no bloquear al usuario
+      console.log('⚠️ Allowing appointment due to error in availability check');
+      return true;
     }
   }
-
   // Actualizar solo el estado de una cita
   static async updateStatus(
-    id: number, 
-    doctorId: number, 
-    status: string, 
+    id: number,
+    doctorId: number,
+    status: string,
     reason?: string
   ) {
     try {
@@ -429,12 +607,12 @@ export class AppointmentService {
 
   // Obtener próximas citas
   static async getUpcomingAppointments(
-    doctorId: number, 
+    doctorId: number,
     limit: number = 10
   ): Promise<AppointmentSummary[]> {
     try {
       const now = new Date();
-      
+
       const result = await db
         .select({
           id: appointmentsTable.id,
@@ -443,7 +621,6 @@ export class AppointmentService {
           duration: appointmentsTable.duration,
           status: appointmentsTable.status,
           type: appointmentsTable.type,
-          // 🔥 MEJORAR EL SQL PARA MOSTRAR NOMBRES DE INVITADOS
           patientName: sql<string>`
             CASE 
               WHEN ${patientsTable.nombres} IS NOT NULL AND ${patientsTable.apellidos} IS NOT NULL 
@@ -477,6 +654,175 @@ export class AppointmentService {
     } catch (error) {
       console.error("Error getting upcoming appointments:", error);
       throw new Error("Error al obtener próximas citas");
+    }
+  }
+
+  // ✅ NUEVO MÉTODO - Obtener citas para recordatorios (día siguiente)
+  static async getAppointmentsForReminders(): Promise<AppointmentWithDetails[]> {
+    try {
+      // Calcular el día siguiente
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+
+      const dayAfterTomorrow = new Date(tomorrow);
+      dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
+      dayAfterTomorrow.setHours(0, 0, 0, 0);
+
+      const result = await db
+        .select({
+          id: appointmentsTable.id,
+          title: appointmentsTable.title,
+          description: appointmentsTable.description,
+          appointmentDate: appointmentsTable.appointmentDate,
+          duration: appointmentsTable.duration,
+          status: appointmentsTable.status,
+          type: appointmentsTable.type,
+          notes: appointmentsTable.notes,
+          cancellationReason: appointmentsTable.cancellationReason,
+          confirmedAt: appointmentsTable.confirmedAt,
+          reminderSent: appointmentsTable.reminderSent,
+          createdAt: appointmentsTable.createdAt,
+          updatedAt: appointmentsTable.updatedAt,
+          confirmationToken: appointmentsTable.confirmationToken,
+
+          // Datos del paciente registrado
+          patientId: patientsTable.id,
+          patientName: patientsTable.nombres,
+          patientLastName: patientsTable.apellidos,
+          patientEmail: patientsTable.email,
+          patientPhone: patientsTable.telefono,
+          patientRut: patientsTable.rut,
+
+          // Datos del invitado
+          guestName: appointmentsTable.guestName,
+          guestEmail: appointmentsTable.guestEmail,
+          guestPhone: appointmentsTable.guestPhone,
+          guestRut: appointmentsTable.guestRut,
+
+          // Datos del doctor
+          doctorName: usersTable.name,
+          doctorLastName: usersTable.lastName
+        })
+        .from(appointmentsTable)
+        .leftJoin(patientsTable, eq(appointmentsTable.patientId, patientsTable.id))
+        .innerJoin(usersTable, eq(appointmentsTable.doctorId, usersTable.id))
+        .where(and(
+          // Citas para mañana
+          sql`${appointmentsTable.appointmentDate} >= ${tomorrow}`,
+          sql`${appointmentsTable.appointmentDate} < ${dayAfterTomorrow}`,
+          // Solo citas pendientes o confirmadas
+          sql`${appointmentsTable.status} IN ('pending', 'confirmed')`,
+          // Que no se haya enviado recordatorio
+          eq(appointmentsTable.reminderSent, false)
+        ))
+        .orderBy(appointmentsTable.appointmentDate);
+
+      console.log('📅 Found appointments for reminders:', {
+        tomorrow: tomorrow.toISOString(),
+        count: result.length,
+        appointments: result.map(apt => ({
+          id: apt.id,
+          appointmentDate: apt.appointmentDate?.toISOString(),
+          patientName: apt.patientName || apt.guestName,
+          reminderSent: apt.reminderSent
+        }))
+      });
+
+      return result;
+    } catch (error) {
+      console.error("Error getting appointments for reminders:", error);
+      throw new Error("Error al obtener citas para recordatorios");
+    }
+  }
+
+  // ✅ NUEVO MÉTODO - Marcar recordatorio como enviado
+  static async markReminderSent(appointmentId: number): Promise<void> {
+    try {
+      await db
+        .update(appointmentsTable)
+        .set({
+          reminderSent: true,
+          reminderSentAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(appointmentsTable.id, appointmentId));
+
+      console.log('✅ Marked reminder as sent for appointment:', appointmentId);
+    } catch (error) {
+      console.error('❌ Error marking reminder as sent:', error);
+      throw new Error('Error al marcar recordatorio como enviado');
+    }
+  }
+
+  // ✅ NUEVO MÉTODO - Enviar recordatorios masivos
+  static async sendBatchReminders(): Promise<{ sent: number; failed: number }> {
+    let sent = 0;
+    let failed = 0;
+
+    try {
+      const appointments = await this.getAppointmentsForReminders();
+
+      console.log(`📧 Processing ${appointments.length} appointments for reminders...`);
+
+      for (const appointment of appointments) {
+        try {
+          // Determinar datos del paciente
+          const patientName = appointment.patientName
+            ? `${appointment.patientName} ${appointment.patientLastName || ''}`.trim()
+            : appointment.guestName || 'Paciente';
+
+          const patientEmail = appointment.patientEmail || appointment.guestEmail;
+
+          if (!patientEmail) {
+            console.warn(`⚠️ No email for appointment ${appointment.id}, skipping...`);
+            failed++;
+            continue;
+          }
+
+          if (!appointment.confirmationToken) {
+            console.warn(`⚠️ No confirmation token for appointment ${appointment.id}, skipping...`);
+            failed++;
+            continue;
+          }
+
+          const doctorName = `${appointment.doctorName || ''} ${appointment.doctorLastName || ''}`.trim();
+
+          // Enviar recordatorio
+          const reminderSent = await this.notificationService.sendAppointmentReminder({
+            appointmentId: appointment.id,
+            patientName,
+            patientEmail,
+            doctorName,
+            appointmentDate: appointment.appointmentDate!,
+            service: appointment.title,
+            duration: appointment.duration || 60,
+            notes: appointment.notes || undefined,
+            confirmationToken: appointment.confirmationToken
+          });
+
+          if (reminderSent) {
+            // Marcar como enviado
+            await this.markReminderSent(appointment.id);
+            sent++;
+            console.log(`✅ Reminder sent for appointment ${appointment.id} to ${patientEmail}`);
+          } else {
+            failed++;
+            console.error(`❌ Failed to send reminder for appointment ${appointment.id}`);
+          }
+
+        } catch (appointmentError) {
+          failed++;
+          console.error(`❌ Error processing appointment ${appointment.id}:`, appointmentError);
+        }
+      }
+
+      console.log(`📊 Reminder batch complete: ${sent} sent, ${failed} failed`);
+      return { sent, failed };
+
+    } catch (error) {
+      console.error('❌ Error in batch reminder process:', error);
+      return { sent, failed };
     }
   }
 }

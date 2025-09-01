@@ -27,7 +27,7 @@ const handler: Handler = async (event: HandlerEvent) => {
     const extractAppointmentId = (path: string): number | null => {
       const pathSegments = path.split('/').filter(segment => segment && segment !== '.netlify' && segment !== 'functions' && segment !== 'appointments');
       const lastSegment = pathSegments[pathSegments.length - 1];
-      
+
       if (lastSegment && !isNaN(parseInt(lastSegment))) {
         return parseInt(lastSegment);
       }
@@ -64,7 +64,7 @@ const handler: Handler = async (event: HandlerEvent) => {
       if (startDate && endDate) {
         const start = new Date(startDate);
         const end = new Date(endDate);
-        
+
         if (isNaN(start.getTime()) || isNaN(end.getTime())) {
           return {
             statusCode: 400,
@@ -75,7 +75,7 @@ const handler: Handler = async (event: HandlerEvent) => {
 
         console.log('🔍 Searching appointments between:', start, 'and', end);
         const appointments = await AppointmentService.findByDateRange(userData.id, start, end);
-        
+
         console.log('📦 Appointments found:', {
           count: appointments.length,
           appointments: appointments.map(apt => ({
@@ -85,7 +85,7 @@ const handler: Handler = async (event: HandlerEvent) => {
             appointmentDate: apt.appointmentDate
           }))
         });
-        
+
         return {
           statusCode: 200,
           body: JSON.stringify(appointments),
@@ -113,7 +113,7 @@ const handler: Handler = async (event: HandlerEvent) => {
       }
 
       const appointment = await AppointmentService.findById(appointmentId, userData.id);
-      
+
       if (!appointment) {
         return {
           statusCode: 404,
@@ -128,6 +128,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         headers: HEADERS.json,
       };
     }
+
 
     // POST /appointments - Crear nueva cita
     if (httpMethod === "POST") {
@@ -184,7 +185,7 @@ const handler: Handler = async (event: HandlerEvent) => {
       }
 
       const appointmentDateTime = new Date(appointmentDate);
-      
+
       // Validar que la fecha no sea en el pasado
       if (appointmentDateTime < new Date()) {
         return {
@@ -196,24 +197,9 @@ const handler: Handler = async (event: HandlerEvent) => {
         };
       }
 
-      // Verificar disponibilidad
-      const isAvailable = await AppointmentService.checkAvailability(
-        userData.id,
-        appointmentDateTime,
-        60
-      );
+      // ✅ REMOVIDO - No verificar disponibilidad aquí, lo hace el AppointmentService.create()
+      // La verificación de disponibilidad se maneja internamente y permite sobrecupos
 
-      if (!isAvailable) {
-        return {
-          statusCode: 409,
-          body: JSON.stringify({
-            message: "Ya existe una cita en ese horario. Se puede agendar como sobrecupo."
-          }),
-          headers: HEADERS.json,
-        };
-      }
-
-      // 🔥 ASEGURAR QUE LOS DATOS DE INVITADO SE PASEN CORRECTAMENTE
       const appointmentData: CreateAppointmentData = {
         doctorId: userData.id,
         patientId: patientId ? parseInt(patientId) : null,
@@ -231,18 +217,29 @@ const handler: Handler = async (event: HandlerEvent) => {
 
       console.log('🔍 Final appointment data to save:', appointmentData);
 
-      const newAppointment = await AppointmentService.create(appointmentData);
+      try {
+        const newAppointment = await AppointmentService.create(appointmentData);
 
-      console.log('✅ Appointment created successfully:', newAppointment);
+        console.log('✅ Appointment created successfully:', newAppointment);
 
-      return {
-        statusCode: 201,
-        body: JSON.stringify({
-          message: "Cita creada exitosamente",
-          appointment: newAppointment
-        }),
-        headers: HEADERS.json,
-      };
+        return {
+          statusCode: 201,
+          body: JSON.stringify({
+            message: "Cita creada exitosamente",
+            appointment: newAppointment
+          }),
+          headers: HEADERS.json,
+        };
+      } catch (createError: any) {
+        console.error('❌ Error creating appointment:', createError);
+        return {
+          statusCode: 500,
+          body: JSON.stringify({
+            message: createError.message || "Error al crear la cita"
+          }),
+          headers: HEADERS.json,
+        };
+      }
     }
 
     // PUT /appointments/:id - Actualizar cita (CON ID)
@@ -268,12 +265,12 @@ const handler: Handler = async (event: HandlerEvent) => {
 
       // Crear objeto con tipos correctos
       const updateData: UpdateAppointmentData = {};
-      
+
       if (title) updateData.title = title;
       if (description !== undefined) updateData.description = description || null;
       if (appointmentDate) {
         const newDateTime = new Date(appointmentDate);
-        
+
         // Verificar disponibilidad si se cambia la fecha/hora
         const isAvailable = await AppointmentService.checkAvailability(
           userData.id,
@@ -291,7 +288,7 @@ const handler: Handler = async (event: HandlerEvent) => {
             headers: HEADERS.json,
           };
         }
-        
+
         updateData.appointmentDate = newDateTime;
       }
       if (duration) updateData.duration = parseInt(duration);
@@ -339,7 +336,7 @@ const handler: Handler = async (event: HandlerEvent) => {
       }
 
       const deletedAppointment = await AppointmentService.delete(appointmentId, userData.id);
-      
+
       if (!deletedAppointment) {
         return {
           statusCode: 404,

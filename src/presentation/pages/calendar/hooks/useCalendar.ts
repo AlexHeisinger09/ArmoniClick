@@ -1,4 +1,4 @@
-// src/presentation/pages/calendar/hooks/useCalendar.ts - ACTUALIZADO
+// src/presentation/pages/calendar/hooks/useCalendar.ts - CON NOTIFICACIONES
 import { useState, useEffect, useMemo } from 'react';
 import { 
   AppointmentsCalendarData, 
@@ -9,6 +9,7 @@ import {
 } from '../types/calendar';
 import { formatDateKey } from '../utils/calendar';
 import { useCalendarAppointments } from '@/presentation/hooks/appointments/useCalendarAppointments';
+import { useNotifications } from '@/presentation/hooks/notifications/useNotifications';
 
 export const useCalendar = () => {
   // Estados locales para la UI
@@ -19,7 +20,15 @@ export const useCalendar = () => {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('day');
 
-  // ✅ ACTUALIZADO - Formulario con nuevos campos
+  // Hook de notificaciones
+  const {
+    notifyAppointmentCreated,
+    notifyReminderInfo,
+    notifyEmailError,
+    setProcessing
+  } = useNotifications();
+
+  // Formulario con nuevos campos
   const [newAppointment, setNewAppointment] = useState<NewAppointmentForm>({
     patient: '',
     service: '',
@@ -101,7 +110,7 @@ export const useCalendar = () => {
       console.log('📅 Date clicked:', day.date.toISOString());
       if (viewMode === 'month') {
         setSelectedDate(day.date);
-        // ✅ ACTUALIZADO - Reset completo del formulario
+        // Reset completo del formulario
         setNewAppointment({
           patient: '',
           service: '',
@@ -134,7 +143,7 @@ export const useCalendar = () => {
     });
     
     setSelectedTimeSlot(timeSlot);
-    // ✅ ACTUALIZADO - Mantener campos existentes al cambiar tiempo
+    // Mantener campos existentes al cambiar tiempo
     setNewAppointment(prev => ({
       ...prev,
       time: timeSlot,
@@ -145,7 +154,7 @@ export const useCalendar = () => {
   };
 
   const handleCreateAppointment = async (): Promise<void> => {
-    // ✅ ACTUALIZADO - Validaciones mejoradas
+    // Validaciones mejoradas
     const hasPatient = newAppointment.patientId || newAppointment.guestName || newAppointment.patient;
     
     if (!hasPatient || !newAppointment.service || !newAppointment.time || !newAppointment.date) {
@@ -154,13 +163,34 @@ export const useCalendar = () => {
     }
 
     console.log('✍️ Creating appointment:', newAppointment);
+    setProcessing(true);
 
     try {
+      // Crear la cita
       await createAppointment(newAppointment);
       
       console.log('✅ Appointment created successfully');
+
+      // 📧 NOTIFICAR SOBRE EMAIL Y RECORDATORIOS
+      const patientName = newAppointment.patientId 
+        ? newAppointment.patient 
+        : newAppointment.guestName || newAppointment.patient;
       
-      // ✅ ACTUALIZADO - Limpiar formulario completo
+      const hasEmail = newAppointment.patientId 
+        ? true // Los pacientes registrados siempre tienen email
+        : !!(newAppointment.guestEmail?.trim());
+
+      // Mostrar notificación de éxito con información de email
+      notifyAppointmentCreated(patientName, hasEmail);
+      
+      // Mostrar información sobre recordatorio automático si hay email
+      if (hasEmail) {
+        setTimeout(() => {
+          notifyReminderInfo();
+        }, 2000);
+      }
+      
+      // Limpiar formulario completo
       setNewAppointment({
         patient: '',
         service: '',
@@ -175,8 +205,16 @@ export const useCalendar = () => {
         guestRut: undefined
       });
       setShowNewAppointmentModal(false);
+      
     } catch (error: any) {
       console.error('❌ Error creating appointment:', error);
+      
+      // Mostrar error específico
+      if (error.message?.includes('email')) {
+        notifyEmailError(error.message, 'confirmation');
+      }
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -186,7 +224,7 @@ export const useCalendar = () => {
 
   const closeNewAppointmentModal = (): void => {
     setShowNewAppointmentModal(false);
-    // ✅ ACTUALIZADO - Reset completo al cerrar
+    // Reset completo al cerrar
     setNewAppointment({
       patient: '',
       service: '',

@@ -1,9 +1,30 @@
-# netlify.toml - EJEMPLO DE CONFIGURACIÓN PARA LAS RUTAS DE TRATAMIENTOS
+# netlify.toml - ACTUALIZADO CON CRON Y NUEVAS RUTAS
 
 [build]
   functions = "netlify/functions"
 
-# Rutas para tratamientos
+# ✅ NUEVO - CRON JOB para recordatorios diarios a las 10:00 AM Chile
+[functions."cron/daily-reminders"]
+  schedule = "0 13 * * *"  # 13:00 UTC = 10:00 AM Chile (UTC-3)
+
+# ✅ NUEVAS RUTAS - Confirmación y cancelación de citas
+[[redirects]]
+  from = "/api/appointments/confirm/:token"
+  to = "/.netlify/functions/appointments/confirm-appointment"
+  status = 200
+
+[[redirects]]
+  from = "/api/appointments/cancel/:token"
+  to = "/.netlify/functions/appointments/cancel-appointment"
+  status = 200
+
+# ✅ NUEVA RUTA - CRON manual para testing
+[[redirects]]
+  from = "/api/cron/daily-reminders"
+  to = "/.netlify/functions/cron/daily-reminders"
+  status = 200
+
+# Rutas existentes para tratamientos
 [[redirects]]
   from = "/api/treatments/patient/:patientId"
   to = "/.netlify/functions/treatments"
@@ -22,18 +43,19 @@
 
 [[redirects]]
   from = "/api/patients/*"
-  to = "/.netlify/functions/patients"
+  to = "/.netlify/functions/patients/patients"
   status = 200
 
 [[redirects]]
   from = "/api/user/*"
-  to = "/.netlify/functions/user"
+  to = "/.netlify/functions/user/user"
   status = 200
 
 [[redirects]]
   from = "/api/upload"
   to = "/.netlify/functions/upload"
   status = 200
+
 [[redirects]]
   from = "/api/appointments"
   to = "/.netlify/functions/appointments/appointments"

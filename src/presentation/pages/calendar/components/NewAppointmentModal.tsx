@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, User, UserPlus, Search, Clock, Calendar, FileText, Mail, Phone, ChevronDown } from 'lucide-react';
 import { NewAppointmentForm, AppointmentsData } from '../types/calendar';
 import { timeSlots, services } from '../constants/calendar';
@@ -49,13 +49,15 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   const { queryPatients } = usePatients();
   const patients = queryPatients.data?.patients || [];
   
-  // Filtrar pacientes basado en búsqueda
-  const filteredPatients = patients.filter(patient => 
-    `${patient.nombres} ${patient.apellidos}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.rut.includes(searchTerm)
-  );
+  // Filtrar pacientes basado en búsqueda - MEMOIZADO para evitar recalculos
+  const filteredPatients = useMemo(() => {
+    return patients.filter(patient => 
+      `${patient.nombres} ${patient.apellidos}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.rut.includes(searchTerm)
+    );
+  }, [patients, searchTerm]);
 
-  // Reset states when modal opens/closes
+  // ✅ CORREGIDO - Reset states when modal opens/closes con dependencias correctas
   useEffect(() => {
     if (isOpen) {
       setPatientType('registered');
@@ -64,32 +66,45 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
       setShowPatientSearch(false);
       setGuestData({ name: '', email: '', phone: '', rut: '' });
     }
-  }, [isOpen]);
+  }, [isOpen]); // ✅ Solo dependiendo de isOpen
 
-  // Actualizar el formulario cuando se selecciona un paciente o se cambian datos de invitado
+  // ✅ CORREGIDO - Separar la lógica de actualización del formulario
   useEffect(() => {
+    if (!isOpen) return; // No hacer nada si el modal está cerrado
+    
     if (patientType === 'registered' && selectedPatient) {
-      onChange({
-        ...newAppointment,
-        patient: `${selectedPatient.nombres} ${selectedPatient.apellidos}`,
-        patientId: selectedPatient.id,
-        guestName: undefined,
-        guestEmail: undefined,
-        guestPhone: undefined,
-        guestRut: undefined
-      });
+      // Solo actualizar si realmente cambió
+      const expectedPatientName = `${selectedPatient.nombres} ${selectedPatient.apellidos}`;
+      const expectedPatientId = selectedPatient.id;
+      
+      if (newAppointment.patient !== expectedPatientName || newAppointment.patientId !== expectedPatientId) {
+        onChange({
+          ...newAppointment,
+          patient: expectedPatientName,
+          patientId: expectedPatientId,
+          guestName: undefined,
+          guestEmail: undefined,
+          guestPhone: undefined,
+          guestRut: undefined
+        });
+      }
     } else if (patientType === 'guest' && guestData.name) {
-      onChange({
-        ...newAppointment,
-        patient: guestData.name,
-        patientId: undefined,
-        guestName: guestData.name,
-        guestEmail: guestData.email,
-        guestPhone: guestData.phone,
-        guestRut: guestData.rut
-      });
+      // Solo actualizar si realmente cambió
+      if (newAppointment.patient !== guestData.name || 
+          newAppointment.guestName !== guestData.name ||
+          newAppointment.guestEmail !== guestData.email) {
+        onChange({
+          ...newAppointment,
+          patient: guestData.name,
+          patientId: undefined,
+          guestName: guestData.name,
+          guestEmail: guestData.email,
+          guestPhone: guestData.phone,
+          guestRut: guestData.rut
+        });
+      }
     }
-  }, [patientType, selectedPatient, guestData, onChange, newAppointment]);
+  }, [patientType, selectedPatient, guestData, isOpen]); // ✅ Eliminar newAppointment y onChange de dependencias
 
   const handlePatientSelect = (patient: Patient) => {
     setSelectedPatient(patient);
@@ -104,6 +119,11 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   const isFormValid = () => {
     const hasPatient = patientType === 'registered' ? selectedPatient : guestData.name.trim();
     return hasPatient && newAppointment.service && newAppointment.time && newAppointment.date;
+  };
+
+  // ✅ CORREGIDO - Handler para cambios de formulario sin causar re-renders infinitos
+  const handleFormChange = (updates: Partial<NewAppointmentForm>) => {
+    onChange({ ...newAppointment, ...updates });
   };
 
   if (!isOpen) return null;
@@ -344,7 +364,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
             </label>
             <select
               value={newAppointment.service}
-              onChange={(e) => onChange({ ...newAppointment, service: e.target.value })}
+              onChange={(e) => handleFormChange({ service: e.target.value })}
               className="w-full p-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
             >
               <option value="">Seleccionar tratamiento</option>
@@ -372,7 +392,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
                   <button
                     key={time}
                     type="button"
-                    onClick={() => onChange({ ...newAppointment, time })}
+                    onClick={() => handleFormChange({ time })}
                     disabled={!available}
                     className={`
                       p-3 text-sm rounded-lg transition-all border-2 font-medium relative
@@ -422,7 +442,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
             </label>
             <textarea
               value={newAppointment.description}
-              onChange={(e) => onChange({ ...newAppointment, description: e.target.value })}
+              onChange={(e) => handleFormChange({ description: e.target.value })}
               className="w-full p-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 h-20 resize-none transition-all"
               placeholder="Observaciones, motivo de consulta, etc..."
             />

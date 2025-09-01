@@ -1,4 +1,4 @@
-// netlify/data/schemas/appointment.schema.ts
+// netlify/data/schemas/appointment.schema.ts - CON TOKEN DE CONFIRMACIÓN
 import { 
   integer, 
   varchar, 
@@ -6,7 +6,8 @@ import {
   timestamp, 
   boolean, 
   serial, 
-  pgTable 
+  pgTable,
+  index
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./user.schema";
 import { patientsTable } from "./patient.schema";
@@ -34,18 +35,48 @@ export const appointmentsTable = pgTable("appointments", {
   // Campos para cancelación
   cancellationReason: text("cancellation_reason"),
   
-  // Campos para confirmación
-  confirmationToken: varchar("confirmation_token", { length: 255 }),
+  // 🔑 CAMPOS PARA CONFIRMACIÓN Y NOTIFICACIONES
+  confirmationToken: varchar("confirmation_token", { length: 255 }).unique(), // 🔥 NUEVO CAMPO
   confirmedAt: timestamp("confirmed_at"),
   
-  // Campos para recordatorios
+  // 🔔 CAMPOS PARA RECORDATORIOS
   reminderSent: boolean("reminder_sent").default(false),
   reminderSentAt: timestamp("reminder_sent_at"),
   
   // Timestamps
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
-});
+}, (table) => ({
+  // Índices existentes
+  doctorIdx: index('idx_appointments_doctor').on(table.doctorId),
+  patientIdx: index('idx_appointments_patient').on(table.patientId),
+  dateIdx: index('idx_appointments_date').on(table.appointmentDate),
+  statusIdx: index('idx_appointments_status').on(table.status),
+  
+  // 🔑 NUEVOS ÍNDICES PARA NOTIFICACIONES
+  confirmationTokenIdx: index('idx_appointments_confirmation_token').on(table.confirmationToken),
+  reminderIdx: index('idx_appointments_reminder').on(table.reminderSent, table.appointmentDate),
+  
+  // Índice compuesto para encontrar citas que necesitan recordatorio
+  reminderDueIdx: index('idx_appointments_reminder_due')
+    .on(table.appointmentDate, table.reminderSent, table.status),
+}));
 
 export type Appointment = typeof appointmentsTable.$inferSelect;
 export type NewAppointment = typeof appointmentsTable.$inferInsert;
+
+// 🔥 CONSTANTES PARA ESTADOS DE NOTIFICACIONES
+export const NOTIFICATION_STATUS = {
+  PENDING: 'pending',
+  SENT: 'sent',
+  FAILED: 'failed',
+  REMINDER_SENT: 'reminder_sent'
+} as const;
+
+// 🔥 CONSTANTES PARA TIPOS DE NOTIFICACIÓN
+export const NOTIFICATION_TYPE = {
+  CONFIRMATION: 'confirmation',
+  REMINDER: 'reminder',
+  CANCELLATION: 'cancellation',
+  STATUS_CHANGE: 'status_change'
+} as const;
