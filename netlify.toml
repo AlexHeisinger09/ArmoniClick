@@ -17,22 +17,26 @@
   path = "daily-reminders" 
   schedule = "0 13 * * *"  # 13:00 UTC = 10:00 Chile (UTC-3)
 
-# ✅ Ruta "bonita" para probar el cron manualmente
 [[redirects]]
-  from = "/api/cron/*"
-  to = "/.netlify/functions/cron/*"
+  from = "/confirm-appointment/:token"
+  to = "/.netlify/functions/appointments-confirm-appointment/:token"
   status = 200
+  force = true
 
-# --- Tus redirects existentes (los dejo tal cual) ---
+# CONFIRMAR: pasa :token y usa nombre aplanado
 [[redirects]]
   from = "/api/appointments/confirm/:token"
-  to = "/.netlify/functions/appointments/confirm-appointment"
+  to = "/.netlify/functions/appointments-confirm-appointment/:token"
   status = 200
+  force = true  # evita que el SPA capture la ruta
 
+# CANCELAR: idem (aplanado y token)
 [[redirects]]
   from = "/api/appointments/cancel/:token"
-  to = "/.netlify/functions/appointments/cancel-appointment"
+  to = "/.netlify/functions/appointments-cancel-appointment/:token"
   status = 200
+  force = true
+
 
 [[redirects]]
   from = "/api/treatments/patient/:patientId"
