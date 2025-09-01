@@ -21,7 +21,7 @@
 # ✅ NUEVA RUTA - CRON manual para testing
 [[redirects]]
   from = "/api/cron/daily-reminders"
-  to = "/.netlify/functions/cron/daily-reminders"
+  to = "/.netlify/functions/cron-daily-reminders"
   status = 200
 
 # Rutas existentes para tratamientos
