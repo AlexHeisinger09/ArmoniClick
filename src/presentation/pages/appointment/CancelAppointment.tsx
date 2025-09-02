@@ -1,4 +1,4 @@
-// src/presentation/pages/appointment/CancelAppointment.tsx - CORREGIDO
+// src/presentation/pages/appointment/CancelAppointment.tsx - SIMPLIFICADO COMO CONFIRM
 import React, { useState, useEffect } from 'react';
 import { XCircle, CheckCircle, Clock, Calendar, User, AlertTriangle, Loader2 } from 'lucide-react';
 
@@ -16,6 +16,12 @@ interface ApiResponse {
 }
 
 const CancelAppointment: React.FC = () => {
+  const [loading, setLoading] = useState(true);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [appointment, setAppointment] = useState<AppointmentData | null>(null);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+
   // Obtener token desde URL
   const getTokenFromUrl = () => {
     const path = window.location.pathname;
@@ -23,12 +29,6 @@ const CancelAppointment: React.FC = () => {
     const cancelIndex = pathParts.findIndex(part => part === 'cancel-appointment');
     return pathParts[cancelIndex + 1] || null;
   };
-
-  const [loading, setLoading] = useState(true);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [appointment, setAppointment] = useState<AppointmentData | null>(null);
-  const [confirmCancel, setConfirmCancel] = useState(false);
 
   useEffect(() => {
     const token = getTokenFromUrl();
@@ -51,21 +51,32 @@ const CancelAppointment: React.FC = () => {
     try {
       setLoading(true);
       
-      console.log('🔍 Attempting to cancel appointment with token:', token);
+      console.log('🔍 Token:', token);
       
-      // ✅ CORREGIDO - Usar la ruta correcta según netlify.toml
-      const response = await fetch(`/.netlify/functions/appointments-cancel-appointment/${token}`, {
+      // ✅ SIMPLIFICADO - Solo una URL como en confirm
+      const url = `/.netlify/functions/cancel?token=${token}`;
+      
+      console.log('🌐 Calling:', url);
+      
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
       });
 
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response headers:', response.headers);
+      console.log('📡 Status:', response.status);
+      console.log('📡 Content-Type:', response.headers.get('content-type'));
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textResponse = await response.text();
+        console.log('📡 HTML Response:', textResponse.substring(0, 200));
+        throw new Error('La función no está disponible. Por favor contacta al administrador.');
+      }
 
       const data: ApiResponse = await response.json();
-      console.log('📦 Response data:', data);
+      console.log('📦 Data:', data);
 
       if (response.ok) {
         setSuccess(true);
@@ -73,13 +84,11 @@ const CancelAppointment: React.FC = () => {
         setError(null);
         console.log('✅ Appointment cancelled successfully');
       } else {
-        setError(data.message || 'Error al cancelar la cita');
-        setSuccess(false);
-        console.error('❌ Server error:', data.message);
+        throw new Error(data.message || 'Error del servidor');
       }
     } catch (err: any) {
-      console.error('❌ Network/Parse error:', err);
-      setError('Error de conexión. Por favor intenta más tarde.');
+      console.error('❌ Error:', err);
+      setError(err.message || 'Error de conexión. Por favor intenta más tarde.');
       setSuccess(false);
     } finally {
       setLoading(false);
