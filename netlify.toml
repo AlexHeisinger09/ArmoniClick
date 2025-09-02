@@ -12,19 +12,6 @@
   path = "daily-reminders" 
   schedule = "0 13 * * *"
 
-# ✅ NUEVAS RUTAS SIMPLIFICADAS - Query parameters
-[[redirects]]
-  from = "/confirm-appointment/:token"
-  to = "/.netlify/functions/confirm?token=:token"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/cancel-appointment/:token"
-  to = "/.netlify/functions/cancel?token=:token"
-  status = 200
-  force = true
-
 # RUTAS EXISTENTES
 [[redirects]]
   from = "/api/treatments/patient/:patientId"
