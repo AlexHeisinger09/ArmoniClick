@@ -1,4 +1,4 @@
-// src/presentation/pages/appointment/ConfirmAppointment.tsx - CORREGIDO
+// src/presentation/pages/appointment/ConfirmAppointment.tsx - MEJORADO
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Clock, Calendar, User, FileText, Loader2 } from 'lucide-react';
 
@@ -46,33 +46,73 @@ const ConfirmAppointment: React.FC = () => {
       
       console.log('🔍 Attempting to confirm appointment with token:', confirmationToken);
       
-      // ✅ CORREGIDO - Usar la ruta correcta según netlify.toml
-      const response = await fetch(`/.netlify/functions/appointments-confirm-appointment/${confirmationToken}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      // ✅ MEJORADO - Múltiples intentos con diferentes rutas
+      const urls = [
+        `/.netlify/functions/appointments-confirm-appointment/${confirmationToken}`,
+        `/api/appointments/confirm/${confirmationToken}` // fallback por si las redirecciones funcionan
+      ];
 
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response headers:', response.headers);
+      let lastError = null;
+      
+      for (const url of urls) {
+        try {
+          console.log('🌐 Trying URL:', url);
+          
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
 
-      const data: ApiResponse = await response.json();
-      console.log('📦 Response data:', data);
+          console.log('📡 Response status:', response.status);
+          console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+          console.log('📡 Response URL:', response.url);
 
-      if (response.ok) {
-        setIsSuccess(true);
-        setAppointmentData(data.appointment || null);
-        setErrorMessage(null);
-        console.log('✅ Appointment confirmed successfully');
-      } else {
-        setErrorMessage(data.message || 'Error al confirmar la cita');
-        setIsSuccess(false);
-        console.error('❌ Server error:', data.message);
+          // Verificar el content-type
+          const contentType = response.headers.get('content-type');
+          console.log('📡 Content-Type:', contentType);
+
+          if (!contentType || !contentType.includes('application/json')) {
+            // Si no es JSON, obtener el texto para debug
+            const textResponse = await response.text();
+            console.log('📡 Non-JSON Response (first 500 chars):', textResponse.substring(0, 500));
+            
+            // Si es HTML, probablemente es una página de error 404
+            if (textResponse.includes('<!doctype') || textResponse.includes('<html>')) {
+              console.log('❌ Received HTML instead of JSON - function might not exist');
+              lastError = `Función no encontrada en ${url}`;
+              continue; // Probar la siguiente URL
+            }
+            
+            throw new Error(`Respuesta no válida: ${contentType}`);
+          }
+
+          const data: ApiResponse = await response.json();
+          console.log('📦 Response data:', data);
+
+          if (response.ok) {
+            setIsSuccess(true);
+            setAppointmentData(data.appointment || null);
+            setErrorMessage(null);
+            console.log('✅ Appointment confirmed successfully');
+            return; // Éxito, salir del bucle
+          } else {
+            throw new Error(data.message || 'Error del servidor');
+          }
+        } catch (fetchError: any) {
+          console.log(`❌ Error with URL ${url}:`, fetchError.message);
+          lastError = fetchError.message;
+          continue; // Probar la siguiente URL
+        }
       }
+
+      // Si llegamos aquí, todos los intentos fallaron
+      throw new Error(lastError || 'No se pudo conectar con el servidor');
+
     } catch (err: any) {
-      console.error('❌ Network/Parse error:', err);
-      setErrorMessage('Error de conexión. Por favor intenta más tarde.');
+      console.error('❌ Final error:', err);
+      setErrorMessage(err.message || 'Error de conexión. Por favor intenta más tarde.');
       setIsSuccess(false);
     } finally {
       setIsLoading(false);
@@ -203,6 +243,7 @@ const ConfirmAppointment: React.FC = () => {
                 <li>• La cita ya fue confirmada anteriormente</li>
                 <li>• La cita fue cancelada</li>
                 <li>• El enlace no es válido</li>
+                <li>• Error temporal del servidor</li>
               </ul>
               
               <div className="mt-4 pt-4 border-t border-red-200">
@@ -214,13 +255,23 @@ const ConfirmAppointment: React.FC = () => {
           </>
         )}
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center space-y-3">
           <button
             onClick={() => window.location.href = '/'}
             className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium transition-colors shadow-sm"
           >
             Volver al inicio
           </button>
+          
+          {/* Botón de debug solo en desarrollo */}
+          {process.env.NODE_ENV === 'development' && (
+            <button
+              onClick={() => console.log('Current URL:', window.location.href)}
+              className="ml-3 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-sm"
+            >
+              Debug URL
+            </button>
+          )}
         </div>
       </div>
     </div>

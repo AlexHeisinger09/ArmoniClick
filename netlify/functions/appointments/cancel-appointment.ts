@@ -1,4 +1,4 @@
-// netlify/functions/appointments/cancel-appointment.ts - COMPLETA
+// netlify/functions/appointments/cancel-appointment.ts - TIPOS CORREGIDOS
 import { Handler, HandlerEvent } from "@netlify/functions";
 import { HEADERS } from "../../config/utils";
 import { db } from "../../data/db";
@@ -6,6 +6,13 @@ import { appointmentsTable } from "../../data/schemas/appointment.schema";
 import { eq } from "drizzle-orm";
 
 const handler: Handler = async (event: HandlerEvent) => {
+  console.log('🔍 Cancel appointment function called:', {
+    httpMethod: event.httpMethod,
+    path: event.path,
+    headers: event.headers,
+    queryStringParameters: event.queryStringParameters
+  });
+
   const { httpMethod, path } = event;
 
   // Manejar preflight OPTIONS
@@ -18,6 +25,7 @@ const handler: Handler = async (event: HandlerEvent) => {
 
   // Solo permitir GET
   if (httpMethod !== "GET") {
+    console.log('❌ Method not allowed:', httpMethod);
     return {
       statusCode: 405,
       body: JSON.stringify({
@@ -28,12 +36,34 @@ const handler: Handler = async (event: HandlerEvent) => {
   }
 
   try {
-    // Extraer token de la URL
+    // ✅ CORREGIDO - Solo parsing manual del path (sin pathParameters)
+    console.log('🔍 Extracting token from path:', path);
+    
+    let confirmationToken: string | null = null;
+    
     const pathParts = path.split('/');
-    const tokenIndex = pathParts.findIndex(part => part === 'cancel-appointment') + 1;
-    const confirmationToken = pathParts[tokenIndex];
+    console.log('🔍 Path parts:', pathParts);
+    
+    // Buscar el índice después de 'cancel-appointment' o 'appointments-cancel-appointment'
+    const cancelIndex = pathParts.findIndex(part => 
+      part === 'appointments-cancel-appointment' || 
+      part === 'cancel-appointment'
+    );
+    
+    if (cancelIndex !== -1 && pathParts[cancelIndex + 1]) {
+      confirmationToken = pathParts[cancelIndex + 1];
+      console.log('✅ Token found by parsing:', confirmationToken);
+    } else {
+      // Método alternativo: tomar el último segmento que no esté vacío
+      const lastSegment = pathParts[pathParts.length - 1];
+      if (lastSegment && lastSegment.length > 10) { // tokens son largos
+        confirmationToken = lastSegment;
+        console.log('✅ Token found as last segment:', confirmationToken);
+      }
+    }
 
     if (!confirmationToken) {
+      console.log('❌ No token found in path:', path);
       return {
         statusCode: 400,
         body: JSON.stringify({
@@ -53,8 +83,10 @@ const handler: Handler = async (event: HandlerEvent) => {
       .limit(1);
 
     const appointment = appointments[0];
+    console.log('🔍 Found appointment:', appointment ? { id: appointment.id, status: appointment.status } : null);
 
     if (!appointment) {
+      console.log('❌ Appointment not found for token:', confirmationToken);
       return {
         statusCode: 404,
         body: JSON.stringify({
@@ -66,6 +98,7 @@ const handler: Handler = async (event: HandlerEvent) => {
 
     // Verificar si la cita ya está cancelada
     if (appointment.status === 'cancelled') {
+      console.log('⚠️ Appointment already cancelled:', appointment.id);
       return {
         statusCode: 200,
         body: JSON.stringify({
@@ -87,6 +120,11 @@ const handler: Handler = async (event: HandlerEvent) => {
     const now = new Date();
     
     if (appointmentDate < now) {
+      console.log('❌ Cannot cancel past appointment:', {
+        appointmentId: appointment.id,
+        appointmentDate: appointmentDate.toISOString(),
+        now: now.toISOString()
+      });
       return {
         statusCode: 400,
         body: JSON.stringify({
@@ -98,6 +136,7 @@ const handler: Handler = async (event: HandlerEvent) => {
 
     // Verificar que no sea una cita completada
     if (appointment.status === 'completed') {
+      console.log('❌ Cannot cancel completed appointment:', appointment.id);
       return {
         statusCode: 400,
         body: JSON.stringify({
@@ -118,7 +157,7 @@ const handler: Handler = async (event: HandlerEvent) => {
       .where(eq(appointmentsTable.id, appointment.id))
       .returning();
 
-    console.log('✅ Appointment cancelled:', updatedAppointment.id);
+    console.log('✅ Appointment cancelled successfully:', updatedAppointment.id);
 
     return {
       statusCode: 200,
@@ -137,6 +176,7 @@ const handler: Handler = async (event: HandlerEvent) => {
 
   } catch (error: any) {
     console.error("❌ Error cancelling appointment:", error);
+    console.error("❌ Error stack:", error.stack);
     return {
       statusCode: 500,
       body: JSON.stringify({

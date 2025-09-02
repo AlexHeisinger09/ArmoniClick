@@ -1,12 +1,18 @@
-// netlify/functions/appointments/confirm-appointment.ts
+// netlify/functions/appointments/confirm-appointment.ts - TIPOS CORREGIDOS
 import { Handler, HandlerEvent } from "@netlify/functions";
 import { HEADERS } from "../../config/utils";
-import { AppointmentService } from "../../services/appointment.service";
 import { db } from "../../data/db";
 import { appointmentsTable } from "../../data/schemas/appointment.schema";
 import { eq } from "drizzle-orm";
 
 const handler: Handler = async (event: HandlerEvent) => {
+  console.log('🔍 Confirm appointment function called:', {
+    httpMethod: event.httpMethod,
+    path: event.path,
+    headers: event.headers,
+    queryStringParameters: event.queryStringParameters
+  });
+
   const { httpMethod, path } = event;
 
   // Manejar preflight OPTIONS
@@ -19,6 +25,7 @@ const handler: Handler = async (event: HandlerEvent) => {
 
   // Solo permitir GET
   if (httpMethod !== "GET") {
+    console.log('❌ Method not allowed:', httpMethod);
     return {
       statusCode: 405,
       body: JSON.stringify({
@@ -29,12 +36,34 @@ const handler: Handler = async (event: HandlerEvent) => {
   }
 
   try {
-    // Extraer token de la URL
+    // ✅ CORREGIDO - Solo parsing manual del path (sin pathParameters)
+    console.log('🔍 Extracting token from path:', path);
+    
+    let confirmationToken: string | null = null;
+    
     const pathParts = path.split('/');
-    const tokenIndex = pathParts.findIndex(part => part === 'confirm-appointment') + 1;
-    const confirmationToken = pathParts[tokenIndex];
+    console.log('🔍 Path parts:', pathParts);
+    
+    // Buscar el índice después de 'confirm-appointment' o 'appointments-confirm-appointment'
+    const confirmIndex = pathParts.findIndex(part => 
+      part === 'appointments-confirm-appointment' || 
+      part === 'confirm-appointment'
+    );
+    
+    if (confirmIndex !== -1 && pathParts[confirmIndex + 1]) {
+      confirmationToken = pathParts[confirmIndex + 1];
+      console.log('✅ Token found by parsing:', confirmationToken);
+    } else {
+      // Método alternativo: tomar el último segmento que no esté vacío
+      const lastSegment = pathParts[pathParts.length - 1];
+      if (lastSegment && lastSegment.length > 10) { // tokens son largos
+        confirmationToken = lastSegment;
+        console.log('✅ Token found as last segment:', confirmationToken);
+      }
+    }
 
     if (!confirmationToken) {
+      console.log('❌ No token found in path:', path);
       return {
         statusCode: 400,
         body: JSON.stringify({
@@ -54,8 +83,10 @@ const handler: Handler = async (event: HandlerEvent) => {
       .limit(1);
 
     const appointment = appointments[0];
+    console.log('🔍 Found appointment:', appointment ? { id: appointment.id, status: appointment.status } : null);
 
     if (!appointment) {
+      console.log('❌ Appointment not found for token:', confirmationToken);
       return {
         statusCode: 404,
         body: JSON.stringify({
@@ -67,6 +98,7 @@ const handler: Handler = async (event: HandlerEvent) => {
 
     // Verificar si la cita ya está confirmada
     if (appointment.status === 'confirmed') {
+      console.log('⚠️ Appointment already confirmed:', appointment.id);
       return {
         statusCode: 200,
         body: JSON.stringify({
@@ -84,6 +116,7 @@ const handler: Handler = async (event: HandlerEvent) => {
 
     // Verificar que la cita no esté cancelada
     if (appointment.status === 'cancelled') {
+      console.log('❌ Cannot confirm cancelled appointment:', appointment.id);
       return {
         statusCode: 400,
         body: JSON.stringify({
@@ -98,6 +131,11 @@ const handler: Handler = async (event: HandlerEvent) => {
     const now = new Date();
     
     if (appointmentDate < now) {
+      console.log('❌ Cannot confirm past appointment:', {
+        appointmentId: appointment.id,
+        appointmentDate: appointmentDate.toISOString(),
+        now: now.toISOString()
+      });
       return {
         statusCode: 400,
         body: JSON.stringify({
@@ -118,7 +156,7 @@ const handler: Handler = async (event: HandlerEvent) => {
       .where(eq(appointmentsTable.id, appointment.id))
       .returning();
 
-    console.log('✅ Appointment confirmed:', updatedAppointment.id);
+    console.log('✅ Appointment confirmed successfully:', updatedAppointment.id);
 
     return {
       statusCode: 200,
@@ -137,6 +175,7 @@ const handler: Handler = async (event: HandlerEvent) => {
 
   } catch (error: any) {
     console.error("❌ Error confirming appointment:", error);
+    console.error("❌ Error stack:", error.stack);
     return {
       statusCode: 500,
       body: JSON.stringify({
