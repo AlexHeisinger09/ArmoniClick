@@ -1,43 +1,31 @@
-# netlify.toml
+# netlify.toml - ACTUALIZADO
 
 [build]
   # Si ya configuras build/publish en la UI, puedes omitir estos dos.
-  # Los dejo comentados por si los necesitas.
-  # command = "npm run build"
-  # publish = "dist"
 
-# 👇 Esta es la forma correcta de declarar el directorio de funciones
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
-# 🕒 Scheduled Function (formato recomendado por Netlify)
-# path es la RUTA DE ARCHIVO relativa a [functions].directory (sin .ts)
+# 🕒 Scheduled Function
 [[scheduled.functions]]
   path = "daily-reminders" 
-  schedule = "0 13 * * *"  # 13:00 UTC = 10:00 Chile (UTC-3)
+  schedule = "0 13 * * *"
 
-# ----- RUTA BONITA: deja que el SPA (React Router) la maneje -----
+# ✅ NUEVAS RUTAS SIMPLIFICADAS - Query parameters
 [[redirects]]
   from = "/confirm-appointment/:token"
-  to = "/index.html"
+  to = "/.netlify/functions/confirm?token=:token"
   status = 200
   force = true
 
-# CONFIRMAR: pasa :token y usa nombre aplanado
 [[redirects]]
-  from = "/api/appointments/confirm/:token"
-  to = "/.netlify/functions/appointments-confirm-appointment/:token"
-  status = 200
-  force = true  # evita que el SPA capture la ruta
-
-# CANCELAR: idem (aplanado y token)
-[[redirects]]
-  from = "/api/appointments/cancel/:token"
-  to = "/.netlify/functions/appointments-cancel-appointment/:token"
+  from = "/cancel-appointment/:token"
+  to = "/.netlify/functions/cancel?token=:token"
   status = 200
   force = true
 
+# RUTAS EXISTENTES
 [[redirects]]
   from = "/api/treatments/patient/:patientId"
   to = "/.netlify/functions/treatments"
@@ -92,13 +80,12 @@
   status = 200
   methods = ["GET", "OPTIONS"]
 
-# ✅ Protege el namespace de Functions para que el fallback del SPA no lo intercepte
 [[redirects]]
   from = "/.netlify/functions/*"
   to = "/.netlify/functions/:splat"
   status = 200
 
-# SPA fallback (dejar al final)
+# SPA fallback
 [[redirects]]
   from = "/*"
   to = "/index.html"

@@ -1,4 +1,4 @@
-// src/presentation/pages/appointment/ConfirmAppointment.tsx - MEJORADO
+// src/presentation/pages/appointment/ConfirmAppointment.tsx - URLS SIMPLES
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Clock, Calendar, User, FileText, Loader2 } from 'lucide-react';
 
@@ -16,13 +16,11 @@ interface ApiResponse {
 }
 
 const ConfirmAppointment: React.FC = () => {
-  // Estados con nombres únicos
   const [isLoading, setIsLoading] = useState(true);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [appointmentData, setAppointmentData] = useState<AppointmentData | null>(null);
 
-  // Obtener token desde URL
   const getTokenFromUrl = () => {
     const path = window.location.pathname;
     const pathParts = path.split('/');
@@ -44,74 +42,43 @@ const ConfirmAppointment: React.FC = () => {
     try {
       setIsLoading(true);
       
-      console.log('🔍 Attempting to confirm appointment with token:', confirmationToken);
+      console.log('🔍 Token:', confirmationToken);
       
-      // ✅ MEJORADO - Múltiples intentos con diferentes rutas
-      const urls = [
-        `/.netlify/functions/appointments-confirm-appointment/${confirmationToken}`,
-        `/api/appointments/confirm/${confirmationToken}` // fallback por si las redirecciones funcionan
-      ];
-
-      let lastError = null;
+      // ✅ SIMPLIFICADO - Solo una URL con query parameter
+      const url = `/.netlify/functions/confirm?token=${confirmationToken}`;
       
-      for (const url of urls) {
-        try {
-          console.log('🌐 Trying URL:', url);
-          
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
+      console.log('🌐 Calling:', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-          console.log('📡 Response status:', response.status);
-          console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
-          console.log('📡 Response URL:', response.url);
+      console.log('📡 Status:', response.status);
+      console.log('📡 Content-Type:', response.headers.get('content-type'));
 
-          // Verificar el content-type
-          const contentType = response.headers.get('content-type');
-          console.log('📡 Content-Type:', contentType);
-
-          if (!contentType || !contentType.includes('application/json')) {
-            // Si no es JSON, obtener el texto para debug
-            const textResponse = await response.text();
-            console.log('📡 Non-JSON Response (first 500 chars):', textResponse.substring(0, 500));
-            
-            // Si es HTML, probablemente es una página de error 404
-            if (textResponse.includes('<!doctype') || textResponse.includes('<html>')) {
-              console.log('❌ Received HTML instead of JSON - function might not exist');
-              lastError = `Función no encontrada en ${url}`;
-              continue; // Probar la siguiente URL
-            }
-            
-            throw new Error(`Respuesta no válida: ${contentType}`);
-          }
-
-          const data: ApiResponse = await response.json();
-          console.log('📦 Response data:', data);
-
-          if (response.ok) {
-            setIsSuccess(true);
-            setAppointmentData(data.appointment || null);
-            setErrorMessage(null);
-            console.log('✅ Appointment confirmed successfully');
-            return; // Éxito, salir del bucle
-          } else {
-            throw new Error(data.message || 'Error del servidor');
-          }
-        } catch (fetchError: any) {
-          console.log(`❌ Error with URL ${url}:`, fetchError.message);
-          lastError = fetchError.message;
-          continue; // Probar la siguiente URL
-        }
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textResponse = await response.text();
+        console.log('📡 HTML Response:', textResponse.substring(0, 200));
+        throw new Error('La función no está disponible. Por favor contacta al administrador.');
       }
 
-      // Si llegamos aquí, todos los intentos fallaron
-      throw new Error(lastError || 'No se pudo conectar con el servidor');
+      const data: ApiResponse = await response.json();
+      console.log('📦 Data:', data);
+
+      if (response.ok) {
+        setIsSuccess(true);
+        setAppointmentData(data.appointment || null);
+        setErrorMessage(null);
+      } else {
+        throw new Error(data.message || 'Error del servidor');
+      }
 
     } catch (err: any) {
-      console.error('❌ Final error:', err);
+      console.error('❌ Error:', err);
       setErrorMessage(err.message || 'Error de conexión. Por favor intenta más tarde.');
       setIsSuccess(false);
     } finally {
@@ -154,7 +121,6 @@ const ConfirmAppointment: React.FC = () => {
       <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full">
         {isSuccess ? (
           <>
-            {/* Éxito */}
             <div className="text-center mb-8">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6">
                 <CheckCircle className="w-12 h-12 text-green-500" />
@@ -223,7 +189,6 @@ const ConfirmAppointment: React.FC = () => {
           </>
         ) : (
           <>
-            {/* Error */}
             <div className="text-center mb-8">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-6">
                 <XCircle className="w-12 h-12 text-red-500" />
@@ -245,33 +210,17 @@ const ConfirmAppointment: React.FC = () => {
                 <li>• El enlace no es válido</li>
                 <li>• Error temporal del servidor</li>
               </ul>
-              
-              <div className="mt-4 pt-4 border-t border-red-200">
-                <p className="text-red-700 text-sm">
-                  <strong>¿Necesitas ayuda?</strong> Contacta directamente con nosotros para resolver este problema.
-                </p>
-              </div>
             </div>
           </>
         )}
 
-        <div className="mt-8 text-center space-y-3">
+        <div className="mt-8 text-center">
           <button
             onClick={() => window.location.href = '/'}
             className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium transition-colors shadow-sm"
           >
             Volver al inicio
           </button>
-          
-          {/* Botón de debug solo en desarrollo */}
-          {process.env.NODE_ENV === 'development' && (
-            <button
-              onClick={() => console.log('Current URL:', window.location.href)}
-              className="ml-3 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-sm"
-            >
-              Debug URL
-            </button>
-          )}
         </div>
       </div>
     </div>
