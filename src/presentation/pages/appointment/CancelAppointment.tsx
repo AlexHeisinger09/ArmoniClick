@@ -1,4 +1,4 @@
-// src/presentation/pages/appointment-actions/CancelAppointment.tsx
+// src/presentation/pages/appointment/CancelAppointment.tsx - CORREGIDO
 import React, { useState, useEffect } from 'react';
 import { XCircle, CheckCircle, Clock, Calendar, User, AlertTriangle, Loader2 } from 'lucide-react';
 
@@ -51,24 +51,34 @@ const CancelAppointment: React.FC = () => {
     try {
       setLoading(true);
       
-      const response = await fetch(`/api/appointments/cancel/${token}`, {
+      console.log('🔍 Attempting to cancel appointment with token:', token);
+      
+      // ✅ CORREGIDO - Usar la ruta correcta según netlify.toml
+      const response = await fetch(`/.netlify/functions/appointments-cancel-appointment/${token}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
       });
 
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', response.headers);
+
       const data: ApiResponse = await response.json();
+      console.log('📦 Response data:', data);
 
       if (response.ok) {
         setSuccess(true);
         setAppointment(data.appointment || null);
         setError(null);
+        console.log('✅ Appointment cancelled successfully');
       } else {
         setError(data.message || 'Error al cancelar la cita');
         setSuccess(false);
+        console.error('❌ Server error:', data.message);
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error('❌ Network/Parse error:', err);
       setError('Error de conexión. Por favor intenta más tarde.');
       setSuccess(false);
     } finally {

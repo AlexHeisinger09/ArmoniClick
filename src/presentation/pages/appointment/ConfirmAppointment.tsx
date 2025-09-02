@@ -1,3 +1,4 @@
+// src/presentation/pages/appointment/ConfirmAppointment.tsx - CORREGIDO
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Clock, Calendar, User, FileText, Loader2 } from 'lucide-react';
 
@@ -43,24 +44,34 @@ const ConfirmAppointment: React.FC = () => {
     try {
       setIsLoading(true);
       
-      const response = await fetch(`/api/appointments/confirm/${confirmationToken}`, {
+      console.log('🔍 Attempting to confirm appointment with token:', confirmationToken);
+      
+      // ✅ CORREGIDO - Usar la ruta correcta según netlify.toml
+      const response = await fetch(`/.netlify/functions/appointments-confirm-appointment/${confirmationToken}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
       });
 
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', response.headers);
+
       const data: ApiResponse = await response.json();
+      console.log('📦 Response data:', data);
 
       if (response.ok) {
         setIsSuccess(true);
         setAppointmentData(data.appointment || null);
         setErrorMessage(null);
+        console.log('✅ Appointment confirmed successfully');
       } else {
         setErrorMessage(data.message || 'Error al confirmar la cita');
         setIsSuccess(false);
+        console.error('❌ Server error:', data.message);
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error('❌ Network/Parse error:', err);
       setErrorMessage('Error de conexión. Por favor intenta más tarde.');
       setIsSuccess(false);
     } finally {
