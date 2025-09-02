@@ -10,7 +10,7 @@
 # 🕒 Scheduled Function
 [[scheduled.functions]]
   path = "daily-reminders" 
-  schedule = "0 13 * * *"
+  schedule = "0 14 * * *"
 
 # RUTAS EXISTENTES
 [[redirects]]
