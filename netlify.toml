@@ -2,7 +2,7 @@
 
 [build]
   # Si ya configuras build/publish en la UI, puedes omitir estos dos.
-  
+
 [build.environment]
   TZ = "America/Santiago"
 
@@ -11,9 +11,8 @@
   node_bundler = "esbuild"
 
 # 🕒 Scheduled Function
-[[scheduled.functions]]
-  path = "daily-reminders" 
-  schedule = "0 14 * * *"
+[functions."daily-reminders"]
+schedule = "30 18 * * *"  # 14:30 CL (18:30 UTC, ajustar en verano a 17:30)
 
 # RUTAS EXISTENTES
 [[redirects]]
