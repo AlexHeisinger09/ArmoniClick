@@ -1,4 +1,4 @@
-// netlify/functions/appointments/appointments.ts - CORREGIDO PARA DEBUG
+// netlify/functions/appointments/appointments.ts - CORRECCIÓN TIMEZONE
 import { Handler, HandlerEvent } from "@netlify/functions";
 import { validateJWT } from "../../middlewares";
 import { HEADERS, fromBodyToObject } from "../../config/utils";
@@ -46,7 +46,7 @@ const handler: Handler = async (event: HandlerEvent) => {
       body
     });
 
-    // GET /appointments - Obtener todas las citas del doctor (SIN ID)
+    // GET /appointments - Obtener todas las citas del doctor
     if (httpMethod === "GET" && !hasAppointmentId) {
       const { startDate, endDate, upcoming } = queryStringParameters || {};
 
@@ -93,7 +93,6 @@ const handler: Handler = async (event: HandlerEvent) => {
         };
       }
 
-      // Todas las citas sin filtro
       const appointments = await AppointmentService.findByDoctor(userData.id);
       return {
         statusCode: 200,
@@ -102,7 +101,7 @@ const handler: Handler = async (event: HandlerEvent) => {
       };
     }
 
-    // GET /appointments/:id - Obtener cita específica (CON ID)
+    // GET /appointments/:id - Obtener cita específica
     if (httpMethod === "GET" && hasAppointmentId) {
       if (!appointmentId || appointmentId <= 0) {
         return {
@@ -129,7 +128,6 @@ const handler: Handler = async (event: HandlerEvent) => {
       };
     }
 
-
     // POST /appointments - Crear nueva cita
     if (httpMethod === "POST") {
       const {
@@ -146,7 +144,6 @@ const handler: Handler = async (event: HandlerEvent) => {
         notes
       } = body;
 
-      // 🔥 DEBUG: Log de datos recibidos
       console.log('📝 Creating appointment with data:', {
         patientId,
         guestName,
@@ -184,10 +181,50 @@ const handler: Handler = async (event: HandlerEvent) => {
         };
       }
 
-      const appointmentDateTime = new Date(appointmentDate);
+      // ✅ CORRECCIÓN DE TIMEZONE - Parsear correctamente la fecha
+      console.log('🔧 Parsing appointment date:', {
+        receivedDate: appointmentDate,
+        type: typeof appointmentDate
+      });
+
+      let appointmentDateTime: Date;
+
+      try {
+        // Si la fecha incluye timezone (+/-), la parseamos directamente
+        if (appointmentDate.includes('+') || appointmentDate.includes('Z') || appointmentDate.match(/-\d{2}:\d{2}$/)) {
+          appointmentDateTime = new Date(appointmentDate);
+          console.log('✅ Parsed date with timezone:', {
+            originalString: appointmentDate,
+            parsedDate: appointmentDateTime.toISOString(),
+            localTime: appointmentDateTime.toLocaleString('es-CL', { timeZone: 'America/Santiago' }),
+            hours: appointmentDateTime.getHours(),
+            minutes: appointmentDateTime.getMinutes()
+          });
+        } else {
+          // Si no tiene timezone, asumir que es hora local de Chile y agregar timezone
+          const dateWithChileTimezone = appointmentDate + '-04:00';
+          appointmentDateTime = new Date(dateWithChileTimezone);
+          console.log('✅ Added Chile timezone to date:', {
+            originalString: appointmentDate,
+            withTimezone: dateWithChileTimezone,
+            parsedDate: appointmentDateTime.toISOString(),
+            localTime: appointmentDateTime.toLocaleString('es-CL', { timeZone: 'America/Santiago' })
+          });
+        }
+      } catch (error) {
+        console.error('❌ Error parsing date:', error);
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: "Formato de fecha inválido"
+          }),
+          headers: HEADERS.json,
+        };
+      }
 
       // Validar que la fecha no sea en el pasado
-      if (appointmentDateTime < new Date()) {
+      const now = new Date();
+      if (appointmentDateTime < now) {
         return {
           statusCode: 400,
           body: JSON.stringify({
@@ -196,9 +233,6 @@ const handler: Handler = async (event: HandlerEvent) => {
           headers: HEADERS.json,
         };
       }
-
-      // ✅ REMOVIDO - No verificar disponibilidad aquí, lo hace el AppointmentService.create()
-      // La verificación de disponibilidad se maneja internamente y permite sobrecupos
 
       const appointmentData: CreateAppointmentData = {
         doctorId: userData.id,
@@ -209,18 +243,27 @@ const handler: Handler = async (event: HandlerEvent) => {
         guestRut: guestRut || null,
         title,
         description: description || null,
-        appointmentDate: appointmentDateTime,
+        appointmentDate: appointmentDateTime, // ✅ Usar fecha parseada correctamente
         duration: 60,
         type,
         notes: notes || null
       };
 
-      console.log('🔍 Final appointment data to save:', appointmentData);
+      console.log('🔍 Final appointment data to save:', {
+        ...appointmentData,
+        appointmentDate: appointmentData.appointmentDate.toISOString(),
+        localTime: appointmentData.appointmentDate.toLocaleString('es-CL', { timeZone: 'America/Santiago' })
+      });
 
       try {
         const newAppointment = await AppointmentService.create(appointmentData);
 
-        console.log('✅ Appointment created successfully:', newAppointment);
+        console.log('✅ Appointment created successfully:', {
+          id: newAppointment.id,
+          savedDate: newAppointment.appointmentDate,
+          savedDateISO: newAppointment.appointmentDate.toISOString(),
+          savedLocalTime: newAppointment.appointmentDate.toLocaleString('es-CL', { timeZone: 'America/Santiago' })
+        });
 
         return {
           statusCode: 201,
@@ -242,7 +285,7 @@ const handler: Handler = async (event: HandlerEvent) => {
       }
     }
 
-    // PUT /appointments/:id - Actualizar cita (CON ID)
+    // PUT /appointments/:id - Actualizar cita
     if (httpMethod === "PUT" && hasAppointmentId) {
       if (!appointmentId || appointmentId <= 0) {
         return {
@@ -263,15 +306,19 @@ const handler: Handler = async (event: HandlerEvent) => {
         cancellationReason
       } = body;
 
-      // Crear objeto con tipos correctos
       const updateData: UpdateAppointmentData = {};
 
       if (title) updateData.title = title;
       if (description !== undefined) updateData.description = description || null;
       if (appointmentDate) {
-        const newDateTime = new Date(appointmentDate);
+        // ✅ MISMA CORRECCIÓN PARA UPDATE
+        let newDateTime: Date;
+        if (appointmentDate.includes('+') || appointmentDate.includes('Z') || appointmentDate.match(/-\d{2}:\d{2}$/)) {
+          newDateTime = new Date(appointmentDate);
+        } else {
+          newDateTime = new Date(appointmentDate + '-04:00');
+        }
 
-        // Verificar disponibilidad si se cambia la fecha/hora
         const isAvailable = await AppointmentService.checkAvailability(
           userData.id,
           newDateTime,
@@ -325,7 +372,7 @@ const handler: Handler = async (event: HandlerEvent) => {
       };
     }
 
-    // DELETE /appointments/:id - Eliminar cita (CON ID)
+    // DELETE /appointments/:id - Eliminar cita
     if (httpMethod === "DELETE" && hasAppointmentId) {
       if (!appointmentId || appointmentId <= 0) {
         return {

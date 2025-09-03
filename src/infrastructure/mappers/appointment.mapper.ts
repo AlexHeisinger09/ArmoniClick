@@ -1,4 +1,3 @@
-// src/infrastructure/mappers/appointment.mapper.ts
 import { AppointmentResponse, CreateAppointmentRequest } from '@/infrastructure/interfaces/appointment.response';
 import { 
   Appointment, 
@@ -11,28 +10,39 @@ import {
 
 export class AppointmentMapper {
   
-  // ✅ NUEVO MÉTODO - Ajustar zona horaria para Chile
-  private static adjustToChileTimezone(date: Date): Date {
-    // Chile está en UTC-4 (horario estándar) o UTC-3 (horario de verano)
-    // Para simplificar, usamos UTC-4 como base
-    const adjustedDate = new Date(date);
-    adjustedDate.setHours(adjustedDate.getHours() - 4);
-    return adjustedDate;
-  }
-
-  // ✅ NUEVO MÉTODO - Crear fecha local sin conversión UTC
+  // ✅ CORRECCIÓN DEFINITIVA - Sin conversiones automáticas de JavaScript
   private static createLocalDateTime(date: Date, time: string): string {
     const [hours, minutes] = time.split(':').map(Number);
     
-    // Crear fecha local sin conversión UTC
+    console.log('🔧 Creating precise datetime:', {
+      originalDate: date.toISOString(),
+      selectedTime: time,
+      hours,
+      minutes,
+      dateDay: date.getDate(),
+      dateMonth: date.getMonth() + 1,
+      dateYear: date.getFullYear()
+    });
+    
+    // ✅ CONSTRUIR MANUALMENTE SIN QUE JAVASCRIPT HAGA CONVERSIONES
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const hoursStr = String(hours).padStart(2, '0');
     const minutesStr = String(minutes).padStart(2, '0');
     
-    // Formato ISO local para Chile (UTC-4)
-    return `${year}-${month}-${day}T${hoursStr}:${minutesStr}:00-04:00`;
+    // ✅ FORMATO ISO SIMPLE - SIN TIMEZONE para evitar conversiones
+    const isoDateTime = `${year}-${month}-${day}T${hoursStr}:${minutesStr}:00`;
+    
+    console.log('🔧 Final appointment date:', {
+      isoDateTime,
+      shouldShowInCalendar: `${hoursStr}:${minutesStr}`,
+      shouldSaveInDB: `${year}-${month}-${day} ${hoursStr}:${minutesStr}:00`
+    });
+    
+    console.log('✅ Generated simple ISO (no timezone conversion):', isoDateTime);
+    
+    return isoDateTime;
   }
 
   // ✅ ACTUALIZADO - Convertir de formulario del calendario a request del backend
@@ -41,28 +51,25 @@ export class AppointmentMapper {
       throw new Error('La fecha es obligatoria');
     }
     
-    console.log('🔍 Original form data:', {
-      date: form.date,
-      time: form.time,
-      dateISO: form.date.toISOString(),
-      localDateString: form.date.toLocaleDateString('es-CL'),
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    console.log('🔍 Processing appointment form:', {
+      originalDate: form.date.toISOString(),
+      originalDateISO: form.date.toISOString(),
+      selectedTime: form.time,
+      dateDay: form.date.getDate(),
+      dateMonth: form.date.getMonth() + 1,
+      dateYear: form.date.getFullYear()
     });
     
-    // ✅ CORREGIDO - Usar método que no convierte a UTC
+    // ✅ USAR MÉTODO CORREGIDO
     const appointmentDateTime = this.createLocalDateTime(form.date, form.time);
     
-    console.log('🔍 Processed appointment date:', {
-      originalDate: form.date.toISOString(),
-      processedDateTime: appointmentDateTime,
-      time: form.time
-    });
+    console.log('📤 Final appointment datetime for backend:', appointmentDateTime);
     
     // Crear request con campos correctos según tipo de paciente
     const request: CreateAppointmentRequest = {
       title: form.service,
       description: form.description || undefined,
-      appointmentDate: appointmentDateTime, // ✅ Usar fecha ajustada
+      appointmentDate: appointmentDateTime,
       duration: form.duration,
       type: 'consultation',
       notes: form.description || undefined
@@ -92,16 +99,16 @@ export class AppointmentMapper {
       console.log('🔍 Creating appointment with fallback guest name:', form.patient);
     }
 
-    console.log('📤 Final backend request:', request);
+    console.log('📤 Complete backend request:', request);
     return request;
   }
   
-  // Convertir de respuesta del backend a formato de calendario
+  // ✅ MÉTODO CORREGIDO - Convertir de respuesta del backend a formato de calendario
   static fromBackendToCalendarData(appointments: AppointmentResponse[]): AppointmentsCalendarData {
     const calendarData: AppointmentsCalendarData = {};
     
     appointments.forEach(apt => {
-      // ✅ CORREGIDO - Parsear fecha sin conversión UTC adicional
+      // ✅ PARSEAR FECHA RESPETANDO LA ZONA HORARIA
       const date = new Date(apt.appointmentDate);
       
       console.log('🔍 Processing backend appointment:', {
@@ -148,8 +155,16 @@ export class AppointmentMapper {
       
       console.log('✅ Added appointment to calendar:', {
         dateKey,
-        appointment: calendarAppointment
+        time: calendarAppointment.time,
+        patient: calendarAppointment.patient,
+        service: calendarAppointment.service
       });
+    });
+    
+    console.log('📋 Final calendar data:', {
+      totalDates: Object.keys(calendarData).length,
+      dates: Object.keys(calendarData),
+      totalAppointments: Object.values(calendarData).reduce((total, dayAppts) => total + dayAppts.length, 0)
     });
     
     return calendarData;

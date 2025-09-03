@@ -1,4 +1,4 @@
-// netlify/data/schemas/appointment.schema.ts - CON TOKEN DE CONFIRMACIÓN
+// netlify/data/schemas/appointment.schema.ts - CON TIMESTAMP SIMPLE
 import { 
   integer, 
   varchar, 
@@ -26,26 +26,27 @@ export const appointmentsTable = pgTable("appointments", {
   // Datos de la cita
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
-  appointmentDate: timestamp("appointment_date").notNull(),
+  // ✅ CORRECCIÓN - Usar timestamp simple SIN timezone para evitar conversiones
+  appointmentDate: timestamp("appointment_date", { withTimezone: false }).notNull(),
   duration: integer("duration").default(60),
-  status: varchar("status", { length: 20 }).default("pending"), // pending, confirmed, cancelled, no-show, completed
-  type: varchar("type", { length: 20 }).default("consultation"), // consultation, treatment, follow-up, emergency
+  status: varchar("status", { length: 20 }).default("pending"),
+  type: varchar("type", { length: 20 }).default("consultation"),
   notes: text("notes"),
   
   // Campos para cancelación
   cancellationReason: text("cancellation_reason"),
   
-  // 🔑 CAMPOS PARA CONFIRMACIÓN Y NOTIFICACIONES
-  confirmationToken: varchar("confirmation_token", { length: 255 }).unique(), // 🔥 NUEVO CAMPO
-  confirmedAt: timestamp("confirmed_at"),
+  // Campos para confirmación y notificaciones
+  confirmationToken: varchar("confirmation_token", { length: 255 }).unique(),
+  confirmedAt: timestamp("confirmed_at", { withTimezone: false }),
   
-  // 🔔 CAMPOS PARA RECORDATORIOS
+  // Campos para recordatorios
   reminderSent: boolean("reminder_sent").default(false),
-  reminderSentAt: timestamp("reminder_sent_at"),
+  reminderSentAt: timestamp("reminder_sent_at", { withTimezone: false }),
   
-  // Timestamps
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
+  // Timestamps - también sin timezone
+  createdAt: timestamp("created_at", { withTimezone: false }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: false }).defaultNow()
 }, (table) => ({
   // Índices existentes
   doctorIdx: index('idx_appointments_doctor').on(table.doctorId),
@@ -53,7 +54,7 @@ export const appointmentsTable = pgTable("appointments", {
   dateIdx: index('idx_appointments_date').on(table.appointmentDate),
   statusIdx: index('idx_appointments_status').on(table.status),
   
-  // 🔑 NUEVOS ÍNDICES PARA NOTIFICACIONES
+  // Índices para notificaciones
   confirmationTokenIdx: index('idx_appointments_confirmation_token').on(table.confirmationToken),
   reminderIdx: index('idx_appointments_reminder').on(table.reminderSent, table.appointmentDate),
   
@@ -65,7 +66,7 @@ export const appointmentsTable = pgTable("appointments", {
 export type Appointment = typeof appointmentsTable.$inferSelect;
 export type NewAppointment = typeof appointmentsTable.$inferInsert;
 
-// 🔥 CONSTANTES PARA ESTADOS DE NOTIFICACIONES
+// Constantes para estados de notificaciones
 export const NOTIFICATION_STATUS = {
   PENDING: 'pending',
   SENT: 'sent',
@@ -73,7 +74,7 @@ export const NOTIFICATION_STATUS = {
   REMINDER_SENT: 'reminder_sent'
 } as const;
 
-// 🔥 CONSTANTES PARA TIPOS DE NOTIFICACIÓN
+// Constantes para tipos de notificación
 export const NOTIFICATION_TYPE = {
   CONFIRMATION: 'confirmation',
   REMINDER: 'reminder',
