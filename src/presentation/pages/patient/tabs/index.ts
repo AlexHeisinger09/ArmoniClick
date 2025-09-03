@@ -1,7 +1,7 @@
 // src/presentation/pages/patient/tabs/index.ts - ACTUALIZADO
 export { PatientInformation } from './information/PatientInformation';
 export { PatientBudget } from './budget/PatientBudget';
-export { PatientAppointments } from './appointments/PatientAppointments';
+export { PatientAppointmentModal } from './appointments/PatientAppointments';
 export { PatientMedicalHistory } from './medicalHistory/PatientMedicalHistory';
 
 // Import from treatments subfolder
