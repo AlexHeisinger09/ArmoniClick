@@ -1,16 +1,10 @@
-// src/presentation/pages/patient/tabs/appointments/PatientAppointments.tsx
-import React, { useState, useMemo } from 'react';
-import { Plus, Calendar, Clock, User, Phone, Mail, ChevronRight, Filter } from 'lucide-react';
-import { Patient } from "@/core/use-cases/patients";
-import { useAppointments } from '@/presentation/hooks/appointments/useAppointments';
-import { PatientAppointmentModal } from '../appointments/PatientAppointmentModal';
-import { useCreateAppointment } from '@/presentation/hooks/appointments/useCreateAppointment';
-import { useCalendarAppointments } from '@/presentation/hooks/appointments/useCalendarAppointments';
-import { AppointmentResponse } from '@/infrastructure/interfaces/appointment.response';
-import { AppointmentMapper } from '@/infrastructure/mappers/appointment.mapper';
-import { Spinner } from '@/presentation/components/ui/spinner';
-import { Alert, AlertDescription } from '@/presentation/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+// src/presentation/pages/patient/components/PatientAppointmentModal.tsx
+import React, { useState, useEffect } from 'react';
+import { X, Clock, Calendar, FileText, Loader, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Patient } from '@/core/use-cases/patients';
+import { timeSlots } from '@/presentation/pages/calendar/constants/calendar';
+import { isTimeSlotAvailable, hasOverlap } from '@/presentation/pages/calendar/utils/calendar';
+import { AppointmentsData } from '@/presentation/pages/calendar/types/calendar';
 
 interface PatientAppointmentForm {
   date: Date;
@@ -20,415 +14,330 @@ interface PatientAppointmentForm {
   duration: number;
 }
 
-interface PatientAppointmentsProps {
+interface PatientAppointmentModalProps {
+  isOpen: boolean;
   patient: Patient;
+  appointments: AppointmentsData;
+  onClose: () => void;
+  onSubmit: (appointmentData: PatientAppointmentForm) => void;
+  isCreating?: boolean;
 }
 
-type AppointmentFilter = 'all' | 'upcoming' | 'completed' | 'cancelled';
+export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = ({
+  isOpen,
+  patient,
+  appointments,
+  onClose,
+  onSubmit,
+  isCreating = false
+}) => {
+  // Estado del formulario específico para pacientes
+  const [appointmentForm, setAppointmentForm] = useState<PatientAppointmentForm>({
+    date: new Date(),
+    time: '',
+    service: '',
+    description: '',
+    duration: 60
+  });
 
-const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patient }) => {
-  // Estados para el modal específico de pacientes
-  const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
-  const [filter, setFilter] = useState<AppointmentFilter>('all');
-  
-  // Hook para obtener todas las citas del doctor (sin filtros de fecha)
-  const { data: allAppointments, isLoading, error, refetch } = useAppointments();
+  // Estados para navegación de fecha
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
 
-  // Hook para crear citas
-  const createAppointmentMutation = useCreateAppointment();
-
-  // Hook para obtener el estado de appointments para disponibilidad
-  const { appointments: calendarAppointments } = useCalendarAppointments(new Date(), 'month');
-
-  // Filtrar citas del paciente específico usando múltiples criterios
-  const patientAppointments = useMemo(() => {
-    if (!allAppointments) return [];
-    
-    console.log('🔍 Filtering appointments for patient:', {
-      patientId: patient.id,
-      patientName: `${patient.nombres} ${patient.apellidos}`,
-      patientRut: patient.rut,
-      totalAppointments: allAppointments.length
-    });
-    
-    const filtered = allAppointments.filter((appointment: AppointmentResponse) => {
-      // Criterio 1: Coincidencia por ID del paciente
-      const matchesById = appointment.patientId === patient.id;
-      
-      // Criterio 2: Coincidencia por nombre completo (para citas creadas como invitado)
-      const patientFullName = `${patient.nombres} ${patient.apellidos}`;
-      const appointmentFullName = appointment.patientName && appointment.patientLastName 
-        ? `${appointment.patientName} ${appointment.patientLastName}`
-        : appointment.guestName || '';
-      const matchesByName = appointmentFullName.toLowerCase().trim() === patientFullName.toLowerCase().trim();
-      
-      // Criterio 3: Coincidencia por RUT (si está disponible)
-      const matchesByRut = appointment.guestRut === patient.rut;
-      
-      // Criterio 4: Coincidencia por email
-      const matchesByEmail = appointment.patientEmail === patient.email || appointment.guestEmail === patient.email;
-      
-      const matches = matchesById || matchesByName || matchesByRut || matchesByEmail;
-      
-      if (matches) {
-        console.log('✅ Found matching appointment:', {
-          appointmentId: appointment.id,
-          appointmentTitle: appointment.title,
-          matchesById,
-          matchesByName,
-          matchesByRut,
-          matchesByEmail,
-          appointmentPatientId: appointment.patientId,
-          appointmentPatientName: appointment.patientName,
-          appointmentGuestName: appointment.guestName
-        });
-      }
-      
-      return matches;
-    });
-    
-    console.log('📊 Patient appointments result:', {
-      patientId: patient.id,
-      patientName: `${patient.nombres} ${patient.apellidos}`,
-      foundAppointments: filtered.length,
-      appointments: filtered
-    });
-    
-    return filtered;
-  }, [allAppointments, patient]);
-
-  // Aplicar filtro
-  const filteredAppointments = useMemo(() => {
-    const now = new Date();
-    
-    switch (filter) {
-      case 'upcoming':
-        return patientAppointments.filter(apt => 
-          new Date(apt.appointmentDate) > now && 
-          ['pending', 'confirmed'].includes(apt.status)
-        );
-      case 'completed':
-        return patientAppointments.filter(apt => apt.status === 'completed');
-      case 'cancelled':
-        return patientAppointments.filter(apt => apt.status === 'cancelled');
-      default:
-        return patientAppointments;
-    }
-  }, [patientAppointments, filter]);
-
-  // Ordenar por fecha (más recientes primero)
-  const sortedAppointments = useMemo(() => {
-    return [...filteredAppointments].sort((a, b) => 
-      new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime()
-    );
-  }, [filteredAppointments]);
-
-  const handleNewAppointment = () => {
-    setShowNewAppointmentModal(true);
-  };
-
-  const handleCreateAppointment = async (appointmentData: PatientAppointmentForm) => {
-    try {
-      // Convertir el formulario del paciente al formato del backend
-      const backendData = AppointmentMapper.fromCalendarFormToBackendRequest({
-        patient: `${patient.nombres} ${patient.apellidos}`,
-        patientId: patient.id,
-        service: appointmentData.service,
-        description: appointmentData.description,
-        time: appointmentData.time,
-        duration: appointmentData.duration,
-        date: appointmentData.date,
-        guestName: undefined,
-        guestEmail: undefined,
-        guestPhone: undefined,
-        guestRut: undefined
+  // Resetear formulario cuando se abre el modal
+  useEffect(() => {
+    if (isOpen) {
+      setAppointmentForm({
+        date: new Date(),
+        time: '',
+        service: '',
+        description: '',
+        duration: 60
       });
-
-      await createAppointmentMutation.mutateAsync(backendData);
-      setShowNewAppointmentModal(false);
-      
-      // Refrescar las citas después de crear una nueva
-      refetch();
-    } catch (error) {
-      console.error('Error creating patient appointment:', error);
-      // El error se maneja automáticamente por el hook
+      setSelectedMonth(new Date());
     }
+  }, [isOpen]);
+
+  const handleFormChange = (updates: Partial<PatientAppointmentForm>) => {
+    setAppointmentForm(prev => ({ ...prev, ...updates }));
   };
 
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('es-CL', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+  const handleSubmit = () => {
+    if (isCreating) return;
+    onSubmit(appointmentForm);
   };
 
-  const formatTime = (dateString: string): string => {
-    return new Date(dateString).toLocaleTimeString('es-CL', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const isFormValid = () => {
+    return appointmentForm.date && appointmentForm.time && appointmentForm.service.trim();
   };
 
-  const getStatusConfig = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return {
-          label: 'Confirmada',
-          color: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-          icon: '✓'
-        };
-      case 'pending':
-        return {
-          label: 'Pendiente',
-          color: 'bg-blue-100 text-blue-800 border-blue-200',
-          icon: '○'
-        };
-      case 'completed':
-        return {
-          label: 'Completada',
-          color: 'bg-green-100 text-green-800 border-green-200',
-          icon: '✓'
-        };
-      case 'cancelled':
-        return {
-          label: 'Cancelada',
-          color: 'bg-red-100 text-red-800 border-red-200',
-          icon: '✕'
-        };
-      case 'no-show':
-        return {
-          label: 'No asistió',
-          color: 'bg-gray-100 text-gray-800 border-gray-200',
-          icon: '?'
-        };
-      default:
-        return {
-          label: status,
-          color: 'bg-slate-100 text-slate-800 border-slate-200',
-          icon: '○'
-        };
-    }
-  };
-
-  const getFilterCount = (filterType: AppointmentFilter): number => {
-    const now = new Date();
+  // Generar días del mes para el selector
+  const getDaysInMonth = () => {
+    const year = selectedMonth.getFullYear();
+    const month = selectedMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - ((firstDay.getDay() + 6) % 7));
     
-    switch (filterType) {
-      case 'upcoming':
-        return patientAppointments.filter(apt => 
-          new Date(apt.appointmentDate) > now && 
-          ['pending', 'confirmed'].includes(apt.status)
-        ).length;
-      case 'completed':
-        return patientAppointments.filter(apt => apt.status === 'completed').length;
-      case 'cancelled':
-        return patientAppointments.filter(apt => apt.status === 'cancelled').length;
-      default:
-        return patientAppointments.length;
+    const days: Date[] = [];
+    for (let i = 0; i < 42; i++) {
+      const day = new Date(startDate);
+      day.setDate(startDate.getDate() + i);
+      days.push(day);
     }
+    return days;
   };
 
-  if (isLoading) {
-    return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <div className="flex items-center justify-center py-12">
-          <Spinner />
-          <span className="ml-3 text-slate-600">Cargando citas...</span>
-        </div>
-      </div>
-    );
-  }
+  const navigateMonth = (direction: number) => {
+    const newMonth = new Date(selectedMonth);
+    newMonth.setMonth(selectedMonth.getMonth() + direction);
+    setSelectedMonth(newMonth);
+  };
 
-  if (error) {
-    return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Error al cargar las citas del paciente
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  };
+
+  const isSelectedDate = (date: Date) => {
+    return date.toDateString() === appointmentForm.date.toDateString();
+  };
+
+  const isPastDate = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date < today;
+  };
+
+  const monthNames = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+
+  const dayNames = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'];
+
+  if (!isOpen) return null;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      {/* Header con información del paciente y botón de nueva cita */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 space-y-4 sm:space-y-0">
-        <div>
-          <h3 className="text-lg font-semibold text-slate-800">
-            Historial de Citas
-          </h3>
-          <div className="flex items-center space-x-4 mt-2 text-sm text-slate-600">
-            <div className="flex items-center">
-              <User className="w-4 h-4 mr-1" />
-              {patient.nombres} {patient.apellidos}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white w-full max-w-sm sm:max-w-2xl max-h-[95vh] sm:max-h-[85vh] sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+        
+        {/* Header - Más compacto en móvil */}
+        <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-3 sm:px-4 py-3 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-base sm:text-lg font-bold">Nueva Cita</h3>
+              <p className="text-xs opacity-90 mt-0.5 truncate">
+                {patient.nombres} {patient.apellidos}
+              </p>
             </div>
-            <div className="flex items-center">
-              <Phone className="w-4 h-4 mr-1" />
-              {patient.telefono}
-            </div>
-            <div className="flex items-center">
-              <Mail className="w-4 h-4 mr-1" />
-              {patient.email}
-            </div>
+            <button
+              onClick={onClose}
+              disabled={isCreating}
+              className="p-1.5 sm:p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
+            >
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
           </div>
         </div>
-        
-        <button 
-          onClick={handleNewAppointment}
-          className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg px-4 py-2.5 transition-colors shadow-sm"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nueva Cita
-        </button>
-      </div>
 
-      {/* Filtros */}
-      <div className="flex items-center space-x-2 mb-6 overflow-x-auto pb-2">
-        <Filter className="w-4 h-4 text-slate-500 flex-shrink-0" />
-        <div className="flex space-x-2">
-          {[
-            { key: 'all' as const, label: 'Todas' },
-            { key: 'upcoming' as const, label: 'Próximas' },
-            { key: 'completed' as const, label: 'Completadas' },
-            { key: 'cancelled' as const, label: 'Canceladas' }
-          ].map(({ key, label }) => {
-            const count = getFilterCount(key);
-            return (
-              <button
-                key={key}
-                onClick={() => setFilter(key)}
-                className={`flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                  filter === key
-                    ? 'bg-cyan-500 text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {label}
-                <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
-                  filter === key
-                    ? 'bg-white bg-opacity-20'
-                    : 'bg-slate-200'
-                }`}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Lista de citas */}
-      <div className="space-y-4">
-        {sortedAppointments.map((appointment) => {
-          const statusConfig = getStatusConfig(appointment.status);
-          const appointmentDate = new Date(appointment.appointmentDate);
-          const isUpcoming = appointmentDate > new Date();
+        {/* Content - Scroll optimizado para móvil */}
+        <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 sm:py-4 space-y-4 sm:space-y-6">
           
-          return (
-            <div 
-              key={appointment.id} 
-              className={`border-2 rounded-xl p-4 transition-colors hover:shadow-md ${
-                isUpcoming 
-                  ? 'border-cyan-200 bg-gradient-to-r from-cyan-50 to-blue-50' 
-                  : 'border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <h4 className="font-semibold text-slate-800 text-lg">
-                      {appointment.title}
-                    </h4>
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${statusConfig.color}`}>
-                      <span className="mr-1">{statusConfig.icon}</span>
-                      {statusConfig.label}
-                    </span>
+          {/* Selector de Fecha - Más compacto */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Seleccionar Fecha *
+            </label>
+            
+            {/* Navegador de mes - Más compacto */}
+            <div className="flex items-center justify-between mb-3 bg-slate-50 rounded-lg p-2">
+              <button
+                onClick={() => navigateMonth(-1)}
+                disabled={isCreating}
+                className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              
+              <h3 className="text-base sm:text-lg font-semibold text-slate-800">
+                {monthNames[selectedMonth.getMonth()]} {selectedMonth.getFullYear()}
+              </h3>
+              
+              <button
+                onClick={() => navigateMonth(1)}
+                disabled={isCreating}
+                className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Calendario - Optimizado para móvil */}
+            <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+              {/* Días de la semana */}
+              <div className="grid grid-cols-7 bg-slate-50">
+                {dayNames.map(day => (
+                  <div key={day} className="p-1.5 sm:p-2 text-center text-xs font-medium text-slate-600">
+                    {day}
                   </div>
+                ))}
+              </div>
+              
+              {/* Días del mes - Altura fija para móvil */}
+              <div className="grid grid-cols-7">
+                {getDaysInMonth().map((day, index) => {
+                  const isCurrentMonth = day.getMonth() === selectedMonth.getMonth();
+                  const isSelected = isSelectedDate(day);
+                  const isCurrentDay = isToday(day);
+                  const isPast = isPastDate(day);
                   
-                  <div className="flex flex-wrap items-center gap-4 text-slate-600">
-                    <div className="flex items-center">
-                      <Calendar className="w-4 h-4 mr-2 text-cyan-500" />
-                      <span className="font-medium">{formatDate(appointment.appointmentDate)}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Clock className="w-4 h-4 mr-2 text-cyan-500" />
-                      <span className="font-medium">{formatTime(appointment.appointmentDate)}</span>
-                      <span className="ml-1 text-slate-500">({appointment.duration} min)</span>
-                    </div>
-                  </div>
-                  
-                  {appointment.notes && (
-                    <div className="mt-3 p-3 bg-slate-50 rounded-lg">
-                      <p className="text-sm text-slate-600">
-                        <span className="font-medium text-slate-700">Notas:</span> {appointment.notes}
-                      </p>
-                    </div>
-                  )}
-                  
-                  {appointment.description && (
-                    <div className="mt-2 p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-blue-700">
-                        <span className="font-medium">Descripción:</span> {appointment.description}
-                      </p>
-                    </div>
-                  )}
-                </div>
-                
-                <button className="ml-4 p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                  <ChevronRight className="w-5 h-5 text-slate-400" />
-                </button>
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => !isPast && !isCreating && handleFormChange({ date: day })}
+                      disabled={isPast || isCreating}
+                      className={`
+                        h-8 sm:h-10 text-sm transition-colors relative
+                        ${isCurrentMonth ? 'hover:bg-cyan-50' : 'text-slate-400'}
+                        ${isSelected ? 'bg-cyan-500 text-white' : ''}
+                        ${isCurrentDay && !isSelected ? 'bg-blue-50 text-blue-600 font-semibold' : ''}
+                        ${isPast ? 'text-slate-300 cursor-not-allowed' : 'cursor-pointer'}
+                        ${!isPast && !isSelected && isCurrentMonth ? 'hover:bg-slate-100' : ''}
+                      `}
+                    >
+                      {day.getDate()}
+                      {isCurrentDay && !isSelected && (
+                        <div className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full"></div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          );
-        })}
 
-        {/* Estado vacío */}
-        {sortedAppointments.length === 0 && (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Calendar className="w-8 h-8 text-slate-400" />
-            </div>
-            <h3 className="text-lg font-medium text-slate-800 mb-2">
-              {filter === 'all' 
-                ? 'No hay citas registradas' 
-                : `No hay citas ${filter === 'upcoming' ? 'próximas' : filter === 'completed' ? 'completadas' : 'canceladas'}`
-              }
-            </h3>
-            <p className="text-slate-500 mb-6 max-w-md mx-auto">
-              {filter === 'all' 
-                ? `Programa la primera cita para ${patient.nombres} para comenzar el tratamiento.`
-                : `No se encontraron citas con el filtro "${filter === 'upcoming' ? 'próximas' : filter === 'completed' ? 'completadas' : 'canceladas'}".`
-              }
-            </p>
-            {filter === 'all' && (
-              <button 
-                onClick={handleNewAppointment}
-                className="flex items-center mx-auto bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg px-6 py-3 transition-colors shadow-sm"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Programar Primera Cita
-              </button>
+            {appointmentForm.date && (
+              <div className="mt-2 p-2 sm:p-3 bg-cyan-50 rounded-lg border border-cyan-200">
+                <p className="text-xs sm:text-sm text-cyan-800 font-medium">
+                  {appointmentForm.date.toLocaleDateString('es-CL', {
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short'
+                  })}
+                </p>
+              </div>
             )}
           </div>
-        )}
-      </div>
 
-      {/* Modal de nueva cita específico para pacientes */}
-      <PatientAppointmentModal
-        isOpen={showNewAppointmentModal}
-        patient={patient}
-        appointments={calendarAppointments}
-        onClose={() => setShowNewAppointmentModal(false)}
-        onSubmit={handleCreateAppointment}
-        isCreating={createAppointmentMutation.isPending}
-      />
+          {/* Selector de Horario - Grid más compacto en móvil */}
+          {appointmentForm.date && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Horario *
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {timeSlots.map(time => {
+                  const available = isTimeSlotAvailable(appointments, appointmentForm.date, time);
+                  const isOverlap = hasOverlap(appointments, appointmentForm.date, time);
+
+                  return (
+                    <button
+                      key={time}
+                      type="button"
+                      onClick={() => !isCreating && handleFormChange({ time })}
+                      disabled={!available || isCreating}
+                      className={`
+                        p-2 text-xs sm:text-sm rounded-lg transition-all border-2 font-medium relative disabled:cursor-not-allowed
+                        ${appointmentForm.time === time
+                          ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg scale-105'
+                          : available && !isCreating
+                            ? isOverlap
+                              ? 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                            : 'bg-slate-100 text-slate-400 border-slate-200 opacity-50'
+                        }
+                      `}
+                    >
+                      <div className="flex items-center justify-center">
+                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                        {time}
+                      </div>
+                      {isOverlap && available && (
+                        <div className="text-xs font-semibold mt-0.5">Sobrecupo</div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Tratamiento - Input más compacto */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Tratamiento/Servicio *
+            </label>
+            <input
+              type="text"
+              value={appointmentForm.service}
+              onChange={(e) => handleFormChange({ service: e.target.value })}
+              disabled={isCreating}
+              className="w-full p-2 sm:p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
+              placeholder="Ej: Limpieza dental, Consulta..."
+            />
+          </div>
+
+          {/* Descripción/Notas - Más compacto */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Notas
+            </label>
+            <textarea
+              value={appointmentForm.description}
+              onChange={(e) => handleFormChange({ description: e.target.value })}
+              disabled={isCreating}
+              className="w-full p-2 sm:p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 h-16 sm:h-20 resize-none transition-all text-sm disabled:opacity-50"
+              placeholder="Observaciones..."
+            />
+          </div>
+        </div>
+
+        {/* Footer - Más compacto en móvil */}
+        <div className="border-t border-slate-200 px-3 sm:px-4 py-2.5 sm:py-3 flex-shrink-0 bg-slate-50">
+          <div className="flex space-x-2 sm:space-x-3">
+            <button
+              onClick={onClose}
+              disabled={isCreating}
+              className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={!isFormValid() || isCreating}
+              className={`flex-1 px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-medium rounded-lg transition-colors shadow-sm flex items-center justify-center ${
+                isFormValid() && !isCreating
+                  ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
+                  : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+              }`}
+            >
+              {isCreating ? (
+                <>
+                  <Loader className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 animate-spin" />
+                  <span className="hidden sm:inline">Creando...</span>
+                  <span className="sm:hidden">...</span>
+                </>
+              ) : (
+                <>
+                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                  <span className="hidden sm:inline">Programar Cita</span>
+                  <span className="sm:hidden">Crear</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
-
-export { PatientAppointments };

@@ -21,7 +21,7 @@ interface NewAppointmentModalProps {
   onClose: () => void;
   onChange: (appointment: NewAppointmentForm) => void;
   onSubmit: () => void;
-  isCreating?: boolean; // ✅ NUEVO - Estado de creación para bloquear botón
+  isCreating?: boolean;
 }
 
 export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
@@ -31,9 +31,9 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   onClose,
   onChange,
   onSubmit,
-  isCreating = false // ✅ NUEVO
+  isCreating = false
 }) => {
-  // Estados para pacientes
+  // Estados locales para el modal
   const [patientType, setPatientType] = useState<'registered' | 'guest'>('registered');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
@@ -51,7 +51,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   const { queryPatients } = usePatients();
   const patients = queryPatients.data?.patients || [];
   
-  // Filtrar pacientes basado en búsqueda - MEMOIZADO para evitar recalculos
+  // Filtrar pacientes basado en búsqueda
   const filteredPatients = useMemo(() => {
     return patients.filter(patient => 
       `${patient.nombres} ${patient.apellidos}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -59,7 +59,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
     );
   }, [patients, searchTerm]);
 
-  // Reset states when modal opens/closes
+  // Reset estados cuando el modal se abre
   useEffect(() => {
     if (isOpen) {
       setPatientType('registered');
@@ -70,7 +70,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
     }
   }, [isOpen]);
 
-  // Separar la lógica de actualización del formulario
+  // Actualizar formulario cuando se selecciona paciente
   useEffect(() => {
     if (!isOpen) return;
     
@@ -106,6 +106,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
     }
   }, [patientType, selectedPatient, guestData, isOpen]);
 
+  // Handlers
   const handlePatientSelect = (patient: Patient) => {
     setSelectedPatient(patient);
     setShowPatientSearch(false);
@@ -116,35 +117,35 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
     setGuestData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleFormChange = (updates: Partial<NewAppointmentForm>) => {
+    onChange({ ...newAppointment, ...updates });
+  };
+
+  const handleSubmit = () => {
+    if (isCreating) return;
+    onSubmit();
+  };
+
+  // Validaciones
   const isFormValid = () => {
     const hasPatient = patientType === 'registered' ? selectedPatient : guestData.name.trim();
     return hasPatient && newAppointment.service && newAppointment.time && newAppointment.date;
   };
 
-  const handleFormChange = (updates: Partial<NewAppointmentForm>) => {
-    onChange({ ...newAppointment, ...updates });
-  };
-
-  // ✅ NUEVO - Handler que previene múltiples envíos
-  const handleSubmit = () => {
-    if (isCreating) return; // Prevenir múltiples clicks
-    onSubmit();
-  };
-
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-      {/* ✅ OPTIMIZADO - Modal más compacto en móvil */}
-      <div className="bg-white w-full h-[95vh] sm:h-auto sm:w-full sm:max-w-xl sm:max-h-[85vh] sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      {/* Modal Container - Responsive */}
+      <div className="bg-white w-full max-w-sm sm:max-w-xl max-h-[95vh] sm:max-h-[90vh] sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col">
         
-        {/* Header compacto */}
-        <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-3 flex-shrink-0">
+        {/* Header con gradiente */}
+        <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-3 sm:px-4 py-3 flex-shrink-0">
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-bold">Nueva Cita</h3>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base sm:text-lg font-bold">Nueva Cita</h3>
               {newAppointment.date && (
-                <p className="text-xs opacity-90 mt-0.5">
+                <p className="text-xs opacity-90 mt-0.5 truncate">
                   {newAppointment.date.toLocaleDateString('es-CL', {
                     weekday: 'short',
                     day: 'numeric',
@@ -156,252 +157,271 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
             <button
               onClick={onClose}
               disabled={isCreating}
-              className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors disabled:opacity-50"
+              className="p-1.5 sm:p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0 ml-2"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
 
-        {/* Content - Más compacto */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-          
-          {/* Tipo de Paciente - Más pequeño */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Tipo de Paciente</label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setPatientType('registered')}
-                disabled={isCreating}
-                className={`flex items-center justify-center p-2.5 rounded-lg border-2 transition-all text-sm font-medium disabled:opacity-50 ${
-                  patientType === 'registered'
-                    ? 'border-cyan-500 bg-cyan-50 text-cyan-700'
-                    : 'border-slate-200 hover:border-slate-300 text-slate-600'
-                }`}
-              >
-                <User className="w-4 h-4 mr-1.5" />
-                Registrado
-              </button>
-              <button
-                type="button"
-                onClick={() => setPatientType('guest')}
-                disabled={isCreating}
-                className={`flex items-center justify-center p-2.5 rounded-lg border-2 transition-all text-sm font-medium disabled:opacity-50 ${
-                  patientType === 'guest'
-                    ? 'border-cyan-500 bg-cyan-50 text-cyan-700'
-                    : 'border-slate-200 hover:border-slate-300 text-slate-600'
-                }`}
-              >
-                <UserPlus className="w-4 h-4 mr-1.5" />
-                Invitado
-              </button>
-            </div>
-          </div>
-
-          {/* Selección de Paciente Registrado - Más compacto */}
-          {patientType === 'registered' && (
+        {/* Contenido principal - Scrolleable */}
+        <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="space-y-4">
+            
+            {/* Selector de tipo de paciente */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Paciente *</label>
-              
-              <div className="relative">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Tipo de Paciente
+              </label>
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
+                  onClick={() => setPatientType('registered')}
                   disabled={isCreating}
-                  className="w-full p-2.5 border-2 border-slate-300 rounded-lg text-left flex items-center justify-between hover:border-cyan-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={() => !isCreating && setShowPatientSearch(!showPatientSearch)}
+                  className={`flex items-center justify-center p-2 sm:p-2.5 rounded-lg border-2 transition-all text-xs sm:text-sm font-medium disabled:opacity-50 ${
+                    patientType === 'registered'
+                      ? 'border-cyan-500 bg-cyan-50 text-cyan-700'
+                      : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                  }`}
                 >
-                  <div className="flex items-center min-w-0 flex-1">
-                    <Search className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
-                    <span className={`truncate ${selectedPatient ? 'text-slate-800 font-medium' : 'text-slate-500'}`}>
-                      {selectedPatient ? `${selectedPatient.nombres} ${selectedPatient.apellidos}` : 'Buscar paciente...'}
-                    </span>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform flex-shrink-0 ml-2 ${
-                    showPatientSearch ? 'rotate-180' : ''
-                  }`} />
+                  <User className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
+                  Registrado
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setPatientType('guest')}
+                  disabled={isCreating}
+                  className={`flex items-center justify-center p-2 sm:p-2.5 rounded-lg border-2 transition-all text-xs sm:text-sm font-medium disabled:opacity-50 ${
+                    patientType === 'guest'
+                      ? 'border-cyan-500 bg-cyan-50 text-cyan-700'
+                      : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                  }`}
+                >
+                  <UserPlus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
+                  Invitado
+                </button>
+              </div>
+            </div>
 
-                {/* Lista de pacientes más compacta */}
-                {showPatientSearch && !isCreating && (
-                  <div className="absolute z-20 w-full mt-1 bg-white border-2 border-slate-200 rounded-lg shadow-xl">
-                    <div className="p-2 border-b border-slate-200 bg-slate-50">
-                      <input
-                        type="text"
-                        placeholder="Buscar..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
-                        autoFocus
-                      />
+            {/* Selector de paciente registrado */}
+            {patientType === 'registered' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Paciente *
+                </label>
+                
+                <div className="relative">
+                  <button
+                    type="button"
+                    disabled={isCreating}
+                    className="w-full p-2 sm:p-2.5 border-2 border-slate-300 rounded-lg text-left flex items-center justify-between hover:border-cyan-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => !isCreating && setShowPatientSearch(!showPatientSearch)}
+                  >
+                    <div className="flex items-center min-w-0 flex-1">
+                      <Search className="w-3 h-3 sm:w-4 sm:h-4 text-slate-400 mr-2 flex-shrink-0" />
+                      <span className={`truncate text-xs sm:text-sm ${selectedPatient ? 'text-slate-800 font-medium' : 'text-slate-500'}`}>
+                        {selectedPatient ? `${selectedPatient.nombres} ${selectedPatient.apellidos}` : 'Buscar paciente...'}
+                      </span>
                     </div>
+                    <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 text-slate-400 transition-transform flex-shrink-0 ml-2 ${
+                      showPatientSearch ? 'rotate-180' : ''
+                    }`} />
+                  </button>
 
-                    <div className="max-h-40 overflow-y-auto">
-                      {filteredPatients.length > 0 ? (
-                        filteredPatients.slice(0, 5).map((patient) => (
-                          <button
-                            key={patient.id}
-                            onClick={() => handlePatientSelect(patient)}
-                            className="w-full text-left p-3 hover:bg-cyan-50 transition-colors border-b border-slate-100 last:border-b-0"
-                          >
-                            <div className="font-medium text-slate-800 text-sm mb-0.5">
-                              {patient.nombres} {patient.apellidos}
-                            </div>
-                            <div className="text-xs text-slate-500">
-                              {patient.rut} • {patient.telefono}
-                            </div>
-                          </button>
-                        ))
-                      ) : (
-                        <div className="p-4 text-center text-slate-500 text-sm">
-                          No se encontraron pacientes
-                        </div>
-                      )}
+                  {/* Dropdown de búsqueda */}
+                  {showPatientSearch && !isCreating && (
+                    <div className="absolute z-20 w-full mt-1 bg-white border-2 border-slate-200 rounded-lg shadow-xl">
+                      <div className="p-2 border-b border-slate-200 bg-slate-50">
+                        <input
+                          type="text"
+                          placeholder="Buscar por nombre o RUT..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-xs sm:text-sm"
+                          autoFocus
+                        />
+                      </div>
+
+                      <div className="max-h-32 sm:max-h-40 overflow-y-auto">
+                        {filteredPatients.length > 0 ? (
+                          filteredPatients.slice(0, 5).map((patient) => (
+                            <button
+                              key={patient.id}
+                              onClick={() => handlePatientSelect(patient)}
+                              className="w-full text-left p-2 sm:p-3 hover:bg-cyan-50 transition-colors border-b border-slate-100 last:border-b-0"
+                            >
+                              <div className="font-medium text-slate-800 text-xs sm:text-sm mb-0.5 truncate">
+                                {patient.nombres} {patient.apellidos}
+                              </div>
+                              <div className="text-xs text-slate-500 truncate">
+                                {patient.rut} • {patient.telefono}
+                              </div>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="p-3 sm:p-4 text-center text-slate-500 text-xs sm:text-sm">
+                            No se encontraron pacientes
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Información del paciente seleccionado */}
+                {selectedPatient && (
+                  <div className="mt-2 p-2 sm:p-3 bg-cyan-50 rounded-lg border border-cyan-200">
+                    <div className="grid grid-cols-1 gap-1 text-xs">
+                      <div className="flex items-center text-slate-600 truncate">
+                        <Mail className="w-3 h-3 mr-2 text-cyan-500 flex-shrink-0" />
+                        <span className="truncate">{selectedPatient.email}</span>
+                      </div>
+                      <div className="flex items-center text-slate-600">
+                        <Phone className="w-3 h-3 mr-2 text-cyan-500 flex-shrink-0" />
+                        <span>{selectedPatient.telefono}</span>
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
+            )}
 
-              {/* Info del paciente más compacta */}
-              {selectedPatient && (
-                <div className="mt-2 p-3 bg-cyan-50 rounded-lg border border-cyan-200">
-                  <div className="grid grid-cols-1 gap-1 text-xs">
-                    <div className="flex items-center text-slate-600 truncate">
-                      <Mail className="w-3 h-3 mr-2 text-cyan-500 flex-shrink-0" />
-                      <span className="truncate">{selectedPatient.email}</span>
-                    </div>
-                    <div className="flex items-center text-slate-600">
-                      <Phone className="w-3 h-3 mr-2 text-cyan-500 flex-shrink-0" />
-                      <span>{selectedPatient.telefono}</span>
-                    </div>
+            {/* Formulario para paciente invitado */}
+            {patientType === 'guest' && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Nombre Completo *
+                  </label>
+                  <input
+                    type="text"
+                    value={guestData.name}
+                    onChange={(e) => handleGuestDataChange('name', e.target.value)}
+                    disabled={isCreating}
+                    className="w-full p-2 sm:p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
+                    placeholder="Nombre del paciente"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={guestData.email}
+                      onChange={(e) => handleGuestDataChange('email', e.target.value)}
+                      disabled={isCreating}
+                      className="w-full p-2 sm:p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
+                      placeholder="correo@ejemplo.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Teléfono
+                    </label>
+                    <input
+                      type="tel"
+                      value={guestData.phone}
+                      onChange={(e) => handleGuestDataChange('phone', e.target.value)}
+                      disabled={isCreating}
+                      className="w-full p-2 sm:p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
+                      placeholder="+56 9 1234 5678"
+                    />
                   </div>
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* Datos de Paciente Invitado - Más compacto */}
-          {patientType === 'guest' && (
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Nombre Completo *</label>
-                <input
-                  type="text"
-                  value={guestData.name}
-                  onChange={(e) => handleGuestDataChange('name', e.target.value)}
-                  disabled={isCreating}
-                  className="w-full p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
-                  placeholder="Nombre del paciente"
-                />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                  <input
-                    type="email"
-                    value={guestData.email}
-                    onChange={(e) => handleGuestDataChange('email', e.target.value)}
-                    disabled={isCreating}
-                    className="w-full p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
-                    placeholder="correo@ejemplo.com"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Teléfono</label>
-                  <input
-                    type="tel"
-                    value={guestData.phone}
-                    onChange={(e) => handleGuestDataChange('phone', e.target.value)}
-                    disabled={isCreating}
-                    className="w-full p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
-                    placeholder="+56 9 1234 5678"
-                  />
-                </div>
+            )}
+
+            {/* Campo de servicio/tratamiento */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Tratamiento/Servicio *
+              </label>
+              <input
+                type="text"
+                value={newAppointment.service}
+                onChange={(e) => handleFormChange({ service: e.target.value })}
+                disabled={isCreating}
+                className="w-full p-2 sm:p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
+                placeholder="Ej: Limpieza facial, Consulta general, Tratamiento..."
+              />
+            </div>
+
+            {/* Selector de horario */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Horario * (60 min)
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {timeSlots.map(time => {
+                  const available = newAppointment.date ?
+                    isTimeSlotAvailable(appointments, newAppointment.date, time) : false;
+                  const isOverlap = newAppointment.date ?
+                    hasOverlap(appointments, newAppointment.date, time) : false;
+
+                  return (
+                    <button
+                      key={time}
+                      type="button"
+                      onClick={() => !isCreating && handleFormChange({ time })}
+                      disabled={!available || isCreating}
+                      className={`
+                        p-1.5 sm:p-2 text-xs sm:text-sm rounded-lg transition-all border-2 font-medium relative disabled:cursor-not-allowed
+                        ${newAppointment.time === time
+                          ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg scale-105'
+                          : available && !isCreating
+                            ? isOverlap
+                              ? 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                            : 'bg-slate-100 text-slate-400 border-slate-200 opacity-50'
+                        }
+                      `}
+                    >
+                      <div className="flex items-center justify-center">
+                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                        {time}
+                      </div>
+                      {isOverlap && available && (
+                        <div className="text-xs font-semibold mt-0.5">Sobrecupo</div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          )}
 
-          {/* ✅ CAMBIADO - Tratamiento como input de texto */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Tratamiento *</label>
-            <input
-              type="text"
-              value={newAppointment.service}
-              onChange={(e) => handleFormChange({ service: e.target.value })}
-              disabled={isCreating}
-              className="w-full p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
-              placeholder="Ej: Limpieza facial, Consulta general, Tratamiento..."
-            />
-          </div>
-
-          {/* Horario más compacto */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Horario *</label>
-            <div className="grid grid-cols-3 gap-2">
-              {timeSlots.map(time => {
-                const available = newAppointment.date ?
-                  isTimeSlotAvailable(appointments, newAppointment.date, time) : false;
-                const isOverlap = newAppointment.date ?
-                  hasOverlap(appointments, newAppointment.date, time) : false;
-
-                return (
-                  <button
-                    key={time}
-                    type="button"
-                    onClick={() => !isCreating && handleFormChange({ time })}
-                    disabled={!available || isCreating}
-                    className={`
-                      p-2 text-xs rounded-lg transition-all border-2 font-medium relative disabled:cursor-not-allowed
-                      ${newAppointment.time === time
-                        ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg scale-105'
-                        : available && !isCreating
-                          ? isOverlap
-                            ? 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200'
-                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                          : 'bg-slate-100 text-slate-400 border-slate-200 opacity-50'
-                      }
-                    `}
-                  >
-                    <div className="flex items-center justify-center">
-                      <Clock className="w-3 h-3 mr-1" />
-                      {time}
-                    </div>
-                    {isOverlap && available && (
-                      <div className="text-[10px] font-semibold">Sobrecupo</div>
-                    )}
-                  </button>
-                );
-              })}
+            {/* Campo de notas/descripción */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Notas Adicionales
+              </label>
+              <textarea
+                value={newAppointment.description}
+                onChange={(e) => handleFormChange({ description: e.target.value })}
+                disabled={isCreating}
+                className="w-full p-2 sm:p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 h-12 sm:h-16 resize-none transition-all text-sm disabled:opacity-50"
+                placeholder="Observaciones, motivo de consulta, etc..."
+              />
             </div>
-          </div>
 
-          {/* Notas más compacto */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Notas</label>
-            <textarea
-              value={newAppointment.description}
-              onChange={(e) => handleFormChange({ description: e.target.value })}
-              disabled={isCreating}
-              className="w-full p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 h-16 resize-none transition-all text-sm disabled:opacity-50"
-              placeholder="Observaciones adicionales..."
-            />
           </div>
         </div>
 
-        {/* ✅ MEJORADO - Footer con botón de carga */}
-        <div className="border-t border-slate-200 px-4 py-3 flex-shrink-0 bg-slate-50">
-          <div className="flex space-x-3">
+        {/* Footer con botones */}
+        <div className="border-t border-slate-200 px-3 sm:px-4 py-2.5 sm:py-3 flex-shrink-0 bg-slate-50">
+          <div className="flex space-x-2 sm:space-x-3">
             <button
               onClick={onClose}
               disabled={isCreating}
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancelar
             </button>
             <button
               onClick={handleSubmit}
               disabled={!isFormValid() || isCreating}
-              className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors shadow-sm flex items-center justify-center relative ${
+              className={`flex-1 px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-medium rounded-lg transition-colors shadow-sm flex items-center justify-center ${
                 isFormValid() && !isCreating
                   ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
                   : 'bg-slate-300 text-slate-500 cursor-not-allowed'
@@ -409,13 +429,15 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
             >
               {isCreating ? (
                 <>
-                  <Loader className="w-4 h-4 mr-2 animate-spin" />
-                  Creando...
+                  <Loader className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 animate-spin" />
+                  <span className="hidden sm:inline">Creando...</span>
+                  <span className="sm:hidden">...</span>
                 </>
               ) : (
                 <>
-                  <FileText className="w-4 h-4 mr-2" />
-                  Crear Cita
+                  <FileText className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                  <span className="hidden sm:inline">Crear Cita</span>
+                  <span className="sm:hidden">Crear</span>
                 </>
               )}
             </button>
