@@ -2,6 +2,9 @@
 
 [build]
   # Si ya configuras build/publish en la UI, puedes omitir estos dos.
+  
+[build.environment]
+  TZ = "America/Santiago"
 
 [functions]
   directory = "netlify/functions"
