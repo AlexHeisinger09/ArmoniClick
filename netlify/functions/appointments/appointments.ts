@@ -1,173 +1,423 @@
-// netlify/functions/appointments/appointments.ts
+// netlify/functions/appointments/appointments.ts - CORRECCIÓN TIMEZONE
 import { Handler, HandlerEvent } from "@netlify/functions";
 import { validateJWT } from "../../middlewares";
 import { HEADERS, fromBodyToObject } from "../../config/utils";
-import * as AppointmentServiceNS from "../../services/appointment.service";
-const AppointmentService: any = AppointmentServiceNS as any;
+import { AppointmentService, CreateAppointmentData, UpdateAppointmentData } from "../../services/appointment.service";
 
-// Normaliza "YYYY-MM-DD HH:mm" o ISO a Date, sin agregar offsets (-04:00/Z)
-function parseIncomingDate(input?: string): Date | null {
-  if (!input) return null;
-  const normalized = input.includes("T") ? input : input.replace(" ", "T");
-  const d = new Date(normalized);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
+const handler: Handler = async (event: HandlerEvent) => {
+  const { httpMethod, path, queryStringParameters } = event;
+  const body = event.body ? fromBodyToObject(event.body) : {};
 
-// Soporta validateJWT con firma (token) o (event)
-async function getAuth(event: HandlerEvent): Promise<{ user: any } | { statusCode: number; body: string; headers: any }> {
-  const token = (event.headers?.authorization ?? event.headers?.Authorization ?? "") as string;
-  try {
-    const res = await (validateJWT as any)(token || event);
-    if (res && typeof res === "object" && "statusCode" in res) return res as any;
-    if (res && typeof res === "object" && ("ok" in res || "user" in res)) {
-      const ok = (res as any).ok ?? true;
-      if (!ok) {
-        return { statusCode: 401, body: JSON.stringify({ message: (res as any).message ?? "No autorizado" }), headers: HEADERS.json };
-      }
-      return { user: (res as any).user };
-    }
-    if ((res as any)?.user) return { user: (res as any).user };
-  } catch {}
-  return { statusCode: 401, body: JSON.stringify({ message: "No autorizado" }), headers: HEADERS.json };
-}
-
-// Adaptadores por si los nombres/firmas del service varían
-async function svcList(params: any) {
-  if (typeof (AppointmentService as any).findMany === "function") return (AppointmentService as any).findMany(params);
-  if (typeof (AppointmentService as any).list === "function") return (AppointmentService as any).list(params);
-  if (typeof (AppointmentService as any).getAll === "function") return (AppointmentService as any).getAll(params);
-  throw new Error("AppointmentService: no se encontró método de listado.");
-}
-async function svcGetById(id: number, userId?: number) {
-  if (typeof (AppointmentService as any).findById === "function") return (AppointmentService as any).findById(id, userId);
-  if (typeof (AppointmentService as any).getById === "function") return (AppointmentService as any).getById(id, userId);
-  if (typeof (AppointmentService as any).get === "function") return (AppointmentService as any).get(id, userId);
-  throw new Error("AppointmentService: no se encontró método findById/getById/get.");
-}
-async function svcCreate(userId: number, data: any) {
-  if (typeof (AppointmentService as any).create !== "function") throw new Error("AppointmentService: no se encontró create.");
-  try {
-    if ((AppointmentService as any).create.length >= 2) return (AppointmentService as any).create(userId, data);
-    return (AppointmentService as any).create({ ...data, userId });
-  } catch {
-    return (AppointmentService as any).create(userId, data);
+  // Manejar preflight OPTIONS
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 200,
+      headers: HEADERS.json,
+    };
   }
-}
-async function svcUpdate(userId: number, id: number, data: any) {
-  if (typeof (AppointmentService as any).update !== "function") throw new Error("AppointmentService: no se encontró update.");
+
+  // Validar JWT
+  const user = await validateJWT(event.headers.authorization!);
+  if (user.statusCode !== 200) return user;
+
+  const userData = JSON.parse(user.body);
+
   try {
-    if ((AppointmentService as any).update.length >= 3) return (AppointmentService as any).update(userId, id, data);
-    if ((AppointmentService as any).update.length === 2) return (AppointmentService as any).update(id, data);
-    return (AppointmentService as any).update({ id, userId, ...data });
-  } catch {
-    return (AppointmentService as any).update(id, data);
-  }
-}
-async function svcDelete(userId: number, id: number) {
-  if (typeof (AppointmentService as any).delete === "function") {
-    try {
-      if ((AppointmentService as any).delete.length >= 2) return (AppointmentService as any).delete(userId, id);
-      return (AppointmentService as any).delete(id);
-    } catch {
-      return (AppointmentService as any).delete(id);
-    }
-  }
-  if (typeof (AppointmentService as any).remove === "function") return (AppointmentService as any).remove(id);
-  throw new Error("AppointmentService: no se encontró delete/remove.");
-}
+    // Función auxiliar para extraer ID de la URL
+    const extractAppointmentId = (path: string): number | null => {
+      const pathSegments = path.split('/').filter(segment => segment && segment !== '.netlify' && segment !== 'functions' && segment !== 'appointments');
+      const lastSegment = pathSegments[pathSegments.length - 1];
 
-const handler: Handler = async (event) => {
-  try {
-    if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers: HEADERS.json };
-
-    const auth = await getAuth(event);
-    if ("statusCode" in auth) return auth;
-    const userData = auth.user || { id: undefined };
-
-    const { httpMethod, queryStringParameters } = event;
-    const body = event.body ? fromBodyToObject(event.body) : {};
-    const idParam = queryStringParameters?.id ?? body?.id;
-    const hasId = idParam != null;
-    const id = hasId ? Number(idParam) : undefined;
-
-    if (httpMethod === "GET") {
-      if (hasId) {
-        if (!Number.isFinite(id!) || (id as number) <= 0) return { statusCode: 400, body: JSON.stringify({ message: "ID inválido" }), headers: HEADERS.json };
-        const item = await svcGetById(id as number, userData?.id);
-        if (!item) return { statusCode: 404, body: JSON.stringify({ message: "Cita no encontrada" }), headers: HEADERS.json };
-        return { statusCode: 200, body: JSON.stringify(item), headers: HEADERS.json };
+      if (lastSegment && !isNaN(parseInt(lastSegment))) {
+        return parseInt(lastSegment);
       }
-      const startDateRaw = queryStringParameters?.startDate;
-      const endDateRaw = queryStringParameters?.endDate;
-      const doctorId = queryStringParameters?.doctorId ? Number(queryStringParameters.doctorId) : undefined;
+      return null;
+    };
 
-      let start: Date | undefined;
-      let end: Date | undefined;
-      if (startDateRaw) {
-        const d = parseIncomingDate(startDateRaw);
-        if (!d) return { statusCode: 400, body: JSON.stringify({ message: "startDate inválida" }), headers: HEADERS.json };
-        start = d;
-      }
-      if (endDateRaw) {
-        const d = parseIncomingDate(endDateRaw);
-        if (!d) return { statusCode: 400, body: JSON.stringify({ message: "endDate inválida" }), headers: HEADERS.json };
-        end = d;
+    const appointmentId = extractAppointmentId(path);
+    const hasAppointmentId = appointmentId !== null;
+
+    console.log('🔍 Debug info:', {
+      httpMethod,
+      path,
+      hasAppointmentId,
+      appointmentId,
+      queryStringParameters,
+      body
+    });
+
+    // GET /appointments - Obtener todas las citas del doctor
+    if (httpMethod === "GET" && !hasAppointmentId) {
+      const { startDate, endDate, upcoming } = queryStringParameters || {};
+
+      console.log('📅 Getting appointments with params:', { startDate, endDate, upcoming });
+
+      if (upcoming === "true") {
+        const appointments = await AppointmentService.getUpcomingAppointments(userData.id);
+        return {
+          statusCode: 200,
+          body: JSON.stringify(appointments),
+          headers: HEADERS.json,
+        };
       }
 
-      const items = await svcList({ userId: userData?.id, doctorId, startDate: start, endDate: end });
-      return { statusCode: 200, body: JSON.stringify(items), headers: HEADERS.json };
+      if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({ message: "Fechas inválidas" }),
+            headers: HEADERS.json,
+          };
+        }
+
+        console.log('🔍 Searching appointments between:', start, 'and', end);
+        const appointments = await AppointmentService.findByDateRange(userData.id, start, end);
+
+        console.log('📦 Appointments found:', {
+          count: appointments.length,
+          appointments: appointments.map(apt => ({
+            id: apt.id,
+            title: apt.title,
+            patientName: apt.patientName,
+            appointmentDate: apt.appointmentDate
+          }))
+        });
+
+        return {
+          statusCode: 200,
+          body: JSON.stringify(appointments),
+          headers: HEADERS.json,
+        };
+      }
+
+      const appointments = await AppointmentService.findByDoctor(userData.id);
+      return {
+        statusCode: 200,
+        body: JSON.stringify(appointments),
+        headers: HEADERS.json,
+      };
     }
 
+    // GET /appointments/:id - Obtener cita específica
+    if (httpMethod === "GET" && hasAppointmentId) {
+      if (!appointmentId || appointmentId <= 0) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ message: "ID de cita inválido" }),
+          headers: HEADERS.json,
+        };
+      }
+
+      const appointment = await AppointmentService.findById(appointmentId, userData.id);
+
+      if (!appointment) {
+        return {
+          statusCode: 404,
+          body: JSON.stringify({ message: "Cita no encontrada" }),
+          headers: HEADERS.json,
+        };
+      }
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify(appointment),
+        headers: HEADERS.json,
+      };
+    }
+
+    // POST /appointments - Crear nueva cita
     if (httpMethod === "POST") {
-      const appointmentDateRaw = body.appointmentDate ?? body.date ?? body.start ?? body.startDate;
-      const appointmentDate = parseIncomingDate(appointmentDateRaw);
-      if (!appointmentDate) return { statusCode: 400, body: JSON.stringify({ message: "appointmentDate inválida" }), headers: HEADERS.json };
+      const {
+        patientId,
+        guestName,
+        guestEmail,
+        guestPhone,
+        guestRut,
+        title,
+        description,
+        appointmentDate,
+        duration = 60,
+        type = "consultation",
+        notes
+      } = body;
 
-      const data = {
-        doctorId: Number(body.doctorId),
-        patientId: body.patientId ? Number(body.patientId) : null,
-        guestName: body.guestName ?? null,
-        guestEmail: body.guestEmail ?? null,
-        guestPhone: body.guestPhone ?? null,
-        title: body.title ?? "Consulta",
-        notes: body.notes ?? null,
-        duration: body.duration ? Number(body.duration) : 60,
-        appointmentDate, // ✅ Date real, sin "-04:00"
+      console.log('📝 Creating appointment with data:', {
+        patientId,
+        guestName,
+        guestEmail,
+        guestPhone,
+        guestRut,
+        title,
+        description,
+        appointmentDate,
+        duration,
+        type,
+        notes,
+        doctorId: userData.id
+      });
+
+      // Validaciones básicas
+      if (!title || !appointmentDate) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: "El título y la fecha de la cita son obligatorios"
+          }),
+          headers: HEADERS.json,
+        };
+      }
+
+      // Validar que se proporcione información del paciente
+      if (!patientId && !guestName) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: "Debe especificar un paciente registrado o proporcionar datos del invitado"
+          }),
+          headers: HEADERS.json,
+        };
+      }
+
+      // ✅ CORRECCIÓN DE TIMEZONE - Parsear correctamente la fecha
+      console.log('🔧 Parsing appointment date:', {
+        receivedDate: appointmentDate,
+        type: typeof appointmentDate
+      });
+
+      let appointmentDateTime: Date;
+
+      try {
+        // Si la fecha incluye timezone (+/-), la parseamos directamente
+        if (appointmentDate.includes('+') || appointmentDate.includes('Z') || appointmentDate.match(/-\d{2}:\d{2}$/)) {
+          appointmentDateTime = new Date(appointmentDate);
+          console.log('✅ Parsed date with timezone:', {
+            originalString: appointmentDate,
+            parsedDate: appointmentDateTime.toISOString(),
+            localTime: appointmentDateTime.toLocaleString('es-CL', { timeZone: 'America/Santiago' }),
+            hours: appointmentDateTime.getHours(),
+            minutes: appointmentDateTime.getMinutes()
+          });
+        } else {
+          // Si no tiene timezone, asumir que es hora local de Chile y agregar timezone
+          const dateWithChileTimezone = appointmentDate + '-04:00';
+          appointmentDateTime = new Date(dateWithChileTimezone);
+          console.log('✅ Added Chile timezone to date:', {
+            originalString: appointmentDate,
+            withTimezone: dateWithChileTimezone,
+            parsedDate: appointmentDateTime.toISOString(),
+            localTime: appointmentDateTime.toLocaleString('es-CL', { timeZone: 'America/Santiago' })
+          });
+        }
+      } catch (error) {
+        console.error('❌ Error parsing date:', error);
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: "Formato de fecha inválido"
+          }),
+          headers: HEADERS.json,
+        };
+      }
+
+      // Validar que la fecha no sea en el pasado
+      const now = new Date();
+      if (appointmentDateTime < now) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: "No se puede agendar citas en el pasado"
+          }),
+          headers: HEADERS.json,
+        };
+      }
+
+      const appointmentData: CreateAppointmentData = {
+        doctorId: userData.id,
+        patientId: patientId ? parseInt(patientId) : null,
+        guestName: guestName || null,
+        guestEmail: guestEmail || null,
+        guestPhone: guestPhone || null,
+        guestRut: guestRut || null,
+        title,
+        description: description || null,
+        appointmentDate: appointmentDateTime, // ✅ Usar fecha parseada correctamente
+        duration: 60,
+        type,
+        notes: notes || null
       };
 
-      const created = await svcCreate(userData?.id, data);
-      return { statusCode: 201, body: JSON.stringify(created), headers: HEADERS.json };
+      console.log('🔍 Final appointment data to save:', {
+        ...appointmentData,
+        appointmentDate: appointmentData.appointmentDate.toISOString(),
+        localTime: appointmentData.appointmentDate.toLocaleString('es-CL', { timeZone: 'America/Santiago' })
+      });
+
+      try {
+        const newAppointment = await AppointmentService.create(appointmentData);
+
+        console.log('✅ Appointment created successfully:', {
+          id: newAppointment.id,
+          savedDate: newAppointment.appointmentDate,
+          savedDateISO: newAppointment.appointmentDate.toISOString(),
+          savedLocalTime: newAppointment.appointmentDate.toLocaleString('es-CL', { timeZone: 'America/Santiago' })
+        });
+
+        return {
+          statusCode: 201,
+          body: JSON.stringify({
+            message: "Cita creada exitosamente",
+            appointment: newAppointment
+          }),
+          headers: HEADERS.json,
+        };
+      } catch (createError: any) {
+        console.error('❌ Error creating appointment:', createError);
+        return {
+          statusCode: 500,
+          body: JSON.stringify({
+            message: createError.message || "Error al crear la cita"
+          }),
+          headers: HEADERS.json,
+        };
+      }
     }
 
-    if (httpMethod === "PUT" && hasId) {
-      if (!Number.isFinite(id!) || (id as number) <= 0) return { statusCode: 400, body: JSON.stringify({ message: "ID inválido" }), headers: HEADERS.json };
-
-      const update: any = {};
-      if (body.title != null) update.title = String(body.title);
-      if (body.notes != null) update.notes = String(body.notes);
-      if (body.duration != null) update.duration = Number(body.duration);
-
-      if (body.appointmentDate || body.date || body.start || body.startDate) {
-        const raw = body.appointmentDate ?? body.date ?? body.start ?? body.startDate;
-        const d = parseIncomingDate(raw);
-        if (!d) return { statusCode: 400, body: JSON.stringify({ message: "appointmentDate inválida" }), headers: HEADERS.json };
-        update.appointmentDate = d; // ✅ Date real
+    // PUT /appointments/:id - Actualizar cita
+    if (httpMethod === "PUT" && hasAppointmentId) {
+      if (!appointmentId || appointmentId <= 0) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ message: "ID de cita inválido" }),
+          headers: HEADERS.json,
+        };
       }
 
-      const updated = await svcUpdate(userData?.id, id as number, update);
-      return { statusCode: 200, body: JSON.stringify(updated), headers: HEADERS.json };
+      const {
+        title,
+        description,
+        appointmentDate,
+        duration,
+        type,
+        notes,
+        status,
+        cancellationReason
+      } = body;
+
+      const updateData: UpdateAppointmentData = {};
+
+      if (title) updateData.title = title;
+      if (description !== undefined) updateData.description = description || null;
+      if (appointmentDate) {
+        // ✅ MISMA CORRECCIÓN PARA UPDATE
+        let newDateTime: Date;
+        if (appointmentDate.includes('+') || appointmentDate.includes('Z') || appointmentDate.match(/-\d{2}:\d{2}$/)) {
+          newDateTime = new Date(appointmentDate);
+        } else {
+          newDateTime = new Date(appointmentDate + '-04:00');
+        }
+
+        const isAvailable = await AppointmentService.checkAvailability(
+          userData.id,
+          newDateTime,
+          duration ? parseInt(duration) : 60,
+          appointmentId
+        );
+
+        if (!isAvailable) {
+          return {
+            statusCode: 409,
+            body: JSON.stringify({
+              message: "Ya existe una cita en ese horario"
+            }),
+            headers: HEADERS.json,
+          };
+        }
+
+        updateData.appointmentDate = newDateTime;
+      }
+      if (duration) updateData.duration = parseInt(duration);
+      if (type) updateData.type = type;
+      if (notes !== undefined) updateData.notes = notes || null;
+      if (status) {
+        updateData.status = status;
+        if (status === "cancelled" && cancellationReason) {
+          updateData.cancellationReason = cancellationReason;
+        }
+      }
+
+      const updatedAppointment = await AppointmentService.update(
+        appointmentId,
+        userData.id,
+        updateData
+      );
+
+      if (!updatedAppointment) {
+        return {
+          statusCode: 404,
+          body: JSON.stringify({ message: "Cita no encontrada" }),
+          headers: HEADERS.json,
+        };
+      }
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Cita actualizada exitosamente",
+          appointment: updatedAppointment
+        }),
+        headers: HEADERS.json,
+      };
     }
 
-    if (httpMethod === "DELETE" && hasId) {
-      if (!Number.isFinite(id!) || (id as number) <= 0) return { statusCode: 400, body: JSON.stringify({ message: "ID inválido" }), headers: HEADERS.json };
-      await svcDelete(userData?.id, id as number);
-      return { statusCode: 204, body: "", headers: HEADERS.json };
+    // DELETE /appointments/:id - Eliminar cita
+    if (httpMethod === "DELETE" && hasAppointmentId) {
+      if (!appointmentId || appointmentId <= 0) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ message: "ID de cita inválido" }),
+          headers: HEADERS.json,
+        };
+      }
+
+      const deletedAppointment = await AppointmentService.delete(appointmentId, userData.id);
+
+      if (!deletedAppointment) {
+        return {
+          statusCode: 404,
+          body: JSON.stringify({ message: "Cita no encontrada" }),
+          headers: HEADERS.json,
+        };
+      }
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Cita eliminada exitosamente"
+        }),
+        headers: HEADERS.json,
+      };
     }
 
-    return { statusCode: 405, body: JSON.stringify({ message: "Método no permitido" }), headers: HEADERS.json };
+    return {
+      statusCode: 405,
+      body: JSON.stringify({
+        message: "Method Not Allowed"
+      }),
+      headers: HEADERS.json,
+    };
+
   } catch (error: any) {
     console.error("❌ Error in appointments handler:", error);
-    return { statusCode: 500, body: JSON.stringify({ message: error?.message ?? "Error interno del servidor" }), headers: HEADERS.json };
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: error.message || "Error interno del servidor"
+      }),
+      headers: HEADERS.json,
+    };
   }
 };
 
