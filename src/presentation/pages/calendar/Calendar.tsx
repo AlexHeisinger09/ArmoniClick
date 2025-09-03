@@ -83,7 +83,7 @@ const Calendar: React.FC = () => {
               <WifiOff className="h-5 w-5 ml-4" />
             </AlertDescription>
           </Alert>
-          
+
           <div className="mt-4 opacity-50">
             {renderCalendarContent()}
           </div>
@@ -189,6 +189,7 @@ const Calendar: React.FC = () => {
           onClose={closeNewAppointmentModal}
           onChange={setNewAppointment}
           onSubmit={handleCreateAppointment}
+          isCreating={isCreating}
         />
       </div>
     </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, User, UserPlus, Search, Clock, Calendar, FileText, Mail, Phone, ChevronDown } from 'lucide-react';
+import { X, User, UserPlus, Search, Clock, FileText, Mail, Phone, ChevronDown, Loader } from 'lucide-react';
 import { NewAppointmentForm, AppointmentsData } from '../types/calendar';
-import { timeSlots, services } from '../constants/calendar';
+import { timeSlots } from '../constants/calendar';
 import { isTimeSlotAvailable, hasOverlap } from '../utils/calendar';
 import { usePatients } from '@/presentation/hooks/patients/usePatients';
 
@@ -21,6 +21,7 @@ interface NewAppointmentModalProps {
   onClose: () => void;
   onChange: (appointment: NewAppointmentForm) => void;
   onSubmit: () => void;
+  isCreating?: boolean; // ✅ NUEVO - Estado de creación para bloquear botón
 }
 
 export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
@@ -29,7 +30,8 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   appointments,
   onClose,
   onChange,
-  onSubmit
+  onSubmit,
+  isCreating = false // ✅ NUEVO
 }) => {
   // Estados para pacientes
   const [patientType, setPatientType] = useState<'registered' | 'guest'>('registered');
@@ -57,7 +59,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
     );
   }, [patients, searchTerm]);
 
-  // ✅ CORREGIDO - Reset states when modal opens/closes con dependencias correctas
+  // Reset states when modal opens/closes
   useEffect(() => {
     if (isOpen) {
       setPatientType('registered');
@@ -66,14 +68,13 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
       setShowPatientSearch(false);
       setGuestData({ name: '', email: '', phone: '', rut: '' });
     }
-  }, [isOpen]); // ✅ Solo dependiendo de isOpen
+  }, [isOpen]);
 
-  // ✅ CORREGIDO - Separar la lógica de actualización del formulario
+  // Separar la lógica de actualización del formulario
   useEffect(() => {
-    if (!isOpen) return; // No hacer nada si el modal está cerrado
+    if (!isOpen) return;
     
     if (patientType === 'registered' && selectedPatient) {
-      // Solo actualizar si realmente cambió
       const expectedPatientName = `${selectedPatient.nombres} ${selectedPatient.apellidos}`;
       const expectedPatientId = selectedPatient.id;
       
@@ -89,7 +90,6 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
         });
       }
     } else if (patientType === 'guest' && guestData.name) {
-      // Solo actualizar si realmente cambió
       if (newAppointment.patient !== guestData.name || 
           newAppointment.guestName !== guestData.name ||
           newAppointment.guestEmail !== guestData.email) {
@@ -104,7 +104,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
         });
       }
     }
-  }, [patientType, selectedPatient, guestData, isOpen]); // ✅ Eliminar newAppointment y onChange de dependencias
+  }, [patientType, selectedPatient, guestData, isOpen]);
 
   const handlePatientSelect = (patient: Patient) => {
     setSelectedPatient(patient);
@@ -121,96 +121,98 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
     return hasPatient && newAppointment.service && newAppointment.time && newAppointment.date;
   };
 
-  // ✅ CORREGIDO - Handler para cambios de formulario sin causar re-renders infinitos
   const handleFormChange = (updates: Partial<NewAppointmentForm>) => {
     onChange({ ...newAppointment, ...updates });
+  };
+
+  // ✅ NUEVO - Handler que previene múltiples envíos
+  const handleSubmit = () => {
+    if (isCreating) return; // Prevenir múltiples clicks
+    onSubmit();
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-      {/* Modal Container - Fullscreen en móvil, centrado en desktop */}
-      <div className="bg-white w-full h-full sm:h-auto sm:w-full sm:max-w-2xl sm:max-h-[90vh] sm:rounded-xl overflow-hidden shadow-2xl flex flex-col">
+      {/* ✅ OPTIMIZADO - Modal más compacto en móvil */}
+      <div className="bg-white w-full h-[95vh] sm:h-auto sm:w-full sm:max-w-xl sm:max-h-[85vh] sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col">
         
-        {/* Header - Sticky en móvil */}
-        <div className="sticky top-0 z-10 bg-white border-b border-slate-200 px-4 sm:px-6 py-4 flex-shrink-0">
+        {/* Header compacto */}
+        <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-3 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg sm:text-xl font-bold text-slate-800">
-                Nueva Cita
-              </h3>
+              <h3 className="text-lg font-bold">Nueva Cita</h3>
               {newAppointment.date && (
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-xs opacity-90 mt-0.5">
                   {newAppointment.date.toLocaleDateString('es-CL', {
-                    weekday: 'long',
+                    weekday: 'short',
                     day: 'numeric',
                     month: 'short'
-                  })}
+                  })} • {newAppointment.time || 'Sin horario'}
                 </p>
               )}
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
+              disabled={isCreating}
+              className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors disabled:opacity-50"
             >
-              <X className="w-5 h-5 text-slate-500" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Content - Más compacto */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
           
-          {/* Tipo de Paciente */}
+          {/* Tipo de Paciente - Más pequeño */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-3">
-              Tipo de Paciente
-            </label>
-            <div className="grid grid-cols-2 gap-3">
+            <label className="block text-sm font-medium text-slate-700 mb-2">Tipo de Paciente</label>
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setPatientType('registered')}
-                className={`flex items-center justify-center p-3 rounded-lg border-2 transition-all font-medium ${
+                disabled={isCreating}
+                className={`flex items-center justify-center p-2.5 rounded-lg border-2 transition-all text-sm font-medium disabled:opacity-50 ${
                   patientType === 'registered'
                     ? 'border-cyan-500 bg-cyan-50 text-cyan-700'
                     : 'border-slate-200 hover:border-slate-300 text-slate-600'
                 }`}
               >
-                <User className="w-4 h-4 mr-2" />
-                <span className="text-sm">Registrado</span>
+                <User className="w-4 h-4 mr-1.5" />
+                Registrado
               </button>
               <button
                 type="button"
                 onClick={() => setPatientType('guest')}
-                className={`flex items-center justify-center p-3 rounded-lg border-2 transition-all font-medium ${
+                disabled={isCreating}
+                className={`flex items-center justify-center p-2.5 rounded-lg border-2 transition-all text-sm font-medium disabled:opacity-50 ${
                   patientType === 'guest'
                     ? 'border-cyan-500 bg-cyan-50 text-cyan-700'
                     : 'border-slate-200 hover:border-slate-300 text-slate-600'
                 }`}
               >
-                <UserPlus className="w-4 h-4 mr-2" />
-                <span className="text-sm">Invitado</span>
+                <UserPlus className="w-4 h-4 mr-1.5" />
+                Invitado
               </button>
             </div>
           </div>
 
-          {/* Selección de Paciente Registrado */}
+          {/* Selección de Paciente Registrado - Más compacto */}
           {patientType === 'registered' && (
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Seleccionar Paciente *
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Paciente *</label>
               
-              {/* Campo de selección sin dropdown interno */}
               <div className="relative">
                 <button
                   type="button"
-                  className="w-full p-3 border-2 border-slate-300 rounded-lg text-left flex items-center justify-between hover:border-cyan-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 transition-all"
-                  onClick={() => setShowPatientSearch(!showPatientSearch)}
+                  disabled={isCreating}
+                  className="w-full p-2.5 border-2 border-slate-300 rounded-lg text-left flex items-center justify-between hover:border-cyan-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => !isCreating && setShowPatientSearch(!showPatientSearch)}
                 >
                   <div className="flex items-center min-w-0 flex-1">
-                    <Search className="w-4 h-4 text-slate-400 mr-3 flex-shrink-0" />
+                    <Search className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
                     <span className={`truncate ${selectedPatient ? 'text-slate-800 font-medium' : 'text-slate-500'}`}>
                       {selectedPatient ? `${selectedPatient.nombres} ${selectedPatient.apellidos}` : 'Buscar paciente...'}
                     </span>
@@ -220,60 +222,39 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
                   }`} />
                 </button>
 
-                {/* Lista de pacientes - Sin doble scroll */}
-                {showPatientSearch && (
-                  <div className="absolute z-20 w-full mt-2 bg-white border-2 border-slate-200 rounded-lg shadow-xl">
-                    {/* Campo de búsqueda fijo */}
-                    <div className="p-3 border-b border-slate-200 bg-slate-50">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <input
-                          type="text"
-                          placeholder="Buscar por nombre o RUT..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
-                          autoFocus
-                        />
-                      </div>
+                {/* Lista de pacientes más compacta */}
+                {showPatientSearch && !isCreating && (
+                  <div className="absolute z-20 w-full mt-1 bg-white border-2 border-slate-200 rounded-lg shadow-xl">
+                    <div className="p-2 border-b border-slate-200 bg-slate-50">
+                      <input
+                        type="text"
+                        placeholder="Buscar..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
+                        autoFocus
+                      />
                     </div>
 
-                    {/* Lista scrollable con altura fija */}
-                    <div className="max-h-48 overflow-y-auto">
+                    <div className="max-h-40 overflow-y-auto">
                       {filteredPatients.length > 0 ? (
-                        filteredPatients.map((patient) => (
+                        filteredPatients.slice(0, 5).map((patient) => (
                           <button
                             key={patient.id}
                             onClick={() => handlePatientSelect(patient)}
-                            className="w-full text-left p-4 hover:bg-cyan-50 transition-colors border-b border-slate-100 last:border-b-0"
+                            className="w-full text-left p-3 hover:bg-cyan-50 transition-colors border-b border-slate-100 last:border-b-0"
                           >
-                            <div className="font-medium text-slate-800 mb-1">
+                            <div className="font-medium text-slate-800 text-sm mb-0.5">
                               {patient.nombres} {patient.apellidos}
                             </div>
-                            <div className="text-sm text-slate-500 flex flex-wrap gap-3">
-                              <span className="flex items-center">
-                                <span className="font-mono">RUT:</span> {patient.rut}
-                              </span>
-                              <span className="flex items-center">
-                                <Phone className="w-3 h-3 mr-1" />
-                                {patient.telefono}
-                              </span>
+                            <div className="text-xs text-slate-500">
+                              {patient.rut} • {patient.telefono}
                             </div>
                           </button>
                         ))
                       ) : (
-                        <div className="p-6 text-center text-slate-500">
-                          {searchTerm ? (
-                            <div>
-                              <Search className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                              <p>No se encontraron pacientes</p>
-                            </div>
-                          ) : (
-                            <div>
-                              <User className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                              <p>No hay pacientes registrados</p>
-                            </div>
-                          )}
+                        <div className="p-4 text-center text-slate-500 text-sm">
+                          No se encontraron pacientes
                         </div>
                       )}
                     </div>
@@ -281,16 +262,16 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
                 )}
               </div>
 
-              {/* Información del paciente seleccionado */}
+              {/* Info del paciente más compacta */}
               {selectedPatient && (
-                <div className="mt-3 p-4 bg-gradient-to-r from-slate-50 to-cyan-50 rounded-lg border border-slate-200">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center text-slate-600">
-                      <Mail className="w-4 h-4 mr-2 text-cyan-500" />
+                <div className="mt-2 p-3 bg-cyan-50 rounded-lg border border-cyan-200">
+                  <div className="grid grid-cols-1 gap-1 text-xs">
+                    <div className="flex items-center text-slate-600 truncate">
+                      <Mail className="w-3 h-3 mr-2 text-cyan-500 flex-shrink-0" />
                       <span className="truncate">{selectedPatient.email}</span>
                     </div>
                     <div className="flex items-center text-slate-600">
-                      <Phone className="w-4 h-4 mr-2 text-cyan-500" />
+                      <Phone className="w-3 h-3 mr-2 text-cyan-500 flex-shrink-0" />
                       <span>{selectedPatient.telefono}</span>
                     </div>
                   </div>
@@ -299,57 +280,40 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
             </div>
           )}
 
-          {/* Datos de Paciente Invitado */}
+          {/* Datos de Paciente Invitado - Más compacto */}
           {patientType === 'guest' && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Nombre Completo *
-                  </label>
-                  <input
-                    type="text"
-                    value={guestData.name}
-                    onChange={(e) => handleGuestDataChange('name', e.target.value)}
-                    className="w-full p-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
-                    placeholder="Nombre del paciente"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    RUT
-                  </label>
-                  <input
-                    type="text"
-                    value={guestData.rut}
-                    onChange={(e) => handleGuestDataChange('rut', e.target.value)}
-                    className="w-full p-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
-                    placeholder="12.345.678-9"
-                  />
-                </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Nombre Completo *</label>
+                <input
+                  type="text"
+                  value={guestData.name}
+                  onChange={(e) => handleGuestDataChange('name', e.target.value)}
+                  disabled={isCreating}
+                  className="w-full p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
+                  placeholder="Nombre del paciente"
+                />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Email
-                  </label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
                   <input
                     type="email"
                     value={guestData.email}
                     onChange={(e) => handleGuestDataChange('email', e.target.value)}
-                    className="w-full p-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
+                    disabled={isCreating}
+                    className="w-full p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
                     placeholder="correo@ejemplo.com"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Teléfono
-                  </label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Teléfono</label>
                   <input
                     type="tel"
                     value={guestData.phone}
                     onChange={(e) => handleGuestDataChange('phone', e.target.value)}
-                    className="w-full p-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
+                    disabled={isCreating}
+                    className="w-full p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
                     placeholder="+56 9 1234 5678"
                   />
                 </div>
@@ -357,31 +321,23 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
             </div>
           )}
 
-          {/* Tratamiento/Servicio */}
+          {/* ✅ CAMBIADO - Tratamiento como input de texto */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Tratamiento *
-            </label>
-            <select
+            <label className="block text-sm font-medium text-slate-700 mb-2">Tratamiento *</label>
+            <input
+              type="text"
               value={newAppointment.service}
               onChange={(e) => handleFormChange({ service: e.target.value })}
-              className="w-full p-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
-            >
-              <option value="">Seleccionar tratamiento</option>
-              {services.map(service => (
-                <option key={service.name} value={service.name}>
-                  {service.name} - {service.price} ({service.duration} min)
-                </option>
-              ))}
-            </select>
+              disabled={isCreating}
+              className="w-full p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
+              placeholder="Ej: Limpieza facial, Consulta general, Tratamiento..."
+            />
           </div>
 
-          {/* Horario */}
+          {/* Horario más compacto */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-3">
-              Horario * (60 min)
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <label className="block text-sm font-medium text-slate-700 mb-2">Horario *</label>
+            <div className="grid grid-cols-3 gap-2">
               {timeSlots.map(time => {
                 const available = newAppointment.date ?
                   isTimeSlotAvailable(appointments, newAppointment.date, time) : false;
@@ -392,90 +348,83 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
                   <button
                     key={time}
                     type="button"
-                    onClick={() => handleFormChange({ time })}
-                    disabled={!available}
+                    onClick={() => !isCreating && handleFormChange({ time })}
+                    disabled={!available || isCreating}
                     className={`
-                      p-3 text-sm rounded-lg transition-all border-2 font-medium relative
+                      p-2 text-xs rounded-lg transition-all border-2 font-medium relative disabled:cursor-not-allowed
                       ${newAppointment.time === time
                         ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg scale-105'
-                        : available
+                        : available && !isCreating
                           ? isOverlap
                             ? 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200'
                             : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                          : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50'
+                          : 'bg-slate-100 text-slate-400 border-slate-200 opacity-50'
                       }
                     `}
                   >
                     <div className="flex items-center justify-center">
-                      <Clock className="w-4 h-4 mr-2" />
+                      <Clock className="w-3 h-3 mr-1" />
                       {time}
                     </div>
                     {isOverlap && available && (
-                      <div className="text-xs leading-tight mt-1 font-semibold">
-                        Sobrecupo
-                      </div>
+                      <div className="text-[10px] font-semibold">Sobrecupo</div>
                     )}
                   </button>
                 );
               })}
             </div>
-            <div className="flex items-center justify-center space-x-4 mt-3 text-xs text-slate-500">
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-slate-50 border border-slate-200 rounded mr-2"></div>
-                Disponible
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-orange-100 border border-orange-300 rounded mr-2"></div>
-                Sobrecupo
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-slate-100 border border-slate-200 rounded mr-2 opacity-50"></div>
-                No disponible
-              </div>
-            </div>
           </div>
 
-          {/* Descripción/Notas */}
+          {/* Notas más compacto */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Notas Adicionales
-            </label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Notas</label>
             <textarea
               value={newAppointment.description}
               onChange={(e) => handleFormChange({ description: e.target.value })}
-              className="w-full p-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 h-20 resize-none transition-all"
-              placeholder="Observaciones, motivo de consulta, etc..."
+              disabled={isCreating}
+              className="w-full p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 h-16 resize-none transition-all text-sm disabled:opacity-50"
+              placeholder="Observaciones adicionales..."
             />
           </div>
         </div>
 
-        {/* Footer - Sticky en móvil */}
-        <div className="sticky bottom-0 bg-white border-t border-slate-200 px-4 sm:px-6 py-4 flex-shrink-0">
-          <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+        {/* ✅ MEJORADO - Footer con botón de carga */}
+        <div className="border-t border-slate-200 px-4 py-3 flex-shrink-0 bg-slate-50">
+          <div className="flex space-x-3">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-3 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors order-2 sm:order-1"
+              disabled={isCreating}
+              className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancelar
             </button>
             <button
-              onClick={onSubmit}
-              disabled={!isFormValid()}
-              className={`flex-1 px-4 py-3 text-sm font-medium rounded-lg transition-colors shadow-sm flex items-center justify-center order-1 sm:order-2 ${
-                isFormValid()
+              onClick={handleSubmit}
+              disabled={!isFormValid() || isCreating}
+              className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors shadow-sm flex items-center justify-center relative ${
+                isFormValid() && !isCreating
                   ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
                   : 'bg-slate-300 text-slate-500 cursor-not-allowed'
               }`}
             >
-              <FileText className="w-4 h-4 mr-2" />
-              Crear Cita
+              {isCreating ? (
+                <>
+                  <Loader className="w-4 h-4 mr-2 animate-spin" />
+                  Creando...
+                </>
+              ) : (
+                <>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Crear Cita
+                </>
+              )}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Overlay para cerrar dropdown en móvil */}
-      {showPatientSearch && (
+      {/* Overlay para cerrar dropdown */}
+      {showPatientSearch && !isCreating && (
         <div 
           className="fixed inset-0 z-10" 
           onClick={() => setShowPatientSearch(false)}
