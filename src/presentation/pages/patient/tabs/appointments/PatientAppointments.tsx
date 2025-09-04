@@ -1,343 +1,152 @@
-// src/presentation/pages/patient/components/PatientAppointmentModal.tsx
-import React, { useState, useEffect } from 'react';
-import { X, Clock, Calendar, FileText, Loader, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Patient } from '@/core/use-cases/patients';
-import { timeSlots } from '@/presentation/pages/calendar/constants/calendar';
-import { isTimeSlotAvailable, hasOverlap } from '@/presentation/pages/calendar/utils/calendar';
-import { AppointmentsData } from '@/presentation/pages/calendar/types/calendar';
+import React, { useState } from 'react';
+import { Calendar, Plus, Clock } from 'lucide-react';
+import { Patient } from "@/core/use-cases/patients";
+import { PatientAppointmentModal } from './PatientAppointmentModal';
 
-interface PatientAppointmentForm {
-  date: Date;
-  time: string;
-  service: string;
-  description: string;
-  duration: number;
-}
-
-interface PatientAppointmentModalProps {
-  isOpen: boolean;
+interface PatientAppointmentsProps {
   patient: Patient;
-  appointments: AppointmentsData;
-  onClose: () => void;
-  onSubmit: (appointmentData: PatientAppointmentForm) => void;
-  isCreating?: boolean;
 }
 
-export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = ({
-  isOpen,
-  patient,
-  appointments,
-  onClose,
-  onSubmit,
-  isCreating = false
-}) => {
-  // Estado del formulario específico para pacientes
-  const [appointmentForm, setAppointmentForm] = useState<PatientAppointmentForm>({
-    date: new Date(),
-    time: '',
-    service: '',
-    description: '',
-    duration: 60
-  });
+const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patient }) => {
+  const [showModal, setShowModal] = useState(false);
+  const [isCreatingAppointment, setIsCreatingAppointment] = useState(false);
 
-  // Estados para navegación de fecha
-  const [selectedMonth, setSelectedMonth] = useState(new Date());
-
-  // Resetear formulario cuando se abre el modal
-  useEffect(() => {
-    if (isOpen) {
-      setAppointmentForm({
-        date: new Date(),
-        time: '',
-        service: '',
-        description: '',
-        duration: 60
-      });
-      setSelectedMonth(new Date());
+  // Mock appointments data - reemplazar con datos reales
+  const mockAppointments = [
+    {
+      id: 1,
+      fecha: '2024-02-15',
+      hora: '10:00',
+      servicio: 'Control Ortodóntico',
+      estado: 'confirmada',
+      descripcion: 'Control mensual de brackets'
+    },
+    {
+      id: 2,
+      fecha: '2024-03-15',
+      hora: '10:30',
+      servicio: 'Ajuste de Alambres',
+      estado: 'pendiente',
+      descripcion: 'Cambio de alambres de progresión'
     }
-  }, [isOpen]);
-
-  const handleFormChange = (updates: Partial<PatientAppointmentForm>) => {
-    setAppointmentForm(prev => ({ ...prev, ...updates }));
-  };
-
-  const handleSubmit = () => {
-    if (isCreating) return;
-    onSubmit(appointmentForm);
-  };
-
-  const isFormValid = () => {
-    return appointmentForm.date && appointmentForm.time && appointmentForm.service.trim();
-  };
-
-  // Generar días del mes para el selector
-  const getDaysInMonth = () => {
-    const year = selectedMonth.getFullYear();
-    const month = selectedMonth.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - ((firstDay.getDay() + 6) % 7));
-    
-    const days: Date[] = [];
-    for (let i = 0; i < 42; i++) {
-      const day = new Date(startDate);
-      day.setDate(startDate.getDate() + i);
-      days.push(day);
-    }
-    return days;
-  };
-
-  const navigateMonth = (direction: number) => {
-    const newMonth = new Date(selectedMonth);
-    newMonth.setMonth(selectedMonth.getMonth() + direction);
-    setSelectedMonth(newMonth);
-  };
-
-  const isToday = (date: Date) => {
-    const today = new Date();
-    return date.toDateString() === today.toDateString();
-  };
-
-  const isSelectedDate = (date: Date) => {
-    return date.toDateString() === appointmentForm.date.toDateString();
-  };
-
-  const isPastDate = (date: Date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return date < today;
-  };
-
-  const monthNames = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
 
-  const dayNames = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'];
-
-  if (!isOpen) return null;
+  const handleCreateAppointment = async (appointmentData: any) => {
+    setIsCreatingAppointment(true);
+    try {
+      // Aquí implementarías la lógica para crear la cita
+      console.log('Creating appointment:', appointmentData);
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simular API call
+      setShowModal(false);
+    } catch (error) {
+      console.error('Error creating appointment:', error);
+    } finally {
+      setIsCreatingAppointment(false);
+    }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white w-full max-w-sm sm:max-w-2xl max-h-[95vh] sm:max-h-[85vh] sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col">
-        
-        {/* Header - Más compacto en móvil */}
-        <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-3 sm:px-4 py-3 flex-shrink-0">
-          <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header */}
+      <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0">
+          <div className="flex items-center space-x-3">
+            <div className="bg-cyan-100 p-2 rounded-full">
+              <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-600" />
+            </div>
             <div>
-              <h3 className="text-base sm:text-lg font-bold">Nueva Cita</h3>
-              <p className="text-xs opacity-90 mt-0.5 truncate">
-                {patient.nombres} {patient.apellidos}
+              <h3 className="text-lg font-semibold text-slate-700">
+                Citas Agendadas
+              </h3>
+              <p className="text-sm text-slate-500">
+                {mockAppointments.length} cita{mockAppointments.length !== 1 ? 's' : ''} programada{mockAppointments.length !== 1 ? 's' : ''}
               </p>
             </div>
-            <button
-              onClick={onClose}
-              disabled={isCreating}
-              className="p-1.5 sm:p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
-            >
-              <X className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
           </div>
-        </div>
-
-        {/* Content - Scroll optimizado para móvil */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 sm:py-4 space-y-4 sm:space-y-6">
-          
-          {/* Selector de Fecha - Más compacto */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Seleccionar Fecha *
-            </label>
-            
-            {/* Navegador de mes - Más compacto */}
-            <div className="flex items-center justify-between mb-3 bg-slate-50 rounded-lg p-2">
-              <button
-                onClick={() => navigateMonth(-1)}
-                disabled={isCreating}
-                className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              
-              <h3 className="text-base sm:text-lg font-semibold text-slate-800">
-                {monthNames[selectedMonth.getMonth()]} {selectedMonth.getFullYear()}
-              </h3>
-              
-              <button
-                onClick={() => navigateMonth(1)}
-                disabled={isCreating}
-                className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Calendario - Optimizado para móvil */}
-            <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-              {/* Días de la semana */}
-              <div className="grid grid-cols-7 bg-slate-50">
-                {dayNames.map(day => (
-                  <div key={day} className="p-1.5 sm:p-2 text-center text-xs font-medium text-slate-600">
-                    {day}
-                  </div>
-                ))}
-              </div>
-              
-              {/* Días del mes - Altura fija para móvil */}
-              <div className="grid grid-cols-7">
-                {getDaysInMonth().map((day, index) => {
-                  const isCurrentMonth = day.getMonth() === selectedMonth.getMonth();
-                  const isSelected = isSelectedDate(day);
-                  const isCurrentDay = isToday(day);
-                  const isPast = isPastDate(day);
-                  
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => !isPast && !isCreating && handleFormChange({ date: day })}
-                      disabled={isPast || isCreating}
-                      className={`
-                        h-8 sm:h-10 text-sm transition-colors relative
-                        ${isCurrentMonth ? 'hover:bg-cyan-50' : 'text-slate-400'}
-                        ${isSelected ? 'bg-cyan-500 text-white' : ''}
-                        ${isCurrentDay && !isSelected ? 'bg-blue-50 text-blue-600 font-semibold' : ''}
-                        ${isPast ? 'text-slate-300 cursor-not-allowed' : 'cursor-pointer'}
-                        ${!isPast && !isSelected && isCurrentMonth ? 'hover:bg-slate-100' : ''}
-                      `}
-                    >
-                      {day.getDate()}
-                      {isCurrentDay && !isSelected && (
-                        <div className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full"></div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {appointmentForm.date && (
-              <div className="mt-2 p-2 sm:p-3 bg-cyan-50 rounded-lg border border-cyan-200">
-                <p className="text-xs sm:text-sm text-cyan-800 font-medium">
-                  {appointmentForm.date.toLocaleDateString('es-CL', {
-                    weekday: 'short',
-                    day: 'numeric',
-                    month: 'short'
-                  })}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Selector de Horario - Grid más compacto en móvil */}
-          {appointmentForm.date && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Horario *
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {timeSlots.map(time => {
-                  const available = isTimeSlotAvailable(appointments, appointmentForm.date, time);
-                  const isOverlap = hasOverlap(appointments, appointmentForm.date, time);
-
-                  return (
-                    <button
-                      key={time}
-                      type="button"
-                      onClick={() => !isCreating && handleFormChange({ time })}
-                      disabled={!available || isCreating}
-                      className={`
-                        p-2 text-xs sm:text-sm rounded-lg transition-all border-2 font-medium relative disabled:cursor-not-allowed
-                        ${appointmentForm.time === time
-                          ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg scale-105'
-                          : available && !isCreating
-                            ? isOverlap
-                              ? 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200'
-                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                            : 'bg-slate-100 text-slate-400 border-slate-200 opacity-50'
-                        }
-                      `}
-                    >
-                      <div className="flex items-center justify-center">
-                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                        {time}
-                      </div>
-                      {isOverlap && available && (
-                        <div className="text-xs font-semibold mt-0.5">Sobrecupo</div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Tratamiento - Input más compacto */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Tratamiento/Servicio *
-            </label>
-            <input
-              type="text"
-              value={appointmentForm.service}
-              onChange={(e) => handleFormChange({ service: e.target.value })}
-              disabled={isCreating}
-              className="w-full p-2 sm:p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
-              placeholder="Ej: Limpieza dental, Consulta..."
-            />
-          </div>
-
-          {/* Descripción/Notas - Más compacto */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Notas
-            </label>
-            <textarea
-              value={appointmentForm.description}
-              onChange={(e) => handleFormChange({ description: e.target.value })}
-              disabled={isCreating}
-              className="w-full p-2 sm:p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 h-16 sm:h-20 resize-none transition-all text-sm disabled:opacity-50"
-              placeholder="Observaciones..."
-            />
-          </div>
-        </div>
-
-        {/* Footer - Más compacto en móvil */}
-        <div className="border-t border-slate-200 px-3 sm:px-4 py-2.5 sm:py-3 flex-shrink-0 bg-slate-50">
-          <div className="flex space-x-2 sm:space-x-3">
-            <button
-              onClick={onClose}
-              disabled={isCreating}
-              className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={!isFormValid() || isCreating}
-              className={`flex-1 px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-medium rounded-lg transition-colors shadow-sm flex items-center justify-center ${
-                isFormValid() && !isCreating
-                  ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
-                  : 'bg-slate-300 text-slate-500 cursor-not-allowed'
-              }`}
-            >
-              {isCreating ? (
-                <>
-                  <Loader className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 animate-spin" />
-                  <span className="hidden sm:inline">Creando...</span>
-                  <span className="sm:hidden">...</span>
-                </>
-              ) : (
-                <>
-                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-                  <span className="hidden sm:inline">Programar Cita</span>
-                  <span className="sm:hidden">Crear</span>
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            onClick={() => setShowModal(true)}
+            className="w-full sm:w-auto flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nueva Cita
+          </button>
         </div>
       </div>
+
+      {/* Lista de citas */}
+      {mockAppointments.length > 0 ? (
+        <div className="space-y-4">
+          {mockAppointments.map((appointment) => (
+            <div
+              key={appointment.id}
+              className="bg-white rounded-xl border border-cyan-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+            >
+              <div className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <h4 className="font-semibold text-slate-800">
+                        {appointment.servicio}
+                      </h4>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        appointment.estado === 'confirmada' 
+                          ? 'bg-green-100 text-green-700 border border-green-200'
+                          : 'bg-yellow-100 text-yellow-700 border border-yellow-200'
+                      }`}>
+                        {appointment.estado === 'confirmada' ? 'Confirmada' : 'Pendiente'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center text-sm text-slate-600 space-x-4">
+                      <div className="flex items-center">
+                        <Calendar className="w-4 h-4 mr-1.5 text-slate-400" />
+                        <span>{new Date(appointment.fecha).toLocaleDateString('es-CL')}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Clock className="w-4 h-4 mr-1.5 text-slate-400" />
+                        <span>{appointment.hora}</span>
+                      </div>
+                    </div>
+                    
+                    {appointment.descripcion && (
+                      <p className="text-sm text-slate-600 mt-2">
+                        {appointment.descripcion}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-8 sm:p-12 text-center">
+          <Calendar className="w-12 h-12 sm:w-16 sm:h-16 text-slate-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-slate-700 mb-2">Sin citas agendadas</h3>
+          <p className="text-slate-500 mb-6 max-w-sm mx-auto">
+            No hay citas programadas para este paciente
+          </p>
+          <button 
+            onClick={() => setShowModal(true)}
+            className="w-full sm:w-auto flex items-center justify-center mx-auto bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg px-6 py-3 transition-colors"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Programar Primera Cita
+          </button>
+        </div>
+      )}
+
+      {/* Modal de nueva cita */}
+      <PatientAppointmentModal
+        isOpen={showModal}
+        patient={patient}
+        appointments={{}} // Pasar datos de citas existentes
+        onClose={() => setShowModal(false)}
+        onSubmit={handleCreateAppointment}
+        isCreating={isCreatingAppointment}
+      />
     </div>
   );
 };
+
+export { PatientAppointments };
