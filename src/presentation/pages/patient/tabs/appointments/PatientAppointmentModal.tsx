@@ -119,72 +119,72 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-      <div className="bg-white w-full h-[95vh] sm:h-auto sm:w-full sm:max-w-2xl sm:max-h-[85vh] sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white w-full max-w-sm sm:max-w-2xl max-h-[95vh] sm:max-h-[85vh] sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col">
         
-        {/* Header */}
-        <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-4 flex-shrink-0">
+        {/* Header - Más compacto en móvil */}
+        <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-3 sm:px-4 py-3 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold">Nueva Cita</h3>
-              <p className="text-xs opacity-90 mt-0.5">
-                Paciente: {patient.nombres} {patient.apellidos}
+              <h3 className="text-base sm:text-lg font-bold">Nueva Cita</h3>
+              <p className="text-xs opacity-90 mt-0.5 truncate">
+                {patient.nombres} {patient.apellidos}
               </p>
             </div>
             <button
               onClick={onClose}
               disabled={isCreating}
-              className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors disabled:opacity-50"
+              className="p-1.5 sm:p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
+        {/* Content - Scroll optimizado para móvil */}
+        <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 sm:py-4 space-y-4 sm:space-y-6">
           
-          {/* Selector de Fecha */}
+          {/* Selector de Fecha - Más compacto */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-3">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
               Seleccionar Fecha *
             </label>
             
-            {/* Navegador de mes */}
-            <div className="flex items-center justify-between mb-4 bg-slate-50 rounded-lg p-3">
+            {/* Navegador de mes - Más compacto */}
+            <div className="flex items-center justify-between mb-3 bg-slate-50 rounded-lg p-2">
               <button
                 onClick={() => navigateMonth(-1)}
                 disabled={isCreating}
-                className="p-2 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
+                className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               
-              <h3 className="text-lg font-semibold text-slate-800">
+              <h3 className="text-base sm:text-lg font-semibold text-slate-800">
                 {monthNames[selectedMonth.getMonth()]} {selectedMonth.getFullYear()}
               </h3>
               
               <button
                 onClick={() => navigateMonth(1)}
                 disabled={isCreating}
-                className="p-2 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
+                className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Calendario */}
+            {/* Calendario - Optimizado para móvil */}
             <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
               {/* Días de la semana */}
               <div className="grid grid-cols-7 bg-slate-50">
                 {dayNames.map(day => (
-                  <div key={day} className="p-2 text-center text-xs font-medium text-slate-600">
+                  <div key={day} className="p-1.5 sm:p-2 text-center text-xs font-medium text-slate-600">
                     {day}
                   </div>
                 ))}
               </div>
               
-              {/* Días del mes */}
+              {/* Días del mes - Altura fija para móvil */}
               <div className="grid grid-cols-7">
                 {getDaysInMonth().map((day, index) => {
                   const isCurrentMonth = day.getMonth() === selectedMonth.getMonth();
@@ -198,7 +198,7 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
                       onClick={() => !isPast && !isCreating && handleFormChange({ date: day })}
                       disabled={isPast || isCreating}
                       className={`
-                        h-10 text-sm transition-colors relative
+                        h-8 sm:h-10 text-sm transition-colors relative
                         ${isCurrentMonth ? 'hover:bg-cyan-50' : 'text-slate-400'}
                         ${isSelected ? 'bg-cyan-500 text-white' : ''}
                         ${isCurrentDay && !isSelected ? 'bg-blue-50 text-blue-600 font-semibold' : ''}
@@ -208,7 +208,7 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
                     >
                       {day.getDate()}
                       {isCurrentDay && !isSelected && (
-                        <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full"></div>
+                        <div className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full"></div>
                       )}
                     </button>
                   );
@@ -217,26 +217,25 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
             </div>
 
             {appointmentForm.date && (
-              <div className="mt-3 p-3 bg-cyan-50 rounded-lg border border-cyan-200">
-                <p className="text-sm text-cyan-800 font-medium">
-                  Fecha seleccionada: {appointmentForm.date.toLocaleDateString('es-CL', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
+              <div className="mt-2 p-2 sm:p-3 bg-cyan-50 rounded-lg border border-cyan-200">
+                <p className="text-xs sm:text-sm text-cyan-800 font-medium">
+                  {appointmentForm.date.toLocaleDateString('es-CL', {
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short'
                   })}
                 </p>
               </div>
             )}
           </div>
 
-          {/* Selector de Horario */}
+          {/* Selector de Horario - Grid más compacto en móvil */}
           {appointmentForm.date && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-3">
-                Horario * (60 min)
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Horario *
               </label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {timeSlots.map(time => {
                   const available = isTimeSlotAvailable(appointments, appointmentForm.date, time);
                   const isOverlap = hasOverlap(appointments, appointmentForm.date, time);
@@ -248,7 +247,7 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
                       onClick={() => !isCreating && handleFormChange({ time })}
                       disabled={!available || isCreating}
                       className={`
-                        p-2.5 text-sm rounded-lg transition-all border-2 font-medium relative disabled:cursor-not-allowed
+                        p-2 text-xs sm:text-sm rounded-lg transition-all border-2 font-medium relative disabled:cursor-not-allowed
                         ${appointmentForm.time === time
                           ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg scale-105'
                           : available && !isCreating
@@ -260,11 +259,11 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
                       `}
                     >
                       <div className="flex items-center justify-center">
-                        <Clock className="w-4 h-4 mr-1.5" />
+                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                         {time}
                       </div>
                       {isOverlap && available && (
-                        <div className="text-xs font-semibold mt-1">Sobrecupo</div>
+                        <div className="text-xs font-semibold mt-0.5">Sobrecupo</div>
                       )}
                     </button>
                   );
@@ -273,7 +272,7 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
             </div>
           )}
 
-          {/* Tratamiento */}
+          {/* Tratamiento - Input más compacto */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Tratamiento/Servicio *
@@ -283,40 +282,40 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
               value={appointmentForm.service}
               onChange={(e) => handleFormChange({ service: e.target.value })}
               disabled={isCreating}
-              className="w-full p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
-              placeholder="Ej: Limpieza dental, Control ortodóntico, Consulta general..."
+              className="w-full p-2 sm:p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
+              placeholder="Ej: Limpieza dental, Consulta..."
             />
           </div>
 
-          {/* Descripción/Notas */}
+          {/* Descripción/Notas - Más compacto */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              Notas o Descripción
+              Notas
             </label>
             <textarea
               value={appointmentForm.description}
               onChange={(e) => handleFormChange({ description: e.target.value })}
               disabled={isCreating}
-              className="w-full p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 h-20 resize-none transition-all text-sm disabled:opacity-50"
-              placeholder="Motivo de la consulta, observaciones, instrucciones especiales..."
+              className="w-full p-2 sm:p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 h-16 sm:h-20 resize-none transition-all text-sm disabled:opacity-50"
+              placeholder="Observaciones..."
             />
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="border-t border-slate-200 px-4 py-3 flex-shrink-0 bg-slate-50">
-          <div className="flex space-x-3">
+        {/* Footer - Más compacto en móvil */}
+        <div className="border-t border-slate-200 px-3 sm:px-4 py-2.5 sm:py-3 flex-shrink-0 bg-slate-50">
+          <div className="flex space-x-2 sm:space-x-3">
             <button
               onClick={onClose}
               disabled={isCreating}
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancelar
             </button>
             <button
               onClick={handleSubmit}
               disabled={!isFormValid() || isCreating}
-              className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors shadow-sm flex items-center justify-center ${
+              className={`flex-1 px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-medium rounded-lg transition-colors shadow-sm flex items-center justify-center ${
                 isFormValid() && !isCreating
                   ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
                   : 'bg-slate-300 text-slate-500 cursor-not-allowed'
@@ -324,13 +323,15 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
             >
               {isCreating ? (
                 <>
-                  <Loader className="w-4 h-4 mr-2 animate-spin" />
-                  Creando...
+                  <Loader className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 animate-spin" />
+                  <span className="hidden sm:inline">Creando...</span>
+                  <span className="sm:hidden">...</span>
                 </>
               ) : (
                 <>
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Programar Cita
+                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                  <span className="hidden sm:inline">Programar Cita</span>
+                  <span className="sm:hidden">Crear</span>
                 </>
               )}
             </button>
