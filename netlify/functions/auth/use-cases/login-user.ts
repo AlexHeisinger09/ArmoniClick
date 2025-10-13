@@ -17,7 +17,10 @@ export class LoginUser implements LoginUserUseCase {
   ){}
 
   public async execute(dto: LoginUserDto): Promise<HandlerResponse> {
-    const user = await this.userService.findOneWithPassword(usersTable.email, dto.email);
+    // ✅ NORMALIZAR EMAIL A MINÚSCULAS
+    const normalizedEmail = dto.email.toLowerCase().trim();
+    
+    const user = await this.userService.findOneWithPassword(usersTable.email, normalizedEmail);
     
     if (!user) return {
       statusCode: 400,
@@ -55,8 +58,6 @@ export class LoginUser implements LoginUserUseCase {
       headers: HEADERS.json,
     
     };
-
-
 
     return {
       statusCode: 200,

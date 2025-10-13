@@ -53,7 +53,10 @@ export class RegisterUser implements RegisterUserUseCase {
   };
 
   public async execute(dto: RegisterUserDto): Promise<HandlerResponse> { 
-    const existUser = await this.userService.findOne(usersTable.email, dto.email);
+    // ✅ NORMALIZAR EMAIL A MINÚSCULAS
+    const normalizedEmail = dto.email.toLowerCase().trim();
+    
+    const existUser = await this.userService.findOne(usersTable.email, normalizedEmail);
 
     if (existUser)
       return {
@@ -68,8 +71,12 @@ export class RegisterUser implements RegisterUserUseCase {
       const password = BcriptAdapter.hash(dto.password);
 
       await Promise.all([
-        this.userService.insert({...dto,password}),
-        this.sendUserValidation(dto.email, dto.name),
+        this.userService.insert({
+          ...dto,
+          email: normalizedEmail, // ✅ GUARDAR EMAIL NORMALIZADO
+          password
+        }),
+        this.sendUserValidation(normalizedEmail, dto.name), // ✅ USAR EMAIL NORMALIZADO
       ]);
 
       return {
@@ -84,7 +91,7 @@ export class RegisterUser implements RegisterUserUseCase {
       return {
         statusCode: 500,
         body: JSON.stringify({
-          message: error.message,
+          message: typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Error desconocido",
         }),
         headers: HEADERS.json,
       };

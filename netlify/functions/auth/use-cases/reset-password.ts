@@ -57,7 +57,10 @@ export class ResetPassword implements ResetPasswordUseCase {
   }
 
   public async execute(dto: ResetPasswordDto): Promise<HandlerResponse> {
-    const user = await this.userService.findOne(usersTable.email, dto.email);
+    // ✅ NORMALIZAR EMAIL A MINÚSCULAS
+    const normalizedEmail = dto.email.toLowerCase().trim();
+    
+    const user = await this.userService.findOne(usersTable.email, normalizedEmail);
 
     if (!user)
       return {
