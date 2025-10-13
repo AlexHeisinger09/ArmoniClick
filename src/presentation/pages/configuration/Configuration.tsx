@@ -1,4 +1,4 @@
-// src/presentation/pages/configuration/Configuration.tsx - COMPONENTE PRINCIPAL
+// src/presentation/pages/configuration/Configuration.tsx - ACTUALIZADO CON TAB DE SERVICIOS
 import { useState } from "react";
 import {
   User,
@@ -9,6 +9,7 @@ import {
   Check,
   AlertCircle,
   Palette,
+  Briefcase, // ✅ NUEVO ICONO PARA SERVICIOS
 } from "lucide-react";
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
 
@@ -17,6 +18,7 @@ import { ProfileTab } from "./tabs/ProfileTab";
 import { PhotoTab } from "./tabs/PhotoTab";
 import { SecurityTab } from "./tabs/SecurityTab";
 import { PreferencesTab } from "./tabs/PreferencesTab";
+import { ServicesTab } from "./tabs/ServicesTab"; // ✅ NUEVO TAB
 
 // Componente de animación de engranajes
 const GearsAnimation: React.FC = () => (
@@ -104,11 +106,12 @@ const Configuration: React.FC = () => {
     }, 5000);
   };
 
-  // Pestañas de configuración
+  // ✅ PESTAÑAS ACTUALIZADAS - INCLUYE SERVICIOS
   const tabs = [
     { id: 'perfil', label: 'Información Personal', icon: User },
     { id: 'foto', label: 'Foto de Perfil', icon: Camera },
     { id: 'seguridad', label: 'Seguridad', icon: Lock },
+    { id: 'servicios', label: 'Servicios', icon: Briefcase }, // ✅ NUEVO TAB
     { id: 'preferencias', label: 'Preferencias', icon: Palette },
   ];
 
@@ -120,6 +123,8 @@ const Configuration: React.FC = () => {
         return <PhotoTab showMessage={showMessage} />;
       case 'seguridad':
         return <SecurityTab showMessage={showMessage} />;
+      case 'servicios': // ✅ NUEVO CASO
+        return <ServicesTab showMessage={showMessage} />;
       case 'preferencias':
         return <PreferencesTab showMessage={showMessage} />;
       default:
@@ -170,7 +175,7 @@ const Configuration: React.FC = () => {
                 Configuración del Perfil
               </h3>
               <p className="mt-0.5 text-slate-500">
-                Administra tu información personal, configuraciones de seguridad y preferencias.
+                Administra tu información personal, servicios, configuraciones de seguridad y preferencias.
               </p>
             </div>
           </div>

@@ -1,9 +1,9 @@
-// src/presentation/pages/patient/tabs/budget/components/BudgetItemsTable.tsx
 import React from 'react';
 import { Save, Download, Edit, Trash2, CheckCircle, X } from 'lucide-react';
 import { BUDGET_TYPE } from "@/core/use-cases/budgets";
-import {  BudgetFormData, ODONTOLOGICO_TREATMENTS, ESTETICA_TREATMENTS, BudgetFormUtils } from '../types/budget.types';
+import { BudgetFormData, BudgetFormUtils } from '../types/budget.types';
 import { BudgetItem } from "@/core/use-cases/budgets";
+import { useServices } from '@/presentation/hooks/services/useServices';
 
 interface BudgetItemsTableProps {
     items: BudgetItem[];
@@ -38,8 +38,26 @@ const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({
     onDeleteItem,
     onEditingItemChange
 }) => {
-    const getCurrentTreatments = () => {
-        return budgetType === BUDGET_TYPE.ODONTOLOGICO ? ODONTOLOGICO_TREATMENTS : ESTETICA_TREATMENTS;
+    // ✅ OBTENER SERVICIOS DE LA BASE DE DATOS
+    const { services, isLoading } = useServices();
+
+    // ✅ FILTRAR SERVICIOS POR TIPO
+    const filteredServices = services.filter(
+        service => service.tipo === budgetType
+    );
+
+    const handleServiceSelect = (serviceId: string) => {
+        if (!serviceId) {
+            onEditingItemChange('accion', '');
+            onEditingItemChange('valor', '');
+            return;
+        }
+
+        const service = services.find(s => s.id === parseInt(serviceId));
+        if (service) {
+            onEditingItemChange('accion', service.nombre);
+            onEditingItemChange('valor', BudgetFormUtils.formatCurrency(parseFloat(service.valor)));
+        }
     };
 
     const handleValueChange = (value: string) => {
@@ -121,16 +139,30 @@ const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({
 
                                 <td className="px-6 py-4">
                                     {canEdit && isEditing === index.toString() ? (
-                                        <select
-                                            value={editingItem.accion}
-                                            onChange={(e) => onEditingItemChange('accion', e.target.value)}
-                                            className="w-full px-2 py-1 border border-cyan-300 rounded text-sm"
-                                        >
-                                            <option value="">Seleccionar...</option>
-                                            {getCurrentTreatments().map((treatment) => (
-                                                <option key={treatment} value={treatment}>{treatment}</option>
-                                            ))}
-                                        </select>
+                                        <div className="space-y-2">
+                                            {/* Select con servicios */}
+                                            <select
+                                                onChange={(e) => handleServiceSelect(e.target.value)}
+                                                className="w-full px-2 py-1 border border-cyan-300 rounded text-sm"
+                                                disabled={isLoading}
+                                            >
+                                                <option value="">Seleccionar servicio...</option>
+                                                {filteredServices.map((service) => (
+                                                    <option key={service.id} value={service.id}>
+                                                        {service.nombre} - ${BudgetFormUtils.formatCurrency(parseFloat(service.valor))}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            
+                                            {/* Input manual */}
+                                            <input
+                                                type="text"
+                                                value={editingItem.accion}
+                                                onChange={(e) => onEditingItemChange('accion', e.target.value)}
+                                                placeholder="O escriba manualmente"
+                                                className="w-full px-2 py-1 border border-cyan-200 rounded text-sm"
+                                            />
+                                        </div>
                                     ) : (
                                         <span className="text-sm text-slate-700">
                                             {item.accion}

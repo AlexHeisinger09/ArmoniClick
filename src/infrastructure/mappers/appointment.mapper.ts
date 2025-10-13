@@ -10,39 +10,42 @@ import {
 
 export class AppointmentMapper {
   
-  // ✅ CORRECCIÓN DEFINITIVA - Sin conversiones automáticas de JavaScript
+ // ✅ CORRECCIÓN ZONA HORARIA CHILE - Horario de verano
   private static createLocalDateTime(date: Date, time: string): string {
     const [hours, minutes] = time.split(':').map(Number);
     
-    console.log('🔧 Creating precise datetime:', {
-      originalDate: date.toISOString(),
-      selectedTime: time,
-      hours,
-      minutes,
-      dateDay: date.getDate(),
-      dateMonth: date.getMonth() + 1,
-      dateYear: date.getFullYear()
-    });
-    
-    // ✅ CONSTRUIR MANUALMENTE SIN QUE JAVASCRIPT HAGA CONVERSIONES
+    // Obtener componentes de fecha SIN conversión de timezone
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const hoursStr = String(hours).padStart(2, '0');
     const minutesStr = String(minutes).padStart(2, '0');
     
-    // ✅ FORMATO ISO SIMPLE - SIN TIMEZONE para evitar conversiones
-    const isoDateTime = `${year}-${month}-${day}T${hoursStr}:${minutesStr}:00`;
+    // ✅ FORMATO ISO CON OFFSET DE CHILE (-03:00 en verano, -04:00 en invierno)
+    // Esto evita que el servidor aplique conversiones adicionales
+    const chileOffset = this.getChileTimezoneOffset(new Date(`${year}-${month}-${day}T${hoursStr}:${minutesStr}:00`));
+    const isoDateTime = `${year}-${month}-${day}T${hoursStr}:${minutesStr}:00${chileOffset}`;
     
-    console.log('🔧 Final appointment date:', {
-      isoDateTime,
-      shouldShowInCalendar: `${hoursStr}:${minutesStr}`,
-      shouldSaveInDB: `${year}-${month}-${day} ${hoursStr}:${minutesStr}:00`
+    console.log('🔧 Chile timezone appointment:', {
+      selectedDate: `${year}-${month}-${day}`,
+      selectedTime: time,
+      chileOffset,
+      finalISO: isoDateTime
     });
     
-    console.log('✅ Generated simple ISO (no timezone conversion):', isoDateTime);
-    
     return isoDateTime;
+  }
+
+  // Detectar offset de Chile (horario de verano vs invierno)
+  private static getChileTimezoneOffset(date: Date): string {
+    // Chile está en UTC-3 durante horario de verano (septiembre-abril)
+    // y UTC-4 durante horario de invierno (abril-septiembre)
+    const month = date.getMonth(); // 0 = enero, 11 = diciembre
+    
+    // Horario de verano: septiembre (8) a marzo (2)
+    const isSummerTime = month >= 8 || month <= 2;
+    
+    return isSummerTime ? '-03:00' : '-04:00';
   }
 
   // ✅ ACTUALIZADO - Convertir de formulario del calendario a request del backend
