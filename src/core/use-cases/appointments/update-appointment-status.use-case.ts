@@ -1,36 +1,63 @@
-// src/core/use-cases/appointments/update-appointment-status.use-case.ts - CORREGIDO
+// src/core/use-cases/appointments/update-appointment-status.use-case.ts
 import { HttpAdapter } from "@/config/adapters/http/http.adapter";
-import { AppointmentResponse } from "@/infrastructure/interfaces/appointment.response";
 
-interface UpdateStatusRequest {
+interface UpdateStatusData {
   status: string;
   reason?: string;
 }
 
 interface UpdateStatusResponse {
   message: string;
-  appointment: AppointmentResponse;
+  appointment: any;
 }
 
 export const updateAppointmentStatusUseCase = async (
   fetcher: HttpAdapter,
   id: number,
-  statusData: UpdateStatusRequest
+  data: UpdateStatusData
 ): Promise<UpdateStatusResponse> => {
-  console.log('📤 updateAppointmentStatusUseCase called:', {
+  console.log('📤 updateAppointmentStatusUseCase called with:', {
     id,
     idType: typeof id,
-    statusData,
-    url: `/appointments/status?id=${id}`
+    data
   });
 
-  // ✅ CAMBIO: Usar query parameter en lugar de path parameter
-  const response = await fetcher.put<UpdateStatusResponse>(
-    `/appointments/status?id=${id}`,
-    statusData
-  );
-  
-  console.log('✅ Status update response:', response);
-  
-  return response;
+  // Validar ID
+  if (!id || isNaN(id) || id <= 0) {
+    throw new Error(`ID de cita inválido: ${id}`);
+  }
+
+  try {
+    // ✅ OPCIÓN 1: Enviar ID en la URL (recomendado)
+    const url = `/appointments/status/${id}`;
+    
+    console.log('🌐 Making PUT request to:', url);
+    console.log('📦 Request body:', data);
+
+    const response = await fetcher.put<UpdateStatusResponse>(
+      url,
+      data
+    );
+
+    console.log('✅ Status update response:', response);
+    return response;
+
+  } catch (error: any) {
+    console.error('❌ Error in updateAppointmentStatusUseCase:', error);
+    
+    // Mejorar el mensaje de error
+    if (error.statusCode === 405) {
+      throw new Error('Método no permitido. Verifica la configuración del endpoint.');
+    }
+    
+    if (error.statusCode === 404) {
+      throw new Error('Cita no encontrada o no tienes permisos para modificarla.');
+    }
+    
+    if (error.statusCode === 400) {
+      throw new Error(error.message || 'Datos inválidos para actualizar la cita.');
+    }
+
+    throw error;
+  }
 };

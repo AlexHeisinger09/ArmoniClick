@@ -1,11 +1,19 @@
+// netlify/functions/appointments/status.ts - CORREGIDO
 import { Handler, HandlerEvent } from "@netlify/functions";
 import { validateJWT } from "../../middlewares";
 import { HEADERS, fromBodyToObject } from "../../config/utils";
 import { AppointmentService } from "../../services/appointment.service";
 
 const handler: Handler = async (event: HandlerEvent) => {
-  const { httpMethod, queryStringParameters } = event;
+  const { httpMethod, path } = event;
   const body = event.body ? fromBodyToObject(event.body) : {};
+
+  console.log('🔍 Status endpoint called:', {
+    httpMethod,
+    path,
+    queryStringParameters: event.queryStringParameters,
+    body
+  });
 
   // Manejar preflight OPTIONS
   if (httpMethod === "OPTIONS") {
@@ -28,32 +36,45 @@ const handler: Handler = async (event: HandlerEvent) => {
       statusCode: 405,
       body: JSON.stringify({
         message: "Method Not Allowed",
-        receivedMethod: httpMethod
+        receivedMethod: httpMethod,
+        expectedMethod: "PUT"
       }),
       headers: HEADERS.json,
     };
   }
 
   try {
-    // LEER ID DESDE QUERY PARAMETERS
-    const rawId = queryStringParameters?.id;
-    const appointmentId = rawId ? parseInt(rawId) : null;
+    // ✅ EXTRAER ID DEL PATH O QUERY PARAMETERS
+    let appointmentId: number | null = null;
+
+    // Método 1: Del path (preferido) - /.netlify/functions/appointments-status/54
+    const pathParts = path.split('/').filter(p => p);
+    const statusIndex = pathParts.findIndex(p => p === 'appointments-status' || p === 'status');
     
-    console.log('✅ Processing update request:', {
-      rawId,
-      appointmentId,
-      isValid: !!(appointmentId && !isNaN(appointmentId) && appointmentId > 0),
-      status: body.status,
-      userId: userData.id
-    });
+    if (statusIndex !== -1 && pathParts[statusIndex + 1]) {
+      const rawId = pathParts[statusIndex + 1];
+      appointmentId = parseInt(rawId);
+      console.log('✅ ID found in path:', appointmentId);
+    }
     
+    // Método 2: De query parameters (fallback)
+    if (!appointmentId && event.queryStringParameters?.id) {
+      appointmentId = parseInt(event.queryStringParameters.id);
+      console.log('✅ ID found in query:', appointmentId);
+    }
+
+    console.log('🔍 Final appointment ID:', appointmentId);
+
+    // Validar ID
     if (!appointmentId || isNaN(appointmentId) || appointmentId <= 0) {
-      console.log('❌ Invalid appointment ID');
+      console.log('❌ Invalid appointment ID:', appointmentId);
       return {
         statusCode: 400,
         body: JSON.stringify({ 
           message: "ID de cita inválido",
-          receivedId: rawId
+          receivedId: appointmentId,
+          path,
+          queryParams: event.queryStringParameters
         }),
         headers: HEADERS.json,
       };
@@ -76,13 +97,19 @@ const handler: Handler = async (event: HandlerEvent) => {
       return {
         statusCode: 400,
         body: JSON.stringify({
-          message: `Estado no válido: ${status}`
+          message: `Estado no válido: ${status}`,
+          validStatuses
         }),
         headers: HEADERS.json,
       };
     }
 
-    console.log('🔄 Calling AppointmentService.updateStatus...');
+    console.log('🔄 Updating appointment:', {
+      appointmentId,
+      status,
+      reason,
+      userId: userData.id
+    });
     
     const updatedAppointment = await AppointmentService.updateStatus(
       appointmentId,
@@ -132,10 +159,12 @@ const handler: Handler = async (event: HandlerEvent) => {
 
   } catch (error: any) {
     console.error("❌ ERROR in status update:", error);
+    console.error("❌ Stack trace:", error.stack);
     return {
       statusCode: 500,
       body: JSON.stringify({
-        message: error.message || "Error interno del servidor"
+        message: error.message || "Error interno del servidor",
+        details: error.toString()
       }),
       headers: HEADERS.json,
     };

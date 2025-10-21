@@ -76,6 +76,7 @@ export interface AppointmentSummary {
   duration: number | null;
   status: string | null;
   type: string | null;
+   patientId: number | null;
   patientName: string;
   patientEmail: string;
 }
@@ -89,7 +90,7 @@ export class AppointmentService {
       console.log('🔍 Creating appointment with data:', data);
 
       const appointmentDate = data.appointmentDate;
-      
+
       console.log('📅 Raw appointment date:', {
         originalDate: appointmentDate.toISOString(),
         localString: appointmentDate.toString(),
@@ -350,24 +351,28 @@ export class AppointmentService {
           duration: appointmentsTable.duration,
           status: appointmentsTable.status,
           type: appointmentsTable.type,
+
+          // ✅ AGREGAR patientId
+          patientId: appointmentsTable.patientId,
+
           patientName: sql<string>`
-            CASE 
-              WHEN ${patientsTable.nombres} IS NOT NULL AND ${patientsTable.apellidos} IS NOT NULL 
-              THEN CONCAT(${patientsTable.nombres}, ' ', ${patientsTable.apellidos})
-              WHEN ${patientsTable.nombres} IS NOT NULL 
-              THEN ${patientsTable.nombres}
-              WHEN ${appointmentsTable.guestName} IS NOT NULL 
-              THEN ${appointmentsTable.guestName}
-              ELSE 'Sin nombre'
-            END
-          `,
+          CASE 
+            WHEN ${patientsTable.nombres} IS NOT NULL AND ${patientsTable.apellidos} IS NOT NULL 
+            THEN CONCAT(${patientsTable.nombres}, ' ', ${patientsTable.apellidos})
+            WHEN ${patientsTable.nombres} IS NOT NULL 
+            THEN ${patientsTable.nombres}
+            WHEN ${appointmentsTable.guestName} IS NOT NULL 
+            THEN ${appointmentsTable.guestName}
+            ELSE 'Sin nombre'
+          END
+        `,
           patientEmail: sql<string>`
-            COALESCE(
-              ${patientsTable.email},
-              ${appointmentsTable.guestEmail},
-              ''
-            )
-          `
+          COALESCE(
+            ${patientsTable.email},
+            ${appointmentsTable.guestEmail},
+            ''
+          )
+        `
         })
         .from(appointmentsTable)
         .leftJoin(patientsTable, eq(appointmentsTable.patientId, patientsTable.id))
@@ -380,10 +385,9 @@ export class AppointmentService {
         appointments: result.map(apt => ({
           id: apt.id,
           title: apt.title,
+          patientId: apt.patientId, // ✅ Log para verificar
           patientName: apt.patientName,
-          appointmentDate: apt.appointmentDate,
-          hours: apt.appointmentDate?.getHours(),
-          minutes: apt.appointmentDate?.getMinutes()
+          appointmentDate: apt.appointmentDate
         }))
       });
 
@@ -393,7 +397,6 @@ export class AppointmentService {
       throw new Error("Error al buscar las citas del doctor");
     }
   }
-
   // Actualizar cita
   static async update(
     id: number,
@@ -474,24 +477,28 @@ export class AppointmentService {
           duration: appointmentsTable.duration,
           status: appointmentsTable.status,
           type: appointmentsTable.type,
+
+          // ✅ AGREGAR patientId
+          patientId: appointmentsTable.patientId,
+
           patientName: sql<string>`
-            CASE 
-              WHEN ${patientsTable.nombres} IS NOT NULL AND ${patientsTable.apellidos} IS NOT NULL 
-              THEN CONCAT(${patientsTable.nombres}, ' ', ${patientsTable.apellidos})
-              WHEN ${patientsTable.nombres} IS NOT NULL 
-              THEN ${patientsTable.nombres}
-              WHEN ${appointmentsTable.guestName} IS NOT NULL 
-              THEN ${appointmentsTable.guestName}
-              ELSE 'Sin nombre'
-            END
-          `,
+          CASE 
+            WHEN ${patientsTable.nombres} IS NOT NULL AND ${patientsTable.apellidos} IS NOT NULL 
+            THEN CONCAT(${patientsTable.nombres}, ' ', ${patientsTable.apellidos})
+            WHEN ${patientsTable.nombres} IS NOT NULL 
+            THEN ${patientsTable.nombres}
+            WHEN ${appointmentsTable.guestName} IS NOT NULL 
+            THEN ${appointmentsTable.guestName}
+            ELSE 'Sin nombre'
+          END
+        `,
           patientEmail: sql<string>`
-            COALESCE(
-              ${patientsTable.email},
-              ${appointmentsTable.guestEmail},
-              ''
-            )
-          `
+          COALESCE(
+            ${patientsTable.email},
+            ${appointmentsTable.guestEmail},
+            ''
+          )
+        `
         })
         .from(appointmentsTable)
         .leftJoin(patientsTable, eq(appointmentsTable.patientId, patientsTable.id))
@@ -507,8 +514,7 @@ export class AppointmentService {
         appointments: result.map(apt => ({
           id: apt.id,
           appointmentDate: apt.appointmentDate,
-          hours: apt.appointmentDate?.getHours(),
-          minutes: apt.appointmentDate?.getMinutes(),
+          patientId: apt.patientId, // ✅ Log para verificar
           patientName: apt.patientName
         }))
       });
@@ -689,13 +695,6 @@ export class AppointmentService {
     try {
       const now = new Date();
 
-      console.log('🔍 Getting upcoming appointments:', {
-        doctorId,
-        now: now.toISOString(),
-        nowHours: now.getHours(),
-        limit
-      });
-
       const result = await db
         .select({
           id: appointmentsTable.id,
@@ -704,24 +703,28 @@ export class AppointmentService {
           duration: appointmentsTable.duration,
           status: appointmentsTable.status,
           type: appointmentsTable.type,
+
+          // ✅ AGREGAR patientId
+          patientId: appointmentsTable.patientId,
+
           patientName: sql<string>`
-            CASE 
-              WHEN ${patientsTable.nombres} IS NOT NULL AND ${patientsTable.apellidos} IS NOT NULL 
-              THEN CONCAT(${patientsTable.nombres}, ' ', ${patientsTable.apellidos})
-              WHEN ${patientsTable.nombres} IS NOT NULL 
-              THEN ${patientsTable.nombres}
-              WHEN ${appointmentsTable.guestName} IS NOT NULL 
-              THEN ${appointmentsTable.guestName}
-              ELSE 'Sin nombre'
-            END
-          `,
+          CASE 
+            WHEN ${patientsTable.nombres} IS NOT NULL AND ${patientsTable.apellidos} IS NOT NULL 
+            THEN CONCAT(${patientsTable.nombres}, ' ', ${patientsTable.apellidos})
+            WHEN ${patientsTable.nombres} IS NOT NULL 
+            THEN ${patientsTable.nombres}
+            WHEN ${appointmentsTable.guestName} IS NOT NULL 
+            THEN ${appointmentsTable.guestName}
+            ELSE 'Sin nombre'
+          END
+        `,
           patientEmail: sql<string>`
-            COALESCE(
-              ${patientsTable.email},
-              ${appointmentsTable.guestEmail},
-              ''
-            )
-          `
+          COALESCE(
+            ${patientsTable.email},
+            ${appointmentsTable.guestEmail},
+            ''
+          )
+        `
         })
         .from(appointmentsTable)
         .leftJoin(patientsTable, eq(appointmentsTable.patientId, patientsTable.id))
@@ -732,16 +735,6 @@ export class AppointmentService {
         ))
         .orderBy(appointmentsTable.appointmentDate)
         .limit(limit);
-
-      console.log('📅 Found upcoming appointments:', {
-        count: result.length,
-        appointments: result.map(apt => ({
-          id: apt.id,
-          appointmentDate: apt.appointmentDate,
-          hours: apt.appointmentDate?.getHours(),
-          patientName: apt.patientName
-        }))
-      });
 
       return result;
     } catch (error) {
@@ -861,7 +854,7 @@ export class AppointmentService {
 
     try {
       console.log('🔔 Starting batch reminders process...');
-      
+
       const appointments = await this.getAppointmentsForReminders();
 
       console.log(`📧 Processing ${appointments.length} appointments for reminders...`);
