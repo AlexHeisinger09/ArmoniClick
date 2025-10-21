@@ -93,7 +93,7 @@ export interface CalendarAppointment {
   patient: string;
   service: string;
   status: 'confirmed' | 'pending' | 'cancelled' | 'no-show';
-  type?: AppointmentType;
+  type: AppointmentType;
   notes?: string;
   email?: string;
   phone?: string;
