@@ -1,4 +1,4 @@
-// src/presentation/pages/calendar/Calendar.tsx - ACTUALIZADO CON NUEVO MODAL
+// src/presentation/pages/calendar/Calendar.tsx - CON MENÚ CONTEXTUAL
 import React from 'react';
 import { useCalendar } from './hooks/useCalendar';
 import { CalendarHeader } from './components/CalendarHeader';
@@ -6,15 +6,15 @@ import { MonthView } from './components/MonthView';
 import { WeekView } from './components/WeekView';
 import { DayView } from './components/DayView';
 import { AppointmentModal } from './components/AppointmentModal';
-// ✅ ACTUALIZADO - Importar nuevo modal
 import { NewAppointmentModal } from './components/NewAppointmentModal';
+import { AppointmentContextMenu } from './components/AppointmentContextMenu';
 import { Spinner } from '@/presentation/components/ui/spinner';
 import { Alert, AlertDescription } from '@/presentation/components/ui/alert';
-import { AlertCircle, Wifi, WifiOff } from 'lucide-react';
+import { AlertCircle, WifiOff } from 'lucide-react';
 
 const Calendar: React.FC = () => {
   const {
-    // Estado original - SIN CAMBIOS
+    // Estado original
     currentDate,
     selectedDate,
     showModal,
@@ -26,6 +26,13 @@ const Calendar: React.FC = () => {
     error,
     isCreating,
     isUpdatingStatus,
+    
+    // Estados del menú contextual
+    showContextMenu,
+    contextMenuPosition,
+    selectedAppointment,
+    
+    // Acciones
     setViewMode,
     setSelectedDate,
     setShowModal,
@@ -35,13 +42,18 @@ const Calendar: React.FC = () => {
     handleDateClick,
     handleNewAppointment,
     handleCreateAppointment,
-    handleAppointmentEdit,
+    handleAppointmentClick,
     handleDateSelect,
     closeModal,
-    closeNewAppointmentModal
+    closeNewAppointmentModal,
+    
+    // Acciones del menú contextual
+    closeContextMenu,
+    handleUpdateStatus,
+    handleNavigateToPatient,
+    handleAppointmentEdit
   } = useCalendar();
 
-  // Función para obtener mensaje de error de forma segura
   const getErrorMessage = (error: unknown): string => {
     if (error instanceof Error) {
       return error.message;
@@ -94,7 +106,6 @@ const Calendar: React.FC = () => {
     return renderCalendarContent();
   };
 
-  // Función auxiliar para renderizar el contenido del calendario
   const renderCalendarContent = () => {
     switch (viewMode) {
       case 'month':
@@ -115,7 +126,7 @@ const Calendar: React.FC = () => {
               setShowModal(true);
             }}
             onTimeSlotClick={handleNewAppointment}
-            onAppointmentEdit={handleAppointmentEdit}
+            onAppointmentClick={handleAppointmentClick}
           />
         );
       case 'day':
@@ -124,7 +135,7 @@ const Calendar: React.FC = () => {
             currentDate={currentDate}
             appointments={appointments}
             onTimeSlotClick={handleNewAppointment}
-            onAppointmentEdit={handleAppointmentEdit}
+            onAppointmentClick={handleAppointmentClick}
           />
         );
       default:
@@ -151,7 +162,7 @@ const Calendar: React.FC = () => {
             {renderCalendarView()}
           </div>
 
-          {/* Overlay de carga para operaciones en curso */}
+          {/* Overlay de carga */}
           {(isCreating || isUpdatingStatus) && (
             <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50 backdrop-blur-sm">
               <div className="bg-white rounded-2xl shadow-2xl p-6 flex items-center space-x-4 border border-cyan-200">
@@ -181,7 +192,7 @@ const Calendar: React.FC = () => {
           />
         )}
 
-        {/* ✅ ACTUALIZADO - Nuevo modal mejorado para crear citas */}
+        {/* Modal para crear citas */}
         <NewAppointmentModal
           isOpen={showNewAppointmentModal}
           newAppointment={newAppointment}
@@ -190,6 +201,17 @@ const Calendar: React.FC = () => {
           onChange={setNewAppointment}
           onSubmit={handleCreateAppointment}
           isCreating={isCreating}
+        />
+
+        {/* Menú contextual */}
+        <AppointmentContextMenu
+          isOpen={showContextMenu}
+          onClose={closeContextMenu}
+          appointment={selectedAppointment}
+          position={contextMenuPosition}
+          onUpdateStatus={handleUpdateStatus}
+          onNavigateToPatient={handleNavigateToPatient}
+          onEditAppointment={handleAppointmentEdit}
         />
       </div>
     </div>

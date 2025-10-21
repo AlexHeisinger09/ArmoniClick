@@ -1,5 +1,5 @@
-// src/presentation/pages/calendar/hooks/useCalendar.ts - CON NOTIFICACIONES
-import { useState, useEffect, useMemo } from 'react';
+// src/presentation/pages/calendar/hooks/useCalendar.ts - CON MENÚ CONTEXTUAL
+import { useState, useEffect } from 'react';
 import { 
   AppointmentsCalendarData, 
   CalendarAppointment, 
@@ -10,8 +10,11 @@ import {
 import { formatDateKey } from '../utils/calendar';
 import { useCalendarAppointments } from '@/presentation/hooks/appointments/useCalendarAppointments';
 import { useNotifications } from '@/presentation/hooks/notifications/useNotifications';
+import { useNavigate } from 'react-router-dom';
 
 export const useCalendar = () => {
+  const navigate = useNavigate();
+  
   // Estados locales para la UI
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -19,6 +22,11 @@ export const useCalendar = () => {
   const [showNewAppointmentModal, setShowNewAppointmentModal] = useState<boolean>(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('day');
+
+  // Estados para menú contextual
+  const [showContextMenu, setShowContextMenu] = useState<boolean>(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [selectedAppointment, setSelectedAppointment] = useState<CalendarAppointment | null>(null);
 
   // Hook de notificaciones
   const {
@@ -28,7 +36,6 @@ export const useCalendar = () => {
     setProcessing
   } = useNotifications();
 
-  // Formulario con nuevos campos
   const [newAppointment, setNewAppointment] = useState<NewAppointmentForm>({
     patient: '',
     service: '',
@@ -36,7 +43,6 @@ export const useCalendar = () => {
     time: '',
     duration: 60,
     date: null,
-    // Nuevos campos
     patientId: undefined,
     guestName: undefined,
     guestEmail: undefined,
@@ -44,7 +50,7 @@ export const useCalendar = () => {
     guestRut: undefined
   });
 
-  // Hook del backend - datos reales
+  // Hook del backend
   const {
     appointments,
     isLoading,
@@ -62,16 +68,7 @@ export const useCalendar = () => {
       currentDate: currentDate.toISOString(),
       viewMode,
       appointmentsKeys: Object.keys(appointments),
-      appointmentsCount: Object.keys(appointments).reduce((total, key) => total + appointments[key].length, 0),
-      appointments: appointments
-    });
-
-    const todayKey = formatDateKey(currentDate);
-    const todayAppointments = appointments[todayKey];
-    console.log('📅 Today appointments:', {
-      todayKey,
-      todayAppointments,
-      count: todayAppointments?.length || 0
+      appointmentsCount: Object.keys(appointments).reduce((total, key) => total + appointments[key].length, 0)
     });
   }, [appointments, currentDate, viewMode]);
 
@@ -86,31 +83,18 @@ export const useCalendar = () => {
       } else if (viewMode === 'day') {
         newDate.setDate(prev.getDate() + direction);
       }
-      
-      console.log('🔄 Date navigation:', {
-        direction,
-        viewMode,
-        oldDate: prev.toISOString(),
-        newDate: newDate.toISOString(),
-        newDateKey: formatDateKey(newDate)
-      });
-      
       return newDate;
     });
   };
 
   const goToToday = (): void => {
-    const today = new Date();
-    console.log('🏠 Go to today:', today.toISOString());
-    setCurrentDate(today);
+    setCurrentDate(new Date());
   };
 
   const handleDateClick = (day: CalendarDay): void => {
     if (day.isCurrentMonth) {
-      console.log('📅 Date clicked:', day.date.toISOString());
       if (viewMode === 'month') {
         setSelectedDate(day.date);
-        // Reset completo del formulario
         setNewAppointment({
           patient: '',
           service: '',
@@ -134,16 +118,8 @@ export const useCalendar = () => {
 
   const handleNewAppointment = (timeSlot: string, targetDate?: Date): void => {
     const dateToUse = targetDate || selectedDate || currentDate;
-    console.log('📝 New appointment:', {
-      timeSlot,
-      targetDate: targetDate?.toISOString(),
-      selectedDate: selectedDate?.toISOString(),
-      currentDate: currentDate.toISOString(),
-      dateToUse: dateToUse.toISOString()
-    });
     
     setSelectedTimeSlot(timeSlot);
-    // Mantener campos existentes al cambiar tiempo
     setNewAppointment(prev => ({
       ...prev,
       time: timeSlot,
@@ -154,7 +130,6 @@ export const useCalendar = () => {
   };
 
   const handleCreateAppointment = async (): Promise<void> => {
-    // Validaciones mejoradas
     const hasPatient = newAppointment.patientId || newAppointment.guestName || newAppointment.patient;
     
     if (!hasPatient || !newAppointment.service || !newAppointment.time || !newAppointment.date) {
@@ -162,35 +137,27 @@ export const useCalendar = () => {
       return;
     }
 
-    console.log('✍️ Creating appointment:', newAppointment);
     setProcessing(true);
 
     try {
-      // Crear la cita
       await createAppointment(newAppointment);
       
-      console.log('✅ Appointment created successfully');
-
-      // 📧 NOTIFICAR SOBRE EMAIL Y RECORDATORIOS
       const patientName = newAppointment.patientId 
         ? newAppointment.patient 
         : newAppointment.guestName || newAppointment.patient;
       
       const hasEmail = newAppointment.patientId 
-        ? true // Los pacientes registrados siempre tienen email
+        ? true
         : !!(newAppointment.guestEmail?.trim());
 
-      // Mostrar notificación de éxito con información de email
       notifyAppointmentCreated(patientName, hasEmail);
       
-      // Mostrar información sobre recordatorio automático si hay email
       if (hasEmail) {
         setTimeout(() => {
           notifyReminderInfo();
         }, 2000);
       }
       
-      // Limpiar formulario completo
       setNewAppointment({
         patient: '',
         service: '',
@@ -209,7 +176,6 @@ export const useCalendar = () => {
     } catch (error: any) {
       console.error('❌ Error creating appointment:', error);
       
-      // Mostrar error específico
       if (error.message?.includes('email')) {
         notifyEmailError(error.message, 'confirmation');
       }
@@ -224,7 +190,6 @@ export const useCalendar = () => {
 
   const closeNewAppointmentModal = (): void => {
     setShowNewAppointmentModal(false);
-    // Reset completo al cerrar
     setNewAppointment({
       patient: '',
       service: '',
@@ -241,17 +206,81 @@ export const useCalendar = () => {
   };
 
   const handleDateSelect = (date: Date): void => {
-    console.log('📆 Date selected:', date.toISOString());
-    if (viewMode === 'day') {
-      setCurrentDate(date);
-    } else {
-      setCurrentDate(date);
+    setCurrentDate(date);
+  };
+
+  // Handlers del menú contextual
+  const handleAppointmentClick = (appointment: CalendarAppointment, event: React.MouseEvent): void => {
+    event.preventDefault();
+    
+    console.log('🖱️ Appointment clicked:', {
+      id: appointment.id,
+      idType: typeof appointment.id,
+      patient: appointment.patient,
+      status: appointment.status,
+      fullAppointment: appointment
+    });
+    
+    setSelectedAppointment(appointment);
+    setContextMenuPosition({ x: event.clientX, y: event.clientY });
+    setShowContextMenu(true);
+  };
+
+  const closeContextMenu = (): void => {
+    setShowContextMenu(false);
+    setSelectedAppointment(null);
+  };
+
+  const handleUpdateStatus = async (appointmentId: string, status: string, reason?: string): Promise<void> => {
+    console.log('🔄 handleUpdateStatus called with:', {
+      appointmentId,
+      appointmentIdType: typeof appointmentId,
+      status,
+      reason,
+      parsedId: Number(appointmentId),
+      isValidNumber: !isNaN(Number(appointmentId))
+    });
+
+    if (!appointmentId || appointmentId === 'null' || appointmentId === 'undefined') {
+      console.error('❌ Invalid appointment ID:', appointmentId);
+      throw new Error('ID de cita inválido');
     }
+
+    const numericId = Number(appointmentId);
+    
+    if (isNaN(numericId)) {
+      console.error('❌ Cannot parse appointment ID to number:', appointmentId);
+      throw new Error('ID de cita no es un número válido');
+    }
+
+    try {
+      console.log('📤 Calling updateAppointmentStatus with:', {
+        id: numericId,
+        status,
+        reason
+      });
+
+      await updateAppointmentStatus({
+        id: numericId,
+        status,
+        reason
+      });
+      
+      console.log('✅ Status updated successfully');
+    } catch (error) {
+      console.error('❌ Error updating appointment status:', error);
+      throw error;
+    }
+  };
+
+  const handleNavigateToPatient = (patientId: number): void => {
+    navigate(`/dashboard/pacientes?id=${patientId}`);
   };
 
   const handleAppointmentEdit = (appointment: CalendarAppointment): void => {
     console.log('✏️ Edit appointment:', appointment);
-    // TODO: Implementar lógica de edición
+    // TODO: Abrir modal de edición con los datos de la cita
+    closeContextMenu();
   };
 
   return {
@@ -264,6 +293,11 @@ export const useCalendar = () => {
     selectedTimeSlot,
     viewMode,
     newAppointment,
+    
+    // Estados del menú contextual
+    showContextMenu,
+    contextMenuPosition,
+    selectedAppointment,
     
     // Estados del backend
     isLoading,
@@ -281,13 +315,18 @@ export const useCalendar = () => {
     handleDateClick,
     handleNewAppointment,
     handleCreateAppointment,
-    handleAppointmentEdit,
+    handleAppointmentClick,
     handleDateSelect,
     closeModal,
     closeNewAppointmentModal,
     
+    // Acciones del menú contextual
+    closeContextMenu,
+    handleUpdateStatus,
+    handleNavigateToPatient,
+    handleAppointmentEdit,
+    
     // Funciones del backend
-    updateAppointmentStatus,
     refetch
   };
 };

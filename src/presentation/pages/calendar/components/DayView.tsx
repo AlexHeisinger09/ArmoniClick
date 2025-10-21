@@ -1,6 +1,6 @@
-// components/DayView.tsx - TIPOS CORREGIDOS
+// components/DayView.tsx - CON MENÚ CONTEXTUAL
 import React from 'react';
-import { AppointmentsData, CalendarAppointment } from '../types/calendar'; // ✅ Usar CalendarAppointment
+import { AppointmentsData, CalendarAppointment } from '../types/calendar';
 import { timeSlots } from '../constants/calendar';
 import { formatDateKey, getAppointmentsForDate, isToday } from '../utils/calendar';
 import { AppointmentBlock } from './AppointmentBlock';
@@ -10,37 +10,33 @@ interface DayViewProps {
   currentDate: Date;
   appointments: AppointmentsData;
   onTimeSlotClick: (time: string, date: Date) => void;
-  onAppointmentEdit?: (appointment: CalendarAppointment) => void; // ✅ Usar CalendarAppointment
+  onAppointmentClick?: (appointment: CalendarAppointment, event: React.MouseEvent) => void;
 }
 
 export const DayView: React.FC<DayViewProps> = ({
   currentDate,
   appointments,
   onTimeSlotClick,
-  onAppointmentEdit
+  onAppointmentClick
 }) => {
   const dayAppointments = getAppointmentsForDate(appointments, currentDate);
   const isCurrentDay = isToday(currentDate);
 
-  // 🔥 DEBUG: Log para ver qué appointments llegan
   React.useEffect(() => {
     const dateKey = formatDateKey(currentDate);
     console.log('🔍 DayView - appointments for date:', {
       currentDate: currentDate.toISOString(),
       dateKey,
       dayAppointments,
-      dayAppointmentsCount: dayAppointments.length,
-      allAppointments: appointments,
-      allAppointmentsKeys: Object.keys(appointments)
+      dayAppointmentsCount: dayAppointments.length
     });
   }, [currentDate, appointments, dayAppointments]);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
       <div className="flex">
-        {/* Columna de horas - Diseño limpio */}
         <div className="w-20 sm:w-24 bg-slate-50 border-r border-slate-100 flex-shrink-0">
-          {timeSlots.map((time, index) => (
+          {timeSlots.map((time) => (
             <div
               key={time}
               className="h-20 flex items-center justify-center text-sm font-medium text-slate-500 border-b border-slate-50"
@@ -50,10 +46,8 @@ export const DayView: React.FC<DayViewProps> = ({
           ))}
         </div>
 
-        {/* Columna del día - Espaciosa y elegante */}
         <div className="flex-1 relative">
-          {/* Slots de tiempo */}
-          {timeSlots.map((time, timeIndex) => {
+          {timeSlots.map((time) => {
             const currentHour = new Date().getHours();
             const currentMinutes = new Date().getMinutes();
             const slotHour = parseInt(time.split(':')[0]);
@@ -65,13 +59,11 @@ export const DayView: React.FC<DayViewProps> = ({
                 className="h-20 border-b border-slate-50 hover:bg-cyan-25 cursor-pointer transition-colors group px-4 sm:px-6 flex items-center relative"
                 onClick={() => onTimeSlotClick(time, currentDate)}
               >
-                {/* Indicador de hover elegante */}
                 <div className="text-sm text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity flex items-center font-medium">
                   <Plus className="w-4 h-4 mr-2 text-cyan-400" />
                   Agendar nueva cita
                 </div>
                 
-                {/* Línea de hora actual - Corregida para partir desde el borde izquierdo */}
                 {isCurrentHourSlot && (
                   <div 
                     className="absolute left-0 right-4 z-20"
@@ -89,7 +81,6 @@ export const DayView: React.FC<DayViewProps> = ({
             );
           })}
 
-          {/* Citas del día */}
           <div className="absolute inset-0 pointer-events-none">
             {dayAppointments.map(appointment => (
               <div key={appointment.id} className="pointer-events-auto">
@@ -98,7 +89,7 @@ export const DayView: React.FC<DayViewProps> = ({
                   date={currentDate}
                   appointments={appointments}
                   viewType="day"
-                  onEdit={onAppointmentEdit}
+                  onClick={onAppointmentClick}
                 />
               </div>
             ))}

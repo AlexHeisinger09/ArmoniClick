@@ -1,38 +1,38 @@
 import { AppointmentResponse, CreateAppointmentRequest } from '@/infrastructure/interfaces/appointment.response';
-import { 
-  Appointment, 
-  CalendarAppointment, 
-  AppointmentsCalendarData, 
+import {
+  Appointment,
+  CalendarAppointment,
+  AppointmentsCalendarData,
   ViewMode,
   NewAppointmentForm,
   AppointmentStatus
 } from '@/presentation/pages/calendar/types/calendar';
 
 export class AppointmentMapper {
-  
- // ✅ CORRECCIÓN ZONA HORARIA CHILE - Horario de verano
+
+  // ✅ CORRECCIÓN ZONA HORARIA CHILE - Horario de verano
   private static createLocalDateTime(date: Date, time: string): string {
     const [hours, minutes] = time.split(':').map(Number);
-    
+
     // Obtener componentes de fecha SIN conversión de timezone
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const hoursStr = String(hours).padStart(2, '0');
     const minutesStr = String(minutes).padStart(2, '0');
-    
+
     // ✅ FORMATO ISO CON OFFSET DE CHILE (-03:00 en verano, -04:00 en invierno)
     // Esto evita que el servidor aplique conversiones adicionales
     const chileOffset = this.getChileTimezoneOffset(new Date(`${year}-${month}-${day}T${hoursStr}:${minutesStr}:00`));
     const isoDateTime = `${year}-${month}-${day}T${hoursStr}:${minutesStr}:00${chileOffset}`;
-    
+
     console.log('🔧 Chile timezone appointment:', {
       selectedDate: `${year}-${month}-${day}`,
       selectedTime: time,
       chileOffset,
       finalISO: isoDateTime
     });
-    
+
     return isoDateTime;
   }
 
@@ -41,10 +41,10 @@ export class AppointmentMapper {
     // Chile está en UTC-3 durante horario de verano (septiembre-abril)
     // y UTC-4 durante horario de invierno (abril-septiembre)
     const month = date.getMonth(); // 0 = enero, 11 = diciembre
-    
+
     // Horario de verano: septiembre (8) a marzo (2)
     const isSummerTime = month >= 8 || month <= 2;
-    
+
     return isSummerTime ? '-03:00' : '-04:00';
   }
 
@@ -53,7 +53,7 @@ export class AppointmentMapper {
     if (!form.date) {
       throw new Error('La fecha es obligatoria');
     }
-    
+
     console.log('🔍 Processing appointment form:', {
       originalDate: form.date.toISOString(),
       originalDateISO: form.date.toISOString(),
@@ -62,12 +62,12 @@ export class AppointmentMapper {
       dateMonth: form.date.getMonth() + 1,
       dateYear: form.date.getFullYear()
     });
-    
+
     // ✅ USAR MÉTODO CORREGIDO
     const appointmentDateTime = this.createLocalDateTime(form.date, form.time);
-    
+
     console.log('📤 Final appointment datetime for backend:', appointmentDateTime);
-    
+
     // Crear request con campos correctos según tipo de paciente
     const request: CreateAppointmentRequest = {
       title: form.service,
@@ -105,15 +105,15 @@ export class AppointmentMapper {
     console.log('📤 Complete backend request:', request);
     return request;
   }
-  
+
   // ✅ MÉTODO CORREGIDO - Convertir de respuesta del backend a formato de calendario
   static fromBackendToCalendarData(appointments: AppointmentResponse[]): AppointmentsCalendarData {
     const calendarData: AppointmentsCalendarData = {};
-    
+
     appointments.forEach(apt => {
       // ✅ PARSEAR FECHA RESPETANDO LA ZONA HORARIA
       const date = new Date(apt.appointmentDate);
-      
+
       console.log('🔍 Processing backend appointment:', {
         id: apt.id,
         backendDate: apt.appointmentDate,
@@ -121,15 +121,15 @@ export class AppointmentMapper {
         localDate: date.toLocaleDateString('es-CL'),
         localTime: date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
       });
-      
+
       const dateKey = this.formatDateKey(date);
       const endDate = new Date(date.getTime() + (apt.duration * 60000));
-      
+
       // Obtener nombre del paciente correctamente
       const patientName = this.getPatientName(apt);
       const patientEmail = this.getPatientEmail(apt);
       const patientPhone = this.getPatientPhone(apt);
-      
+
       const calendarAppointment: CalendarAppointment = {
         id: apt.id.toString(),
         time: this.formatTime(date),
@@ -141,7 +141,9 @@ export class AppointmentMapper {
         notes: apt.notes || undefined,
         email: patientEmail,
         phone: patientPhone,
-        
+        patientId: apt.patientId, // ID del paciente registrado
+        patientName: apt.patientName, // Nombre del paciente registrado
+        guestName: apt.guestName, // Nombre del invitado        
         // Propiedades adicionales para compatibilidad
         title: `${patientName} - ${apt.title}`,
         start: date,
@@ -149,13 +151,20 @@ export class AppointmentMapper {
         allDay: false,
         meta: apt as unknown as Record<string, unknown>
       };
-      
+
       if (!calendarData[dateKey]) {
         calendarData[dateKey] = [];
       }
-      
+
       calendarData[dateKey].push(calendarAppointment);
-      
+      console.log('📋 Mapped appointment:', {
+        backendId: apt.id,
+        backendIdType: typeof apt.id,
+        calendarId: calendarAppointment.id,
+        calendarIdType: typeof calendarAppointment.id,
+        patientName,
+        status: calendarAppointment.status
+      });
       console.log('✅ Added appointment to calendar:', {
         dateKey,
         time: calendarAppointment.time,
@@ -163,23 +172,23 @@ export class AppointmentMapper {
         service: calendarAppointment.service
       });
     });
-    
+
     console.log('📋 Final calendar data:', {
       totalDates: Object.keys(calendarData).length,
       dates: Object.keys(calendarData),
       totalAppointments: Object.values(calendarData).reduce((total, dayAppts) => total + dayAppts.length, 0)
     });
-    
+
     return calendarData;
   }
-  
+
   // Obtener rango de fechas para vista del calendario
   static getDateRangeForCalendarView(currentDate: Date, viewMode: ViewMode) {
     const start = new Date(currentDate);
     const end = new Date(currentDate);
-    
+
     start.setHours(0, 0, 0, 0);
-    
+
     switch (viewMode) {
       case 'month':
         start.setDate(1);
@@ -196,12 +205,12 @@ export class AppointmentMapper {
         end.setHours(23, 59, 59, 999);
         break;
     }
-    
+
     const result = {
       startDate: start.toISOString().split('T')[0],
       endDate: end.toISOString().split('T')[0]
     };
-    
+
     console.log('📅 Date range for calendar view:', {
       viewMode,
       currentDate: currentDate.toISOString(),
@@ -210,17 +219,17 @@ export class AppointmentMapper {
       start: start.toISOString(),
       end: end.toISOString()
     });
-    
+
     return result;
   }
-  
+
   // Convertir AppointmentResponse a Appointment (para Big Calendar)
   static fromResponseToCalendarEvents(appointments: AppointmentResponse[]): Appointment[] {
     return appointments.map(apt => {
       const startDate = new Date(apt.appointmentDate);
       const endDate = new Date(startDate.getTime() + (apt.duration * 60000));
       const patientName = this.getPatientName(apt);
-      
+
       return {
         id: apt.id.toString(),
         title: `${patientName} - ${apt.title}`,
@@ -241,7 +250,7 @@ export class AppointmentMapper {
       };
     });
   }
-  
+
   // Utilidades privadas
   private static formatDateKey(date: Date): string {
     const year = date.getFullYear();
@@ -249,13 +258,13 @@ export class AppointmentMapper {
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
-  
+
   private static formatTime(date: Date): string {
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     return `${hours}:${minutes}`;
   }
-  
+
   // Obtener nombre del paciente con prioridad correcta
   private static getPatientName(apt: AppointmentResponse): string {
     console.log('🔍 Getting patient name from appointment:', {
@@ -270,33 +279,33 @@ export class AppointmentMapper {
       console.log('✅ Using registered patient full name:', fullName);
       return fullName;
     }
-    
+
     // Prioridad 2: Solo nombre del paciente registrado
     if (apt.patientName) {
       console.log('✅ Using registered patient name only:', apt.patientName);
       return apt.patientName;
     }
-    
+
     // Prioridad 3: Paciente invitado
     if (apt.guestName) {
       console.log('✅ Using guest name:', apt.guestName);
       return apt.guestName;
     }
-    
+
     // Fallback
     const fallback = 'Paciente sin nombre';
     console.log('⚠️ Using fallback name:', fallback);
     return fallback;
   }
-  
+
   private static getPatientEmail(apt: AppointmentResponse): string | undefined {
     return apt.patientEmail || apt.guestEmail || undefined;
   }
-  
+
   private static getPatientPhone(apt: AppointmentResponse): string | undefined {
     return apt.patientPhone || apt.guestPhone || undefined;
   }
-  
+
   // Función para mapear status
   private static mapStatus(status: any): AppointmentStatus {
     switch (status) {

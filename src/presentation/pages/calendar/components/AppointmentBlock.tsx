@@ -1,4 +1,4 @@
-// components/AppointmentBlock.tsx - ACTUALIZADO CON MEJORES VISTAS
+// components/AppointmentBlock.tsx - CON MENÚ CONTEXTUAL
 import React, { useEffect, useState } from 'react';
 import { CalendarAppointment, AppointmentsData } from '../types/calendar';
 import { formatDateKey } from '../utils/calendar';
@@ -9,6 +9,7 @@ interface AppointmentBlockProps {
   appointments: AppointmentsData;
   viewType?: 'week' | 'day' | 'month';
   onEdit?: (appointment: CalendarAppointment) => void;
+  onClick?: (appointment: CalendarAppointment, event: React.MouseEvent) => void;
 }
 
 export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
@@ -16,7 +17,8 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
   date,
   appointments,
   viewType = 'week',
-  onEdit
+  onEdit,
+  onClick
 }) => {
   const [isMobile, setIsMobile] = useState(false);
   
@@ -38,30 +40,27 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 
   const getSlotIndex = (time: string) => {
     const [hour] = time.split(':').map(Number);
-    return hour - 9; // Los slots empiezan a las 9:00
+    return hour - 9;
   };
 
   const slotIndex = getSlotIndex(appointment.time);
   
-  // Configuración de alturas para cada vista
   const SLOT_HEIGHTS = {
     week: {
-      desktop: 64, // h-16 = 64px
-      mobile: 48   // h-12 = 48px
+      desktop: 64,
+      mobile: 48
     },
     day: {
-      desktop: 80, // h-20 = 80px
-      mobile: 80   // h-20 = 80px
+      desktop: 80,
+      mobile: 80
     },
     month: {
-      desktop: 24, // h-6 = 24px (para vista mensual)
-      mobile: 20   // h-5 = 20px
+      desktop: 24,
+      mobile: 20
     }
   };
 
-  // Cálculo de posición completamente responsive
   const getPositionStyle = (): React.CSSProperties => {
-    // Para vista mensual, no usar posición absoluta
     if (viewType === 'month') {
       return {};
     }
@@ -76,7 +75,6 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
       overflow: 'hidden',
     };
 
-    // Ancho y posición según overlap
     if (isOverbook) {
       if (appointmentIndex === 0) {
         return {
@@ -100,7 +98,6 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
     }
   };
 
-  // Paleta de colores elegante
   const getAppointmentStyles = () => {
     switch (appointment.status) {
       case 'confirmed':
@@ -150,11 +147,9 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 
   const colors = getAppointmentStyles();
 
-  // ✅ RENDERIZADO ESPECÍFICO POR VISTA
   const renderContent = () => {
     switch (viewType) {
       case 'month':
-        // Vista mensual: Solo nombre del paciente
         return (
           <div className="flex items-center space-x-1 min-w-0">
             <div className={`w-1.5 h-1.5 rounded-full ${colors.dot} flex-shrink-0`}></div>
@@ -165,7 +160,6 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
         );
       
       case 'week':
-        // Vista semanal: Nombre del paciente y hora
         if (isOverbook && appointmentIndex > 0) {
           return (
             <div className="text-xs h-full flex flex-col justify-center items-center space-y-0.5 p-1">
@@ -191,7 +185,6 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
         );
       
       case 'day':
-        // Vista diaria: Nombre del paciente, servicio y hora
         if (isOverbook && appointmentIndex > 0) {
           return (
             <div className="text-xs h-full flex flex-col justify-center items-center space-y-1 p-2">
@@ -230,7 +223,13 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
     }
   };
 
-  // Clases CSS base
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onClick) {
+      onClick(appointment, e);
+    }
+  };
+
   const baseClasses = `
     rounded-lg cursor-pointer transition-all duration-200
     border border-opacity-60 hover:shadow-md active:scale-95
@@ -242,7 +241,7 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
     <div
       className={baseClasses}
       style={getPositionStyle()}
-      onClick={() => onEdit?.(appointment)}
+      onClick={handleClick}
       title={`${appointment.patient} - ${appointment.service} (${appointment.time})`}
     >
       {renderContent()}

@@ -1,6 +1,6 @@
-// components/WeekView.tsx - TIPOS CORREGIDOS
+// components/WeekView.tsx - CON MENÚ CONTEXTUAL (PARTE 1)
 import React from 'react';
-import { AppointmentsData, CalendarAppointment } from '../types/calendar'; // ✅ Usar CalendarAppointment
+import { AppointmentsData, CalendarAppointment } from '../types/calendar';
 import { timeSlots, dayNames } from '../constants/calendar';
 import { getWeekDays, isToday, getAppointmentsForDate } from '../utils/calendar';
 import { AppointmentBlock } from './AppointmentBlock';
@@ -11,7 +11,7 @@ interface WeekViewProps {
   appointments: AppointmentsData;
   onDateSelect: (date: Date) => void;
   onTimeSlotClick: (time: string, date: Date) => void;
-  onAppointmentEdit?: (appointment: CalendarAppointment) => void; // ✅ Usar CalendarAppointment
+  onAppointmentClick?: (appointment: CalendarAppointment, event: React.MouseEvent) => void;
 }
 
 export const WeekView: React.FC<WeekViewProps> = ({
@@ -19,24 +19,21 @@ export const WeekView: React.FC<WeekViewProps> = ({
   appointments,
   onDateSelect,
   onTimeSlotClick,
-  onAppointmentEdit
+  onAppointmentClick
 }) => {
   const weekDays = getWeekDays(currentDate);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      {/* Header con días de la semana - Vista desktop normal, móvil mejorado */}
+      {/* Header Desktop */}
       <div className="border-b border-slate-100">
-        {/* Desktop: Header normal fuera del scroll */}
         <div className="hidden sm:flex">
-          {/* Espacio para columna de horas */}
           <div className="w-16 md:w-20 bg-slate-50 border-r border-slate-100 flex items-center justify-center">
             <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">
               MGS
             </div>
           </div>
           
-          {/* Días de la semana - Desktop */}
           {weekDays.map((day, index) => {
             const dayAppointments = getAppointmentsForDate(appointments, day);
             const hasAppointments = dayAppointments.length > 0;
@@ -79,9 +76,8 @@ export const WeekView: React.FC<WeekViewProps> = ({
 
       {/* Cuerpo del calendario */}
       <div className="relative">
-        {/* Desktop: Sin scroll horizontal */}
+        {/* Desktop */}
         <div className="hidden sm:flex">
-          {/* Columna de horas - Desktop */}
           <div className="w-16 md:w-20 bg-slate-50 border-r border-slate-100 flex-shrink-0">
             {timeSlots.map((time) => (
               <div
@@ -93,7 +89,6 @@ export const WeekView: React.FC<WeekViewProps> = ({
             ))}
           </div>
 
-          {/* Días - Desktop */}
           <div className="flex flex-1">
             {weekDays.map((day, dayIndex) => {
               const dayAppointments = getAppointmentsForDate(appointments, day);
@@ -141,7 +136,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
                           date={day}
                           appointments={appointments}
                           viewType="week"
-                          onEdit={onAppointmentEdit}
+                          onClick={onAppointmentClick}
                         />
                       </div>
                     ))}
@@ -152,10 +147,10 @@ export const WeekView: React.FC<WeekViewProps> = ({
           </div>
         </div>
 
-        {/* Móvil: Scroll unificado con header incluido */}
+        {/* Móvil */}
         <div className="sm:hidden overflow-x-auto">
           <div className="min-w-[600px]">
-            {/* Header móvil dentro del scroll */}
+            {/* Header móvil */}
             <div className="bg-white border-b border-slate-100 sticky top-0 z-30">
               <div className="flex">
                 <div className="w-16 bg-slate-50 border-r border-slate-100 flex items-center justify-center flex-shrink-0">
@@ -259,7 +254,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
                             date={day}
                             appointments={appointments}
                             viewType="week"
-                            onEdit={onAppointmentEdit}
+                            onClick={onAppointmentClick}
                           />
                         </div>
                       ))}
@@ -271,7 +266,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
           </div>
         </div>
 
-        {/* Indicador de navegación - Solo móvil */}
+        {/* Indicador de navegación móvil */}
         <div className="sm:hidden border-t border-slate-100 bg-slate-50 px-4 py-2">
           <div className="flex items-center justify-center text-xs text-slate-500">
             <span>← Desliza para ver más días →</span>

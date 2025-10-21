@@ -1,4 +1,4 @@
-// src/presentation/pages/calendar/types/calendar.ts - ACTUALIZADO CON NUEVOS CAMPOS
+// src/presentation/pages/calendar/types/calendar.ts - ACTUALIZADO
 export type AppointmentStatus = 'confirmed' | 'pending' | 'cancelled' | 'no-show' | 'completed';
 
 export interface Appointment {
@@ -9,7 +9,6 @@ export interface Appointment {
   allDay?: boolean;
   meta?: Record<string, unknown>;
   
-  // Propiedades adicionales necesarias para el calendario
   time: string;
   duration: number;
   patient: string;
@@ -19,6 +18,9 @@ export interface Appointment {
   notes?: string;
   email?: string;
   phone?: string;
+  patientId?: number;
+  patientName?: string;
+  guestName?: string;
 }
 
 export interface CalendarAppointment {
@@ -33,7 +35,12 @@ export interface CalendarAppointment {
   email?: string;
   phone?: string;
   
-  // Propiedades adicionales para compatibilidad con Appointment
+  // Campos adicionales para el menú contextual
+  patientId?: number;
+  patientName?: string;
+  guestName?: string;
+  
+  // Para compatibilidad con Appointment
   title: string;
   start: Date;
   end: Date;
@@ -54,9 +61,7 @@ export interface CalendarDay {
   isCurrentMonth: boolean;
 }
 
-// ✅ ACTUALIZADO - Nuevo formulario con campos para pacientes registrados e invitados
 export interface NewAppointmentForm {
-  // Datos básicos
   patient: string;
   service: string;
   description: string;
@@ -64,10 +69,7 @@ export interface NewAppointmentForm {
   duration: number;
   date: Date | null;
   
-  // ✅ NUEVOS CAMPOS - Para paciente registrado
   patientId?: number;
-  
-  // ✅ NUEVOS CAMPOS - Para paciente invitado
   guestName?: string;
   guestEmail?: string;
   guestPhone?: string;

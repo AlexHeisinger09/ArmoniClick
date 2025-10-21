@@ -14,6 +14,7 @@ import {
   Mail,
   User
 } from 'lucide-react';
+import { CalendarAppointment, AppointmentStatus } from '../types/calendar';
 
 // Tipos
 interface Appointment {
@@ -38,11 +39,11 @@ interface Appointment {
 interface AppointmentContextMenuProps {
   isOpen: boolean;
   onClose: () => void;
-  appointment: Appointment | null;
+  appointment: CalendarAppointment | null;
   position: { x: number; y: number };
   onUpdateStatus: (appointmentId: string, status: string, reason?: string) => Promise<void>;
   onNavigateToPatient?: (patientId: number) => void;
-  onEditAppointment?: (appointment: Appointment) => void;
+  onEditAppointment?: (appointment: CalendarAppointment) => void;
 }
 
 // Opciones del menú con sus estados
