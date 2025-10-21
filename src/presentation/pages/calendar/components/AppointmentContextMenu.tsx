@@ -215,39 +215,38 @@ export const AppointmentContextMenu: React.FC<AppointmentContextMenuProps> = ({
       {/* Menú contextual compacto */}
       <div
         ref={menuRef}
-        className="fixed z-50 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden"
+        className="fixed z-50 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden w-[200px] sm:w-[240px]"
         style={{
           left: `${menuPosition.x}px`,
           top: `${menuPosition.y}px`,
-          width: '240px',
           maxHeight: '90vh',
           overflowY: 'auto'
         }}
       >
         {/* Header compacto */}
-        <div className="bg-gradient-to-r from-cyan-50 to-blue-50 px-3 py-2 border-b border-gray-200">
-          <div className="flex items-start justify-between gap-2">
+        <div className="bg-gradient-to-r from-cyan-50 to-blue-50 px-2 py-1.5 sm:px-3 sm:py-2 border-b border-gray-200">
+          <div className="flex items-start justify-between gap-1.5 sm:gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 truncate">
+              <p className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
                 {appointment.patient || appointment.guestName || 'Paciente'}
               </p>
-              <p className="text-xs text-gray-600 truncate">{appointment.service}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{appointment.time}</p>
+              <p className="text-[10px] sm:text-xs text-gray-600 truncate">{appointment.service}</p>
+              <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{appointment.time}</p>
             </div>
             <button
               onClick={onClose}
-              className="p-1 hover:bg-white/50 rounded transition-colors flex-shrink-0"
+              className="p-0.5 sm:p-1 hover:bg-white/50 rounded transition-colors flex-shrink-0"
             >
-              <X className="w-3.5 h-3.5 text-gray-500" />
+              <X className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-500" />
             </button>
           </div>
         </div>
 
         {/* Error */}
         {updateError && (
-          <div className="mx-2 mt-2 p-2 bg-red-50 border border-red-200 rounded flex items-start gap-1.5">
-            <AlertCircle className="w-3.5 h-3.5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-red-600">{updateError}</p>
+          <div className="mx-1.5 mt-1.5 p-1.5 sm:mx-2 sm:mt-2 sm:p-2 bg-red-50 border border-red-200 rounded flex items-start gap-1 sm:gap-1.5">
+            <AlertCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-600 flex-shrink-0 mt-0.5" />
+            <p className="text-[10px] sm:text-xs text-red-600">{updateError}</p>
           </div>
         )}
 
@@ -260,13 +259,13 @@ export const AppointmentContextMenu: React.FC<AppointmentContextMenuProps> = ({
                 <button
                   onClick={handleViewProfile}
                   disabled={isUpdating}
-                  className="w-full px-3 py-2 flex items-center gap-2 hover:bg-cyan-50 transition-all disabled:opacity-50 text-left"
+                  className="w-full px-2 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1.5 sm:gap-2 hover:bg-cyan-50 transition-all disabled:opacity-50 text-left"
                 >
-                  <div className="w-7 h-7 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0">
-                    <User className="w-3.5 h-3.5 text-cyan-600" />
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0">
+                    <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-cyan-600" />
                   </div>
-                  <span className="text-xs font-medium text-gray-700 flex-1">Ver Perfil</span>
-                  <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                  <span className="text-[11px] sm:text-xs font-medium text-gray-700 flex-1">Ver Perfil</span>
+                  <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400 flex-shrink-0" />
                 </button>
               )}
 
@@ -283,12 +282,12 @@ export const AppointmentContextMenu: React.FC<AppointmentContextMenuProps> = ({
                     key={option.id}
                     onClick={() => handleStatusClick(option.status)}
                     disabled={isUpdating}
-                    className={`w-full px-3 py-2 flex items-center gap-2 transition-all disabled:opacity-50 text-left ${option.bgColor}`}
+                    className={`w-full px-2 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1.5 sm:gap-2 transition-all disabled:opacity-50 text-left ${option.bgColor}`}
                   >
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${option.iconBg}`}>
-                      <Icon className={`w-3.5 h-3.5 ${option.color}`} />
+                    <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${option.iconBg}`}>
+                      <Icon className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${option.color}`} />
                     </div>
-                    <span className="text-xs font-medium text-gray-700">{option.label}</span>
+                    <span className="text-[11px] sm:text-xs font-medium text-gray-700">{option.label}</span>
                   </button>
                 );
               })}
@@ -302,12 +301,12 @@ export const AppointmentContextMenu: React.FC<AppointmentContextMenuProps> = ({
                   onClose();
                 }}
                 disabled={isUpdating}
-                className="w-full px-3 py-2 flex items-center gap-2 hover:bg-gray-50 transition-all disabled:opacity-50 text-left"
+                className="w-full px-2 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1.5 sm:gap-2 hover:bg-gray-50 transition-all disabled:opacity-50 text-left"
               >
-                <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                  <Edit className="w-3.5 h-3.5 text-gray-600" />
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                  <Edit className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-600" />
                 </div>
-                <span className="text-xs font-medium text-gray-700">Editar</span>
+                <span className="text-[11px] sm:text-xs font-medium text-gray-700">Editar</span>
               </button>
 
               {/* Cancelar */}
@@ -315,34 +314,34 @@ export const AppointmentContextMenu: React.FC<AppointmentContextMenuProps> = ({
                 <button
                   onClick={() => setShowCancelConfirm(true)}
                   disabled={isUpdating}
-                  className="w-full px-3 py-2 flex items-center gap-2 hover:bg-red-50 transition-all disabled:opacity-50 text-left"
+                  className="w-full px-2 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1.5 sm:gap-2 hover:bg-red-50 transition-all disabled:opacity-50 text-left"
                 >
-                  <div className="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
-                    <XCircle className="w-3.5 h-3.5 text-red-600" />
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                    <XCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-600" />
                   </div>
-                  <span className="text-xs font-medium text-red-600">Cancelar</span>
+                  <span className="text-[11px] sm:text-xs font-medium text-red-600">Cancelar</span>
                 </button>
               )}
             </>
           ) : (
             /* Confirmación */
-            <div className="px-3 py-2">
-              <div className="mb-3">
-                <p className="text-xs font-semibold text-gray-900 mb-1">¿Cancelar cita?</p>
-                <p className="text-xs text-gray-600">No se puede deshacer</p>
+            <div className="px-2 py-1.5 sm:px-3 sm:py-2">
+              <div className="mb-2 sm:mb-3">
+                <p className="text-[11px] sm:text-xs font-semibold text-gray-900 mb-0.5 sm:mb-1">¿Cancelar cita?</p>
+                <p className="text-[10px] sm:text-xs text-gray-600">No se puede deshacer</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5 sm:gap-2">
                 <button
                   onClick={() => setShowCancelConfirm(false)}
                   disabled={isUpdating}
-                  className="flex-1 px-2 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors disabled:opacity-50"
+                  className="flex-1 px-2 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors disabled:opacity-50"
                 >
                   No
                 </button>
                 <button
                   onClick={handleConfirmCancel}
                   disabled={isUpdating}
-                  className="flex-1 px-2 py-1.5 text-xs font-medium text-white bg-red-500 hover:bg-red-600 rounded transition-colors disabled:opacity-50"
+                  className="flex-1 px-2 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium text-white bg-red-500 hover:bg-red-600 rounded transition-colors disabled:opacity-50"
                 >
                   {isUpdating ? '...' : 'Sí'}
                 </button>
@@ -353,10 +352,10 @@ export const AppointmentContextMenu: React.FC<AppointmentContextMenuProps> = ({
 
         {/* Footer - Estado actual */}
         {!showCancelConfirm && (
-          <div className="px-3 py-2 bg-gray-50 border-t border-gray-100">
+          <div className="px-2 py-1.5 sm:px-3 sm:py-2 bg-gray-50 border-t border-gray-100">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-500">Estado:</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${currentStatusStyle.bg} ${currentStatusStyle.text}`}>
+              <span className="text-[10px] sm:text-xs text-gray-500">Estado:</span>
+              <span className={`px-1.5 py-0.5 sm:px-2 rounded-full text-[10px] sm:text-xs font-semibold ${currentStatusStyle.bg} ${currentStatusStyle.text}`}>
                 {STATUS_LABELS[appointment.status]}
               </span>
             </div>
@@ -366,7 +365,7 @@ export const AppointmentContextMenu: React.FC<AppointmentContextMenuProps> = ({
         {/* Loading */}
         {isUpdating && (
           <div className="absolute inset-0 bg-white/90 flex items-center justify-center rounded-xl">
-            <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
         )}
       </div>
