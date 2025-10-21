@@ -211,7 +211,7 @@ const Calendar: React.FC = () => {
           position={contextMenuPosition}
           onUpdateStatus={handleUpdateStatus}
           onNavigateToPatient={handleNavigateToPatient}
-          onEditAppointment={handleAppointmentEdit}
+          onEditAppointment={handleAppointmentEdit as any}
         />
       </div>
     </div>
