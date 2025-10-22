@@ -1,4 +1,4 @@
-// src/presentation/pages/patient/Patient.tsx - COMPLETO CON NAVEGACIÓN
+// src/presentation/pages/patient/Patient.tsx - COMPLETO CON NAVEGACIÓN Y ALERTAS MÉDICAS
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -417,7 +417,8 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
 
         {currentView === 'detail' && selectedPatient && (
           <div className="bg-white border border-cyan-200 rounded-xl px-6 py-4 mb-6 shadow-sm">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              {/* Información básica del paciente */}
               <div className="flex items-center space-x-4 min-w-0">
                 <div className="bg-cyan-100 w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center">
                   <span className="text-cyan-700 font-bold text-lg">
@@ -435,6 +436,56 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                   </div>
                 </div>
               </div>
+
+              {/* Alertas médicas - Estilo uniforme cyan */}
+              {(selectedPatient.alergias || selectedPatient.enfermedades_cronicas || selectedPatient.medicamentos_actuales) && (
+                <div className="flex flex-wrap gap-3 md:justify-end">
+                  {/* Alergias */}
+                  {selectedPatient.alergias && (
+                    <div className="bg-cyan-500 rounded-lg px-4 py-3 min-w-[140px]">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-5 h-5 text-yellow-300 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-xs font-bold text-white mb-1">Alertas médicas</p>
+                          <p className="text-xs text-cyan-50 leading-relaxed border-b border-dashed border-cyan-300 pb-1">
+                            {selectedPatient.alergias}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Enfermedades Crónicas */}
+                  {selectedPatient.enfermedades_cronicas && (
+                    <div className="bg-cyan-500 rounded-lg px-4 py-3 min-w-[140px]">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-5 h-5 text-yellow-300 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-xs font-bold text-white mb-1">Enfermedades</p>
+                          <p className="text-xs text-cyan-50 leading-relaxed border-b border-dashed border-cyan-300 pb-1">
+                            {selectedPatient.enfermedades_cronicas}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Medicamentos Actuales */}
+                  {selectedPatient.medicamentos_actuales && (
+                    <div className="bg-cyan-500 rounded-lg px-4 py-3 min-w-[140px]">
+                      <div className="flex items-start gap-2">
+                        <Info className="w-5 h-5 text-yellow-300 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-xs font-bold text-white mb-1">Medicamentos</p>
+                          <p className="text-xs text-cyan-50 leading-relaxed border-b border-dashed border-cyan-300 pb-1">
+                            {selectedPatient.medicamentos_actuales}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
