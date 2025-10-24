@@ -23,6 +23,9 @@ export interface Treatment {
   // Datos del presupuesto asociado
   budget_item_pieza?: string;
   budget_item_valor?: string;
+  // Datos del doctor que realizó el tratamiento
+  doctor_name?: string;
+  doctor_lastName?: string;
 }
 
 export interface BudgetSummary {
@@ -31,6 +34,9 @@ export interface BudgetSummary {
   status: string;
   total_amount: string;
   created_at: string;
+  // Datos del doctor que creó el presupuesto
+  doctor_name?: string;
+  doctor_lastName?: string;
 }
 
 // ✅ ACTUALIZADO: Agregar campos adicionales

@@ -2,6 +2,7 @@
 import { db } from '../data/db';
 import { budgetsTable, budgetItemsTable, BUDGET_STATUS } from '../data/schemas/budget.schema';
 import { treatmentsTable } from '../data/schemas/treatment.schema';
+import { usersTable } from '../data/schemas/user.schema';
 import { eq, and, desc, sum, sql, inArray } from "drizzle-orm";
 
 type NewBudget = typeof budgetsTable.$inferInsert;
@@ -18,6 +19,9 @@ export interface BudgetWithItems {
     created_at: Date;
     updated_at: Date | null;
     items: BudgetItemData[];
+    // ✅ AGREGAR: Datos del doctor que creó el presupuesto
+    doctor_name?: string;
+    doctor_lastName?: string;
 }
 
 export interface BudgetItemData {
@@ -152,8 +156,21 @@ export class BudgetService {
     // ✅ OBTENER TODOS los presupuestos de un paciente
     async findAllByPatientId(patientId: number, userId: number): Promise<BudgetWithItems[]> {
         const budgets = await db
-            .select()
+            .select({
+                id: budgetsTable.id,
+                patient_id: budgetsTable.patient_id,
+                user_id: budgetsTable.user_id,
+                total_amount: budgetsTable.total_amount,
+                status: budgetsTable.status,
+                budget_type: budgetsTable.budget_type,
+                created_at: budgetsTable.created_at,
+                updated_at: budgetsTable.updated_at,
+                // ✅ AGREGAR: Datos del doctor que creó el presupuesto
+                doctor_name: usersTable.name,
+                doctor_lastName: usersTable.lastName,
+            })
             .from(budgetsTable)
+            .innerJoin(usersTable, eq(budgetsTable.user_id, usersTable.id))
             .where(
                 and(
                     eq(budgetsTable.patient_id, patientId),
@@ -190,8 +207,21 @@ export class BudgetService {
     // ✅ OBTENER solo el presupuesto ACTIVO de un paciente
     async findActiveByPatientId(patientId: number, userId: number): Promise<BudgetWithItems | null> {
         const budget = await db
-            .select()
+            .select({
+                id: budgetsTable.id,
+                patient_id: budgetsTable.patient_id,
+                user_id: budgetsTable.user_id,
+                total_amount: budgetsTable.total_amount,
+                status: budgetsTable.status,
+                budget_type: budgetsTable.budget_type,
+                created_at: budgetsTable.created_at,
+                updated_at: budgetsTable.updated_at,
+                // ✅ AGREGAR: Datos del doctor que creó el presupuesto
+                doctor_name: usersTable.name,
+                doctor_lastName: usersTable.lastName,
+            })
             .from(budgetsTable)
+            .innerJoin(usersTable, eq(budgetsTable.user_id, usersTable.id))
             .where(
                 and(
                     eq(budgetsTable.patient_id, patientId),
@@ -465,8 +495,21 @@ export class BudgetService {
 
     async findByBudgetId(budgetId: number, userId: number): Promise<BudgetWithItems | null> {
         const budget = await db
-            .select()
+            .select({
+                id: budgetsTable.id,
+                patient_id: budgetsTable.patient_id,
+                user_id: budgetsTable.user_id,
+                total_amount: budgetsTable.total_amount,
+                status: budgetsTable.status,
+                budget_type: budgetsTable.budget_type,
+                created_at: budgetsTable.created_at,
+                updated_at: budgetsTable.updated_at,
+                // ✅ AGREGAR: Datos del doctor que creó el presupuesto
+                doctor_name: usersTable.name,
+                doctor_lastName: usersTable.lastName,
+            })
             .from(budgetsTable)
+            .innerJoin(usersTable, eq(budgetsTable.user_id, usersTable.id))
             .where(
                 and(
                     eq(budgetsTable.id, budgetId),

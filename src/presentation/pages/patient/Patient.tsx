@@ -8,7 +8,6 @@ import {
   ChevronRight,
   ChevronLeft,
   X,
-  CheckCircle,
   AlertCircle,
   Info,
 } from "lucide-react";
@@ -16,6 +15,7 @@ import {
 import { NewPatientModal, PatientFormData } from "./NewPatientModal";
 import { EditPatientModal, PatientFormData as EditPatientFormData } from "./EditPatientModal";
 import { PatientDetail } from "./tabs/PatientDetail";
+import { useNotification } from "@/presentation/hooks/notifications/useNotification";
 
 import {
   usePatients,
@@ -29,69 +29,6 @@ import { Patient as PatientType } from "@/core/use-cases/patients";
 interface PatientProps {
   doctorId?: number;
 }
-
-interface NotificationProps {
-  type: 'success' | 'error' | 'info';
-  title: string;
-  message: string;
-  onClose: () => void;
-}
-
-const Notification: React.FC<NotificationProps> = ({ type, title, message, onClose }) => {
-  const getStyles = () => {
-    switch (type) {
-      case 'success':
-        return 'bg-green-50 border-green-200 text-green-800';
-      case 'error':
-        return 'bg-red-50 border-red-200 text-red-800';
-      case 'info':
-        return 'bg-blue-50 border-blue-200 text-blue-800';
-      default:
-        return 'bg-gray-50 border-gray-200 text-gray-800';
-    }
-  };
-
-  const getIcon = () => {
-    switch (type) {
-      case 'success':
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case 'error':
-        return <AlertCircle className="w-5 h-5 text-red-600" />;
-      case 'info':
-        return <Info className="w-5 h-5 text-blue-600" />;
-      default:
-        return <Info className="w-5 h-5 text-gray-600" />;
-    }
-  };
-
-  return (
-    <div className={`fixed top-4 right-4 z-50 max-w-md w-full mx-auto`}>
-      <div className={`p-4 rounded-lg border shadow-lg ${getStyles()}`}>
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            {getIcon()}
-          </div>
-          <div className="ml-3 w-0 flex-1">
-            <p className="text-sm font-medium">
-              {title}
-            </p>
-            <p className="mt-1 text-sm">
-              {message}
-            </p>
-          </div>
-          <div className="ml-4 flex-shrink-0 flex">
-            <button
-              onClick={onClose}
-              className="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const PatientsAnimation: React.FC = () => null;
 
@@ -139,12 +76,8 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   const [showEditPatientModal, setShowEditPatientModal] = useState(false);
   const [patientToEdit, setPatientToEdit] = useState<PatientType | null>(null);
 
-  // Estado para notificaciones
-  const [notification, setNotification] = useState<{
-    type: 'success' | 'error' | 'info';
-    title: string;
-    message: string;
-  } | null>(null);
+  // Notification hook
+  const notification = useNotification();
 
   // Cargar todos los pacientes
   const { queryPatients } = usePatients();
@@ -178,11 +111,13 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
         setSearchParams(searchParams);
       } else {
         console.log('❌ Paciente no encontrado con ID:', patientId);
-        showNotification('error', 'Paciente no encontrado', 
-          `No se encontró el paciente con ID ${patientId}`);
+        notification.error(
+          `No se encontró el paciente con ID ${patientId}`,
+          { description: 'Paciente no encontrado' }
+        );
       }
     }
-  }, [searchParams, allPatients]);
+  }, [searchParams, allPatients, notification]);
 
   // FILTRADO LOCAL
   const filteredPatients = useMemo(() => {
@@ -205,13 +140,6 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
     });
   }, [allPatients, searchTerm]);
 
-  // Función para mostrar notificación
-  const showNotification = (type: 'success' | 'error' | 'info', title: string, message: string) => {
-    setNotification({ type, title, message });
-    setTimeout(() => {
-      setNotification(null);
-    }, 5000);
-  };
 
   // Calcular edad
   const calculateAge = (birthDate: string): number => {
@@ -272,12 +200,12 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
         notas_medicas: formData.notas_medicas,
       });
 
-      showNotification('success', 'Éxito', 'Paciente creado exitosamente');
+      notification.success('Paciente creado exitosamente');
       setShowNewPatientModal(false);
 
     } catch (error: any) {
       const errorMessage = processApiError(error);
-      showNotification('error', 'Error al crear paciente', errorMessage);
+      notification.error(errorMessage, { description: 'Error al crear paciente' });
     }
   };
 
@@ -318,13 +246,13 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
         setCurrentView('grid');
       }
 
-      showNotification('success', 'Éxito', 'Paciente actualizado exitosamente');
+      notification.success('Paciente actualizado exitosamente');
       setShowEditPatientModal(false);
       setPatientToEdit(null);
 
     } catch (error: any) {
       const errorMessage = processApiError(error);
-      showNotification('error', 'Error al actualizar paciente', errorMessage);
+      notification.error(errorMessage, { description: 'Error al actualizar paciente' });
     }
   };
 
@@ -333,10 +261,10 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
       await deletePatientMutation.mutateAsync(patientId);
       setCurrentView('grid');
       setSelectedPatient(null);
-      showNotification('success', 'Éxito', 'Paciente eliminado exitosamente');
+      notification.success('Paciente eliminado exitosamente');
     } catch (error: any) {
       const errorMessage = processApiError(error);
-      showNotification('error', 'Error al eliminar paciente', errorMessage);
+      notification.error(errorMessage, { description: 'Error al eliminar paciente' });
     }
   };
 
@@ -350,15 +278,6 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
 
   return (
     <div className="bg-gradient-to-br from-slate-50 to-cyan-50 min-h-full flex flex-col">
-      {notification && (
-        <Notification
-          type={notification.type}
-          title={notification.title}
-          message={notification.message}
-          onClose={() => setNotification(null)}
-        />
-      )}
-
       <div className="flex-1 p-6">
         {currentView === 'grid' && (
           <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6 mb-6">

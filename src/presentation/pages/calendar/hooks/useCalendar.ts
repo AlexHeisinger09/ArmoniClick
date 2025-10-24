@@ -9,7 +9,7 @@ import {
 } from '../types/calendar';
 import { formatDateKey } from '../utils/calendar';
 import { useCalendarAppointments } from '@/presentation/hooks/appointments/useCalendarAppointments';
-import { useNotifications } from '@/presentation/hooks/notifications/useNotifications';
+import { useNotification } from '@/presentation/hooks/notifications/useNotification';
 import { useNavigate } from 'react-router-dom';
 
 export const useCalendar = () => {
@@ -29,12 +29,7 @@ export const useCalendar = () => {
   const [selectedAppointment, setSelectedAppointment] = useState<CalendarAppointment | null>(null);
 
   // Hook de notificaciones
-  const {
-    notifyAppointmentCreated,
-    notifyReminderInfo,
-    notifyEmailError,
-    setProcessing
-  } = useNotifications();
+  const notification = useNotification();
 
   const [newAppointment, setNewAppointment] = useState<NewAppointmentForm>({
     patient: '',
@@ -137,27 +132,25 @@ export const useCalendar = () => {
       return;
     }
 
-    setProcessing(true);
-
     try {
       await createAppointment(newAppointment);
-      
-      const patientName = newAppointment.patientId 
-        ? newAppointment.patient 
+
+      const patientName = newAppointment.patientId
+        ? newAppointment.patient
         : newAppointment.guestName || newAppointment.patient;
-      
-      const hasEmail = newAppointment.patientId 
+
+      const hasEmail = newAppointment.patientId
         ? true
         : !!(newAppointment.guestEmail?.trim());
 
-      notifyAppointmentCreated(patientName, hasEmail);
-      
+      notification.notifyAppointmentCreated(patientName, hasEmail);
+
       if (hasEmail) {
         setTimeout(() => {
-          notifyReminderInfo();
+          notification.notifyReminderInfo();
         }, 2000);
       }
-      
+
       setNewAppointment({
         patient: '',
         service: '',
@@ -172,15 +165,13 @@ export const useCalendar = () => {
         guestRut: undefined
       });
       setShowNewAppointmentModal(false);
-      
+
     } catch (error: any) {
       console.error('❌ Error creating appointment:', error);
-      
+
       if (error.message?.includes('email')) {
-        notifyEmailError(error.message, 'confirmation');
+        notification.notifyEmailError(error.message, 'confirmation');
       }
-    } finally {
-      setProcessing(false);
     }
   };
 

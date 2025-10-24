@@ -1,10 +1,19 @@
 import { Outlet } from "react-router-dom";
+import { Toaster } from "sonner";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 
 export const HomeLayout = () => {
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Toaster for notifications */}
+      <Toaster
+        position="top-right"
+        richColors
+        closeButton
+        expand
+      />
+
       {/* Sidebar - Solo este permanece fijo */}
       <Sidebar
         className="fixed top-0 left-0 h-full z-30"

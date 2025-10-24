@@ -1,29 +1,22 @@
 // src/presentation/pages/patient/tabs/PatientMedicalHistory.tsx
-import React, { useState } from 'react';
-import { 
-  FileText, 
-  Stethoscope, 
-  Activity, 
+import React, { useState, useMemo } from 'react';
+import {
+  FileText,
+  Stethoscope,
+  Activity,
   Calendar,
   DollarSign,
   Clock,
   User,
   ChevronDown,
   ChevronUp,
-  Filter
+  Filter,
+  AlertCircle,
+  Loader
 } from 'lucide-react';
 import { Patient } from "@/core/use-cases/patients";
-
-interface MedicalRecord {
-  id: number;
-  fecha: string;
-  tipo: string;
-  descripcion: string;
-  medico: string;
-  categoria: 'registro' | 'consulta' | 'examen' | 'tratamiento' | 'cirugia' | 'diagnostico' | 'presupuesto' | 'cita';
-  estado?: 'completado' | 'pendiente' | 'cancelado' | 'aprobado' | 'rechazado';
-  monto?: number;
-}
+import { useMedicalHistory } from "@/presentation/hooks/medical-history";
+import { MedicalHistoryRecord } from "@/core/use-cases/medical-history";
 
 interface PatientMedicalHistoryProps {
   patient: Patient;
@@ -31,93 +24,19 @@ interface PatientMedicalHistoryProps {
 
 const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }) => {
   const [selectedFilter, setSelectedFilter] = useState<string>('todos');
-  const [expandedRecord, setExpandedRecord] = useState<number | null>(null);
+  const [expandedRecord, setExpandedRecord] = useState<string | null>(null);
 
-  // Mock data expandido - reemplazar con datos reales de la API
-  const mockMedicalRecords: MedicalRecord[] = [
-    {
-      id: 1,
-      fecha: "2024-01-10",
-      tipo: "Registro de Paciente",
-      descripcion: "Registro inicial del paciente. Datos personales y antecedentes médicos recopilados.",
-      medico: "Recepción",
-      categoria: 'registro',
-      estado: 'completado'
-    },
-    {
-      id: 2,
-      fecha: "2024-01-15",
-      tipo: "Primera Consulta",
-      descripcion: "Evaluación ortodóntica inicial. Apiñamiento dental severo detectado. Necesidad de tratamiento con brackets.",
-      medico: "Dra. García",
-      categoria: 'consulta',
-      estado: 'completado'
-    },
-    {
-      id: 3,
-      fecha: "2024-01-20",
-      tipo: "Radiografía Inicial",
-      descripcion: "Radiografía panorámica y cefalométrica para planificación de tratamiento ortodóntico.",
-      medico: "Dr. Martínez",
-      categoria: 'examen',
-      estado: 'completado'
-    },
-    {
-      id: 4,
-      fecha: "2024-01-25",
-      tipo: "Presupuesto Ortodoncia",
-      descripcion: "Presupuesto detallado para tratamiento ortodóntico completo con brackets metálicos.",
-      medico: "Administración",
-      categoria: 'presupuesto',
-      estado: 'aprobado',
-      monto: 2500000
-    },
-    {
-      id: 5,
-      fecha: "2024-02-05",
-      tipo: "Instalación de Brackets",
-      descripcion: "Colocación de brackets metálicos superiores e inferiores. Instrucciones de higiene oral.",
-      medico: "Dra. García",
-      categoria: 'tratamiento',
-      estado: 'completado'
-    },
-    {
-      id: 6,
-      fecha: "2024-03-05",
-      tipo: "Control Mensual",
-      descripcion: "Primer control post-instalación. Ajuste de alambres. Evolución favorable.",
-      medico: "Dra. García",
-      categoria: 'cita',
-      estado: 'completado'
-    },
-    {
-      id: 7,
-      fecha: "2024-04-10",
-      tipo: "Limpieza Dental",
-      descripcion: "Profilaxis dental completa. Destartraje supragingival. Refuerzo de técnicas de higiene.",
-      medico: "Higienista López",
-      categoria: 'tratamiento',
-      estado: 'completado'
-    },
-    {
-      id: 8,
-      fecha: "2024-05-15",
-      tipo: "Control Ortodóntico",
-      descripcion: "Control mensual programado. Evaluación de progreso del tratamiento.",
-      medico: "Dra. García",
-      categoria: 'cita',
-      estado: 'pendiente'
-    },
-    {
-      id: 9,
-      fecha: "2024-06-20",
-      tipo: "Radiografía de Control",
-      descripcion: "Radiografía panorámica de seguimiento para evaluar movimiento dental.",
-      medico: "Dr. Martínez",
-      categoria: 'examen',
-      estado: 'pendiente'
+  // Fetch real medical history data
+  const { data: medicalHistoryData, isLoading, error } = useMedicalHistory({
+    patientId: patient.id,
+  });
+
+  const medicalRecords: MedicalHistoryRecord[] = useMemo(() => {
+    if (!medicalHistoryData?.records) {
+      return [];
     }
-  ];
+    return medicalHistoryData.records;
+  }, [medicalHistoryData]);
 
   const formatDate = (dateString: string): string => {
     const options: Intl.DateTimeFormatOptions = { 
@@ -209,7 +128,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
     return statusConfig[estado as keyof typeof statusConfig] || statusConfig.completado;
   };
 
-  const sortedRecords = mockMedicalRecords
+  const sortedRecords = medicalRecords
     .filter(record => selectedFilter === 'todos' || record.categoria === selectedFilter)
     .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
 
@@ -235,15 +154,16 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
             Historial completo de {patient.nombres} {patient.apellidos}
           </p>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Filtro */}
           <div className="relative">
             <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <select 
+            <select
               value={selectedFilter}
               onChange={(e) => setSelectedFilter(e.target.value)}
-              className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              disabled={isLoading}
+              className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent disabled:opacity-50"
             >
               {filterOptions.map(option => (
                 <option key={option.value} value={option.value}>
@@ -252,11 +172,37 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
               ))}
             </select>
           </div>
-          
+
         </div>
       </div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="flex flex-col items-center gap-3">
+            <Loader className="w-8 h-8 text-cyan-500 animate-spin" />
+            <p className="text-gray-600">Cargando historial médico...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-semibold text-red-800 mb-1">Error al cargar historial</h4>
+              <p className="text-sm text-red-700">
+                {error instanceof Error ? error.message : 'Ocurrió un error al cargar el historial médico'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Timeline */}
+      {!isLoading && !error && (
       <div className="relative">
         {/* Vista móvil - Timeline centrada */}
         <div className="block sm:hidden">
@@ -300,9 +246,16 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                             )}
                             
                             <div className="text-xs text-gray-600 mb-2 space-y-1">
-                              <div className="flex items-center">
-                                <Calendar className="w-2.5 h-2.5 mr-1 flex-shrink-0" />
-                                <span className="text-xs">{formatDate(record.fecha)}</span>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Calendar className="w-2.5 h-2.5 flex-shrink-0" />
+                                <span className="text-xs">{formatDate(record.fechaEvento || record.fecha)}</span>
+                                {(record.horaEvento || record.hora) && (
+                                  <>
+                                    <span className="text-gray-400">•</span>
+                                    <Clock className="w-2.5 h-2.5 flex-shrink-0" />
+                                    <span className="text-xs">{record.horaEvento || record.hora}</span>
+                                  </>
+                                )}
                               </div>
                               <div className="text-xs">
                                 <span className="font-medium">{record.medico}</span>
@@ -382,9 +335,16 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                             )}
                             
                             <div className="text-xs text-gray-600 mb-2 space-y-1">
-                              <div className="flex items-center">
-                                <Calendar className="w-2.5 h-2.5 mr-1 flex-shrink-0" />
-                                <span className="text-xs">{formatDate(record.fecha)}</span>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Calendar className="w-2.5 h-2.5 flex-shrink-0" />
+                                <span className="text-xs">{formatDate(record.fechaEvento || record.fecha)}</span>
+                                {(record.horaEvento || record.hora) && (
+                                  <>
+                                    <span className="text-gray-400">•</span>
+                                    <Clock className="w-2.5 h-2.5 flex-shrink-0" />
+                                    <span className="text-xs">{record.horaEvento || record.hora}</span>
+                                  </>
+                                )}
                               </div>
                               <div className="text-xs">
                                 <span className="font-medium">{record.medico}</span>
@@ -457,14 +417,21 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                                 )}
                               </div>
                               
-                              <div className="flex items-center text-xs text-gray-600 mb-1">
-                                <Calendar className="w-3 h-3 mr-1" />
-                                {formatDate(record.fecha)}
-                                <span className="mx-2">•</span>
+                              <div className="flex items-center text-xs text-gray-600 mb-1 flex-wrap gap-2">
+                                <Calendar className="w-3 h-3" />
+                                <span>{formatDate(record.fechaEvento || record.fecha)}</span>
+                                {(record.horaEvento || record.hora) && (
+                                  <>
+                                    <span className="text-gray-400">•</span>
+                                    <Clock className="w-3 h-3" />
+                                    <span>{record.horaEvento || record.hora}</span>
+                                  </>
+                                )}
+                                <span className="text-gray-400">•</span>
                                 <span className="font-medium">{record.medico}</span>
                                 {record.monto && (
                                   <>
-                                    <span className="mx-2">•</span>
+                                    <span className="text-gray-400">•</span>
                                     <span className="font-semibold text-green-600">
                                       {formatMoney(record.monto)}
                                     </span>
@@ -545,14 +512,21 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                                 )}
                               </div>
                               
-                              <div className="flex items-center text-xs text-gray-600 mb-1">
-                                <Calendar className="w-3 h-3 mr-1" />
-                                {formatDate(record.fecha)}
-                                <span className="mx-2">•</span>
+                              <div className="flex items-center text-xs text-gray-600 mb-1 flex-wrap gap-2">
+                                <Calendar className="w-3 h-3" />
+                                <span>{formatDate(record.fechaEvento || record.fecha)}</span>
+                                {(record.horaEvento || record.hora) && (
+                                  <>
+                                    <span className="text-gray-400">•</span>
+                                    <Clock className="w-3 h-3" />
+                                    <span>{record.horaEvento || record.hora}</span>
+                                  </>
+                                )}
+                                <span className="text-gray-400">•</span>
                                 <span className="font-medium">{record.medico}</span>
                                 {record.monto && (
                                   <>
-                                    <span className="mx-2">•</span>
+                                    <span className="text-gray-400">•</span>
                                     <span className="font-semibold text-green-600">
                                       {formatMoney(record.monto)}
                                     </span>
@@ -616,15 +590,15 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
               No hay registros para mostrar
             </h4>
             <p className="text-gray-500 mb-6 text-sm sm:text-base">
-              {selectedFilter === 'todos' 
-                ? 'No hay registros médicos para este paciente' 
+              {selectedFilter === 'todos'
+                ? 'No hay registros médicos para este paciente'
                 : `No hay registros de tipo "${filterOptions.find(f => f.value === selectedFilter)?.label.toLowerCase()}"`
               }
             </p>
           </div>
         )}
       </div>
-
+      )}
 
     </div>
   );

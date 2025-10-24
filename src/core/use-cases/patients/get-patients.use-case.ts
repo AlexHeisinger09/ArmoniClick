@@ -21,6 +21,9 @@ export interface Patient {
   createdat: string;
   updatedat: string;
   isactive: boolean;
+  // Datos del doctor que registró al paciente
+  doctor_name?: string;
+  doctor_lastName?: string;
 }
 
 export interface GetPatientsResponse {

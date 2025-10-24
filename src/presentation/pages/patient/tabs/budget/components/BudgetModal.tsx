@@ -5,7 +5,7 @@ import { Patient } from "@/core/use-cases/patients";
 import { Budget, BudgetItem, BUDGET_TYPE, BudgetUtils } from "@/core/use-cases/budgets";
 import { useMultipleBudgetOperations } from "@/presentation/hooks/budgets/useBudgets";
 import { BudgetEditor } from './BudgetEditor';
-import { Notification } from './Notification';
+import { useNotification } from '@/presentation/hooks/notifications/useNotification';
 import { PDFGenerator } from '../utils/pdfGenerator';
 import { BudgetFormData, BudgetFormUtils } from '../types/budget.types';
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
@@ -44,10 +44,7 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
     });
 
     // Estados de UI
-    const [notification, setNotification] = useState<{
-        type: 'success' | 'error' | 'info';
-        message: string;
-    } | null>(null);
+    const notification = useNotification();
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
     // Hooks para datos
@@ -85,15 +82,8 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
             setIsEditing(null);
             setEditingItem({ pieza: '', accion: '', valor: '' });
             setNewItem({ pieza: '', accion: '', valor: '' });
-            setNotification(null);
         }
     }, [isOpen]);
-
-    // ✅ FUNCIONES DE UTILIDAD
-    const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
-        setNotification({ type, message });
-        setTimeout(() => setNotification(null), 5000);
-    };
 
     const markAsChanged = () => setHasUnsavedChanges(true);
 
@@ -110,7 +100,7 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
     const handleAddItem = () => {
         const validation = BudgetFormUtils.validateItem(newItem);
         if (validation) {
-            showNotification('error', validation);
+            notification.error(validation);
             return;
         }
 
@@ -125,14 +115,14 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
         setItems([...items, item]);
         setNewItem({ pieza: '', accion: '', valor: '' });
         markAsChanged();
-        showNotification('success', 'Tratamiento agregado exitosamente');
+        notification.success('Tratamiento agregado exitosamente');
     };
 
     const handleDeleteItem = (index: number) => {
         const newItems = items.filter((_, i) => i !== index);
         setItems(newItems);
         markAsChanged();
-        showNotification('success', 'Tratamiento eliminado');
+        notification.success('Tratamiento eliminado');
     };
 
     const handleStartEditing = (index: number) => {
@@ -153,7 +143,7 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
     const handleSaveEditing = () => {
         const validation = BudgetFormUtils.validateItem(editingItem);
         if (validation) {
-            showNotification('error', validation);
+            notification.error(validation);
             return;
         }
 
@@ -174,7 +164,7 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
         setIsEditing(null);
         setEditingItem({ pieza: '', accion: '', valor: '' });
         markAsChanged();
-        showNotification('success', 'Tratamiento actualizado');
+        notification.success('Tratamiento actualizado');
     };
 
     const handleBudgetTypeChange = (type: string) => {
@@ -184,7 +174,7 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
 
     const handleSaveBudget = async () => {
         if (!items || items.length === 0) {
-            showNotification('error', 'Agrega al menos un tratamiento antes de guardar');
+            notification.error('Agrega al menos un tratamiento antes de guardar');
             return;
         }
 
@@ -212,7 +202,7 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
 
             await saveBudget(budgetData);
             setHasUnsavedChanges(false);
-            showNotification('success', 'Presupuesto guardado exitosamente');
+            notification.success('Presupuesto guardado exitosamente');
             
             // Cerrar modal después de guardar exitosamente
             setTimeout(() => {
@@ -220,7 +210,7 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
             }, 1500);
         } catch (error: any) {
             const errorMessage = error?.response?.data?.message || error.message || 'Error desconocido al guardar';
-            showNotification('error', `Error al guardar: ${errorMessage}`);
+            notification.error(`Error al guardar: ${errorMessage}`);
         }
     };
 
@@ -240,7 +230,7 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
 
     const handleExportPDF = async () => {
         if (items.length === 0) {
-            showNotification('error', 'No hay tratamientos para exportar');
+            notification.error('No hay tratamientos para exportar');
             return;
         }
 
@@ -269,11 +259,11 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
             };
 
             await PDFGenerator.generateBudgetPDF(tempBudget, patient, doctorData);
-            showNotification('success', 'PDF generado exitosamente');
+            notification.success('PDF generado exitosamente');
 
         } catch (error: any) {
             const errorMessage = error.message || 'Error al generar PDF';
-            showNotification('error', errorMessage);
+            notification.error(errorMessage);
         }
     };
 
@@ -421,16 +411,6 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
                 </div>
             </div>
 
-            {/* Notificaciones */}
-            {notification && (
-                <div className="fixed top-4 right-4 z-60">
-                    <Notification
-                        type={notification.type}
-                        message={notification.message}
-                        onClose={() => setNotification(null)}
-                    />
-                </div>
-            )}
         </>
     );
 };

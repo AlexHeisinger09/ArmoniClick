@@ -17,8 +17,8 @@ import {
 import { Patient } from "@/core/use-cases/patients";
 
 // Componentes del editor (reutilizamos los existentes)
-import { Notification } from '../patient/tabs/budget/components/Notification';
 import { BudgetEditor } from '../patient/tabs/budget/components/BudgetEditor';
+import { useNotification } from '@/presentation/hooks/notifications/useNotification';
 import { PDFGenerator } from '../patient/tabs/budget/utils/pdfGenerator';
 import {
     BudgetFormData,
@@ -53,11 +53,8 @@ const BudgetPage: React.FC = () => {
         valor: ''
     });
 
-    // Estados de UI
-    const [notification, setNotification] = useState<{
-        type: 'success' | 'error' | 'info';
-        message: string;
-    } | null>(null);
+    // Notification hook
+    const notification = useNotification();
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
     // Hooks para datos
@@ -101,11 +98,6 @@ const BudgetPage: React.FC = () => {
     }, [budgetId, budgets]);
 
     // ✅ FUNCIONES DE UTILIDAD
-    const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
-        setNotification({ type, message });
-        setTimeout(() => setNotification(null), 5000);
-    };
-
     const markAsChanged = () => setHasUnsavedChanges(true);
 
     const handlePatientChange = (patientId: string) => {
@@ -138,7 +130,7 @@ const BudgetPage: React.FC = () => {
     const handleAddItem = () => {
         const validation = BudgetFormUtils.validateItem(newItem);
         if (validation) {
-            showNotification('error', validation);
+            notification.error(validation);
             return;
         }
 
@@ -153,14 +145,14 @@ const BudgetPage: React.FC = () => {
         setItems([...items, item]);
         setNewItem({ pieza: '', accion: '', valor: '' });
         markAsChanged();
-        showNotification('success', 'Tratamiento agregado exitosamente');
+        notification.success('Tratamiento agregado exitosamente');
     };
 
     const handleDeleteItem = (index: number) => {
         const newItems = items.filter((_, i) => i !== index);
         setItems(newItems);
         markAsChanged();
-        showNotification('success', 'Tratamiento eliminado');
+        notification.success('Tratamiento eliminado');
     };
 
     const handleStartEditing = (index: number) => {
@@ -181,7 +173,7 @@ const BudgetPage: React.FC = () => {
     const handleSaveEditing = () => {
         const validation = BudgetFormUtils.validateItem(editingItem);
         if (validation) {
-            showNotification('error', validation);
+            notification.error(validation);
             return;
         }
 
@@ -202,7 +194,7 @@ const BudgetPage: React.FC = () => {
         setIsEditing(null);
         setEditingItem({ pieza: '', accion: '', valor: '' });
         markAsChanged();
-        showNotification('success', 'Tratamiento actualizado');
+        notification.success('Tratamiento actualizado');
     };
 
     const handleBudgetTypeChange = (type: string) => {
@@ -212,12 +204,12 @@ const BudgetPage: React.FC = () => {
 
     const handleSaveBudget = async () => {
         if (!selectedPatient) {
-            showNotification('error', 'Debes seleccionar un paciente');
+            notification.error('Debes seleccionar un paciente');
             return;
         }
 
         if (!items || items.length === 0) {
-            showNotification('error', 'Agrega al menos un tratamiento antes de guardar');
+            notification.error('Agrega al menos un tratamiento antes de guardar');
             return;
         }
 
@@ -245,10 +237,10 @@ const BudgetPage: React.FC = () => {
 
             await saveBudget(budgetData);
             setHasUnsavedChanges(false);
-            showNotification('success', 'Presupuesto guardado exitosamente');
+            notification.success('Presupuesto guardado exitosamente');
         } catch (error: any) {
             const errorMessage = error?.response?.data?.message || error.message || 'Error desconocido al guardar';
-            showNotification('error', `Error al guardar: ${errorMessage}`);
+            notification.error(`Error al guardar: ${errorMessage}`);
         }
     };
 
@@ -268,12 +260,12 @@ const BudgetPage: React.FC = () => {
 
     const handleExportPDF = async () => {
         if (!selectedPatient) {
-            showNotification('error', 'Debes seleccionar un paciente');
+            notification.error('Debes seleccionar un paciente');
             return;
         }
 
         if (items.length === 0) {
-            showNotification('error', 'No hay tratamientos para exportar');
+            notification.error('No hay tratamientos para exportar');
             return;
         }
 
@@ -302,11 +294,11 @@ const BudgetPage: React.FC = () => {
             };
 
             await PDFGenerator.generateBudgetPDF(tempBudget, selectedPatient, doctorData);
-            showNotification('success', 'PDF generado exitosamente');
+            notification.success('PDF generado exitosamente');
 
         } catch (error: any) {
             const errorMessage = error.message || 'Error al generar PDF';
-            showNotification('error', errorMessage);
+            notification.error(errorMessage);
         }
     };
 
@@ -337,15 +329,6 @@ const BudgetPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-6">
             <div className="max-w-6xl mx-auto space-y-6">
-                {/* Notifications */}
-                {notification && (
-                    <Notification
-                        type={notification.type}
-                        message={notification.message}
-                        onClose={() => setNotification(null)}
-                    />
-                )}
-
                 {/* Selector de paciente */}
                 <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
                     <div className="flex items-center space-x-4">

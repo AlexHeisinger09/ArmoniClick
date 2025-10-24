@@ -1,6 +1,7 @@
 // netlify/services/patient.service.ts - ACTUALIZADO
 import { db } from '../data/db';
 import { patientsTable } from '../data/schemas/patient.schema';
+import { usersTable } from '../data/schemas/user.schema';
 import { Column, ColumnBaseConfig, ColumnDataType, eq, and, ilike, or, ne } from "drizzle-orm";
 
 type NewPatient = typeof patientsTable.$inferInsert;
@@ -30,8 +31,12 @@ export class PatientService {
         createdat: patientsTable.createdAt,
         updatedat: patientsTable.updatedAt,
         isactive: patientsTable.isActive,
+        // ✅ AGREGAR: Datos del doctor que registró al paciente
+        doctor_name: usersTable.name,
+        doctor_lastName: usersTable.lastName,
       })
       .from(patientsTable)
+      .innerJoin(usersTable, eq(patientsTable.id_doctor, usersTable.id))
       .where(
         and(
           eq(patientsTable.id_doctor, doctorId),
@@ -67,8 +72,12 @@ export class PatientService {
         createdat: patientsTable.createdAt,
         updatedat: patientsTable.updatedAt,
         isactive: patientsTable.isActive,
+        // ✅ AGREGAR: Datos del doctor que registró al paciente
+        doctor_name: usersTable.name,
+        doctor_lastName: usersTable.lastName,
       })
       .from(patientsTable)
+      .innerJoin(usersTable, eq(patientsTable.id_doctor, usersTable.id))
       .where(
         and(
           eq(patientsTable.id_doctor, doctorId),
@@ -109,8 +118,12 @@ export class PatientService {
         createdat: patientsTable.createdAt,
         updatedat: patientsTable.updatedAt,
         isactive: patientsTable.isActive,
+        // ✅ AGREGAR: Datos del doctor que registró al paciente
+        doctor_name: usersTable.name,
+        doctor_lastName: usersTable.lastName,
       })
       .from(patientsTable)
+      .innerJoin(usersTable, eq(patientsTable.id_doctor, usersTable.id))
       .where(
         and(
           eq(patientsTable.id, patientId),
@@ -173,6 +186,9 @@ export class PatientService {
         createdat: patientsTable.createdAt,
         updatedat: patientsTable.updatedAt,
         isactive: patientsTable.isActive,
+        // ✅ AGREGAR: Datos del doctor que registró al paciente
+        doctor_name: usersTable.name,
+        doctor_lastName: usersTable.lastName,
       });
 
     return newPatient[0];
@@ -213,6 +229,9 @@ export class PatientService {
         createdat: patientsTable.createdAt,
         updatedat: patientsTable.updatedAt,
         isactive: patientsTable.isActive,
+        // ✅ AGREGAR: Datos del doctor que registró al paciente
+        doctor_name: usersTable.name,
+        doctor_lastName: usersTable.lastName,
       });
 
     return updatedPatient[0];

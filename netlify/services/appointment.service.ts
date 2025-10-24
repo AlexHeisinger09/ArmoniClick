@@ -76,9 +76,13 @@ export interface AppointmentSummary {
   duration: number | null;
   status: string | null;
   type: string | null;
-   patientId: number | null;
+  patientId: number | null;
   patientName: string;
   patientEmail: string;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  confirmedAt: Date | null;
+  cancellationReason: string | null;
 }
 
 export class AppointmentService {
@@ -356,12 +360,12 @@ export class AppointmentService {
           patientId: appointmentsTable.patientId,
 
           patientName: sql<string>`
-          CASE 
-            WHEN ${patientsTable.nombres} IS NOT NULL AND ${patientsTable.apellidos} IS NOT NULL 
+          CASE
+            WHEN ${patientsTable.nombres} IS NOT NULL AND ${patientsTable.apellidos} IS NOT NULL
             THEN CONCAT(${patientsTable.nombres}, ' ', ${patientsTable.apellidos})
-            WHEN ${patientsTable.nombres} IS NOT NULL 
+            WHEN ${patientsTable.nombres} IS NOT NULL
             THEN ${patientsTable.nombres}
-            WHEN ${appointmentsTable.guestName} IS NOT NULL 
+            WHEN ${appointmentsTable.guestName} IS NOT NULL
             THEN ${appointmentsTable.guestName}
             ELSE 'Sin nombre'
           END
@@ -372,7 +376,12 @@ export class AppointmentService {
             ${appointmentsTable.guestEmail},
             ''
           )
-        `
+        `,
+          // ✅ AGREGAR campos de timestamps y estados
+          createdAt: appointmentsTable.createdAt,
+          updatedAt: appointmentsTable.updatedAt,
+          confirmedAt: appointmentsTable.confirmedAt,
+          cancellationReason: appointmentsTable.cancellationReason
         })
         .from(appointmentsTable)
         .leftJoin(patientsTable, eq(appointmentsTable.patientId, patientsTable.id))
@@ -482,12 +491,12 @@ export class AppointmentService {
           patientId: appointmentsTable.patientId,
 
           patientName: sql<string>`
-          CASE 
-            WHEN ${patientsTable.nombres} IS NOT NULL AND ${patientsTable.apellidos} IS NOT NULL 
+          CASE
+            WHEN ${patientsTable.nombres} IS NOT NULL AND ${patientsTable.apellidos} IS NOT NULL
             THEN CONCAT(${patientsTable.nombres}, ' ', ${patientsTable.apellidos})
-            WHEN ${patientsTable.nombres} IS NOT NULL 
+            WHEN ${patientsTable.nombres} IS NOT NULL
             THEN ${patientsTable.nombres}
-            WHEN ${appointmentsTable.guestName} IS NOT NULL 
+            WHEN ${appointmentsTable.guestName} IS NOT NULL
             THEN ${appointmentsTable.guestName}
             ELSE 'Sin nombre'
           END
@@ -498,7 +507,12 @@ export class AppointmentService {
             ${appointmentsTable.guestEmail},
             ''
           )
-        `
+        `,
+          // ✅ AGREGAR campos de timestamps y estados
+          createdAt: appointmentsTable.createdAt,
+          updatedAt: appointmentsTable.updatedAt,
+          confirmedAt: appointmentsTable.confirmedAt,
+          cancellationReason: appointmentsTable.cancellationReason
         })
         .from(appointmentsTable)
         .leftJoin(patientsTable, eq(appointmentsTable.patientId, patientsTable.id))
@@ -708,12 +722,12 @@ export class AppointmentService {
           patientId: appointmentsTable.patientId,
 
           patientName: sql<string>`
-          CASE 
-            WHEN ${patientsTable.nombres} IS NOT NULL AND ${patientsTable.apellidos} IS NOT NULL 
+          CASE
+            WHEN ${patientsTable.nombres} IS NOT NULL AND ${patientsTable.apellidos} IS NOT NULL
             THEN CONCAT(${patientsTable.nombres}, ' ', ${patientsTable.apellidos})
-            WHEN ${patientsTable.nombres} IS NOT NULL 
+            WHEN ${patientsTable.nombres} IS NOT NULL
             THEN ${patientsTable.nombres}
-            WHEN ${appointmentsTable.guestName} IS NOT NULL 
+            WHEN ${appointmentsTable.guestName} IS NOT NULL
             THEN ${appointmentsTable.guestName}
             ELSE 'Sin nombre'
           END
@@ -724,7 +738,12 @@ export class AppointmentService {
             ${appointmentsTable.guestEmail},
             ''
           )
-        `
+        `,
+          // ✅ AGREGAR campos de timestamps y estados
+          createdAt: appointmentsTable.createdAt,
+          updatedAt: appointmentsTable.updatedAt,
+          confirmedAt: appointmentsTable.confirmedAt,
+          cancellationReason: appointmentsTable.cancellationReason
         })
         .from(appointmentsTable)
         .leftJoin(patientsTable, eq(appointmentsTable.patientId, patientsTable.id))

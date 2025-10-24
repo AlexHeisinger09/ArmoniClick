@@ -1,0 +1,1 @@
+export { useMedicalHistory } from './useMedicalHistory';

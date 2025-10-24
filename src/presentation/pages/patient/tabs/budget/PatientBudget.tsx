@@ -7,8 +7,8 @@ import { useMultipleBudgetOperations } from "@/presentation/hooks/budgets/useBud
 // Componentes
 import { BudgetsList } from './components/BudgetList';
 import { BudgetModal } from './components/BudgetModal';
-import { Notification } from './components/Notification';
 import { PDFGenerator } from './utils/pdfGenerator';
+import { useNotification } from '@/presentation/hooks/notifications/useNotification';
 
 // Hooks para datos del doctor
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
@@ -47,17 +47,9 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         mode: 'create'
     });
 
-    // Estados locales para notificaciones
-    const [notification, setNotification] = useState<{
-        type: 'success' | 'error' | 'info';
-        message: string;
-    } | null>(null);
+    // Notification hook
+    const notification = useNotification();
     const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-
-    const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
-        setNotification({ type, message });
-        setTimeout(() => setNotification(null), 5000);
-    };
 
     // Función para procesar errores de API
     const processApiError = (error: any): string => {
@@ -120,30 +112,30 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
     const handleActivateBudget = async (budget: Budget) => {
         try {
             await activateBudget(budget.id);
-            showNotification('success', 'Presupuesto activado exitosamente');
+            notification.success('Presupuesto activado exitosamente');
         } catch (error: any) {
             const errorMessage = processApiError(error);
-            showNotification('error', errorMessage);
+            notification.error(errorMessage);
         }
     };
 
     const handleCompleteBudget = async (budget: Budget) => {
         try {
             await completeBudget(budget.id);
-            showNotification('success', 'Presupuesto completado exitosamente');
+            notification.success('Presupuesto completado exitosamente');
         } catch (error: any) {
             const errorMessage = processApiError(error);
-            showNotification('error', errorMessage);
+            notification.error(errorMessage);
         }
     };
 
     const handleRevertBudget = async (budget: Budget) => {
         try {
             await revertBudget(budget.id);
-            showNotification('success', 'Presupuesto revertido a borrador');
+            notification.success('Presupuesto revertido a borrador');
         } catch (error: any) {
             const errorMessage = processApiError(error);
-            showNotification('error', errorMessage);
+            notification.error(errorMessage);
         }
     };
 
@@ -154,10 +146,10 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
 
         try {
             await deleteBudget(budget.id);
-            showNotification('success', 'Presupuesto eliminado exitosamente');
+            notification.success('Presupuesto eliminado exitosamente');
         } catch (error: any) {
             const errorMessage = processApiError(error);
-            showNotification('error', errorMessage);
+            notification.error(errorMessage);
         }
     };
 
@@ -173,11 +165,11 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
             } : undefined;
 
             await PDFGenerator.generateBudgetPDF(budget, patient, doctorData);
-            showNotification('success', 'PDF generado exitosamente');
-            
+            notification.success('PDF generado exitosamente');
+
         } catch (error: any) {
             const errorMessage = error.message || 'Error al generar PDF';
-            showNotification('error', errorMessage);
+            notification.error(errorMessage);
         } finally {
             setIsGeneratingPDF(false);
         }
@@ -212,14 +204,6 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                 mode={modalState.mode}
             />
 
-            {/* Notificaciones */}
-            {notification && (
-                <Notification
-                    type={notification.type}
-                    message={notification.message}
-                    onClose={() => setNotification(null)}
-                />
-            )}
 
             {/* Indicador de generación de PDF */}
             {isGeneratingPDF && (

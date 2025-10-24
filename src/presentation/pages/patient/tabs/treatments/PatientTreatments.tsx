@@ -18,7 +18,7 @@ import { BudgetSidebar } from './components/BudgetSidebar';
 import { NewTreatmentModal } from './modals/NewTreatmentModal';
 import { EditTreatmentModal } from './modals/EditTreatmentModal';
 import { TreatmentDetailModal } from './modals/TreatmentDetailModal';
-import { Notification } from './shared/Notification';
+import { useNotification } from '@/presentation/hooks/notifications/useNotification';
 
 interface PatientTreatmentsProps {
   patient: Patient;
@@ -35,12 +35,8 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   // Estados para presupuestos
   const [selectedBudgetId, setSelectedBudgetId] = useState<number | null>(null);
 
-  // Estados para notificaciones
-  const [notification, setNotification] = useState<{
-    type: 'success' | 'error' | 'info';
-    title: string;
-    message: string;
-  } | null>(null);
+  // Notification hook
+  const notification = useNotification();
 
   // Hooks principales
   const {
@@ -73,14 +69,6 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
       setSelectedBudgetId(activeBudget.id);
     }
   }, [activeBudget, selectedBudgetId]);
-
-  // Función para mostrar notificación
-  const showNotification = (type: 'success' | 'error' | 'info', title: string, message: string) => {
-    setNotification({ type, title, message });
-    setTimeout(() => {
-      setNotification(null);
-    }, 5000);
-  };
 
   // Función para procesar errores de API
   const processApiError = (error: any): string => {
@@ -126,12 +114,12 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
         ? `${baseMessage}. Se agregó al presupuesto y se actualizó el total.`
         : baseMessage;
 
-      showNotification('success', 'Éxito', finalMessage);
+      notification.success(finalMessage);
 
     } catch (error: any) {
       console.error('❌ Error al crear tratamiento:', error);
       const errorMessage = processApiError(error);
-      showNotification('error', 'Error al crear tratamiento', errorMessage);
+      notification.error(errorMessage, { description: 'Error al crear tratamiento' });
     }
   };
 
@@ -155,11 +143,11 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
         setSelectedTreatment(null);
       }
 
-      showNotification('success', 'Éxito', 'Tratamiento actualizado correctamente');
+      notification.success('Tratamiento actualizado correctamente');
     } catch (error: any) {
       console.error('❌ Error al actualizar tratamiento:', error);
       const errorMessage = processApiError(error);
-      showNotification('error', 'Error al actualizar tratamiento', errorMessage);
+      notification.error(errorMessage, { description: 'Error al actualizar tratamiento' });
     }
   };
 
@@ -185,11 +173,11 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
         ? `Tratamiento completado correctamente. Se registró un avance de $${parseFloat(treatment.budget_item_valor).toLocaleString('es-CL')} en el presupuesto.`
         : 'Tratamiento completado correctamente';
 
-      showNotification('success', 'Éxito', successMessage);
+      notification.success(successMessage);
     } catch (error: any) {
       console.error('❌ Error al completar tratamiento:', error);
       const errorMessage = processApiError(error);
-      showNotification('error', 'Error al completar tratamiento', errorMessage);
+      notification.error(errorMessage, { description: 'Error al completar tratamiento' });
     }
   };
 
@@ -230,12 +218,12 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
         ? `Tratamiento eliminado correctamente. Se eliminó el item del presupuesto y se recalculó el total automáticamente.`
         : 'Tratamiento eliminado correctamente';
 
-      showNotification('success', 'Éxito', successMessage);
+      notification.success(successMessage);
 
     } catch (error: any) {
       console.error('❌ Error al eliminar tratamiento completo:', error);
       const errorMessage = processApiError(error);
-      showNotification('error', 'Error al eliminar tratamiento', errorMessage);
+      notification.error(errorMessage, { description: 'Error al eliminar tratamiento' });
     }
   };
 
@@ -359,15 +347,6 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
         canComplete={selectedTreatment?.status === 'pending'}
       />
 
-      {/* Notificaciones */}
-      {notification && (
-        <Notification
-          type={notification.type}
-          title={notification.title}
-          message={notification.message}
-          onClose={() => setNotification(null)}
-        />
-      )}
     </div>
   );
 };

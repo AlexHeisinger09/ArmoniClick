@@ -2,6 +2,7 @@
 import { db } from '../data/db';
 import { treatmentsTable } from '../data/schemas/treatment.schema';
 import { budgetItemsTable, budgetsTable } from '../data/schemas/budget.schema';
+import { usersTable } from '../data/schemas/user.schema';
 import { eq, and, desc, asc } from "drizzle-orm";
 
 type NewTreatment = typeof treatmentsTable.$inferInsert;
@@ -129,8 +130,12 @@ export class TreatmentService {
         created_at: treatmentsTable.created_at,
         updated_at: treatmentsTable.updated_at,
         is_active: treatmentsTable.is_active,
+        // ✅ AGREGAR: Datos del doctor que realizó el tratamiento
+        doctor_name: usersTable.name,
+        doctor_lastName: usersTable.lastName,
       })
       .from(treatmentsTable)
+      .innerJoin(usersTable, eq(treatmentsTable.id_doctor, usersTable.id))
       .where(
         and(
           eq(treatmentsTable.id_paciente, patientId),

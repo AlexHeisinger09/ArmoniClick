@@ -40,60 +40,42 @@ const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patient }) =>
   // Hook para obtener el estado de appointments para disponibilidad
   const { appointments: calendarAppointments } = useCalendarAppointments(new Date(), 'month');
 
-  // Filtrar citas del paciente específico usando múltiples criterios
+  // Filtrar citas del paciente específico - PRIORIDAD: ID del paciente registrado
   const patientAppointments = useMemo(() => {
     if (!allAppointments) return [];
-    
+
     console.log('🔍 Filtering appointments for patient:', {
       patientId: patient.id,
       patientName: `${patient.nombres} ${patient.apellidos}`,
       patientRut: patient.rut,
       totalAppointments: allAppointments.length
     });
-    
+
+    // ✅ FILTRADO CORRECTO: SOLO citas donde patientId coincide con el paciente actual
+    // Esto es el criterio principal y más confiable
     const filtered = allAppointments.filter((appointment: AppointmentResponse) => {
-      // Criterio 1: Coincidencia por ID del paciente
+      // Criterio principal: Coincidencia por ID del paciente (es lo más confiable)
       const matchesById = appointment.patientId === patient.id;
-      
-      // Criterio 2: Coincidencia por nombre completo (para citas creadas como invitado)
-      const patientFullName = `${patient.nombres} ${patient.apellidos}`;
-      const appointmentFullName = appointment.patientName && appointment.patientLastName 
-        ? `${appointment.patientName} ${appointment.patientLastName}`
-        : appointment.guestName || '';
-      const matchesByName = appointmentFullName.toLowerCase().trim() === patientFullName.toLowerCase().trim();
-      
-      // Criterio 3: Coincidencia por RUT (si está disponible)
-      const matchesByRut = appointment.guestRut === patient.rut;
-      
-      // Criterio 4: Coincidencia por email
-      const matchesByEmail = appointment.patientEmail === patient.email || appointment.guestEmail === patient.email;
-      
-      const matches = matchesById || matchesByName || matchesByRut || matchesByEmail;
-      
-      if (matches) {
-        console.log('✅ Found matching appointment:', {
+
+      if (matchesById) {
+        console.log('✅ Found appointment by patient ID:', {
           appointmentId: appointment.id,
           appointmentTitle: appointment.title,
-          matchesById,
-          matchesByName,
-          matchesByRut,
-          matchesByEmail,
-          appointmentPatientId: appointment.patientId,
-          appointmentPatientName: appointment.patientName,
-          appointmentGuestName: appointment.guestName
+          patientId: appointment.patientId,
+          appointmentPatientName: appointment.patientName
         });
       }
-      
-      return matches;
+
+      return matchesById;
     });
-    
+
     console.log('📊 Patient appointments result:', {
       patientId: patient.id,
       patientName: `${patient.nombres} ${patient.apellidos}`,
       foundAppointments: filtered.length,
-      appointments: filtered
+      appointmentIds: filtered.map(a => a.id)
     });
-    
+
     return filtered;
   }, [allAppointments, patient]);
 

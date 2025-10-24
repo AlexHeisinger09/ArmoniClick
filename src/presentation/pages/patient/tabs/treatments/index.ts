@@ -13,5 +13,4 @@ export { EditTreatmentModal } from './modals/EditTreatmentModal';
 export { TreatmentDetailModal } from './modals/TreatmentDetailModal';
 
 // Shared
-export { Notification } from './shared/Notification';
 export * from './shared/types';
