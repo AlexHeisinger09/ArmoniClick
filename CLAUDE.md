@@ -7,9 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Development
 ```bash
 npm run dev                    # Start Vite dev server (http://localhost:5173)
-npm run netlify:dev          # Start Netlify dev server (includes serverless functions)
-npm run build                # TypeScript check + Vite build
-npm run lint                 # Run ESLint
+npm run netlify:dev           # Start Netlify dev server with functions (http://localhost:8888)
+npm run build                 # TypeScript check + Vite build
+npm run lint                  # Run ESLint
+npm run preview               # Preview production build locally
 ```
 
 ### Database
@@ -114,8 +115,22 @@ PostgreSQL (Neon serverless)
 - `treatments` - Treatment records with photos and media
 - `budgets` - Medical budget items
 - `services` - Available medical services
+- `documents` - Medical documents with digital signatures and PDF generation
 
 **Configuration**: `drizzle.config.ts` uses Neon PostgreSQL serverless
+
+### Backend Services Pattern
+
+Services in `netlify/services/` handle cross-cutting concerns:
+- `EmailService` - Base email sending with Gmail SMTP
+- `DocumentEmailService` - Specialized email for documents with PDF attachments
+- `PDFService` - Backend PDF generation with pdfkit
+- `UploadService` - Cloudinary integration
+- `NotificationService` - Appointment reminders
+- `TokenService` - JWT handling
+- `PatientService`, `BudgetService`, `TreatmentService` - Business logic services
+
+**Pattern**: Services are instantiated in functions and used by use cases. Email services extend a base class for consistency.
 
 ### Authentication Flow
 
@@ -131,6 +146,24 @@ PostgreSQL (Neon serverless)
 - `useCheckUserToken` - Validate token on app load
 - Auto-logout if token missing
 
+### Major Features
+
+**Documents Module** (`src/presentation/pages/documents/`)
+- Digital signature via canvas drawing
+- Dynamic document template system with patient/doctor data interpolation
+- PDF generation (frontend via jsPDF, backend via pdfkit)
+- Email delivery to patients with signed documents
+- Document status tracking (pendiente/firmado)
+- View signed documents with embedded signatures
+- Four predefined consent templates with placeholder variables: `{{PATIENT_NAME}}`, `{{PATIENT_RUT}}`, `{{DOCTOR_NAME}}`, `{{PARENT_NAME}}`
+
+**Other Core Features**:
+- Appointments with availability checking and reminder emails
+- Budget management with status tracking
+- Treatment records with photo/media uploads
+- Patient management with profile images
+- Services catalog
+
 ### Routing
 
 **Protected Routes** (require authentication):
@@ -138,7 +171,7 @@ PostgreSQL (Neon serverless)
 - `/dashboard/calendario` - Calendar view
 - `/dashboard/pacientes` - Patient management
 - `/dashboard/presupuestos` - Budgets
-- `/dashboard/documentos` - Documents
+- `/dashboard/documentos` - Documents with signature capability
 - `/dashboard/configuracion` - Settings
 
 **Public Routes**:
@@ -193,7 +226,10 @@ VITE_BACKEND_URL=http://localhost:8888/.netlify/functions
 - Builds in `dist/` directory
 - Functions deployed from `netlify/functions/`
 - Environment variables configured in Netlify dashboard
-- Cron job: `daily-reminders` function runs at 13:30 Chile time daily
+
+**Scheduled Functions** (configured in `netlify.toml`):
+- `daily-reminders`: Runs at 13:30 Chile time (UTC-3) daily, sends appointment reminders via email
+- Add more scheduled functions in `netlify.toml` with cron syntax, then create the function file
 
 ## Component & Hook Examples
 
@@ -237,22 +273,56 @@ export function useMyFeature(id: string) {
 - `axios` (1.9.0) - HTTP client (wrapped by AxiosAdapter)
 - `@radix-ui/*` - Accessible unstyled components
 - `tailwindcss` (3.4.3) - Styling
+- `jspdf` (3.0.1) - Client-side PDF generation (documents feature)
+- `html2canvas` (1.4.1) - Canvas rendering for PDFs
+- `recharts` (3.0.0) - Charts/graphs (budgets, analytics)
+- `sonner` (2.0.7) - Toast notifications
 
 **Backend** (Netlify Functions):
 - `drizzle-orm` (0.44.1) - TypeScript ORM
 - `@neondatabase/serverless` - PostgreSQL client
 - `jsonwebtoken` - JWT signing/validation
 - `bcryptjs` - Password hashing
-- `nodemailer` - Email sending
+- `nodemailer` (7.0.3) - Email sending
 - `cloudinary` - Image storage API
+- `pdfkit` (0.17.2) - Server-side PDF generation (documents feature)
+
+## Important Implementation Notes
+
+### API Route Mapping
+- Frontend calls: `POST /documents` → Backend receives at `/.netlify/functions/documents/documents`
+- **Routing Rule**: `VITE_BACKEND_URL` = `http://localhost:8888/.netlify/functions` (already includes base)
+- In use cases, call `/documents` (not `/api/documents`), as the base URL includes `/.netlify/functions`
+- See `netlify.toml` for redirect rules matching patterns like `/documents/*` → `/.netlify/functions/documents/documents`
+
+### Document Feature Implementation Details
+**Frontend Path**: `src/presentation/pages/documents/DocumentsPage.tsx`
+- Three views: `list` (view documents), `generate` (create new), `sign` (add signature), `view` (see signed)
+- Uses `useDocuments()` hook which wraps use cases + React Query
+- Templates in `src/presentation/pages/documents/templates/index.ts` use placeholder syntax
+- PDF download: `generateDocumentPDF(document)` from `utils/pdfGenerator.ts`
+
+**Backend Path**: `netlify/functions/documents/documents.ts`
+- Single handler managing GET (list), POST (create), PUT (sign), DELETE operations
+- Signing sends emails via `DocumentEmailService` with PDF attachment
+- PDF backend generation: `generateDocumentPDF(document)` from `services/pdfService.ts` (pdfkit)
+
+**Database**: `documents` table tracks signature data, status, timestamps
+
+### Middleware Pattern
+- `validateJWT(event.headers.authorization!)` extracts and validates token
+- Returns error response if invalid; otherwise returns `{ statusCode: 200, body: userJson }`
+- Doctor ID extracted from JWT for ownership/association
 
 ## Common Development Tasks
 
 **Adding a New API Endpoint**:
 1. Create function in `netlify/functions/my-feature/my-endpoint.ts`
 2. Export handler function with Netlify signature
-3. Add route redirect in `netlify.toml` if needed
+3. Add route redirect in `netlify.toml` if needed (pattern matching)
 4. Import database schemas from `netlify/data/schemas/`
+5. Use `validateJWT()` for authentication
+6. Remember: base URL already includes `/.netlify/functions`, so use `/endpoint` not `/api/endpoint`
 
 **Adding a New Database Schema**:
 1. Define schema in `netlify/data/schemas/`

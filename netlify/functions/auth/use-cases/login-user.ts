@@ -49,14 +49,22 @@ export class LoginUser implements LoginUserUseCase {
       headers: HEADERS.json,
     };
 
-    const token = await JwtAdapter.generateToken({ email: user.email }, "3d");
+    // Incluir información completa del usuario en el token
+    const tokenPayload = {
+      id: user.id,
+      email: user.email,
+      name: user.name || 'Dr./Dra.',
+      rut: user.rut || '',
+    };
+
+    const token = await JwtAdapter.generateToken(tokenPayload, "3d");
     if (!token) return {
       statusCode: 500,
       body: JSON.stringify({
         message: "Error generando token",
       }),
       headers: HEADERS.json,
-    
+
     };
 
     return {

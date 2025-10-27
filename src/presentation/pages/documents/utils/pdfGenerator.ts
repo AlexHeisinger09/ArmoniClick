@@ -1,44 +1,137 @@
-export const generateDocumentPDF = async (document: any, patient: any, signature?: string) => {
-  // Usar jsPDF o similar para generar PDF
+import { Document } from '@/core/use-cases/documents/types';
+
+/**
+ * Genera un PDF del documento para descargar en el navegador del cliente
+ * @param document - Documento con título y contenido
+ * @param signature - Firma en formato base64 (opcional, se puede pasar en el documento)
+ */
+export const generateDocumentPDF = async (document: Document, signature?: string) => {
+  // Usar firma del documento si no se proporciona como parámetro
+  const signatureToUse = signature || document.signature_data;
   const { jsPDF } = await import('jspdf');
-  const doc = new jsPDF();
+  const pageWidth = 210; // A4 width en mm
+  const pageHeight = 297; // A4 height en mm
+  const margins = 20;
+  const contentWidth = pageWidth - 2 * margins;
 
-  // Configurar documento
+  const doc = new jsPDF('p', 'mm', 'a4');
+
+  let currentY = margins;
+
+  // Encabezado - Título del documento
   doc.setFontSize(16);
-  doc.text('CONSENTIMIENTO INFORMADO', 105, 20, { align: 'center' });
-  
-  doc.setFontSize(14);
-  doc.text('PARA TRATAMIENTO ODONTOLÓGICO', 105, 30, { align: 'center' });
+  doc.setFont('Helvetica', 'bold');
+  const titleLines = doc.splitTextToSize(document.title, contentWidth);
+  doc.text(titleLines, pageWidth / 2, currentY, { align: 'center' });
+  currentY += titleLines.length * 7;
 
-  // Agregar información del paciente
-  doc.setFontSize(12);
-  doc.text(`Paciente: ${patient.nombres} ${patient.apellidos}`, 20, 50);
-  doc.text(`RUT: ${patient.rut}`, 20, 60);
-  doc.text(`Fecha: ${new Date().toLocaleDateString('es-CL')}`, 20, 70);
+  // Metadata del documento
+  doc.setFontSize(10);
+  doc.setFont('Helvetica', 'normal');
+  doc.setTextColor(100);
 
-  // Agregar contenido del documento
-  const content = document.content || getDefaultConsentContent();
-  const lines = doc.splitTextToSize(content, 170);
-  doc.text(lines, 20, 90);
+  const metadata = [
+    `Paciente: ${document.patient_name}`,
+    `RUT: ${document.patient_rut}`,
+    `Fecha: ${new Date().toLocaleDateString('es-CL')}`,
+    `Tipo: ${document.document_type}`,
+  ];
 
-  // Agregar firma si existe
-  if (signature) {
-    doc.text('Firma del paciente:', 20, 250);
-    doc.addImage(signature, 'PNG', 20, 255, 60, 30);
+  metadata.forEach((line) => {
+    doc.text(line, margins, currentY);
+    currentY += 6;
+  });
+
+  // Separador
+  currentY += 2;
+  doc.setDrawColor(200);
+  doc.line(margins, currentY, pageWidth - margins, currentY);
+  currentY += 5;
+
+  // Contenido del documento
+  doc.setFont('Helvetica', 'normal');
+  doc.setTextColor(0);
+  doc.setFontSize(11);
+
+  const contentLines = doc.splitTextToSize(document.content, contentWidth);
+
+  // Paginar el contenido si es necesario
+  contentLines.forEach((line: string) => {
+    if (currentY > pageHeight - margins - 40) {
+      // Agregar nueva página si es necesario
+      doc.addPage();
+      currentY = margins;
+    }
+    doc.text(line, margins, currentY);
+    currentY += 5;
+  });
+
+  // Espacio para firma
+  currentY += 10;
+
+  if (currentY > pageHeight - margins - 40) {
+    doc.addPage();
+    currentY = margins;
   }
 
-  // Descargar
-  doc.save(`${document.type}_${patient.nombres}_${patient.apellidos}.pdf`);
-};
+  doc.setFont('Helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('FIRMA DEL PACIENTE:', margins, currentY);
+  currentY += 10;
 
-const getDefaultConsentContent = () => {
-  return `Declaro que he cumplido todas las explicaciones que se me han facilitado en un lenguaje claro y sencillo. He sido informado para realizar todas las observaciones y he sido informado aclarado todas las dudas.
+  // Agregar firma si existe
+  if (signatureToUse) {
+    try {
+      // Extraer datos base64 si es necesario
+      const signatureData = signatureToUse.includes(',') ? signatureToUse.split(',')[1] : signatureToUse;
+      doc.addImage(signatureData, 'PNG', margins, currentY, 80, 40);
+      currentY += 50;
+    } catch (error) {
+      console.error('Error al agregar firma al PDF:', error);
+      doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text('(Firma digital)', margins, currentY);
+      currentY += 15;
+    }
+  } else {
+    currentY += 15;
+  }
 
-He entendido el médico tratante de las patologías que presento, sin ocultar enfermedades de la piel ni mucosas (herpes labial, alergias, problemas de cicatrización) que puedan afectar el tratamiento.
+  // Agregar fecha final
+  if (currentY > pageHeight - margins - 20) {
+    doc.addPage();
+    currentY = margins;
+  }
 
-Entiendo que si no informo con la verdad todos los datos necesarios o incumplo las indicaciones a seguir posterior al procedimiento en cuestión, se pueden ocasionar resultados no deseables y estaré exento de responsabilidad profesional del facultativo/a.
+  doc.setFont('Helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  const signedOrCreatedDate = document.signed_date ? new Date(document.signed_date).toLocaleDateString('es-CL') : new Date().toLocaleDateString('es-CL');
+  const signedOrCreatedTime = document.signed_date ? new Date(document.signed_date).toLocaleTimeString('es-CL') : new Date().toLocaleTimeString('es-CL');
+  doc.text(`Fecha de ${document.signature_data ? 'firma' : 'creación'}: ${signedOrCreatedDate} a las ${signedOrCreatedTime}`, margins, currentY);
 
-Comprendo que a pesar de la adecuada elección de tratamiento y de su correcta realización, la duración del efecto conseguido es variable (de 3 a 8 meses) dependiendo de factores individuales de cada organismo y pueden presentarse efectos secundarios inmediatos como: hinchazón, enrojecimiento, dolor, escozor o hematomas y que en contadas ocasiones puede aparecer efectos secundarios tardíos como: infección / necrosis.
+  // Pie de página
+  const pageCount = doc.internal.pages.length;
+  doc.setFontSize(9);
+  doc.setTextColor(150);
 
-Por lo tanto, otorgo mi consentimiento para realizar el tratamiento que se me ha ofrecido y autorizo el uso de material de imagen y video registrados antes, durante y después del procedimiento para fines exclusivos del tratamiento.`;
+  for (let i = 1; i < pageCount; i++) {
+    doc.setPage(i);
+    doc.text(
+      `Documento generado el ${new Date().toLocaleDateString('es-CL')} a las ${new Date().toLocaleTimeString('es-CL')}`,
+      pageWidth / 2,
+      pageHeight - 10,
+      { align: 'center' }
+    );
+    doc.text(
+      `Página ${i} de ${pageCount - 1}`,
+      pageWidth / 2,
+      pageHeight - 5,
+      { align: 'center' }
+    );
+  }
+
+  // Descargar el PDF
+  const filename = `${document.title.replace(/\s+/g, '_')}_${document.patient_name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
+  doc.save(filename);
 };

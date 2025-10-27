@@ -4,7 +4,15 @@
       "Bash(npm install)",
       "Bash(npm run build:*)",
       "Bash(find:*)",
-      "Bash(ls -la \"c:\\MisProyectosReact\\ArmoniClick\\src\\core\\use-cases\\medical-history\"\" && echo \"---\" && ls -la \"c:MisProyectosReactArmoniClicksrcpresentationhooksmedical-history\"\")"
+      "Bash(ls -la \"c:\\MisProyectosReact\\ArmoniClick\\src\\core\\use-cases\\medical-history\"\" && echo \"---\" && ls -la \"c:MisProyectosReactArmoniClicksrcpresentationhooksmedical-history\"\")",
+      "Bash(npm run drizzle:generate:*)",
+      "Bash(npm run drizzle:push:*)",
+      "Bash(xargs cat:*)",
+      "Bash(xargs sed:*)",
+      "Bash(npm install:*)",
+      "Bash(timeout 30 npm run netlify:dev:*)",
+      "Bash(timeout 25 npm run:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

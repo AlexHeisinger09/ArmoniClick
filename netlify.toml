@@ -69,6 +69,19 @@ schedule = "30 13 * * *"  # 14:30 CL (18:30 UTC, ajustar en verano a 17:30)
   status = 200
   methods = ["GET", "OPTIONS"]
 
+# DOCUMENTOS ROUTES
+[[redirects]]
+  from = "/documents/*"
+  to = "/.netlify/functions/documents/documents"
+  status = 200
+  methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+
+# BUDGETS ROUTES (existing, just moved after documents)
+[[redirects]]
+  from = "/api/budgets/*"
+  to = "/.netlify/functions/budgets"
+  status = 200
+
 [[redirects]]
   from = "/.netlify/functions/*"
   to = "/.netlify/functions/:splat"

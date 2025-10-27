@@ -1,21 +1,24 @@
 export interface Document {
   id: number;
-  patient_id: number;
-  type: DocumentType;
+  id_patient: number;
+  id_doctor: number;
+  patient_id?: number;
+  document_type: string;
   title: string;
   content: string;
-  status: 'draft' | 'pending' | 'signed' | 'completed';
+  patient_name: string;
+  patient_rut: string;
+  status: 'pendiente' | 'firmado';
   signature_data?: string;
-  created_at: string;
-  signed_at?: string;
-  doctor_id: number;
+  signed_date?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface DocumentType {
   id: string;
   name: string;
   description: string;
-  template: string;
 }
 
 export interface DocumentSignature {
