@@ -243,10 +243,16 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden shadow-2xl">
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-cyan-200 bg-gradient-to-r from-cyan-50 to-blue-50">
+    <>
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+        onClick={onClose}
+      />
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex min-h-full items-center justify-center p-4">
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md sm:max-w-2xl">
+            {/* Header - Estándar */}
+            <div className="bg-gradient-to-r from-cyan-500 to-blue-500 px-4 sm:px-6 py-3 sm:py-4 rounded-t-xl">
           <div className="flex items-center space-x-3">
             <div className="bg-cyan-100 p-2 rounded-full">
               <Stethoscope className="w-6 h-6 text-cyan-600" />

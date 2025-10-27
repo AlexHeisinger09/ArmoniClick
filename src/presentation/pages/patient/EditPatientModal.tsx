@@ -174,56 +174,62 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
   if (!isOpen || !patient) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden shadow-2xl">
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50">
-          <div className="flex items-center space-x-3">
-            <div className="bg-amber-100 p-2 rounded-full">
-              <User className="w-6 h-6 text-amber-600" />
-            </div>
-            <div>
-              <h3 className="text-lg sm:text-xl font-bold text-slate-700">
-                Editar Paciente
-              </h3>
-              <p className="text-sm text-slate-500">
-                Paso {currentStep} de 3 - {
-                  currentStep === 1 ? 'Información Personal' :
-                  currentStep === 2 ? 'Ubicación' : 'Información Médica'
-                }
-              </p>
-            </div>
-          </div>
-          <button onClick={handleClose} className="text-slate-500 hover:text-slate-700 transition-colors p-2 hover:bg-slate-100 rounded-full">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Progress indicator */}
-        <div className="px-4 sm:px-6 py-4 bg-slate-50">
-          <div className="flex items-center space-x-2">
-            {[1, 2, 3].map((step) => (
-              <div key={step} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  step <= currentStep ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-500'
-                }`}>
-                  {step}
+    <>
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+        onClick={handleClose}
+      />
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex min-h-full items-center justify-center p-4">
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md sm:max-w-2xl">
+            {/* Header - Estándar */}
+            <div className="bg-gradient-to-r from-cyan-500 to-blue-500 px-4 sm:px-6 py-3 sm:py-4 rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base sm:text-lg font-semibold text-white">
+                    Editar Paciente
+                  </h3>
+                  <p className="text-xs sm:text-sm text-white text-opacity-90 mt-0.5">
+                    Paso {currentStep} de 3 - {
+                      currentStep === 1 ? 'Información Personal' :
+                      currentStep === 2 ? 'Ubicación' : 'Información Médica'
+                    }
+                  </p>
                 </div>
-                {step < 3 && (
-                  <div className={`w-8 sm:w-16 h-1 mx-2 ${
-                    step < currentStep ? 'bg-amber-500' : 'bg-slate-200'
-                  }`} />
-                )}
+                <button
+                  onClick={handleClose}
+                  className="p-1.5 sm:p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors flex-shrink-0 ml-2"
+                >
+                  <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </button>
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        {/* Form content */}
-        <div className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto">
+            {/* Progress indicator */}
+            <div className="px-4 sm:px-6 py-3 sm:py-4 bg-slate-50 border-b border-slate-200">
+              <div className="flex items-center space-x-2">
+                {[1, 2, 3].map((step) => (
+                  <div key={step} className="flex items-center flex-1 sm:flex-none">
+                    <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium ${
+                      step <= currentStep ? 'bg-cyan-500 text-white' : 'bg-slate-200 text-slate-500'
+                    }`}>
+                      {step}
+                    </div>
+                    {step < 3 && (
+                      <div className={`flex-1 h-0.5 mx-1 sm:mx-2 ${
+                        step < currentStep ? 'bg-cyan-500' : 'bg-slate-200'
+                      }`} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Form content */}
+            <div className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto space-y-4">
           {currentStep === 1 && (
             <div className="space-y-4">
-              <h4 className="text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-amber-200">
+              <h4 className="text-base sm:text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-slate-200">
                 Información Personal
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -235,8 +241,8 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
                     value={formData.rut}
                     onChange={handleInputChange}
                     placeholder="12345678-9"
-                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 ${
-                      formErrors.rut ? 'border-red-300' : 'border-amber-200'
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 transition-all ${
+                      formErrors.rut ? 'border-red-400 bg-red-50' : 'border-slate-300 hover:border-slate-400'
                     }`}
                   />
                   {formErrors.rut && <p className="text-red-600 text-xs mt-1">{formErrors.rut}</p>}
@@ -250,8 +256,8 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
                     value={formData.nombres}
                     onChange={handleInputChange}
                     placeholder="Juan Carlos"
-                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 ${
-                      formErrors.nombres ? 'border-red-300' : 'border-amber-200'
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 transition-all ${
+                      formErrors.nombres ? 'border-red-400 bg-red-50' : 'border-slate-300 hover:border-slate-400'
                     }`}
                   />
                   {formErrors.nombres && <p className="text-red-600 text-xs mt-1">{formErrors.nombres}</p>}
@@ -265,8 +271,8 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
                     value={formData.apellidos}
                     onChange={handleInputChange}
                     placeholder="González López"
-                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 ${
-                      formErrors.apellidos ? 'border-red-300' : 'border-amber-200'
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 transition-all ${
+                      formErrors.apellidos ? 'border-red-400 bg-red-50' : 'border-slate-300 hover:border-slate-400'
                     }`}
                   />
                   {formErrors.apellidos && <p className="text-red-600 text-xs mt-1">{formErrors.apellidos}</p>}
@@ -279,8 +285,8 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
                     name="fecha_nacimiento"
                     value={formData.fecha_nacimiento}
                     onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 ${
-                      formErrors.fecha_nacimiento ? 'border-red-300' : 'border-amber-200'
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 transition-all ${
+                      formErrors.fecha_nacimiento ? 'border-red-400 bg-red-50' : 'border-slate-300 hover:border-slate-400'
                     }`}
                   />
                   {formErrors.fecha_nacimiento && <p className="text-red-600 text-xs mt-1">{formErrors.fecha_nacimiento}</p>}
@@ -294,8 +300,8 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
                     value={formData.telefono}
                     onChange={handleInputChange}
                     placeholder="+56912345678"
-                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 ${
-                      formErrors.telefono ? 'border-red-300' : 'border-amber-200'
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 transition-all ${
+                      formErrors.telefono ? 'border-red-400 bg-red-50' : 'border-slate-300 hover:border-slate-400'
                     }`}
                   />
                   {formErrors.telefono && <p className="text-red-600 text-xs mt-1">{formErrors.telefono}</p>}
@@ -309,8 +315,8 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
                     value={formData.email}
                     onChange={handleInputChange}
                     placeholder="juan@email.com"
-                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 ${
-                      formErrors.email ? 'border-red-300' : 'border-amber-200'
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 transition-all ${
+                      formErrors.email ? 'border-red-400 bg-red-50' : 'border-slate-300 hover:border-slate-400'
                     }`}
                   />
                   {formErrors.email && <p className="text-red-600 text-xs mt-1">{formErrors.email}</p>}
@@ -321,7 +327,7 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
 
           {currentStep === 2 && (
             <div className="space-y-4">
-              <h4 className="text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-amber-200">
+              <h4 className="text-base sm:text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-slate-200">
                 Ubicación
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -333,8 +339,8 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
                     value={formData.direccion}
                     onChange={handleInputChange}
                     placeholder="Av. Las Condes 1234"
-                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 ${
-                      formErrors.direccion ? 'border-red-300' : 'border-amber-200'
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 transition-all ${
+                      formErrors.direccion ? 'border-red-400 bg-red-50' : 'border-slate-300 hover:border-slate-400'
                     }`}
                   />
                   {formErrors.direccion && <p className="text-red-600 text-xs mt-1">{formErrors.direccion}</p>}
@@ -348,8 +354,8 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
                     value={formData.ciudad}
                     onChange={handleInputChange}
                     placeholder="Santiago"
-                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 ${
-                      formErrors.ciudad ? 'border-red-300' : 'border-amber-200'
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 transition-all ${
+                      formErrors.ciudad ? 'border-red-400 bg-red-50' : 'border-slate-300 hover:border-slate-400'
                     }`}
                   />
                   {formErrors.ciudad && <p className="text-red-600 text-xs mt-1">{formErrors.ciudad}</p>}
@@ -363,7 +369,7 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
                     value={formData.codigo_postal}
                     onChange={handleInputChange}
                     placeholder="7550000"
-                    className="w-full px-3 py-2 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 border-slate-300 hover:border-slate-400 transition-all"
                   />
                 </div>
               </div>
@@ -372,7 +378,7 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
 
           {currentStep === 3 && (
             <div className="space-y-4">
-              <h4 className="text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-amber-200">
+              <h4 className="text-base sm:text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-slate-200">
                 Información Médica
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -384,7 +390,7 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
                     onChange={handleInputChange}
                     placeholder="Penicilina, polen, mariscos..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 border-slate-300 hover:border-slate-400 transition-all"
                   />
                 </div>
 
@@ -396,7 +402,7 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
                     onChange={handleInputChange}
                     placeholder="Omeprazol 20mg (diario)..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 border-slate-300 hover:border-slate-400 transition-all"
                   />
                 </div>
 
@@ -408,7 +414,7 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
                     onChange={handleInputChange}
                     placeholder="Diabetes, hipertensión..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 border-slate-300 hover:border-slate-400 transition-all"
                   />
                 </div>
 
@@ -420,7 +426,7 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
                     onChange={handleInputChange}
                     placeholder="Apendicectomía (2020)..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 border-slate-300 hover:border-slate-400 transition-all"
                   />
                 </div>
 
@@ -432,7 +438,7 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
                     onChange={handleInputChange}
                     placeholder="Neumonía (2018) - 5 días..."
                     rows={2}
-                    className="w-full px-3 py-2 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 border-slate-300 hover:border-slate-400 transition-all"
                   />
                 </div>
 
@@ -444,52 +450,54 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
                     onChange={handleInputChange}
                     placeholder="Observaciones adicionales del paciente..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 border-slate-300 hover:border-slate-400 transition-all"
                   />
                 </div>
               </div>
             </div>
           )}
-        </div>
+            </div>
 
-        {/* Footer */}
-        <div className="flex flex-col sm:flex-row justify-between items-center p-4 sm:p-6 border-t border-amber-200 bg-slate-50 space-y-3 sm:space-y-0">
-          <div className="text-sm text-slate-500">* Campos obligatorios</div>
-          <div className="flex space-x-3 w-full sm:w-auto">
-            {currentStep > 1 && (
-              <button
-                onClick={() => setCurrentStep(prev => prev - 1)}
-                className="flex-1 sm:flex-none bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg text-sm px-6 py-2.5 transition-colors"
-              >
-                Anterior
-              </button>
-            )}
-            <button
-              onClick={handleClose}
-              className="flex-1 sm:flex-none bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg text-sm px-6 py-2.5 transition-colors"
-            >
-              Cancelar
-            </button>
-            {currentStep < 3 ? (
-              <button
-                onClick={handleNext}
-                className="flex-1 sm:flex-none flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg text-sm px-6 py-2.5 transition-colors shadow-sm"
-              >
-                Siguiente
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </button>
-            ) : (
-              <button
-                onClick={handleSubmit}
-                className="flex-1 sm:flex-none flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg text-sm px-6 py-2.5 transition-colors shadow-sm"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                Guardar Cambios
-              </button>
-            )}
+            {/* Footer */}
+            <div className="border-t border-slate-200 px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0 bg-slate-50">
+              <div className="flex gap-2 sm:gap-3 flex-col-reverse sm:flex-row">
+                {currentStep > 1 && (
+                  <button
+                    onClick={() => setCurrentStep(prev => prev - 1)}
+                    className="flex-1 px-4 py-2 sm:py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200"
+                  >
+                    Anterior
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="flex-1 px-4 py-2 sm:py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200"
+                >
+                  Cancelar
+                </button>
+                {currentStep < 3 ? (
+                  <button
+                    onClick={handleNext}
+                    className="flex-1 px-4 py-2 sm:py-2.5 text-sm font-medium text-white bg-cyan-500 hover:bg-cyan-600 rounded-lg transition-colors shadow-sm flex items-center justify-center"
+                  >
+                    <span>Siguiente</span>
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSubmit}
+                    className="flex-1 px-4 py-2 sm:py-2.5 text-sm font-medium text-white bg-cyan-500 hover:bg-cyan-600 rounded-lg transition-colors shadow-sm flex items-center justify-center"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    <span>Guardar Cambios</span>
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </>
     </div>
   );
 };

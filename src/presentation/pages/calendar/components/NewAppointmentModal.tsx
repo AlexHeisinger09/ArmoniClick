@@ -135,38 +135,42 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-      {/* Modal Container - Responsive */}
-      <div className="bg-white w-full max-w-sm sm:max-w-xl max-h-[95vh] sm:max-h-[90vh] sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col">
-        
-        {/* Header con gradiente */}
-        <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-3 sm:px-4 py-3 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base sm:text-lg font-bold">Nueva Cita</h3>
-              {newAppointment.date && (
-                <p className="text-xs opacity-90 mt-0.5 truncate">
-                  {newAppointment.date.toLocaleDateString('es-CL', {
-                    weekday: 'short',
-                    day: 'numeric',
-                    month: 'short'
-                  })} • {newAppointment.time || 'Sin horario'}
-                </p>
-              )}
+    <>
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+        onClick={onClose}
+      />
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex min-h-full items-center justify-center p-4">
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md sm:max-w-xl">
+            {/* Header con gradiente - Estándar */}
+            <div className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-t-xl flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base sm:text-lg font-semibold text-white">Nueva Cita</h3>
+                  {newAppointment.date && (
+                    <p className="text-xs sm:text-sm text-white text-opacity-90 mt-0.5 truncate">
+                      {newAppointment.date.toLocaleDateString('es-CL', {
+                        weekday: 'short',
+                        day: 'numeric',
+                        month: 'short'
+                      })} • {newAppointment.time || 'Sin horario'}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={onClose}
+                  disabled={isCreating}
+                  className="p-1.5 sm:p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0 ml-2"
+                >
+                  <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </button>
+              </div>
             </div>
-            <button
-              onClick={onClose}
-              disabled={isCreating}
-              className="p-1.5 sm:p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0 ml-2"
-            >
-              <X className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-          </div>
-        </div>
 
-        {/* Contenido principal - Scrolleable */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 sm:py-4">
-          <div className="space-y-4">
+            {/* Contenido principal - Scrolleable */}
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6 max-h-[60vh]">
+              <div className="space-y-4">
             
             {/* Selector de tipo de paciente */}
             <div>
@@ -405,53 +409,55 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
               />
             </div>
 
-          </div>
-        </div>
+              </div>
+            </div>
 
-        {/* Footer con botones */}
-        <div className="border-t border-slate-200 px-3 sm:px-4 py-2.5 sm:py-3 flex-shrink-0 bg-slate-50">
-          <div className="flex space-x-2 sm:space-x-3">
-            <button
-              onClick={onClose}
-              disabled={isCreating}
-              className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={!isFormValid() || isCreating}
-              className={`flex-1 px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-medium rounded-lg transition-colors shadow-sm flex items-center justify-center ${
-                isFormValid() && !isCreating
-                  ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
-                  : 'bg-slate-300 text-slate-500 cursor-not-allowed'
-              }`}
-            >
-              {isCreating ? (
-                <>
-                  <Loader className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 animate-spin" />
-                  <span className="hidden sm:inline">Creando...</span>
-                  <span className="sm:hidden">...</span>
-                </>
-              ) : (
-                <>
-                  <FileText className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-                  <span className="hidden sm:inline">Crear Cita</span>
-                  <span className="sm:hidden">Crear</span>
-                </>
-              )}
-            </button>
+            {/* Footer con botones */}
+            <div className="border-t border-slate-200 px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0 bg-slate-50">
+              <div className="flex gap-2 sm:gap-3">
+                <button
+                  onClick={onClose}
+                  disabled={isCreating}
+                  className="flex-1 px-4 py-2 sm:py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={!isFormValid() || isCreating}
+                  className={`flex-1 px-4 py-2 sm:py-2.5 text-sm font-medium rounded-lg transition-colors shadow-sm flex items-center justify-center ${
+                    isFormValid() && !isCreating
+                      ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
+                      : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                  }`}
+                >
+                  {isCreating ? (
+                    <>
+                      <Loader className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 animate-spin" />
+                      <span className="hidden sm:inline">Creando...</span>
+                      <span className="sm:hidden">...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                      <span className="hidden sm:inline">Crear Cita</span>
+                      <span className="sm:hidden">Crear</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Overlay para cerrar dropdown */}
       {showPatientSearch && !isCreating && (
-        <div 
-          className="fixed inset-0 z-10" 
+        <div
+          className="fixed inset-0 z-10"
           onClick={() => setShowPatientSearch(false)}
         />
       )}
-    </div>
+    </>
   );
 };
