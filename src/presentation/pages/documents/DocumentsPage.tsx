@@ -363,12 +363,23 @@ const DocumentsPage: React.FC = () => {
     }
 
     try {
+      const patientEmail = queryPatients.data?.find(p => p.id === selectedDocument.id_patient)?.email;
+
+      console.log('🖊️ Firmando documento con estos datos:');
+      console.log('  - Document ID:', selectedDocument.id);
+      console.log('  - Patient ID:', selectedDocument.id_patient);
+      console.log('  - Patient Email:', patientEmail);
+      console.log('  - Send Email:', sendEmail);
+      console.log('  - Signature length:', signature.length);
+
       const signedDoc = await signDocumentMutation.mutateAsync({
         documentId: selectedDocument.id,
         signatureData: signature,
         sendEmail,
-        patientEmail: queryPatients.data?.find(p => p.id === selectedDocument.id_patient)?.email,
+        patientEmail,
       });
+
+      console.log('✅ Documento firmado exitosamente:', signedDoc);
 
       // Generate and download PDF
       try {
