@@ -13,7 +13,8 @@
       "Bash(timeout 30 npm run netlify:dev:*)",
       "Bash(timeout 25 npm run:*)",
       "Bash(cat:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

@@ -253,53 +253,50 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
           <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md sm:max-w-2xl">
             {/* Header - Estándar */}
             <div className="bg-gradient-to-r from-cyan-500 to-blue-500 px-4 sm:px-6 py-3 sm:py-4 rounded-t-xl">
-          <div className="flex items-center space-x-3">
-            <div className="bg-cyan-100 p-2 rounded-full">
-              <Stethoscope className="w-6 h-6 text-cyan-600" />
-            </div>
-            <div>
-              <h3 className="text-lg sm:text-xl font-bold text-slate-700">
-                Nuevo Tratamiento
-              </h3>
-              <p className="text-sm text-slate-500">
-                Paso {currentStep} de 3 - {
-                  currentStep === 1 ? 'Información del Control' :
-                  currentStep === 2 ? 'Producto y Próximo Control' : 'Fotos y Observaciones'
-                }
-              </p>
-            </div>
-          </div>
-          <button 
-            onClick={handleClose} 
-            className="text-slate-500 hover:text-slate-700 transition-colors p-2 hover:bg-slate-100 rounded-full"
-            disabled={isLoading}
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Progress indicator */}
-        <div className="px-4 sm:px-6 py-4 bg-slate-50">
-          <div className="flex items-center space-x-2">
-            {[1, 2, 3].map((step) => (
-              <div key={step} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  step <= currentStep ? 'bg-cyan-500 text-white' : 'bg-slate-200 text-slate-500'
-                }`}>
-                  {step}
+              <div className="flex items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base sm:text-lg font-semibold text-white">
+                    Nuevo Tratamiento
+                  </h3>
+                  <p className="text-xs sm:text-sm text-white text-opacity-90 mt-0.5">
+                    Paso {currentStep} de 3 - {
+                      currentStep === 1 ? 'Información del Control' :
+                      currentStep === 2 ? 'Producto y Próximo Control' : 'Fotos y Observaciones'
+                    }
+                  </p>
                 </div>
-                {step < 3 && (
-                  <div className={`w-8 sm:w-16 h-1 mx-2 ${
-                    step < currentStep ? 'bg-cyan-500' : 'bg-slate-200'
-                  }`} />
-                )}
+                <button
+                  onClick={handleClose}
+                  disabled={isLoading}
+                  className="p-1.5 sm:p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors flex-shrink-0 ml-2"
+                >
+                  <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </button>
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        {/* Form content */}
-        <div className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto">
+            {/* Progress indicator */}
+            <div className="px-4 sm:px-6 py-3 sm:py-4 bg-slate-50 border-b border-slate-200">
+              <div className="flex items-center space-x-2">
+                {[1, 2, 3].map((step) => (
+                  <div key={step} className="flex items-center flex-1 sm:flex-none">
+                    <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium ${
+                      step <= currentStep ? 'bg-cyan-500 text-white' : 'bg-slate-200 text-slate-500'
+                    }`}>
+                      {step}
+                    </div>
+                    {step < 3 && (
+                      <div className={`flex-1 h-0.5 mx-1 sm:mx-2 ${
+                        step < currentStep ? 'bg-cyan-500' : 'bg-slate-200'
+                      }`} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Form content */}
+            <div className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto space-y-4">
           {currentStep === 1 && (
             <div className="space-y-6">
               <h4 className="text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-cyan-200 flex items-center">
@@ -672,61 +669,63 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
                 />
               </div>
             </div>
-          )}
-        </div>
+            )}
+            </div>
 
-        {/* Footer */}
-        <div className="flex flex-col sm:flex-row justify-between items-center p-4 sm:p-6 border-t border-cyan-200 bg-slate-50 space-y-3 sm:space-y-0">
-          <div className="text-sm text-slate-500">* Campos obligatorios</div>
-          <div className="flex space-x-3 w-full sm:w-auto">
-            {currentStep > 1 && (
-              <button
-                onClick={() => setCurrentStep(prev => prev - 1)}
-                className="flex-1 sm:flex-none bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg text-sm px-6 py-2.5 transition-colors"
-                disabled={isLoading}
-              >
-                Anterior
-              </button>
-            )}
-            <button
-              onClick={handleClose}
-              className="flex-1 sm:flex-none bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg text-sm px-6 py-2.5 transition-colors"
-              disabled={isLoading}
-            >
-              Cancelar
-            </button>
-            {currentStep < 3 ? (
-              <button
-                onClick={handleNext}
-                className="flex-1 sm:flex-none flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-6 py-2.5 transition-colors shadow-sm"
-                disabled={isLoading}
-              >
-                Siguiente
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </button>
-            ) : (
-              <button
-                onClick={handleSubmit}
-                className="flex-1 sm:flex-none flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-6 py-2.5 transition-colors shadow-sm"
-                disabled={isLoading || uploadingImages.foto1 || uploadingImages.foto2}
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Guardando...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Crear Tratamiento
-                  </>
+            {/* Footer */}
+            <div className="border-t border-slate-200 px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0 bg-slate-50">
+              <div className="flex gap-2 sm:gap-3 flex-col-reverse sm:flex-row">
+                {currentStep > 1 && (
+                  <button
+                    onClick={() => setCurrentStep(prev => prev - 1)}
+                    className="flex-1 px-4 py-2 sm:py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200"
+                    disabled={isLoading}
+                  >
+                    Anterior
+                  </button>
                 )}
-              </button>
-            )}
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="flex-1 px-4 py-2 sm:py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200"
+                  disabled={isLoading}
+                >
+                  Cancelar
+                </button>
+                {currentStep < 3 ? (
+                  <button
+                    onClick={handleNext}
+                    className="flex-1 px-4 py-2 sm:py-2.5 text-sm font-medium text-white bg-cyan-500 hover:bg-cyan-600 rounded-lg transition-colors shadow-sm flex items-center justify-center"
+                    disabled={isLoading}
+                  >
+                    <span>Siguiente</span>
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSubmit}
+                    className="flex-1 px-4 py-2 sm:py-2.5 text-sm font-medium text-white bg-cyan-500 hover:bg-cyan-600 rounded-lg transition-colors shadow-sm flex items-center justify-center"
+                    disabled={isLoading || uploadingImages.foto1 || uploadingImages.foto2}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        <span>Guardando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        <span>Crear Tratamiento</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
