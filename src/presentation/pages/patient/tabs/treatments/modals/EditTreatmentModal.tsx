@@ -195,58 +195,60 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
   if (!isOpen || !treatment) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden shadow-2xl">
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50">
-          <div className="flex items-center space-x-3">
-            <div className="bg-amber-100 p-2 rounded-full">
-              <Stethoscope className="w-6 h-6 text-amber-600" />
-            </div>
-            <div>
-              <h3 className="text-lg sm:text-xl font-bold text-slate-700">
-                Editar Tratamiento
-              </h3>
-              <p className="text-sm text-slate-500">
-                Paso {currentStep} de 3 - {
-                  currentStep === 1 ? 'Información del Control' :
-                    currentStep === 2 ? 'Producto y Próximo Control' : 'Fotos y Observaciones'
-                }
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={handleClose}
-            className="text-slate-500 hover:text-slate-700 transition-colors p-2 hover:bg-slate-100 rounded-full"
-            disabled={isLoading}
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Progress indicator */}
-        <div className="px-4 sm:px-6 py-4 bg-slate-50">
-          <div className="flex items-center space-x-2">
-            {[1, 2, 3].map((step) => (
-              <div key={step} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step <= currentStep ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-500'
-                  }`}>
-                  {step}
+    <>
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+        onClick={handleClose}
+      />
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex min-h-full items-center justify-center p-4">
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md sm:max-w-2xl">
+            {/* Header - Estándar */}
+            <div className="bg-gradient-to-r from-cyan-500 to-blue-500 px-4 sm:px-6 py-3 sm:py-4 rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base sm:text-lg font-semibold text-white">
+                    Editar Tratamiento
+                  </h3>
+                  <p className="text-xs sm:text-sm text-white text-opacity-90 mt-0.5">
+                    Paso {currentStep} de 3 - {
+                      currentStep === 1 ? 'Información del Control' :
+                        currentStep === 2 ? 'Producto y Próximo Control' : 'Fotos y Observaciones'
+                    }
+                  </p>
                 </div>
-                {step < 3 && (
-                  <div className={`w-8 sm:w-16 h-1 mx-2 ${step < currentStep ? 'bg-amber-500' : 'bg-slate-200'
-                    }`} />
-                )}
+                <button
+                  onClick={handleClose}
+                  disabled={isLoading}
+                  className="p-1.5 sm:p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors flex-shrink-0 ml-2"
+                >
+                  <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </button>
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        {/* Form content */}
-        <div className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto">
-          {currentStep === 1 && (
-            <div className="space-y-4">
-              <h4 className="text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-amber-200 flex items-center">
+            {/* Progress indicator */}
+            <div className="px-4 sm:px-6 py-3 sm:py-4 bg-slate-50 border-b border-slate-200">
+              <div className="flex items-center space-x-2">
+                {[1, 2, 3].map((step) => (
+                  <div key={step} className="flex items-center flex-1 sm:flex-none">
+                    <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium ${step <= currentStep ? 'bg-cyan-500 text-white' : 'bg-slate-200 text-slate-500'
+                      }`}>
+                      {step}
+                    </div>
+                    {step < 3 && (
+                      <div className={`flex-1 h-0.5 mx-1 sm:mx-2 ${step < currentStep ? 'bg-cyan-500' : 'bg-slate-200'}`} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Form content */}
+            <div className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto space-y-4">
+              {currentStep === 1 && (
+                <div className="space-y-4">
+                  <h4 className="text-base sm:text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-slate-200 flex items-center">
                 <Calendar className="w-5 h-5 mr-2" />
                 Información del Control
               </h4>
