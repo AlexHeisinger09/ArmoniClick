@@ -186,9 +186,6 @@ export class PatientService {
         createdat: patientsTable.createdAt,
         updatedat: patientsTable.updatedAt,
         isactive: patientsTable.isActive,
-        // ✅ AGREGAR: Datos del doctor que registró al paciente
-        doctor_name: usersTable.name,
-        doctor_lastName: usersTable.lastName,
       });
 
     return newPatient[0];
@@ -229,9 +226,6 @@ export class PatientService {
         createdat: patientsTable.createdAt,
         updatedat: patientsTable.updatedAt,
         isactive: patientsTable.isActive,
-        // ✅ AGREGAR: Datos del doctor que registró al paciente
-        doctor_name: usersTable.name,
-        doctor_lastName: usersTable.lastName,
       });
 
     return updatedPatient[0];
