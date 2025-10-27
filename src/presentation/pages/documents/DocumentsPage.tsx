@@ -240,7 +240,7 @@ const DocumentsPage: React.FC = () => {
     isLoadingCreate,
     isLoadingSign,
     isLoadingSendEmail,
-  } = useDocuments(selectedPatientId || filterPatientId);
+  } = useDocuments(selectedPatientId); // Solo usar selectedPatientId para crear documentos, no para filtrar la lista
 
   const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
     setNotification({ type, message });
@@ -400,6 +400,7 @@ const DocumentsPage: React.FC = () => {
         setCurrentView('list');
         setSelectedDocument(null);
         setSignature('');
+        setFilterPatientId(undefined); // Limpiar filtro al volver a la lista
         signatureRef.current?.clear();
       }, 1000);
     } catch (error) {
@@ -460,132 +461,253 @@ const DocumentsPage: React.FC = () => {
             </select>
           </div>
 
-          {/* Tabla de Documentos */}
+          {/* Tabla de Documentos - Responsiva */}
           {isLoadingPatients ? (
             <div className="flex justify-center py-12">
               <Loader className="w-8 h-8 text-cyan-500 animate-spin" />
             </div>
           ) : queryDocuments.data && queryDocuments.data.length > 0 ? (
-            <div className="bg-white rounded-xl shadow-sm border border-cyan-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-cyan-50 border-b border-cyan-200">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-cyan-900">Documento</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-cyan-900">Paciente</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-cyan-900">RUT</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-cyan-900">Fecha</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-cyan-900">Estado</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-cyan-900">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {queryDocuments.data.map((doc) => (
-                      <tr key={doc.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 text-sm text-slate-900 font-medium">{doc.title}</td>
-                        <td className="px-6 py-4 text-sm text-slate-600">{doc.patient_name}</td>
-                        <td className="px-6 py-4 text-sm text-slate-600">{doc.patient_rut}</td>
-                        <td className="px-6 py-4 text-sm text-slate-600">
-                          {new Date(doc.createdAt || '').toLocaleDateString('es-CL')}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
+            <>
+              {/* Vista Desktop (tabla) */}
+              <div className="hidden md:block bg-white rounded-xl shadow-sm border border-cyan-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-cyan-50 border-b border-cyan-200">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-cyan-900">Documento</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-cyan-900">Paciente</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-cyan-900">RUT</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-cyan-900">Fecha</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-cyan-900">Estado</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-cyan-900">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {queryDocuments.data.map((doc) => (
+                        <tr key={doc.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 text-sm text-slate-900 font-medium">{doc.title}</td>
+                          <td className="px-6 py-4 text-sm text-slate-600">{doc.patient_name}</td>
+                          <td className="px-6 py-4 text-sm text-slate-600">{doc.patient_rut}</td>
+                          <td className="px-6 py-4 text-sm text-slate-600">
+                            {new Date(doc.createdAt || '').toLocaleDateString('es-CL')}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
+                              doc.status === 'firmado'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {doc.status === 'firmado' ? '✓ Firmado' : '⏱ Pendiente'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {doc.status === 'pendiente' ? (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedDocument(doc);
+                                      setCurrentView('sign');
+                                    }}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-cyan-500 hover:bg-cyan-600 text-white rounded text-xs font-medium transition-colors"
+                                    title="Firmar documento"
+                                  >
+                                    <PenTool className="w-3 h-3" />
+                                    Firmar
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedDocument(doc);
+                                      setCurrentView('view');
+                                    }}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors"
+                                    title="Ver documento"
+                                  >
+                                    <Eye className="w-3 h-3" />
+                                    Ver
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      try {
+                                        generateDocumentPDF(doc);
+                                      } catch (error) {
+                                        showNotification('error', 'Error al descargar PDF');
+                                      }
+                                    }}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-medium transition-colors"
+                                    title="Descargar PDF"
+                                  >
+                                    <Download className="w-3 h-3" />
+                                    PDF
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      const patientEmail = queryPatients.data?.find(p => p.id === doc.id_patient)?.email;
+                                      if (!patientEmail) {
+                                        showNotification('error', 'Email del paciente no disponible');
+                                        return;
+                                      }
+                                      setSendingEmailDocId(doc.id);
+                                      sendDocumentEmailMutation.mutate(
+                                        {
+                                          documentId: doc.id,
+                                          patientEmail: patientEmail,
+                                        },
+                                        {
+                                          onSuccess: () => {
+                                            showNotification('success', 'Documento enviado por correo');
+                                            setSendingEmailDocId(null);
+                                          },
+                                          onError: () => {
+                                            showNotification('error', 'Error al enviar documento');
+                                            setSendingEmailDocId(null);
+                                          },
+                                        }
+                                      );
+                                    }}
+                                    disabled={sendingEmailDocId === doc.id}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Enviar por correo"
+                                  >
+                                    {sendingEmailDocId === doc.id ? (
+                                      <Loader className="w-3 h-3 animate-spin" />
+                                    ) : (
+                                      <Mail className="w-3 h-3" />
+                                    )}
+                                    Email
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Vista Mobile (cards) */}
+              <div className="md:hidden space-y-4">
+                {queryDocuments.data.map((doc) => (
+                  <div key={doc.id} className="bg-white rounded-lg shadow-sm border border-cyan-200 p-4">
+                    <div className="space-y-3">
+                      <div>
+                        <h3 className="font-semibold text-slate-900 text-sm">{doc.title}</h3>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <p className="text-gray-500">Paciente</p>
+                          <p className="text-slate-700 font-medium">{doc.patient_name}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">RUT</p>
+                          <p className="text-slate-700 font-medium">{doc.patient_rut}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">Fecha</p>
+                          <p className="text-slate-700 font-medium">
+                            {new Date(doc.createdAt || '').toLocaleDateString('es-CL')}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">Estado</p>
+                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
                             doc.status === 'firmado'
                               ? 'bg-green-100 text-green-800'
                               : 'bg-yellow-100 text-yellow-800'
                           }`}>
                             {doc.status === 'firmado' ? '✓ Firmado' : '⏱ Pendiente'}
                           </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {doc.status === 'pendiente' ? (
-                              <>
-                                <button
-                                  onClick={() => {
-                                    setSelectedDocument(doc);
-                                    setCurrentView('sign');
-                                  }}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-cyan-500 hover:bg-cyan-600 text-white rounded text-xs font-medium transition-colors"
-                                  title="Firmar documento"
-                                >
-                                  <PenTool className="w-3 h-3" />
-                                  Firmar
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={() => {
-                                    setSelectedDocument(doc);
-                                    setCurrentView('view');
-                                  }}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors"
-                                  title="Ver documento"
-                                >
-                                  <Eye className="w-3 h-3" />
-                                  Ver
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    try {
-                                      generateDocumentPDF(doc);
-                                    } catch (error) {
-                                      showNotification('error', 'Error al descargar PDF');
-                                    }
-                                  }}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-medium transition-colors"
-                                  title="Descargar PDF"
-                                >
-                                  <Download className="w-3 h-3" />
-                                  PDF
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    const patientEmail = queryPatients.data?.find(p => p.id === doc.id_patient)?.email;
-                                    if (!patientEmail) {
-                                      showNotification('error', 'Email del paciente no disponible');
-                                      return;
-                                    }
-                                    setSendingEmailDocId(doc.id);
-                                    sendDocumentEmailMutation.mutate(
-                                      {
-                                        documentId: doc.id,
-                                        patientEmail: patientEmail,
-                                      },
-                                      {
-                                        onSuccess: () => {
-                                          showNotification('success', 'Documento enviado por correo');
-                                          setSendingEmailDocId(null);
-                                        },
-                                        onError: () => {
-                                          showNotification('error', 'Error al enviar documento');
-                                          setSendingEmailDocId(null);
-                                        },
-                                      }
-                                    );
-                                  }}
-                                  disabled={sendingEmailDocId === doc.id}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                  title="Enviar por correo"
-                                >
-                                  {sendingEmailDocId === doc.id ? (
-                                    <Loader className="w-3 h-3 animate-spin" />
-                                  ) : (
-                                    <Mail className="w-3 h-3" />
-                                  )}
-                                  Email
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200">
+                        {doc.status === 'pendiente' ? (
+                          <button
+                            onClick={() => {
+                              setSelectedDocument(doc);
+                              setCurrentView('sign');
+                            }}
+                            className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded text-xs font-medium transition-colors"
+                            title="Firmar documento"
+                          >
+                            <PenTool className="w-3 h-3" />
+                            Firmar
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => {
+                                setSelectedDocument(doc);
+                                setCurrentView('view');
+                              }}
+                              className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors"
+                              title="Ver documento"
+                            >
+                              <Eye className="w-3 h-3" />
+                              Ver
+                            </button>
+                            <button
+                              onClick={() => {
+                                try {
+                                  generateDocumentPDF(doc);
+                                } catch (error) {
+                                  showNotification('error', 'Error al descargar PDF');
+                                }
+                              }}
+                              className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-medium transition-colors"
+                              title="Descargar PDF"
+                            >
+                              <Download className="w-3 h-3" />
+                              PDF
+                            </button>
+                            <button
+                              onClick={() => {
+                                const patientEmail = queryPatients.data?.find(p => p.id === doc.id_patient)?.email;
+                                if (!patientEmail) {
+                                  showNotification('error', 'Email del paciente no disponible');
+                                  return;
+                                }
+                                setSendingEmailDocId(doc.id);
+                                sendDocumentEmailMutation.mutate(
+                                  {
+                                    documentId: doc.id,
+                                    patientEmail: patientEmail,
+                                  },
+                                  {
+                                    onSuccess: () => {
+                                      showNotification('success', 'Documento enviado por correo');
+                                      setSendingEmailDocId(null);
+                                    },
+                                    onError: () => {
+                                      showNotification('error', 'Error al enviar documento');
+                                      setSendingEmailDocId(null);
+                                    },
+                                  }
+                                );
+                              }}
+                              disabled={sendingEmailDocId === doc.id}
+                              className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Enviar por correo"
+                            >
+                              {sendingEmailDocId === doc.id ? (
+                                <Loader className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Mail className="w-3 h-3" />
+                              )}
+                              Email
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+            </>
           ) : (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
               <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
