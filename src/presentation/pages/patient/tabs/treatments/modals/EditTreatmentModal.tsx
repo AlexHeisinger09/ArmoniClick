@@ -312,7 +312,7 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
             <div className="space-y-6">
               {/* Próximo Control */}
               <div>
-                <h4 className="text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-amber-200 flex items-center">
+                    <h4 className="text-base sm:text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-slate-200 flex items-center">
                   <Clock className="w-5 h-5 mr-2" />
                   Próximo Control (Opcional)
                 </h4>
@@ -338,7 +338,7 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
                       name="hora_proximo_control"
                       value={formData.hora_proximo_control || ''}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700"
+                      className="w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 border-slate-300 hover:border-slate-400 transition-all"
                     />
                   </div>
                 </div>
@@ -346,7 +346,7 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
 
               {/* Información del Producto */}
               <div>
-                <h4 className="text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-amber-200 flex items-center">
+                    <h4 className="text-base sm:text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-slate-200 flex items-center">
                   <Package className="w-5 h-5 mr-2" />
                   Información del Producto
                 </h4>
@@ -359,7 +359,7 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
                       value={formData.producto || ''}
                       onChange={handleInputChange}
                       placeholder="Ej: Botox Allergan"
-                      className="w-full px-3 py-2 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700"
+                      className="w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 border-slate-300 hover:border-slate-400 transition-all"
                     />
                   </div>
 
@@ -371,7 +371,7 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
                       value={formData.lote_producto || ''}
                       onChange={handleInputChange}
                       placeholder="Número de lote"
-                      className="w-full px-3 py-2 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700"
+                      className="w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 border-slate-300 hover:border-slate-400 transition-all"
                     />
                   </div>
 
@@ -396,7 +396,7 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
                       value={formData.dilucion || ''}
                       onChange={handleInputChange}
                       placeholder="Ej: 100 UI en 2.5ml de solución salina"
-                      className="w-full px-3 py-2 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700"
+                      className="w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 border-slate-300 hover:border-slate-400 transition-all"
                     />
                   </div>
                 </div>
@@ -408,7 +408,7 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
             <div className="space-y-6">
               {/* Fotografías */}
               <div>
-                <h4 className="text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-amber-200 flex items-center">
+                    <h4 className="text-base sm:text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-slate-200 flex items-center">
                   <Camera className="w-5 h-5 mr-2" />
                   Fotografías (Antes y Después)
                 </h4>
@@ -517,65 +517,67 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
                   onChange={handleInputChange}
                   rows={4}
                   placeholder="Detalles del tratamiento, observaciones, efectos secundarios, reacciones del paciente, etc."
-                  className="w-full px-3 py-2 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 resize-none"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 border-slate-300 hover:border-slate-400 transition-all resize-none"
                 />
               </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Footer */}
-        <div className="flex flex-col sm:flex-row justify-between items-center p-4 sm:p-6 border-t border-amber-200 bg-slate-50 space-y-3 sm:space-y-0">
-          <div className="text-sm text-slate-500">* Campos obligatorios</div>
-          <div className="flex space-x-3 w-full sm:w-auto">
-            {currentStep > 1 && (
-              <button
-                onClick={() => setCurrentStep(prev => prev - 1)}
-                className="flex-1 sm:flex-none bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg text-sm px-6 py-2.5 transition-colors"
-                disabled={isLoading}
-              >
-                Anterior
-              </button>
-            )}
-            <button
-              onClick={handleClose}
-              className="flex-1 sm:flex-none bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg text-sm px-6 py-2.5 transition-colors"
-              disabled={isLoading}
-            >
-              Cancelar
-            </button>
-            {currentStep < 3 ? (
-              <button
-                onClick={handleNext}
-                className="flex-1 sm:flex-none flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg text-sm px-6 py-2.5 transition-colors shadow-sm"
-                disabled={isLoading}
-              >
-                Siguiente
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </button>
-            ) : (
-              <button
-                onClick={handleSubmit}
-                className="flex-1 sm:flex-none flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg text-sm px-6 py-2.5 transition-colors shadow-sm"
-                disabled={isLoading || uploadingImages.foto1 || uploadingImages.foto2}
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Guardando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Guardar Cambios
-                  </>
+            {/* Footer */}
+            <div className="border-t border-slate-200 px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0 bg-slate-50">
+              <div className="flex gap-2 sm:gap-3 flex-col-reverse sm:flex-row">
+                {currentStep > 1 && (
+                  <button
+                    onClick={() => setCurrentStep(prev => prev - 1)}
+                    className="flex-1 px-4 py-2 sm:py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200"
+                    disabled={isLoading}
+                  >
+                    Anterior
+                  </button>
                 )}
-              </button>
-            )}
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="flex-1 px-4 py-2 sm:py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200"
+                  disabled={isLoading}
+                >
+                  Cancelar
+                </button>
+                {currentStep < 3 ? (
+                  <button
+                    onClick={handleNext}
+                    className="flex-1 px-4 py-2 sm:py-2.5 text-sm font-medium text-white bg-cyan-500 hover:bg-cyan-600 rounded-lg transition-colors shadow-sm flex items-center justify-center"
+                    disabled={isLoading}
+                  >
+                    <span>Siguiente</span>
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSubmit}
+                    className="flex-1 px-4 py-2 sm:py-2.5 text-sm font-medium text-white bg-cyan-500 hover:bg-cyan-600 rounded-lg transition-colors shadow-sm flex items-center justify-center"
+                    disabled={isLoading || uploadingImages.foto1 || uploadingImages.foto2}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        <span>Guardando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        <span>Guardar Cambios</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

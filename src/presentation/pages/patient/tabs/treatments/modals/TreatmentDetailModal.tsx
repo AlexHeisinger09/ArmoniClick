@@ -48,28 +48,37 @@ const TreatmentDetailModal: React.FC<TreatmentDetailModalProps> = ({
   const statusInfo = getStatusInfo(treatment.status);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full overflow-hidden">
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <h2 className="text-lg font-bold text-gray-900">Detalles del Tratamiento</h2>
-              {/* ✅ NUEVO: Badge de estado */}
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${statusInfo.color}`}>
-                {statusInfo.icon}
-                <span className="ml-2">{statusInfo.label}</span>
-              </span>
+    <>
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+        onClick={onClose}
+      />
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex min-h-full items-center justify-center p-4">
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md sm:max-w-2xl">
+            <div className="bg-gradient-to-r from-cyan-500 to-blue-500 px-4 sm:px-6 py-3 sm:py-4 rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base sm:text-lg font-semibold text-white">
+                    Detalles del Tratamiento
+                  </h3>
+                  <div className="mt-2">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium border ${statusInfo.color}`}>
+                      {statusInfo.icon}
+                      <span className="ml-2">{statusInfo.label}</span>
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="p-1.5 sm:p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors flex-shrink-0 ml-2"
+                >
+                  <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </button>
+              </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
 
-        <div className="max-h-[80vh] overflow-y-auto p-4 space-y-4">
+            <div className="max-h-[60vh] overflow-y-auto p-4 sm:p-6 space-y-4">
           {/* Servicio */}
           <div className="bg-cyan-50 p-3 rounded-md">
             <h3 className="text-base font-semibold text-cyan-800 mb-2">{treatment.nombre_servicio}</h3>
@@ -197,19 +206,21 @@ const TreatmentDetailModal: React.FC<TreatmentDetailModalProps> = ({
               <p className="text-sm text-gray-700 whitespace-pre-wrap">{treatment.descripcion}</p>
             </div>
           )}
-        </div>
+            </div>
 
-        {/* ✅ NUEVO: Footer con botones de acción */}
-        <div className="flex justify-between items-center p-4 border-t border-gray-200 bg-slate-50">
-          <div className="text-sm text-slate-500">
-            Creado: {formatDate(treatment.created_at)}
-            {treatment.updated_at && (
-              <span className="ml-4">Actualizado: {formatDate(treatment.updated_at)}</span>
-            )}
+            {/* Footer con información y botones */}
+            <div className="border-t border-slate-200 px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0 bg-slate-50">
+              <div className="text-xs sm:text-sm text-slate-600 mb-3">
+                <p>Creado: {formatDate(treatment.created_at)}</p>
+                {treatment.updated_at && (
+                  <p>Actualizado: {formatDate(treatment.updated_at)}</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

@@ -19,26 +19,36 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   onNewAppointment
 }) => {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white rounded-xl w-full max-w-xs sm:max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-cyan-200">
-          <h3 className="text-base sm:text-xl font-bold text-slate-700">
-            Citas para {selectedDate.toLocaleDateString('es-CL', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
-          </h3>
-          <button
-            onClick={onClose}
-            className="p-1.5 sm:p-2 hover:bg-slate-100 rounded-lg transition-colors"
-          >
-            <X className="w-4 h-4 sm:w-5 sm:h-5 text-slate-500" />
-          </button>
-        </div>
+    <>
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+        onClick={onClose}
+      />
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex min-h-full items-center justify-center p-4">
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md sm:max-w-2xl">
+            <div className="bg-gradient-to-r from-cyan-500 to-blue-500 px-4 sm:px-6 py-3 sm:py-4 rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base sm:text-lg font-semibold text-white">
+                    Citas para {selectedDate.toLocaleDateString('es-CL', {
+                      weekday: 'short',
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </h3>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="p-1.5 sm:p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors flex-shrink-0 ml-2"
+                >
+                  <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </button>
+              </div>
+            </div>
 
-        <div className="p-4 sm:p-6">
+            <div className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto">
           <div>
             <h4 className="font-semibold text-slate-700 mb-3 text-sm sm:text-base">Horarios disponibles</h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -73,9 +83,10 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                 );
               })}
             </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };

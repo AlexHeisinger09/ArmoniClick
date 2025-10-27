@@ -282,36 +282,28 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
 
             {/* Modal */}
             <div className="fixed inset-0 z-50 overflow-y-auto">
-                <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
-                    <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[95vh] overflow-hidden">
-                        
+                <div className="flex min-h-full items-center justify-center p-4">
+                    <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md sm:max-w-4xl">
+
                         {/* Header del modal */}
-                        <div className="bg-gradient-to-r from-cyan-500 to-blue-500 px-4 sm:px-6 py-4 text-white">
+                        <div className="bg-gradient-to-r from-cyan-500 to-blue-500 px-4 sm:px-6 py-3 sm:py-4 text-white rounded-t-xl">
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                    <button
-                                        onClick={handleClose}
-                                        className="p-1 hover:bg-white/20 rounded-lg transition-colors"
-                                    >
-                                        <ArrowLeft className="w-5 h-5" />
-                                    </button>
-                                    <div>
-                                        <h2 className="text-lg sm:text-xl font-semibold">
-                                            {mode === 'create' ? 'Nuevo Presupuesto' : 
-                                             mode === 'edit' ? 'Editar Presupuesto' : 
-                                             'Ver Presupuesto'}
-                                        </h2>
-                                        <p className="text-sm text-white/80">
-                                            {patient.nombres} {patient.apellidos}
-                                        </p>
-                                    </div>
+                                <div className="min-w-0 flex-1">
+                                    <h2 className="text-base sm:text-lg font-semibold">
+                                        {mode === 'create' ? 'Nuevo Presupuesto' :
+                                         mode === 'edit' ? 'Editar Presupuesto' :
+                                         'Ver Presupuesto'}
+                                    </h2>
+                                    <p className="text-xs sm:text-sm text-white text-opacity-90 mt-0.5">
+                                        {patient.nombres} {patient.apellidos}
+                                    </p>
                                 </div>
-                                
+
                                 <button
                                     onClick={handleClose}
-                                    className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                                    className="p-1.5 sm:p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors flex-shrink-0 ml-2"
                                 >
-                                    <X className="w-5 h-5" />
+                                    <X className="w-4 h-4 sm:w-5 sm:h-5" />
                                 </button>
                             </div>
                         </div>
