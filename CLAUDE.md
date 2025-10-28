@@ -290,10 +290,19 @@ export function useMyFeature(id: string) {
 ## Important Implementation Notes
 
 ### API Route Mapping
-- Frontend calls: `POST /documents` → Backend receives at `/.netlify/functions/documents/documents`
-- **Routing Rule**: `VITE_BACKEND_URL` = `http://localhost:8888/.netlify/functions` (already includes base)
-- In use cases, call `/documents` (not `/api/documents`), as the base URL includes `/.netlify/functions`
-- See `netlify.toml` for redirect rules matching patterns like `/documents/*` → `/.netlify/functions/documents/documents`
+
+**Frontend → Backend Route Flow**:
+1. Frontend use case calls: `httpAdapter.get('/documents')` (just the path)
+2. AxiosAdapter prepends `VITE_BACKEND_URL = http://localhost:8888/.netlify/functions`
+3. Full URL becomes: `http://localhost:8888/.netlify/functions/documents`
+4. `netlify.toml` redirects `/documents/*` → `/.netlify/functions/documents/documents`
+5. Backend handler at `netlify/functions/documents/documents.ts` receives the request
+
+**Key Points**:
+- **Do NOT** use `/api/` prefix in use cases—the base URL already includes `/.netlify/functions`
+- Frontend routes to patterns defined in `netlify.toml` (line 73-77 for documents, etc.)
+- Each redirect rule maps a frontend URL pattern to a backend function file
+- HTTP methods (GET, POST, PUT, DELETE) are handled by the same handler function
 
 ### Document Feature Implementation Details
 **Frontend Path**: `src/presentation/pages/documents/DocumentsPage.tsx`
@@ -355,3 +364,72 @@ ESLint is configured in `eslint.config.js`:
 - React refresh rules via `eslint-plugin-react-refresh`
 
 Run: `npm run lint`
+
+## Testing
+
+**Current State**: No automated tests are configured in the project yet. All testing is manual.
+
+**When to Test Manually**:
+- After database schema changes: Verify migrations with `npm run drizzle:push`
+- After API changes: Use `npm run netlify:dev` to test endpoints locally
+- After component changes: Check browser at http://localhost:8888 or http://localhost:5173
+- Document feature critical paths: Use browser DevTools to inspect network requests and localStorage
+
+**Recommended Approach** (not yet implemented):
+- Unit tests for use cases (business logic)
+- Integration tests for API endpoints (Netlify functions)
+- Component tests for complex UI (forms, modals)
+
+## Development Workflow & Troubleshooting
+
+**Local Development Setup**:
+1. Copy `.env.example` to `.env.local` (if not present)
+2. Run `npm install`
+3. Start dev server: `npm run netlify:dev` (includes backend functions)
+4. Open http://localhost:8888 (Netlify) or http://localhost:5173 (Vite only)
+
+**Common Issues**:
+
+**Hot Module Replacement (HMR) not working**:
+- Restart: `npm run dev` or `npm run netlify:dev`
+- Clear browser cache (DevTools → Network → Disable cache)
+- Check `VITE_BACKEND_URL` is set correctly
+
+**Database connection issues**:
+- Verify `DATABASE_URL` is set in `.env` or Netlify dashboard
+- Run `npm run drizzle:studio` to inspect database
+- Check Neon serverless PostgreSQL connection status
+
+**API returning 401 Unauthorized**:
+- Token missing or expired: Check localStorage in DevTools (`Application` → `Local Storage`)
+- Token may be invalid: Log out and login again
+- Backend JWT validation: Check `netlify/config/jwt.ts`
+
+**TypeScript errors before build succeeds**:
+- Run `npm run build` to see full type-check results
+- May have `@ts-expect-error` or `// @ts-ignore` comments for known issues
+- Check `tsconfig.json` for settings
+
+## UI Component Patterns
+
+### Modal Standardization
+
+All modals follow a consistent pattern (documented in `MODALES_ESTANDARIZACION.md`):
+- Consistent header with title and close button
+- Predictable layout and spacing
+- Standard footer with action buttons
+- Example: [NewTreatmentModal.tsx](src/presentation/pages/patient/tabs/treatments/modals/NewTreatmentModal.tsx)
+
+### Form Components
+
+Located in `src/presentation/components/ui/form/`:
+- Use `react-hook-form` for form state management
+- Use `zod` for schema validation
+- Use `zodResolver()` from `@hookform/resolvers`
+- Standard form components: `<Form>`, `<FormField>`, `<FormControl>`, `<FormMessage>`
+
+### Charts & Visualization
+
+- Budget analytics: `recharts` library (bar charts, line charts)
+- Calendar view: `react-big-calendar` for appointments
+- Examples in Dashboard and budget pages

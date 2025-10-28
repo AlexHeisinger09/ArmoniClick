@@ -10,6 +10,7 @@ import {
   RevertBudgetToDraft,
   DeleteBudget,
   GetBudgetStats,
+  GetRevenueByTreatments,
 } from "./use-cases";
 
 import {
@@ -47,6 +48,14 @@ const handler: Handler = async (event: HandlerEvent) => {
     // ✅ GET /budgets/stats - Obtener estadísticas de presupuestos
     if (httpMethod === "GET" && path.includes('/stats')) {
       return new GetBudgetStats()
+        .execute(userId)
+        .then((res) => res)
+        .catch((error) => error);
+    }
+
+    // ✅ GET /budgets/revenue-treatments - Obtener ingresos por treatments completados
+    if (httpMethod === "GET" && path.includes('/revenue-treatments')) {
+      return new GetRevenueByTreatments()
         .execute(userId)
         .then((res) => res)
         .catch((error) => error);

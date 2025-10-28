@@ -14,8 +14,9 @@ import {
   FileText
 } from 'lucide-react';
 import { CreateTreatmentData, BudgetSummary } from "@/core/use-cases/treatments";
-import { NewTreatmentModalProps, SERVICIOS_COMUNES } from '../shared/types';
+import { NewTreatmentModalProps } from '../shared/types';
 import { useTreatmentUpload } from '@/presentation/hooks/treatments/useTreatmentUpload';
+import { useServices } from '@/presentation/hooks/services/useServices';
 
 const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
   isOpen,
@@ -57,6 +58,9 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
 
   const { uploadImageFromFile, validateImageFile } = useTreatmentUpload();
 
+  // ✅ OBTENER SERVICIOS DE LA BASE DE DATOS
+  const { services, isLoading: isLoadingServices } = useServices();
+
   // Actualizar presupuesto seleccionado
   useEffect(() => {
     if (selectedBudgetId && selectedBudgetId !== selectedBudget) {
@@ -66,7 +70,7 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
+
     // Manejar campo de valor (formato numérico)
     if (name === 'valor') {
       const numericValue = parseFloat(value) || 0;
@@ -76,13 +80,21 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
       }));
     } else if (name === 'selectedBudget') {
       setSelectedBudget(value ? parseInt(value) : undefined);
+    } else if (name === 'nombre_servicio') {
+      // ✅ Cuando selecciona un servicio, asignar automáticamente su valor
+      const selectedService = services.find(s => s.nombre === value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        valor: selectedService ? parseFloat(selectedService.valor) : prev.valor
+      }));
     } else {
       setFormData(prev => ({
         ...prev,
         [name]: value
       }));
     }
-    
+
     if (formErrors[name]) {
       setFormErrors(prev => ({
         ...prev,
@@ -311,43 +323,43 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
                     <FileText className="w-4 h-4 mr-2" />
                     Vincular a Presupuesto (Opcional)
                   </h5>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-blue-700 mb-2">Presupuesto</label>
-                      <select
-                        name="selectedBudget"
-                        value={selectedBudget || ''}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-700"
-                      >
-                        <option value="">Tratamiento independiente</option>
-                        {budgets.filter(b => b.status === 'activo').map((budget) => (
-                          <option key={budget.id} value={budget.id}>
-                            Presupuesto #{budget.id} - {budget.budget_type === 'odontologico' ? 'Odontológico' : 'Estética'} 
-                            - ${formatCurrency(budget.total_amount)}
-                          </option>
-                        ))}
-                      </select>
-                      
-                      {/* ✅ MENSAJE INFORMATIVO si no hay presupuestos activos */}
-                      {budgets.filter(b => b.status === 'activo').length === 0 && budgets.length > 0 && (
-                        <p className="text-sm text-amber-600 mt-2 bg-amber-50 p-2 rounded border border-amber-200">
-                          ⚠️ Solo los presupuestos activos pueden recibir nuevos tratamientos.
-                          {budgets.length > 0 && (
-                            <span className="block mt-1">
-                              Tienes {budgets.length} presupuesto{budgets.length > 1 ? 's' : ''} en otros estados.
-                            </span>
-                          )}
-                        </p>
-                      )}
-                    </div>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-blue-700 mb-2">Presupuesto</label>
+                        <select
+                          name="selectedBudget"
+                          value={selectedBudget || ''}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-700"
+                        >
+                          <option value="">Tratamiento independiente</option>
+                          {budgets.filter(b => b.status === 'activo').map((budget) => (
+                            <option key={budget.id} value={budget.id}>
+                              Presupuesto #{budget.id} - {budget.budget_type === 'odontologico' ? 'Odontológico' : 'Estética'}
+                              - ${formatCurrency(budget.total_amount)}
+                            </option>
+                          ))}
+                        </select>
 
-                    {/* ✅ CAMPOS ADICIONALES SI HAY PRESUPUESTO SELECCIONADO */}
-                    {selectedBudget && (
-                      <>
+                        {/* ✅ MENSAJE INFORMATIVO si no hay presupuestos activos */}
+                        {budgets.filter(b => b.status === 'activo').length === 0 && budgets.length > 0 && (
+                          <p className="text-sm text-amber-600 mt-2 bg-amber-50 p-2 rounded border border-amber-200">
+                            ⚠️ Solo los presupuestos activos pueden recibir nuevos tratamientos.
+                            {budgets.length > 0 && (
+                              <span className="block mt-1">
+                                Tienes {budgets.length} presupuesto{budgets.length > 1 ? 's' : ''} en otros estados.
+                              </span>
+                            )}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* ✅ PIEZA/ZONA si hay presupuesto seleccionado */}
+                      {selectedBudget && (
                         <div>
                           <label className="block text-sm font-medium text-blue-700 mb-2">
-                            Pieza/Zona {selectedBudget ? '*' : '(Opcional)'}
+                            Pieza/Zona *
                           </label>
                           <input
                             type="text"
@@ -358,8 +370,37 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
                             className="w-full px-3 py-2 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-700"
                           />
                         </div>
-                        
-                        <div className="lg:col-span-2">
+                      )}
+                    </div>
+
+                    {/* ✅ NOMBRE DEL SERVICIO Y VALOR si hay presupuesto seleccionado */}
+                    {selectedBudget && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-blue-700 mb-2">Nombre del Servicio *</label>
+                          {isLoadingServices ? (
+                            <div className="w-full px-3 py-2 border border-blue-200 rounded-xl bg-white">
+                              <span className="text-slate-400 text-sm">Cargando...</span>
+                            </div>
+                          ) : (
+                            <select
+                              name="nombre_servicio"
+                              value={formData.nombre_servicio}
+                              onChange={handleInputChange}
+                              className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-700 ${
+                                formErrors.nombre_servicio ? 'border-red-300' : 'border-blue-200'
+                              }`}
+                            >
+                              <option value="">Seleccionar servicio...</option>
+                              {services.map((service) => (
+                                <option key={service.id} value={service.nombre}>{service.nombre}</option>
+                              ))}
+                            </select>
+                          )}
+                          {formErrors.nombre_servicio && <p className="text-red-600 text-xs mt-1">{formErrors.nombre_servicio}</p>}
+                        </div>
+
+                        <div>
                           <label className="block text-sm font-medium text-blue-700 mb-2">Valor del Tratamiento *</label>
                           <div className="relative">
                             <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
@@ -368,7 +409,7 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
                               name="valor"
                               value={formData.valor || ''}
                               onChange={handleInputChange}
-                              placeholder="25000"
+                              placeholder="Auto"
                               min="0"
                               step="1000"
                               className={`w-full pl-8 pr-3 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-700 ${
@@ -378,24 +419,24 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
                           </div>
                           {formErrors.valor && <p className="text-red-600 text-xs mt-1">{formErrors.valor}</p>}
                         </div>
-                      </>
+                      </div>
+                    )}
+
+                    {selectedBudget && (
+                      <div className="p-3 bg-white rounded-lg border border-blue-200">
+                        <div className="text-sm text-blue-600 font-medium">
+                          ✓ Se creará un nuevo item en el presupuesto #{selectedBudget}
+                        </div>
+                        <div className="mt-1 text-xs text-blue-500">
+                          El tratamiento quedará vinculado automáticamente al presupuesto
+                        </div>
+                      </div>
                     )}
                   </div>
-                  
-                  {selectedBudget && (
-                    <div className="mt-3 p-3 bg-white rounded-lg border border-blue-200">
-                      <div className="text-sm text-blue-600 font-medium">
-                        ✓ Se creará un nuevo item en el presupuesto #{selectedBudget}
-                      </div>
-                      <div className="mt-1 text-xs text-blue-500">
-                        El tratamiento quedará vinculado automáticamente al presupuesto
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Fecha del Control *</label>
                   <input
@@ -423,32 +464,6 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
                     }`}
                   />
                   {formErrors.hora_control && <p className="text-red-600 text-xs mt-1">{formErrors.hora_control}</p>}
-                </div>
-
-                <div className="sm:col-span-2 lg:col-span-1">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Nombre del Servicio *</label>
-                  <select
-                    name="nombre_servicio"
-                    value={formData.nombre_servicio}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700 ${
-                      formErrors.nombre_servicio ? 'border-red-300' : 'border-cyan-200'
-                    }`}
-                  >
-                    <option value="">Seleccionar servicio...</option>
-                    {SERVICIOS_COMUNES.map((servicio) => (
-                      <option key={servicio} value={servicio}>{servicio}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    value={formData.nombre_servicio}
-                    onChange={handleInputChange}
-                    name="nombre_servicio"
-                    placeholder="O escriba un tratamiento personalizado"
-                    className="w-full px-3 py-1 mt-2 border border-cyan-100 rounded-lg text-sm text-slate-600 focus:ring-1 focus:ring-cyan-400"
-                  />
-                  {formErrors.nombre_servicio && <p className="text-red-600 text-xs mt-1">{formErrors.nombre_servicio}</p>}
                 </div>
               </div>
             </div>

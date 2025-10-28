@@ -16,6 +16,12 @@ schedule = "30 13 * * *"  # 14:30 CL (18:30 UTC, ajustar en verano a 17:30)
 
 # RUTAS EXISTENTES
 [[redirects]]
+  from = "/treatments/popular"
+  to = "/.netlify/functions/treatments/popular"
+  status = 200
+  methods = ["GET", "OPTIONS"]
+
+[[redirects]]
   from = "/api/treatments/patient/:patientId"
   to = "/.netlify/functions/treatments"
   status = 200
@@ -78,13 +84,14 @@ schedule = "30 13 * * *"  # 14:30 CL (18:30 UTC, ajustar en verano a 17:30)
 
 # BUDGETS ROUTES (existing, just moved after documents)
 [[redirects]]
-  from = "/api/budgets/*"
+  from = "/budgets/revenue-treatments"
   to = "/.netlify/functions/budgets"
   status = 200
+  methods = ["GET", "OPTIONS"]
 
 [[redirects]]
-  from = "/.netlify/functions/*"
-  to = "/.netlify/functions/:splat"
+  from = "/api/budgets/*"
+  to = "/.netlify/functions/budgets"
   status = 200
 
 # SPA fallback
