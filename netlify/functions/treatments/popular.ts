@@ -6,7 +6,7 @@ import { HEADERS } from "../../config/utils";
 
 interface TreatmentCount {
   nombre_servicio: string;
-  frecuencia: number;
+  frecuencia: number | string | bigint;
 }
 
 const handler: Handler = async (event) => {
@@ -33,7 +33,15 @@ const handler: Handler = async (event) => {
       LIMIT 4
     `) as unknown as { rows: TreatmentCount[] };
 
-    const data = treatmentResults.rows || [];
+    const rows = treatmentResults.rows || [];
+
+    // ✅ Convertir frecuencia a número
+    const data = rows.map(row => ({
+      nombre_servicio: row.nombre_servicio,
+      frecuencia: typeof row.frecuencia === 'string'
+        ? parseInt(row.frecuencia, 10)
+        : Number(row.frecuencia)
+    }));
 
     console.log(`📊 Tratamientos encontrados: ${data.length}`, data);
 
