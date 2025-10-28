@@ -30,37 +30,7 @@ export const useMonthlyRevenueHistory = () => {
         return response;
       } catch (error) {
         console.warn('❌ No se puede obtener ingresos por treatments completados', error);
-        // ✅ MOCK DATA PARA TESTING - Datos de 12 meses
-        console.log('⚠️ Usando datos de mock para historial de ingresos');
-        const now = new Date();
-        const mockBudgets: Budget[] = [];
-
-        // Generar datos de mock para los últimos 12 meses
-        for (let i = 11; i >= 0; i--) {
-          const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
-          mockBudgets.push({
-            id: i + 1,
-            patient_id: i + 1,
-            user_id: 1,
-            total_amount: (150000 + Math.random() * 350000).toString(),
-            status: 'ACTIVATED',
-            budget_type: 'treatment',
-            created_at: month.toISOString(),
-            updated_at: null,
-            items: [
-              {
-                id: i + 1,
-                budget_id: i + 1,
-                accion: `Tratamiento ${i + 1}`,
-                valor: (50000 + Math.random() * 200000) * (1 + i * 0.1),
-                orden: 1,
-                created_at: new Date(month.getFullYear(), month.getMonth(), 15).toISOString(),
-              },
-            ],
-          });
-        }
-
-        return { budgets: mockBudgets };
+        return { budgets: [] };
       }
     },
     staleTime: 15 * 60 * 1000, // 15 minutos

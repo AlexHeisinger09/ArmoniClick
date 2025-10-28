@@ -34,14 +34,7 @@ export const usePopularTreatments = () => {
         return treatments;
       } catch (error) {
         console.error('❌ Error fetching popular treatments:', error);
-        // ✅ MOCK DATA PARA TESTING
-        console.log('⚠️ Usando datos de mock para tratamientos populares');
-        return [
-          { nombre_servicio: 'Limpieza', frecuencia: 5 },
-          { nombre_servicio: 'Relleno', frecuencia: 3 },
-          { nombre_servicio: 'Ortodoncia', frecuencia: 2 },
-          { nombre_servicio: 'Blanqueamiento', frecuencia: 1 },
-        ];
+        return [];
       }
     },
     staleTime: 15 * 60 * 1000, // 15 minutos

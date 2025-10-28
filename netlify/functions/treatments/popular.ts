@@ -18,11 +18,13 @@ const handler: Handler = async (event) => {
     const userData = JSON.parse(user.body);
     const doctorId = Number(userData.id);
 
-    // Query para obtener los 4 tratamientos más populares
-    const treatments = await db.execute(sql`
+    console.log('🎯 Obteniendo tratamientos populares para doctor:', doctorId);
+
+    // ✅ QUERY CORRECTA: obtener nombre_servicio con su frecuencia
+    const treatmentResults = await db.execute(sql`
       SELECT
         nombre_servicio,
-        COUNT(id_tratamiento) AS frecuencia
+        COUNT(*) as frecuencia
       FROM treatments
       WHERE id_doctor = ${doctorId}
         AND is_active = true
@@ -31,7 +33,9 @@ const handler: Handler = async (event) => {
       LIMIT 4
     `) as unknown as { rows: TreatmentCount[] };
 
-    const data = treatments.rows || [];
+    const data = treatmentResults.rows || [];
+
+    console.log(`📊 Tratamientos encontrados: ${data.length}`, data);
 
     return {
       statusCode: 200,
@@ -42,11 +46,12 @@ const handler: Handler = async (event) => {
       headers: HEADERS.json,
     };
   } catch (error) {
-    console.error("Error fetching popular treatments:", error);
+    console.error("❌ Error fetching popular treatments:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({
         error: "Error al obtener tratamientos populares",
+        details: (error as any).message,
       }),
       headers: HEADERS.json,
     };

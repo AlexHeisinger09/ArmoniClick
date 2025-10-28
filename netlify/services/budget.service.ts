@@ -694,90 +694,70 @@ export class BudgetService {
         return budget ? ['pendiente', 'borrador'].includes(budget.status) : false;
     }
 
-    // ✅ OBTENER INGRESOS POR TREATMENTS COMPLETADOS
+    // ✅ OBTENER INGRESOS DE BUDGET_ITEMS FILTRANDO POR DOCTOR
     async getRevenueByCompletedTreatments(userId: number): Promise<BudgetWithItems[]> {
         try {
-            console.log('💰 Obteniendo ingresos por treatments completados para doctor:', userId);
+            console.log('💰 Obteniendo ingresos por budget_items para doctor:', userId);
 
-            // Obtener presupuestos activados del doctor
-            const budgets = await db
+            // ✅ Query directa: obtener budget_items que pertenecen a presupuestos del doctor
+            const budgetItems = await db
                 .select({
-                    id: budgetsTable.id,
-                    patient_id: budgetsTable.patient_id,
-                    user_id: budgetsTable.user_id,
-                    total_amount: budgetsTable.total_amount,
-                    status: budgetsTable.status,
-                    budget_type: budgetsTable.budget_type,
-                    created_at: budgetsTable.created_at,
-                    updated_at: budgetsTable.updated_at,
-                    doctor_name: usersTable.name,
-                    doctor_lastName: usersTable.last_name,
+                    id: budgetItemsTable.id,
+                    budget_id: budgetItemsTable.budget_id,
+                    pieza: budgetItemsTable.pieza,
+                    accion: budgetItemsTable.accion,
+                    valor: budgetItemsTable.valor,
+                    orden: budgetItemsTable.orden,
+                    created_at: budgetItemsTable.created_at,
+                    budget_user_id: budgetsTable.user_id,
+                    budget_status: budgetsTable.status,
                 })
-                .from(budgetsTable)
-                .innerJoin(usersTable, eq(budgetsTable.user_id, usersTable.id))
+                .from(budgetItemsTable)
+                .innerJoin(budgetsTable, eq(budgetItemsTable.budget_id, budgetsTable.id))
                 .where(
                     and(
                         eq(budgetsTable.user_id, userId),
-                        eq(budgetsTable.status, BUDGET_STATUS.ACTIVATED)
+                        eq(budgetItemsTable.is_active, true)
                     )
                 )
-                .orderBy(desc(budgetsTable.created_at));
+                .orderBy(desc(budgetItemsTable.created_at));
 
-            console.log(`📊 Presupuestos activados encontrados: ${budgets.length}`);
+            console.log(`📊 Budget items encontrados: ${budgetItems.length}`);
 
-            // Para cada presupuesto, obtener items que tienen treatments completados
-            const budgetsWithTreatments: BudgetWithItems[] = await Promise.all(
-                budgets.map(async (budget) => {
-                    // Obtener items del presupuesto CON sus treatments asociados
-                    const allItems = await db
-                        .select({
-                            id: budgetItemsTable.id,
-                            budget_id: budgetItemsTable.budget_id,
-                            pieza: budgetItemsTable.pieza,
-                            accion: budgetItemsTable.accion,
-                            valor: budgetItemsTable.valor,
-                            orden: budgetItemsTable.orden,
-                            created_at: budgetItemsTable.created_at,
-                            treatment_status: treatmentsTable.status,
-                            treatment_updated_at: treatmentsTable.updated_at,
-                            treatment_created_at: treatmentsTable.created_at,
-                        })
-                        .from(budgetItemsTable)
-                        .leftJoin(
-                            treatmentsTable,
-                            eq(budgetItemsTable.id, treatmentsTable.budget_item_id)
-                        )
-                        .where(eq(budgetItemsTable.budget_id, budget.id));
+            // ✅ Agrupar items por presupuesto
+            const budgetMap = new Map<number, BudgetWithItems>();
 
-                    // Filtrar solo items que tienen treatments completados
-                    const completedItems = allItems
-                        .filter(item => item.treatment_status === 'completed')
-                        .map(item => ({
-                            id: item.id,
-                            budget_id: item.budget_id,
-                            pieza: item.pieza,
-                            accion: item.accion,
-                            valor: item.valor,
-                            orden: item.orden,
-                            // Usar fecha del treatment actualizado, o si no existe, la fecha de creación del treatment
-                            created_at: item.treatment_updated_at || item.treatment_created_at || item.created_at,
-                        } as BudgetItemData));
+            for (const item of budgetItems) {
+                if (!budgetMap.has(item.budget_id)) {
+                    budgetMap.set(item.budget_id, {
+                        id: item.budget_id,
+                        patient_id: 0, // No necesitamos este valor
+                        user_id: item.budget_user_id,
+                        total_amount: '0',
+                        status: item.budget_status,
+                        budget_type: 'odontologico',
+                        created_at: new Date().toISOString(),
+                        updated_at: null,
+                        items: [],
+                    });
+                }
 
-                    return {
-                        ...budget,
-                        items: completedItems,
-                    };
-                })
-            );
+                const budget = budgetMap.get(item.budget_id)!;
+                budget.items.push({
+                    id: item.id,
+                    budget_id: item.budget_id,
+                    pieza: item.pieza,
+                    accion: item.accion,
+                    valor: item.valor.toString(),
+                    orden: item.orden,
+                    created_at: item.created_at,
+                } as BudgetItemData);
+            }
 
-            // Filtrar presupuestos que tienen al menos un item con treatment completado
-            const budgetsWithCompletedTreatments = budgetsWithTreatments.filter(
-                (b) => b.items.length > 0
-            );
+            const budgets = Array.from(budgetMap.values());
+            console.log(`✅ Presupuestos agrupados: ${budgets.length}`);
 
-            console.log(`✅ Presupuestos con treatments completados: ${budgetsWithCompletedTreatments.length}`);
-
-            return budgetsWithCompletedTreatments;
+            return budgets;
         } catch (error) {
             console.error('❌ Error en getRevenueByCompletedTreatments:', error);
             throw error;

@@ -28,55 +28,7 @@ export const useMonthlyRevenue = () => {
         return response;
       } catch (error) {
         console.warn('❌ No se puede obtener ingresos por treatments completados', error);
-        // ✅ MOCK DATA PARA TESTING
-        console.log('⚠️ Usando datos de mock para ingresos');
-        const now = new Date();
-        return {
-          budgets: [
-            {
-              id: 1,
-              patient_id: 1,
-              user_id: 1,
-              total_amount: '500000',
-              status: 'ACTIVATED',
-              budget_type: 'consultation',
-              created_at: `${now.getFullYear()}-01-15T10:00:00Z`,
-              updated_at: null,
-              items: [
-                {
-                  id: 1,
-                  budget_id: 1,
-                  pieza: null,
-                  accion: 'Limpieza',
-                  valor: '250000',
-                  orden: 1,
-                  created_at: new Date(now.getFullYear(), now.getMonth(), 20).toISOString(),
-                },
-              ],
-            },
-            {
-              id: 2,
-              patient_id: 2,
-              user_id: 1,
-              total_amount: '750000',
-              status: 'ACTIVATED',
-              budget_type: 'treatment',
-              created_at: `${now.getFullYear()}-02-10T10:00:00Z`,
-              updated_at: null,
-              items: [
-                {
-                  id: 2,
-                  budget_id: 2,
-                  pieza: null,
-                  accion: 'Relleno',
-                  valor: '500000',
-                  orden: 1,
-                  created_at: new Date(now.getFullYear(), now.getMonth() - 1, 15).toISOString(),
-                },
-              ],
-            },
-          ],
-        };
+        return { budgets: [] };
       }
     },
     staleTime: 10 * 60 * 1000, // 10 minutos
