@@ -14,7 +14,8 @@
       "Bash(timeout 25 npm run:*)",
       "Bash(cat:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm run:*)"
     ],
     "deny": [],
     "ask": []

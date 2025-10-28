@@ -74,23 +74,76 @@ export const isToday = (date: Date): boolean => {
 export const isTimeSlotAvailable = (
   appointments: AppointmentsCalendarData,
   date: Date,
-  time: string
+  time: string,
+  duration: number = 60
 ): boolean => {
   const dateKey = formatDateKey(date);
   const dayAppointments = appointments[dateKey] || [];
-  const conflictingAppointments = dayAppointments.filter((appointment: CalendarAppointment) => appointment.time === time);
-  return conflictingAppointments.length < 2;
+
+  // Convertir tiempo inicial a minutos desde las 00:00
+  const [hours, minutes] = time.split(':').map(Number);
+  const startMinutes = hours * 60 + minutes;
+  const endMinutes = startMinutes + duration;
+
+  // Verificar si hay conflictos con otras citas
+  const hasConflict = dayAppointments.some((appointment: CalendarAppointment) => {
+    const [appHours, appMinutes] = appointment.time.split(':').map(Number);
+    const appStart = appHours * 60 + appMinutes;
+    const appEnd = appStart + appointment.duration;
+
+    // Hay conflicto si los tiempos se solapan
+    const conflicts = startMinutes < appEnd && endMinutes > appStart;
+
+    if (conflicts) {
+      console.log(`⚠️ CONFLICTO DETECTADO:`, {
+        newAppointment: {
+          time,
+          startMinutes,
+          endMinutes,
+          duration,
+          timeRange: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}-${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`
+        },
+        existingAppointment: {
+          time: appointment.time,
+          startMinutes: appStart,
+          endMinutes: appEnd,
+          duration: appointment.duration,
+          timeRange: `${String(appHours).padStart(2, '0')}:${String(appMinutes).padStart(2, '0')}-${String(Math.floor(appEnd / 60)).padStart(2, '0')}:${String(appEnd % 60).padStart(2, '0')}`
+        }
+      });
+    }
+
+    return conflicts;
+  });
+
+  return !hasConflict;
 };
 
 export const hasOverlap = (
   appointments: AppointmentsCalendarData,
   date: Date,
-  time: string
+  time: string,
+  duration: number = 60
 ): boolean => {
   const dateKey = formatDateKey(date);
   const dayAppointments = appointments[dateKey] || [];
-  const conflictingAppointments = dayAppointments.filter((appointment: CalendarAppointment) => appointment.time === time);
-  return conflictingAppointments.length >= 1;
+
+  // Convertir tiempo inicial a minutos desde las 00:00
+  const [hours, minutes] = time.split(':').map(Number);
+  const startMinutes = hours * 60 + minutes;
+  const endMinutes = startMinutes + duration;
+
+  // Verificar si hay conflictos con otras citas
+  const hasConflict = dayAppointments.some((appointment: CalendarAppointment) => {
+    const [appHours, appMinutes] = appointment.time.split(':').map(Number);
+    const appStart = appHours * 60 + appMinutes;
+    const appEnd = appStart + appointment.duration;
+
+    // Hay conflicto si los tiempos se solapan
+    return startMinutes < appEnd && endMinutes > appStart;
+  });
+
+  return hasConflict;
 };
 
 export const getAppointmentsForDate = (

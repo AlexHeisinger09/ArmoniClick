@@ -49,40 +49,41 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             </div>
 
             <div className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto">
-          <div>
-            <h4 className="font-semibold text-slate-700 mb-3 text-sm sm:text-base">Horarios disponibles</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {timeSlots.map(time => {
-                const available = isTimeSlotAvailable(appointments, selectedDate, time);
-                const isOverlap = hasOverlap(appointments, selectedDate, time);
+              <div>
+                <h4 className="font-semibold text-slate-700 mb-3 text-sm sm:text-base">Horarios disponibles</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {timeSlots.map(time => {
+                    const available = isTimeSlotAvailable(appointments, selectedDate, time);
+                    const isOverlap = hasOverlap(appointments, selectedDate, time);
 
-                return (
-                  <div key={time} className="text-center">
-                    <div className="text-xs sm:text-sm font-medium text-slate-700 mb-1">{time}</div>
-                    <div className="space-y-1">
-                      <button
-                        onClick={() => onNewAppointment(time, selectedDate)}
-                        disabled={!available}
-                        className={`
-                          w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded transition-colors
-                          ${available
-                            ? isOverlap
-                              ? 'bg-orange-500 text-white hover:bg-orange-600'
-                              : 'bg-cyan-500 text-white hover:bg-cyan-600'
-                            : 'bg-slate-200 text-slate-500 cursor-not-allowed'
-                          }
-                        `}
-                      >
-                        60min
-                        {isOverlap && available && (
-                          <div className="text-xs">Sobrecupo</div>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    return (
+                      <div key={time} className="text-center">
+                        <div className="text-xs sm:text-sm font-medium text-slate-700 mb-1">{time}</div>
+                        <div className="space-y-1">
+                          <button
+                            onClick={() => onNewAppointment(time, selectedDate)}
+                            disabled={!available}
+                            className={`
+                              w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded transition-colors
+                              ${available
+                                ? isOverlap
+                                  ? 'bg-orange-500 text-white hover:bg-orange-600'
+                                  : 'bg-cyan-500 text-white hover:bg-cyan-600'
+                                : 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                              }
+                            `}
+                          >
+                            60min
+                            {isOverlap && available && (
+                              <div className="text-xs">Sobrecupo</div>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </div>

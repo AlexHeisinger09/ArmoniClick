@@ -244,7 +244,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         title,
         description: description || null,
         appointmentDate: appointmentDateTime, // ✅ Usar fecha parseada correctamente
-        duration: 60,
+        duration: parseInt(duration) || 60,
         type,
         notes: notes || null
       };

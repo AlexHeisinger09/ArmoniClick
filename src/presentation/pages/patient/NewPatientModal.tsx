@@ -446,8 +446,8 @@ const NewPatientModal: React.FC<NewPatientModalProps> = ({ isOpen, onClose, onSu
             </div>
           </div>
         </div>
-      </>
-    </div>
+      </div>
+    </>
   );
 };
 

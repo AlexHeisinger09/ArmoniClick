@@ -34,17 +34,42 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 
   const dateKey = formatDateKey(date);
   const dayAppointments = appointments[dateKey] || [];
-  const sameTimeAppointments = dayAppointments.filter(app => app.time === appointment.time);
-  const appointmentIndex = sameTimeAppointments.findIndex(app => app.id === appointment.id);
-  const isOverbook = sameTimeAppointments.length > 1;
+
+  // Convertir tiempo de la cita actual a minutos
+  const [hours, minutes] = appointment.time.split(':').map(Number);
+  const appStart = hours * 60 + minutes;
+  const appEnd = appStart + appointment.duration;
+
+  // Encontrar todas las citas que se solapan con esta
+  const overlappingAppointments = dayAppointments.filter(app => {
+    const [appHours, appMinutes] = app.time.split(':').map(Number);
+    const otherStart = appHours * 60 + appMinutes;
+    const otherEnd = otherStart + app.duration;
+
+    // Hay solapamiento si los tiempos se cruzan
+    return appStart < otherEnd && appEnd > otherStart;
+  });
+
+  const appointmentIndex = overlappingAppointments.findIndex(app => app.id === appointment.id);
+  const isOverbook = overlappingAppointments.length > 1;
 
   const getSlotIndex = (time: string) => {
     const [hour] = time.split(':').map(Number);
     return hour - 9;
   };
 
+  // Calcular posición basada en minutos exactos (no solo horas)
+  const getExactMinutePosition = (time: string, slotHeight: number): number => {
+    const [hours, mins] = time.split(':').map(Number);
+    const totalMinutes = hours * 60 + mins;
+    const startMinute = 9 * 60; // 09:00 es el inicio del calendario
+    const minutesFromStart = totalMinutes - startMinute;
+    const pixelPerMinute = slotHeight / 60;
+    return minutesFromStart * pixelPerMinute;
+  };
+
   const slotIndex = getSlotIndex(appointment.time);
-  
+
   const SLOT_HEIGHTS = {
     week: {
       desktop: 64,
@@ -67,11 +92,19 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 
     const heights = SLOT_HEIGHTS[viewType];
     const slotHeight = isMobile ? heights.mobile : heights.desktop;
-    
+
+    // Calcular altura en función de la duración
+    // 60 minutos = 1 slot, 30 minutos = 0.5 slots, 90 minutos = 1.5 slots, 120 minutos = 2 slots
+    const durationFactor = appointment.duration / 60;
+    const appointmentHeight = slotHeight * durationFactor - 4;
+
+    // Calcular posición exacta en minutos en lugar de solo usar horas
+    const exactTopPosition = getExactMinutePosition(appointment.time, slotHeight);
+
     const baseStyle: React.CSSProperties = {
       position: 'absolute',
-      top: `${slotIndex * slotHeight + 2}px`,
-      height: `${slotHeight - 4}px`,
+      top: `${exactTopPosition + 2}px`,
+      height: `${appointmentHeight}px`,
       overflow: 'hidden',
     };
 
@@ -167,19 +200,19 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
                 {appointment.patient.split(' ')[0]}
               </div>
               <div className="text-[10px] text-center opacity-80">
-                {appointment.time}
+                {appointment.time} ({appointment.duration}m)
               </div>
             </div>
           );
         }
-        
+
         return (
           <div className="h-full flex flex-col justify-center p-2">
             <div className="font-semibold text-xs truncate mb-1">
               {isMobile ? appointment.patient.split(' ')[0] : appointment.patient}
             </div>
             <div className="text-xs opacity-80 font-medium">
-              {appointment.time}
+              {appointment.time} ({appointment.duration}m)
             </div>
           </div>
         );
@@ -192,7 +225,7 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
                 {appointment.patient.split(' ')[0]}
               </div>
               <div className="text-[10px] text-center opacity-80">
-                {appointment.time}
+                {appointment.time} ({appointment.duration}m)
               </div>
               <div className="text-[9px] text-center opacity-70 leading-tight">
                 {appointment.service}
@@ -200,7 +233,7 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
             </div>
           );
         }
-        
+
         return (
           <div className="h-full flex flex-col justify-between p-3">
             <div className="flex-1 flex flex-col justify-center space-y-1">
@@ -212,7 +245,7 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
               </div>
             </div>
             <div className="text-xs opacity-75 flex justify-between items-center">
-              <span className="font-medium">{appointment.time}</span>
+              <span className="font-medium">{appointment.time} ({appointment.duration}m)</span>
               <div className={`w-2 h-2 rounded-full ${colors.dot}`}></div>
             </div>
           </div>

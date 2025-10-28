@@ -12,6 +12,29 @@ export const timeSlots: string[] = [
   '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'
 ];
 
+// Función para generar time slots dinámicamente basado en la duración
+export const getTimeSlotsForDuration = (duration: number = 60): string[] => {
+  const slots: string[] = [];
+  const startHour = 9;
+  const endHour = 21; // Hasta las 21:00 (9 PM)
+
+  // Calcular el intervalo basado en la duración
+  // Si es 30 min, intervalo de 30 min; si es 60 min, intervalo de 60 min, etc
+  const interval = duration <= 30 ? 30 : 60;
+
+  for (let hour = startHour; hour < endHour; hour++) {
+    // Si el intervalo es 30, agregar también los slots de media hora
+    if (interval === 30) {
+      slots.push(`${String(hour).padStart(2, '0')}:00`);
+      slots.push(`${String(hour).padStart(2, '0')}:30`);
+    } else {
+      slots.push(`${String(hour).padStart(2, '0')}:00`);
+    }
+  }
+
+  return slots;
+};
+
 export const services: Service[] = [
   { name: 'Limpieza facial', duration: 60, price: '$45.000' },
   { name: 'Tratamiento anti-edad', duration: 60, price: '$65.000' },
@@ -25,32 +48,32 @@ export const services: Service[] = [
 // Datos de ejemplo - ahora usando el tipo correcto con IDs string
 export const exampleAppointments: AppointmentsCalendarData = {
   '2025-08-10': [
-    { 
-      id: '1', time: '09:00', duration: 60, patient: 'María García', service: 'Limpieza facial', 
-      status: 'confirmed', title: 'María García - Limpieza facial', 
-      start: new Date('2025-08-10T09:00:00'), end: new Date('2025-08-10T10:00:00'), allDay: false 
+    {
+      id: '1', time: '09:00', duration: 60, patient: 'María García', service: 'Limpieza facial',
+      status: 'confirmed', title: 'María García - Limpieza facial',
+      start: new Date('2025-08-10T09:00:00'), end: new Date('2025-08-10T10:00:00'), allDay: false
     },
-    { 
-      id: '2', time: '11:00', duration: 30, patient: 'Ana López', service: 'Depilación cejas', 
+    {
+      id: '2', time: '11:00', duration: 30, patient: 'Ana López', service: 'Depilación cejas',
       status: 'pending', title: 'Ana López - Depilación cejas',
-      start: new Date('2025-08-10T11:00:00'), end: new Date('2025-08-10T11:30:00'), allDay: false 
+      start: new Date('2025-08-10T11:00:00'), end: new Date('2025-08-10T11:30:00'), allDay: false
     },
-    { 
-      id: '3', time: '14:00', duration: 60, patient: 'Carmen Silva', service: 'Tratamiento anti-edad', 
+    {
+      id: '3', time: '14:00', duration: 90, patient: 'Carmen Silva', service: 'Tratamiento anti-edad',
       status: 'confirmed', title: 'Carmen Silva - Tratamiento anti-edad',
-      start: new Date('2025-08-10T14:00:00'), end: new Date('2025-08-10T15:00:00'), allDay: false 
+      start: new Date('2025-08-10T14:00:00'), end: new Date('2025-08-10T15:30:00'), allDay: false
     }
   ],
   '2025-08-11': [
-    { 
-      id: '4', time: '10:00', duration: 30, patient: 'Laura Martín', service: 'Manicura', 
+    {
+      id: '4', time: '10:00', duration: 30, patient: 'Laura Martín', service: 'Manicura',
       status: 'confirmed', title: 'Laura Martín - Manicura',
-      start: new Date('2025-08-11T10:00:00'), end: new Date('2025-08-11T10:30:00'), allDay: false 
+      start: new Date('2025-08-11T10:00:00'), end: new Date('2025-08-11T10:30:00'), allDay: false
     },
-    { 
-      id: '5', time: '15:00', duration: 60, patient: 'Patricia Ruiz', service: 'Masaje facial', 
+    {
+      id: '5', time: '15:00', duration: 120, patient: 'Patricia Ruiz', service: 'Masaje facial',
       status: 'cancelled', title: 'Patricia Ruiz - Masaje facial',
-      start: new Date('2025-08-11T15:00:00'), end: new Date('2025-08-11T16:00:00'), allDay: false 
+      start: new Date('2025-08-11T15:00:00'), end: new Date('2025-08-11T17:00:00'), allDay: false
     }
   ]
 };

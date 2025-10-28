@@ -130,9 +130,30 @@ export class AppointmentMapper {
       const patientEmail = this.getPatientEmail(apt);
       const patientPhone = this.getPatientPhone(apt);
 
+      // ✅ CORRECCIÓN: Si appointmentDate está en UTC (termina con Z), convertir a hora local Chile
+      // Si ya tiene timezone (-03:00, -04:00, etc), usar la hora del string ISO
+      const appointmentDateTime = new Date(apt.appointmentDate);
+      let localTime: string;
+
+      if (apt.appointmentDate.endsWith('Z')) {
+        // Está en UTC, convertir a hora Chile (UTC-3 en verano, UTC-4 en invierno)
+        const formatter = new Intl.DateTimeFormat('es-CL', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+          timeZone: 'America/Santiago'
+        });
+        localTime = formatter.format(appointmentDateTime);
+      } else {
+        // Ya tiene offset de timezone, extraer HH:MM del ISO string
+        const timePart = apt.appointmentDate.split('T')[1];
+        const timeMatch = timePart.match(/^(\d{2}):(\d{2}):/);
+        localTime = timeMatch ? `${timeMatch[1]}:${timeMatch[2]}` : this.formatTime(appointmentDateTime);
+      }
+
       const calendarAppointment: CalendarAppointment = {
         id: apt.id.toString(),
-        time: this.formatTime(date),
+        time: localTime,
         duration: apt.duration as number,
         patient: patientName,
         service: apt.title,

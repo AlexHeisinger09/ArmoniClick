@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Clock, Calendar, FileText, Loader, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Patient } from '@/core/use-cases/patients';
-import { timeSlots } from '@/presentation/pages/calendar/constants/calendar';
+import { getTimeSlotsForDuration } from '@/presentation/pages/calendar/constants/calendar';
 import { isTimeSlotAvailable, hasOverlap } from '@/presentation/pages/calendar/utils/calendar';
 import { AppointmentsData } from '@/presentation/pages/calendar/types/calendar';
 
@@ -229,26 +229,57 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
             )}
           </div>
 
+          {/* Selector de Duración */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Duración de la Cita *
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[30, 60, 90, 120].map(duration => (
+                <button
+                  key={duration}
+                  type="button"
+                  onClick={() => !isCreating && handleFormChange({ duration, time: '' })}
+                  disabled={isCreating}
+                  className={`
+                    p-2 sm:p-2.5 text-xs sm:text-sm rounded-lg transition-all border-2 font-medium disabled:cursor-not-allowed flex items-center justify-center
+                    ${appointmentForm.duration === duration
+                      ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg scale-105'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300 disabled:opacity-50'
+                    }
+                  `}
+                >
+                  <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                  {duration} min
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Selector de Horario - Grid más compacto en móvil */}
           {appointmentForm.date && (
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Horario *
+                Horario * ({appointmentForm.duration} min)
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {timeSlots.map(time => {
-                  const available = isTimeSlotAvailable(appointments, appointmentForm.date, time);
-                  const isOverlap = hasOverlap(appointments, appointmentForm.date, time);
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {getTimeSlotsForDuration(appointmentForm.duration).map(time => {
+                  const available = isTimeSlotAvailable(appointments, appointmentForm.date, time, appointmentForm.duration);
+                  const isOverlap = hasOverlap(appointments, appointmentForm.date, time, appointmentForm.duration);
 
                   return (
                     <button
                       key={time}
                       type="button"
-                      onClick={() => !isCreating && handleFormChange({ time })}
+                      onClick={() => {
+                        if (available && !isCreating) {
+                          handleFormChange({ time });
+                        }
+                      }}
                       disabled={!available || isCreating}
                       className={`
                         p-2 text-xs sm:text-sm rounded-lg transition-all border-2 font-medium relative disabled:cursor-not-allowed
-                        ${appointmentForm.time === time
+                        ${appointmentForm.time === time && available
                           ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg scale-105'
                           : available && !isCreating
                             ? isOverlap
@@ -257,6 +288,7 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
                             : 'bg-slate-100 text-slate-400 border-slate-200 opacity-50'
                         }
                       `}
+                      title={!available ? `No disponible: conflicta con cita existente` : available && isOverlap ? 'Sobrecupo' : 'Disponible'}
                     >
                       <div className="flex items-center justify-center">
                         <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />

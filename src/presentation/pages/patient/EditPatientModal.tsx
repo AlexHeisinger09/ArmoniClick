@@ -497,8 +497,8 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({
             </div>
           </div>
         </div>
-      </>
-    </div>
+      </div>
+    </>
   );
 };
 

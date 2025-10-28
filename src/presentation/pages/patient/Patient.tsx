@@ -357,7 +357,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
               </div>
 
               {/* Alertas médicas - Estilo uniforme cyan */}
-              {(selectedPatient.alergias || selectedPatient.enfermedades_cronicas || selectedPatient.medicamentos_actuales) && (
+              {(selectedPatient.alergias) && (
                 <div className="flex flex-wrap gap-3 md:justify-end">
                   {/* Alergias */}
                   {selectedPatient.alergias && (
@@ -365,7 +365,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                       <div className="flex items-start gap-2">
                         <AlertCircle className="w-5 h-5 text-yellow-300 flex-shrink-0 mt-0.5" />
                         <div className="flex-1">
-                          <p className="text-xs font-bold text-white mb-1">Alertas médicas</p>
+                          <p className="text-xs font-bold text-white mb-1">Alérgias</p>
                           <p className="text-xs text-cyan-50 leading-relaxed border-b border-dashed border-cyan-300 pb-1">
                             {selectedPatient.alergias}
                           </p>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, User, UserPlus, Search, Clock, FileText, Mail, Phone, ChevronDown, Loader } from 'lucide-react';
 import { NewAppointmentForm, AppointmentsData } from '../types/calendar';
-import { timeSlots } from '../constants/calendar';
+import { getTimeSlotsForDuration } from '../constants/calendar';
 import { isTimeSlotAvailable, hasOverlap } from '../utils/calendar';
 import { usePatients } from '@/presentation/hooks/patients/usePatients';
 
@@ -352,27 +352,68 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
               />
             </div>
 
+            {/* Selector de duración */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Duración de la Cita *
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[30, 60, 90, 120].map(duration => (
+                  <button
+                    key={duration}
+                    type="button"
+                    onClick={() => !isCreating && handleFormChange({ duration })}
+                    disabled={isCreating}
+                    className={`
+                      p-2 sm:p-2.5 text-xs sm:text-sm rounded-lg transition-all border-2 font-medium disabled:cursor-not-allowed flex items-center justify-center
+                      ${newAppointment.duration === duration
+                        ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg scale-105'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300 disabled:opacity-50'
+                      }
+                    `}
+                  >
+                    <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                    {duration} min
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Selector de horario */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Horario * (60 min)
+                Horario * ({newAppointment.duration || 60} min)
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {timeSlots.map(time => {
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {getTimeSlotsForDuration(newAppointment.duration || 60).map(time => {
                   const available = newAppointment.date ?
-                    isTimeSlotAvailable(appointments, newAppointment.date, time) : false;
+                    isTimeSlotAvailable(appointments, newAppointment.date, time, newAppointment.duration || 60) : false;
                   const isOverlap = newAppointment.date ?
-                    hasOverlap(appointments, newAppointment.date, time) : false;
+                    hasOverlap(appointments, newAppointment.date, time, newAppointment.duration || 60) : false;
+
+                  // Debug log
+                  if (newAppointment.date) {
+                    console.log(`🔍 Time slot ${time}:`, {
+                      duration: newAppointment.duration || 60,
+                      available,
+                      isOverlap,
+                      appointmentsData: appointments
+                    });
+                  }
 
                   return (
                     <button
                       key={time}
                       type="button"
-                      onClick={() => !isCreating && handleFormChange({ time })}
+                      onClick={() => {
+                        if (available && !isCreating) {
+                          handleFormChange({ time });
+                        }
+                      }}
                       disabled={!available || isCreating}
                       className={`
                         p-1.5 sm:p-2 text-xs sm:text-sm rounded-lg transition-all border-2 font-medium relative disabled:cursor-not-allowed
-                        ${newAppointment.time === time
+                        ${newAppointment.time === time && available
                           ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg scale-105'
                           : available && !isCreating
                             ? isOverlap
@@ -381,6 +422,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
                             : 'bg-slate-100 text-slate-400 border-slate-200 opacity-50'
                         }
                       `}
+                      title={!available ? `No disponible: conflicta con cita existente` : available && isOverlap ? 'Sobrecupo' : 'Disponible'}
                     >
                       <div className="flex items-center justify-center">
                         <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
