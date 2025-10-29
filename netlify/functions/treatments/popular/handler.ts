@@ -1,8 +1,8 @@
 import { Handler } from "@netlify/functions";
 import { sql } from "drizzle-orm";
-import { db } from "../data/db";
-import { validateJWT } from "../../config/jwt";
-import { HEADERS } from "../../config/utils";
+import { db } from "../../data/db";
+import { validateJWT } from "../../../config/jwt";
+import { HEADERS } from "../../../config/utils";
 
 interface TreatmentCount {
   nombre_servicio: string;
@@ -20,11 +20,11 @@ const handler: Handler = async (event) => {
 
     console.log('🎯 Obteniendo tratamientos populares para doctor:', doctorId);
 
-    // ✅ QUERY CORRECTA: obtener nombre_servicio con su frecuencia
+    // ✅ QUERY: obtener TOP 4 tratamientos por nombre_servicio (TODOS los tratamientos, no solo completados)
     const treatmentResults = await db.execute(sql`
       SELECT
         nombre_servicio,
-        COUNT(*) as frecuencia
+        COUNT(id_tratamiento) AS frecuencia
       FROM treatments
       WHERE id_doctor = ${doctorId}
         AND is_active = true
