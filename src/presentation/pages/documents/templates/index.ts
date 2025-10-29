@@ -28,7 +28,7 @@ Para consultas:
 
 ---
 
-Firma del Paciente: ______________________________`
+`
   },
 
   'consentimiento-odontologico': {
@@ -63,7 +63,7 @@ Para consultas:
 
 ---
 
-Firma del Paciente: ______________________________`
+`
   },
 
   'consentimiento-anestesia': {
@@ -101,7 +101,7 @@ Para consultas:
 
 ---
 
-Firma del Paciente: ______________________________`
+`
   },
 
   'permiso-padres': {
@@ -126,7 +126,7 @@ Fecha: {{SIGNED_DATE}}
 
 ---
 
-Yo, {{PARENT_NAME}}, como padre, madre o tutor legal del menor {{PATIENT_NAME}}, he sido informado(a) clara y completamente sobre el procedimiento médico propuesto.
+Yo, {{PARENT_NAME}}, como {{PARENT_RELATION}} legal del menor {{PATIENT_NAME}}, he sido informado(a) clara y completamente sobre el procedimiento médico propuesto.
 
 INFORMACIÓN DEL PROCEDIMIENTO:
 Comprendo la naturaleza del procedimiento, sus objetivos, beneficios esperados, tiempo de recuperación y posibles riesgos y complicaciones. He tenido la oportunidad de realizar preguntas al Dr./Dra. {{DOCTOR_NAME}} y todas han sido respondidas satisfactoriamente.
@@ -171,7 +171,7 @@ Fecha: {{SIGNED_DATE}}
 
 ---
 
-Yo, {{PARENT_NAME}}, como padre, madre o tutor legal del menor {{PATIENT_NAME}}, he sido informado(a) clara y completamente sobre el procedimiento estético propuesto.
+Yo, {{PARENT_NAME}}, como {{PARENT_RELATION}} legal del menor {{PATIENT_NAME}}, he sido informado(a) clara y completamente sobre el procedimiento estético propuesto.
 
 INFORMACIÓN DEL PROCEDIMIENTO:
 Comprendo que el procedimiento es de carácter estético con objetivo de mejorar la apariencia facial o corporal. He comprendido los objetivos, beneficios esperados, resultados aproximados, tiempo de recuperación y posibles riesgos incluyendo cambios en sensibilidad, variabilidad en resultados y complicaciones excepcionales.

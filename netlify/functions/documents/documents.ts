@@ -172,11 +172,13 @@ const handler: Handler = async (event: HandlerEvent) => {
           .where(eq(documentsTable.id, documentId))
           .returning();
 
-        // Obtener email del paciente desde la tabla de pacientes si está disponible
-        const patientEmail = documentWithPatient.patientEmail || body.patient_email;
+        // Solo obtener email del paciente si se solicita envío de email
+        const shouldSendEmail = body.send_email === true || body.send_email === 'true';
+        const patientEmail = shouldSendEmail ? (body.patient_email || documentWithPatient.patientEmail) : null;
 
         console.log('🔍 Sign document debug:', {
           send_email: body.send_email,
+          shouldSendEmail: shouldSendEmail,
           patientEmailFromDB: documentWithPatient.patientEmail,
           patientEmailFromBody: body.patient_email,
           finalPatientEmail: patientEmail,
@@ -185,8 +187,8 @@ const handler: Handler = async (event: HandlerEvent) => {
           MAILER_USER: envs.MAILER_USER ? '***' : 'NOT SET',
         });
 
-        // Enviar email si se solicita
-        if (body.send_email && patientEmail) {
+        // Enviar email si se solicita explícitamente
+        if (shouldSendEmail && patientEmail) {
           try {
             console.log(`📧 Starting email send process for patient: ${patientEmail}`);
 
