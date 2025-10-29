@@ -5,6 +5,7 @@ import { useProfile, useLoginMutation } from "@/presentation/hooks";
 import { useWeeklyAppointments } from '@/presentation/hooks/appointments/useWeeklyAppointments';
 import { useMonthlyPatients } from '@/presentation/hooks/patients/useMonthlyPatients';
 import { useMonthlyRevenue } from '@/presentation/hooks/budgets/useMonthlyRevenue';
+import { usePendingTreatmentsRevenue } from '@/presentation/hooks/budgets/usePendingTreatmentsRevenue';
 import { useTodayAndUpcomingAppointments } from '@/presentation/hooks/appointments/useTodayAndUpcomingAppointments';
 import { usePopularTreatments } from '@/presentation/hooks/budgets/usePopularTreatments';
 import { useMonthlyRevenueHistory } from '@/presentation/hooks/budgets/useMonthlyRevenueHistory';
@@ -21,10 +22,11 @@ const Dashboard = () => {
   // Estado para carrusel de ingresos
   const [currentSemesterIndex, setCurrentSemesterIndex] = useState(0);
 
-  // Hooks dinámicos para los 4 stats cards
+  // Hooks dinámicos para los 5 stats cards
   const { weeklyAppointmentsCount } = useWeeklyAppointments();
   const { monthlyPatientsCount, percentageChange: patientsPercentageChange } = useMonthlyPatients();
   const { currentMonthRevenueFormatted, percentageChange: revenuePercentageChange } = useMonthlyRevenue();
+  const { currentMonthPendingRevenueFormatted, percentageChange: pendingRevenuePercentageChange } = usePendingTreatmentsRevenue();
 
   // Hooks dinámicos para los 4 componentes
   const { upcomingAppointments } = useTodayAndUpcomingAppointments();
@@ -91,7 +93,7 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <Card className="bg-gradient-to-r from-clinic-500 to-clinic-600 text-white hover:shadow-lg transition-shadow duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Citas Esta Semana</CardTitle>
@@ -122,6 +124,17 @@ const Dashboard = () => {
             <CardContent>
               <div className="text-2xl font-bold">{currentMonthRevenueFormatted}</div>
               <p className="text-xs opacity-90">{revenuePercentageChange > 0 ? '+' : ''}{revenuePercentageChange}% vs mes anterior</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:shadow-lg transition-shadow duration-300">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Dinero Pendiente</CardTitle>
+              <TrendingUp className="h-4 w-4" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{currentMonthPendingRevenueFormatted}</div>
+              <p className="text-xs opacity-90">{pendingRevenuePercentageChange > 0 ? '+' : ''}{pendingRevenuePercentageChange}% vs mes anterior</p>
             </CardContent>
           </Card>
 
