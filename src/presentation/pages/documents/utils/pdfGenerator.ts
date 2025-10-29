@@ -23,30 +23,7 @@ export const generateDocumentPDF = async (document: Document, signature?: string
   doc.setFont('Helvetica', 'bold');
   const titleLines = doc.splitTextToSize(document.title, contentWidth);
   doc.text(titleLines, pageWidth / 2, currentY, { align: 'center' });
-  currentY += titleLines.length * 7;
-
-  // Metadata del documento
-  doc.setFontSize(10);
-  doc.setFont('Helvetica', 'normal');
-  doc.setTextColor(100);
-
-  const metadata = [
-    `Paciente: ${document.patient_name}`,
-    `RUT: ${document.patient_rut}`,
-    `Fecha: ${new Date().toLocaleDateString('es-CL')}`,
-    `Tipo: ${document.document_type}`,
-  ];
-
-  metadata.forEach((line) => {
-    doc.text(line, margins, currentY);
-    currentY += 6;
-  });
-
-  // Separador
-  currentY += 2;
-  doc.setDrawColor(200);
-  doc.line(margins, currentY, pageWidth - margins, currentY);
-  currentY += 5;
+  currentY += titleLines.length * 7 + 10;
 
   // Contenido del documento
   doc.setFont('Helvetica', 'normal');
