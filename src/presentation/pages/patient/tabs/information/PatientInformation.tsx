@@ -49,11 +49,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
             </button>
 
             <button
-              onClick={() => {
-                if (window.confirm('¿Estás seguro de que deseas eliminar este paciente?')) {
-                  onDelete(patient.id);
-                }
-              }}
+              onClick={() => onDelete(patient.id)}
               className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
               title="Eliminar Paciente"
             >

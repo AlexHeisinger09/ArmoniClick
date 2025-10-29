@@ -18,7 +18,9 @@ import { BudgetSidebar } from './components/BudgetSidebar';
 import { NewTreatmentModal } from './modals/NewTreatmentModal';
 import { EditTreatmentModal } from './modals/EditTreatmentModal';
 import { TreatmentDetailModal } from './modals/TreatmentDetailModal';
+import { ConfirmationModal } from '@/presentation/components/ui/ConfirmationModal';
 import { useNotification } from '@/presentation/hooks/notifications/useNotification';
+import { useConfirmation } from '@/presentation/hooks/useConfirmation';
 
 interface PatientTreatmentsProps {
   patient: Patient;
@@ -35,8 +37,9 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   // Estados para presupuestos
   const [selectedBudgetId, setSelectedBudgetId] = useState<number | null>(null);
 
-  // Notification hook
+  // Notification y confirmation hooks
   const notification = useNotification();
+  const confirmation = useConfirmation();
 
   // Hooks principales
   const {
@@ -73,7 +76,7 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   // Función para procesar errores de API
   const processApiError = (error: any): string => {
     if (!error.response) {
-      return `Error de conexión: ${error.message || 'No se pudo conectar al servidor'}`;
+      return `Error: ${error.message || 'No se pudo conectar al servidor'}`;
     }
 
     const status = error.response?.status;
@@ -154,11 +157,22 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   // ✅ MANEJAR COMPLETAR TRATAMIENTO CON LOGGING Y CONFIRMACIÓN
   const handleCompleteTreatment = async (treatmentId: number) => {
     const treatment = budgetTreatments.find(t => t.id_tratamiento === treatmentId);
-    const confirmMessage = treatment?.budget_item_valor
-      ? `¿Estás seguro de marcar este tratamiento como completado?\n\nSe registrará un avance de $${parseFloat(treatment.budget_item_valor).toLocaleString('es-CL')} en el presupuesto.`
-      : '¿Estás seguro de marcar este tratamiento como completado?';
 
-    if (!window.confirm(confirmMessage)) {
+    const details = treatment?.budget_item_valor
+      ? [`Se registrará un avance de $${parseFloat(treatment.budget_item_valor).toLocaleString('es-CL')} en el presupuesto.`]
+      : [];
+
+    const confirmed = await confirmation.confirm({
+      title: '¿Marcar como completado?',
+      message: '¿Estás seguro de marcar este tratamiento como completado?',
+      confirmText: 'Completar',
+      cancelText: 'Cancelar',
+      variant: 'success',
+      details
+    });
+
+    if (!confirmed) {
+      confirmation.close();
       return;
     }
 
@@ -174,10 +188,12 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
         : 'Tratamiento completado correctamente';
 
       notification.success(successMessage);
+      confirmation.close();
     } catch (error: any) {
       console.error('❌ Error al completar tratamiento:', error);
       const errorMessage = processApiError(error);
       notification.error(errorMessage, { description: 'Error al completar tratamiento' });
+      confirmation.close();
     }
   };
 
@@ -185,21 +201,27 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   const handleDeleteTreatment = async (treatmentId: number) => {
     const treatment = budgetTreatments.find(t => t.id_tratamiento === treatmentId);
 
-    // ✅ MENSAJE DE CONFIRMACIÓN MÁS INFORMATIVO
-    let confirmMessage = '¿Estás seguro de que deseas eliminar este tratamiento?';
+    const details: string[] = ['Esta acción no se puede deshacer'];
 
     if (treatment?.budget_item_valor) {
       const valor = parseFloat(treatment.budget_item_valor);
-      confirmMessage += `\n\n⚠️ IMPORTANTE: Este tratamiento está vinculado a un presupuesto.\n\n`;
-      confirmMessage += `• Se eliminará el item del presupuesto (valor: $${valor.toLocaleString('es-CL')})\n`;
-      confirmMessage += `• Se recalculará automáticamente el total del presupuesto\n`;
-      confirmMessage += `• Esta acción no se puede deshacer\n\n`;
-      confirmMessage += `¿Deseas continuar?`;
-    } else {
-      confirmMessage += '\n\nEsta acción no se puede deshacer.';
+      details.unshift(
+        `Se eliminará el item del presupuesto (valor: $${valor.toLocaleString('es-CL')})`,
+        'Se recalculará automáticamente el total del presupuesto'
+      );
     }
 
-    if (!window.confirm(confirmMessage)) {
+    const confirmed = await confirmation.confirm({
+      title: 'Eliminar tratamiento',
+      message: '¿Estás seguro de que deseas eliminar este tratamiento?',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+      details
+    });
+
+    if (!confirmed) {
+      confirmation.close();
       return;
     }
 
@@ -219,11 +241,13 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
         : 'Tratamiento eliminado correctamente';
 
       notification.success(successMessage);
+      confirmation.close();
 
     } catch (error: any) {
       console.error('❌ Error al eliminar tratamiento completo:', error);
       const errorMessage = processApiError(error);
       notification.error(errorMessage, { description: 'Error al eliminar tratamiento' });
+      confirmation.close();
     }
   };
 
@@ -345,6 +369,20 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
         onComplete={handleCompleteTreatment}
         onDelete={handleDeleteTreatment}
         canComplete={selectedTreatment?.status === 'pending'}
+      />
+
+      {/* Modal de confirmación */}
+      <ConfirmationModal
+        isOpen={confirmation.isOpen}
+        title={confirmation.title}
+        message={confirmation.message}
+        details={confirmation.details}
+        confirmText={confirmation.confirmText}
+        cancelText={confirmation.cancelText}
+        variant={confirmation.variant}
+        isLoading={confirmation.isLoading}
+        onConfirm={confirmation.onConfirm}
+        onCancel={confirmation.onCancel}
       />
 
     </div>

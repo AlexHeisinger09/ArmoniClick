@@ -7,8 +7,10 @@ import { useMultipleBudgetOperations } from "@/presentation/hooks/budgets/useBud
 // Componentes
 import { BudgetsList } from './components/BudgetList';
 import { BudgetModal } from './components/BudgetModal';
+import { ConfirmationModal } from '@/presentation/components/ui/ConfirmationModal';
 import { PDFGenerator } from './utils/pdfGenerator';
 import { useNotification } from '@/presentation/hooks/notifications/useNotification';
+import { useConfirmation } from '@/presentation/hooks/useConfirmation';
 
 // Hooks para datos del doctor
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
@@ -47,14 +49,15 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         mode: 'create'
     });
 
-    // Notification hook
+    // Notification y confirmation hooks
     const notification = useNotification();
+    const confirmation = useConfirmation();
     const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
     // Función para procesar errores de API
     const processApiError = (error: any): string => {
         if (!error.response) {
-            return `Error de conexión: ${error.message || 'No se pudo conectar al servidor'}`;
+            return `Error: ${error.message || 'No se pudo conectar al servidor'}`;
         }
 
         const status = error.response?.status;
@@ -110,22 +113,62 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
 
     // ✅ OPERACIONES DE PRESUPUESTO (mantienen la misma lógica)
     const handleActivateBudget = async (budget: Budget) => {
+        // Preparar detalles de los tratamientos que se crearán
+        const treatmentDetails = budget.items.map((item: any) =>
+            `${item.pieza ? `${item.pieza}: ` : ''}${item.accion} ($${parseFloat(item.valor).toLocaleString('es-CL')})`
+        );
+
+        const confirmed = await confirmation.confirm({
+            title: 'Activar presupuesto',
+            message: `Se activará este presupuesto y se crearán los tratamientos siguientes:`,
+            confirmText: 'Activar',
+            cancelText: 'Cancelar',
+            variant: 'success',
+            details: treatmentDetails
+        });
+
+        if (!confirmed) {
+            confirmation.close();
+            return;
+        }
+
         try {
             await activateBudget(budget.id);
             notification.success('Presupuesto activado exitosamente');
+            confirmation.close();
         } catch (error: any) {
             const errorMessage = processApiError(error);
             notification.error(errorMessage);
+            confirmation.close();
         }
     };
 
     const handleCompleteBudget = async (budget: Budget) => {
+        // Preparar detalles con advertencia
+        const details = ['Se marcará el presupuesto como completado'];
+
+        const confirmed = await confirmation.confirm({
+            title: 'Completar presupuesto',
+            message: '¿Desea completar este presupuesto aun si los tratamientos no están completados?',
+            confirmText: 'Completar',
+            cancelText: 'Cancelar',
+            variant: 'warning',
+            details: details
+        });
+
+        if (!confirmed) {
+            confirmation.close();
+            return;
+        }
+
         try {
             await completeBudget(budget.id);
             notification.success('Presupuesto completado exitosamente');
+            confirmation.close();
         } catch (error: any) {
             const errorMessage = processApiError(error);
             notification.error(errorMessage);
+            confirmation.close();
         }
     };
 
@@ -140,16 +183,28 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
     };
 
     const handleDeleteBudget = async (budget: Budget) => {
-        if (!window.confirm('¿Estás seguro de que deseas eliminar este presupuesto? Esta acción no se puede deshacer.')) {
+        const confirmed = await confirmation.confirm({
+            title: 'Eliminar presupuesto',
+            message: '¿Estás seguro de que deseas eliminar este presupuesto?',
+            confirmText: 'Eliminar',
+            cancelText: 'Cancelar',
+            variant: 'danger',
+            details: ['Esta acción no se puede deshacer']
+        });
+
+        if (!confirmed) {
+            confirmation.close();
             return;
         }
 
         try {
             await deleteBudget(budget.id);
             notification.success('Presupuesto eliminado exitosamente');
+            confirmation.close();
         } catch (error: any) {
             const errorMessage = processApiError(error);
             notification.error(errorMessage);
+            confirmation.close();
         }
     };
 
@@ -219,6 +274,20 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                     </div>
                 </div>
             )}
+
+            {/* Modal de confirmación */}
+            <ConfirmationModal
+                isOpen={confirmation.isOpen}
+                title={confirmation.title}
+                message={confirmation.message}
+                details={confirmation.details}
+                confirmText={confirmation.confirmText}
+                cancelText={confirmation.cancelText}
+                variant={confirmation.variant}
+                isLoading={confirmation.isLoading}
+                onConfirm={confirmation.onConfirm}
+                onCancel={confirmation.onCancel}
+            />
         </>
     );
 };

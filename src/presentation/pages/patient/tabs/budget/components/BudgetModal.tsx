@@ -5,7 +5,9 @@ import { Patient } from "@/core/use-cases/patients";
 import { Budget, BudgetItem, BUDGET_TYPE, BudgetUtils } from "@/core/use-cases/budgets";
 import { useMultipleBudgetOperations } from "@/presentation/hooks/budgets/useBudgets";
 import { BudgetEditor } from './BudgetEditor';
+import { ConfirmationModal } from '@/presentation/components/ui/ConfirmationModal';
 import { useNotification } from '@/presentation/hooks/notifications/useNotification';
+import { useConfirmation } from '@/presentation/hooks/useConfirmation';
 import { PDFGenerator } from '../utils/pdfGenerator';
 import { BudgetFormData, BudgetFormUtils } from '../types/budget.types';
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
@@ -45,6 +47,7 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
 
     // Estados de UI
     const notification = useNotification();
+    const confirmation = useConfirmation();
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
     // Hooks para datos
@@ -87,11 +90,22 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
 
     const markAsChanged = () => setHasUnsavedChanges(true);
 
-    const handleClose = () => {
+    const handleClose = async () => {
         if (hasUnsavedChanges) {
-            if (!window.confirm('Tienes cambios sin guardar. ¿Estás seguro de que quieres cerrar?')) {
+            const confirmed = await confirmation.confirm({
+                title: 'Cambios sin guardar',
+                message: '¿Estás seguro de que quieres cerrar? Los cambios no guardados se perderán.',
+                confirmText: 'Cerrar',
+                cancelText: 'Continuar editando',
+                variant: 'warning'
+            });
+
+            if (!confirmed) {
+                confirmation.close();
                 return;
             }
+
+            confirmation.close();
         }
         onClose();
     };
@@ -405,6 +419,19 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
                 </div>
             </div>
 
+            {/* Modal de confirmación */}
+            <ConfirmationModal
+                isOpen={confirmation.isOpen}
+                title={confirmation.title}
+                message={confirmation.message}
+                details={confirmation.details}
+                confirmText={confirmation.confirmText}
+                cancelText={confirmation.cancelText}
+                variant={confirmation.variant}
+                isLoading={confirmation.isLoading}
+                onConfirm={confirmation.onConfirm}
+                onCancel={confirmation.onCancel}
+            />
         </>
     );
 };

@@ -15,7 +15,9 @@ import {
 import { NewPatientModal, PatientFormData } from "./NewPatientModal";
 import { EditPatientModal, PatientFormData as EditPatientFormData } from "./EditPatientModal";
 import { PatientDetail } from "./tabs/PatientDetail";
+import { ConfirmationModal } from "@/presentation/components/ui/ConfirmationModal";
 import { useNotification } from "@/presentation/hooks/notifications/useNotification";
+import { useConfirmation } from "@/presentation/hooks/useConfirmation";
 
 import {
   usePatients,
@@ -36,7 +38,7 @@ const processApiError = (error: any): string => {
   console.error('Error completo:', error);
 
   if (!error.response) {
-    return `Error de conexión: ${error.message || 'No se pudo conectar al servidor'}`;
+    return `Error: ${error.message || 'No se pudo conectar al servidor'}`;
   }
 
   const status = error.response?.status;
@@ -76,8 +78,9 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   const [showEditPatientModal, setShowEditPatientModal] = useState(false);
   const [patientToEdit, setPatientToEdit] = useState<PatientType | null>(null);
 
-  // Notification hook
+  // Notification y confirmation hooks
   const notification = useNotification();
+  const confirmation = useConfirmation();
 
   // Cargar todos los pacientes
   const { queryPatients } = usePatients();
@@ -257,14 +260,30 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   };
 
   const handleDeletePatient = async (patientId: number) => {
+    const confirmed = await confirmation.confirm({
+      title: 'Eliminar paciente',
+      message: '¿Estás seguro de que deseas eliminar este paciente?',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+      details: ['Se eliminará toda la información del paciente', 'Esta acción no se puede deshacer']
+    });
+
+    if (!confirmed) {
+      confirmation.close();
+      return;
+    }
+
     try {
       await deletePatientMutation.mutateAsync(patientId);
       setCurrentView('grid');
       setSelectedPatient(null);
       notification.success('Paciente eliminado exitosamente');
+      confirmation.close();
     } catch (error: any) {
       const errorMessage = processApiError(error);
       notification.error(errorMessage, { description: 'Error al eliminar paciente' });
+      confirmation.close();
     }
   };
 
@@ -546,6 +565,20 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
           patient={patientToEdit}
           onClose={handleCloseEditPatientModal}
           onSubmit={handleSubmitEditPatient}
+        />
+
+        {/* Modal de confirmación */}
+        <ConfirmationModal
+          isOpen={confirmation.isOpen}
+          title={confirmation.title}
+          message={confirmation.message}
+          details={confirmation.details}
+          confirmText={confirmation.confirmText}
+          cancelText={confirmation.cancelText}
+          variant={confirmation.variant}
+          isLoading={confirmation.isLoading}
+          onConfirm={confirmation.onConfirm}
+          onCancel={confirmation.onCancel}
         />
       </div>
     </div>

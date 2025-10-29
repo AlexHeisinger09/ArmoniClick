@@ -3,23 +3,26 @@ import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Stethoscope, Sparkles, Search, Filter } from 'lucide-react';
 import { useServices } from '@/presentation/hooks/services/useServices';
 import { Service } from '@/core/use-cases/services';
+import { ConfirmationModal } from '@/presentation/components/ui/ConfirmationModal';
+import { useConfirmation } from '@/presentation/hooks/useConfirmation';
 
 interface ServicesTabProps {
   showMessage: (message: string, type: 'success' | 'error') => void;
 }
 
 const ServicesTab: React.FC<ServicesTabProps> = ({ showMessage }) => {
-  const { 
-    services, 
-    isLoading, 
-    createService, 
-    updateService, 
+  const {
+    services,
+    isLoading,
+    createService,
+    updateService,
     deleteService,
     isCreating,
     isUpdating,
-    isDeleting 
+    isDeleting
   } = useServices();
 
+  const confirmation = useConfirmation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -113,15 +116,27 @@ const ServicesTab: React.FC<ServicesTabProps> = ({ showMessage }) => {
   };
 
   const handleDelete = async (serviceId: number) => {
-    if (!window.confirm('¿Estás seguro de eliminar este servicio?')) {
+    const confirmed = await confirmation.confirm({
+      title: 'Eliminar servicio',
+      message: '¿Estás seguro de eliminar este servicio?',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+      details: ['Esta acción no se puede deshacer']
+    });
+
+    if (!confirmed) {
+      confirmation.close();
       return;
     }
 
     try {
       await deleteService(serviceId);
       showMessage('Servicio eliminado exitosamente', 'success');
+      confirmation.close();
     } catch (error: any) {
       showMessage(error.message || 'Error al eliminar el servicio', 'error');
+      confirmation.close();
     }
   };
 
@@ -435,6 +450,20 @@ const ServicesTab: React.FC<ServicesTabProps> = ({ showMessage }) => {
           </div>
         </>
       )}
+
+      {/* Modal de confirmación */}
+      <ConfirmationModal
+        isOpen={confirmation.isOpen}
+        title={confirmation.title}
+        message={confirmation.message}
+        details={confirmation.details}
+        confirmText={confirmation.confirmText}
+        cancelText={confirmation.cancelText}
+        variant={confirmation.variant}
+        isLoading={confirmation.isLoading}
+        onConfirm={confirmation.onConfirm}
+        onCancel={confirmation.onCancel}
+      />
     </div>
   );
 };

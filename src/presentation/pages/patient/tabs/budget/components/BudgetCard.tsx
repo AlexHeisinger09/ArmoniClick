@@ -219,11 +219,7 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
 
                     {BudgetUtils.canDelete(budget) && (
                         <button
-                            onClick={(e) => handleActionClick(e, () => {
-                                if (window.confirm('¿Estás seguro de eliminar este presupuesto?')) {
-                                    onDelete(budget);
-                                }
-                            })}
+                            onClick={(e) => handleActionClick(e, () => onDelete(budget))}
                             disabled={isLoadingDelete}
                             className="flex items-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs sm:text-sm font-medium rounded-lg px-3 py-1.5 border border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                             title="Eliminar este presupuesto"

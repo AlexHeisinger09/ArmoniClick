@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, FileText, Calculator, Eye, Download, Play, CheckCircle, Trash2 } from 'lucide-react';
 import { useAllBudgets, useDeleteBudgetById, useActivateBudget, useCompleteBudget } from "@/presentation/hooks/budgets/useBudgets";
@@ -7,6 +7,8 @@ import { Patient } from "@/core/use-cases/patients";
 import { BudgetFormUtils } from './types/budget.types';
 import { PDFGenerator } from './utils/pdfGenerator';
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
+import { ConfirmationModal } from '@/presentation/components/ui/ConfirmationModal';
+import { useConfirmation } from '@/presentation/hooks/useConfirmation';
 
 interface PatientBudgetDisplayProps {
     patient: Patient;
@@ -18,7 +20,8 @@ const PatientBudgetDisplay: React.FC<PatientBudgetDisplayProps> = ({ patient }) 
     const { deleteBudget, isLoadingDelete } = useDeleteBudgetById();
     const { activateBudget, isLoadingActivate } = useActivateBudget();
     const { completeBudget, isLoadingComplete } = useCompleteBudget();
-    
+    const confirmation = useConfirmation();
+
     const { token } = useLoginMutation();
     const { queryProfile } = useProfile(token || '');
 
@@ -50,28 +53,87 @@ const PatientBudgetDisplay: React.FC<PatientBudgetDisplayProps> = ({ patient }) 
     };
 
     const handleDeleteBudget = async (budgetId: number) => {
-        if (window.confirm('¿Estás seguro de eliminar este presupuesto?')) {
-            try {
-                await deleteBudget(budgetId);
-            } catch (error) {
-                console.error('Error deleting budget:', error);
-            }
+        const confirmed = await confirmation.confirm({
+            title: 'Eliminar presupuesto',
+            message: '¿Estás seguro de que deseas eliminar este presupuesto?',
+            confirmText: 'Eliminar',
+            cancelText: 'Cancelar',
+            variant: 'danger',
+            details: ['Esta acción no se puede deshacer']
+        });
+
+        if (!confirmed) {
+            confirmation.close();
+            return;
+        }
+
+        try {
+            await deleteBudget(budgetId);
+            confirmation.close();
+        } catch (error) {
+            console.error('Error deleting budget:', error);
+            confirmation.close();
         }
     };
 
-    const handleActivateBudget = async (budgetId: number) => {
+    const handleActivateBudget = async (budget: any) => {
+        // Preparar detalles de los tratamientos que se crearán
+        const treatmentDetails = budget.items.map((item: any) =>
+            `${item.pieza ? `${item.pieza}: ` : ''}${item.accion} ($${parseFloat(item.valor).toLocaleString('es-CL')})`
+        );
+
+        const confirmed = await confirmation.confirm({
+            title: 'Activar presupuesto',
+            message: `Se activará este presupuesto y se crearán los tratamientos siguientes:`,
+            confirmText: 'Activar',
+            cancelText: 'Cancelar',
+            variant: 'success',
+            details: treatmentDetails
+        });
+
+        if (!confirmed) {
+            confirmation.close();
+            return;
+        }
+
         try {
-            await activateBudget(budgetId);
+            await activateBudget(budget.id);
+            confirmation.close();
         } catch (error) {
             console.error('Error activating budget:', error);
+            confirmation.close();
         }
     };
 
-    const handleCompleteBudget = async (budgetId: number) => {
+    const handleCompleteBudget = async (budget: any) => {
+        // Buscar tratamientos no completados en el presupuesto
+        const incompleteTreatments: string[] = [];
+
+        // Aquí podríamos obtener los tratamientos del presupuesto
+        // Por ahora mostramos un mensaje genérico
+
+        const confirmed = await confirmation.confirm({
+            title: 'Completar presupuesto',
+            message: '¿Desea completar este presupuesto aun si los tratamientos no están completados?',
+            confirmText: 'Completar',
+            cancelText: 'Cancelar',
+            variant: 'warning',
+            details: incompleteTreatments.length > 0
+                ? incompleteTreatments
+                : ['Se marcará el presupuesto como completado']
+        });
+
+        if (!confirmed) {
+            confirmation.close();
+            return;
+        }
+
         try {
-            await completeBudget(budgetId);
+            await completeBudget(budget.id);
+            confirmation.close();
         } catch (error) {
             console.error('Error completing budget:', error);
+            confirmation.close();
         }
     };
 
@@ -227,7 +289,7 @@ const PatientBudgetDisplay: React.FC<PatientBudgetDisplayProps> = ({ patient }) 
 
                                             {BudgetUtils.canActivate(budget) && (
                                                 <button
-                                                    onClick={() => handleActivateBudget(budget.id)}
+                                                    onClick={() => handleActivateBudget(budget)}
                                                     disabled={isLoadingActivate}
                                                     className="flex items-center bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
                                                 >
@@ -243,7 +305,7 @@ const PatientBudgetDisplay: React.FC<PatientBudgetDisplayProps> = ({ patient }) 
 
                                             {BudgetUtils.canComplete(budget) && (
                                                 <button
-                                                    onClick={() => handleCompleteBudget(budget.id)}
+                                                    onClick={() => handleCompleteBudget(budget)}
                                                     disabled={isLoadingComplete}
                                                     className="flex items-center bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
                                                 >
@@ -296,6 +358,20 @@ const PatientBudgetDisplay: React.FC<PatientBudgetDisplayProps> = ({ patient }) 
                     </button>
                 </div>
             )}
+
+            {/* Modal de confirmación */}
+            <ConfirmationModal
+                isOpen={confirmation.isOpen}
+                title={confirmation.title}
+                message={confirmation.message}
+                details={confirmation.details}
+                confirmText={confirmation.confirmText}
+                cancelText={confirmation.cancelText}
+                variant={confirmation.variant}
+                isLoading={confirmation.isLoading}
+                onConfirm={confirmation.onConfirm}
+                onCancel={confirmation.onCancel}
+            />
         </div>
     );
 };

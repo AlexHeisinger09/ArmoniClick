@@ -6,6 +6,7 @@ import { ArrowLeft, Users } from 'lucide-react';
 // Hooks
 import { useLoginMutation, useProfile, usePatients } from "@/presentation/hooks";
 import { useMultipleBudgetOperations } from "@/presentation/hooks/budgets/useBudgets";
+import { useConfirmation } from "@/presentation/hooks/useConfirmation";
 
 // Types y utilidades
 import {
@@ -18,6 +19,7 @@ import { Patient } from "@/core/use-cases/patients";
 
 // Componentes del editor (reutilizamos los existentes)
 import { BudgetEditor } from '../patient/tabs/budget/components/BudgetEditor';
+import { ConfirmationModal } from '@/presentation/components/ui/ConfirmationModal';
 import { useNotification } from '@/presentation/hooks/notifications/useNotification';
 import { PDFGenerator } from '../patient/tabs/budget/utils/pdfGenerator';
 import {
@@ -53,8 +55,9 @@ const BudgetPage: React.FC = () => {
         valor: ''
     });
 
-    // Notification hook
+    // Notification y confirmation hooks
     const notification = useNotification();
+    const confirmation = useConfirmation();
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
     // Hooks para datos
@@ -112,11 +115,22 @@ const BudgetPage: React.FC = () => {
         setHasUnsavedChanges(false);
     };
 
-    const handleBackToPatient = () => {
+    const handleBackToPatient = async () => {
         if (hasUnsavedChanges) {
-            if (!window.confirm('Tienes cambios sin guardar. ¿Estás seguro de que quieres salir?')) {
+            const confirmed = await confirmation.confirm({
+                title: 'Cambios sin guardar',
+                message: '¿Estás seguro de que quieres salir? Los cambios no guardados se perderán.',
+                confirmText: 'Salir',
+                cancelText: 'Continuar editando',
+                variant: 'warning'
+            });
+
+            if (!confirmed) {
+                confirmation.close();
                 return;
             }
+
+            confirmation.close();
         }
 
         if (selectedPatient) {
@@ -327,8 +341,23 @@ const BudgetPage: React.FC = () => {
     const canEdit = !isReadonly && (!selectedBudget || BudgetUtils.canModify(selectedBudget));
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            <div className="max-w-6xl mx-auto space-y-6">
+        <>
+            {/* Modal de confirmación */}
+            <ConfirmationModal
+                isOpen={confirmation.isOpen}
+                title={confirmation.title}
+                message={confirmation.message}
+                details={confirmation.details}
+                confirmText={confirmation.confirmText}
+                cancelText={confirmation.cancelText}
+                variant={confirmation.variant}
+                isLoading={confirmation.isLoading}
+                onConfirm={confirmation.onConfirm}
+                onCancel={confirmation.onCancel}
+            />
+
+            <div className="min-h-screen bg-gray-50 p-6">
+                <div className="max-w-6xl mx-auto space-y-6">
                 {/* Selector de paciente */}
                 <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
                     <div className="flex items-center space-x-4">
@@ -411,8 +440,9 @@ const BudgetPage: React.FC = () => {
                         </div>
                     </div>
                 )}
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 
