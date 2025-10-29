@@ -225,6 +225,8 @@ const DocumentsPage: React.FC = () => {
   const [doctorName, setDoctorName] = useState<string>('');
   const [doctorRut, setDoctorRut] = useState<string>('');
   const [sendingEmailDocId, setSendingEmailDocId] = useState<number | null>(null);
+  const [parentName, setParentName] = useState<string>('');
+  const [parentRut, setParentRut] = useState<string>('');
   const signatureRef = useRef<SignatureCanvasRef | null>(null);
 
   // Use hooks
@@ -308,6 +310,12 @@ const DocumentsPage: React.FC = () => {
       return;
     }
 
+    // Validar campos de padre/tutor si es necesario
+    if ((selectedDocumentType === 'permiso-padres' || selectedDocumentType === 'permiso-padres-estetica') && (!parentName || !parentRut)) {
+      showNotification('error', 'Debes ingresar el nombre y RUT del padre/madre/tutor');
+      return;
+    }
+
     const patient = queryPatients.data?.find(p => p.id === selectedPatientId);
     if (!patient) {
       showNotification('error', 'Paciente no encontrado');
@@ -333,7 +341,9 @@ const DocumentsPage: React.FC = () => {
       template.content,
       patientFullName,
       patient.rut,
-      doctorName || 'Dr./Dra.'
+      doctorName || 'Dr./Dra.',
+      parentName || undefined,
+      parentRut || undefined
     );
 
     try {
@@ -401,6 +411,8 @@ const DocumentsPage: React.FC = () => {
         setSelectedDocument(null);
         setSignature('');
         setFilterPatientId(undefined); // Limpiar filtro al volver a la lista
+        setParentName(''); // Limpiar campos de padre
+        setParentRut('');
         signatureRef.current?.clear();
       }, 1000);
     } catch (error) {
@@ -790,6 +802,39 @@ const DocumentsPage: React.FC = () => {
                 ))}
               </div>
             </div>
+
+            {/* Campos de Padre/Tutor (solo para documentos de autorización) */}
+            {(selectedDocumentType === 'permiso-padres' || selectedDocumentType === 'permiso-padres-estetica') && (
+              <div className="border-l-4 border-blue-400 bg-blue-50 p-4 rounded">
+                <h3 className="text-sm font-semibold text-blue-900 mb-4">Datos del Padre/Madre/Tutor</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Nombre del Padre/Madre/Tutor *
+                    </label>
+                    <input
+                      type="text"
+                      value={parentName}
+                      onChange={(e) => setParentName(e.target.value)}
+                      placeholder="Ej: Juan García Pérez"
+                      className="w-full px-4 py-2.5 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      RUT del Padre/Madre/Tutor *
+                    </label>
+                    <input
+                      type="text"
+                      value={parentRut}
+                      onChange={(e) => setParentRut(e.target.value)}
+                      placeholder="Ej: 12.345.678-9"
+                      className="w-full px-4 py-2.5 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Botones */}
             <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
