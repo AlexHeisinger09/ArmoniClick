@@ -154,8 +154,13 @@ const Dashboard = () => {
                   upcomingAppointments.map((appointment) => (
                     <div key={appointment.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-clinic-50 to-transparent rounded-lg border border-clinic-200 hover:shadow-md transition-all duration-200">
                       <div className="flex items-center space-x-4">
-                        <div className="text-clinic-700 font-semibold text-lg">
-                          {appointment.time}
+                        <div className="flex flex-col items-center">
+                          <div className="text-clinic-700 font-semibold text-lg">
+                            {appointment.time}
+                          </div>
+                          <div className="text-xs text-clinic-600 font-medium">
+                            {appointment.date}
+                          </div>
                         </div>
                         <div>
                           <div className="font-medium text-gray-900">{appointment.patient}</div>
