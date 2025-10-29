@@ -222,6 +222,8 @@ const DocumentsPage: React.FC = () => {
   const [signature, setSignature] = useState('');
   const [sendEmail, setSendEmail] = useState(false);
   const [filterPatientId, setFilterPatientId] = useState<number | undefined>();
+  const [filterSearchText, setFilterSearchText] = useState<string>('');
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [doctorName, setDoctorName] = useState<string>('');
   const [doctorRut, setDoctorRut] = useState<string>('');
   const [sendingEmailDocId, setSendingEmailDocId] = useState<number | null>(null);
@@ -322,6 +324,19 @@ const DocumentsPage: React.FC = () => {
     }
     return result;
   };
+
+  // Filtrar pacientes según texto de búsqueda
+  const filteredPatients = (queryPatients.data || []).filter(patient => {
+    const searchLower = filterSearchText.toLowerCase();
+    const fullName = `${patient.nombres} ${patient.apellidos}`.toLowerCase();
+    const rut = patient.rut?.toLowerCase() || '';
+    return fullName.includes(searchLower) || rut.includes(searchLower);
+  });
+
+  // Filtrar documentos según paciente seleccionado
+  const filteredDocuments = filterPatientId
+    ? (queryDocuments.data || []).filter(doc => doc.id_patient === filterPatientId)
+    : (queryDocuments.data || []);
 
   const handleGenerateDocument = async () => {
     if (!selectedPatientId || !selectedDocumentType) {
@@ -481,24 +496,80 @@ const DocumentsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Filtro por paciente */}
+          {/* Filtro por paciente con búsqueda */}
           <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-4 sm:p-6">
             <label className="block text-sm font-medium text-slate-700 mb-3">
               Filtrar por paciente (opcional)
             </label>
-            <select
-              value={filterPatientId || ''}
-              onChange={(e) => setFilterPatientId(e.target.value ? Number(e.target.value) : undefined)}
-              disabled={isLoadingPatients}
-              className="w-full px-4 py-2.5 border border-cyan-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
-            >
-              <option value="">Todos los pacientes</option>
-              {queryPatients.data?.map((patient) => (
-                <option key={patient.id} value={patient.id}>
-                  {patient.nombres} {patient.apellidos} - {patient.rut}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Busca por nombre o RUT..."
+                value={filterSearchText}
+                onChange={(e) => {
+                  setFilterSearchText(e.target.value);
+                  setShowFilterDropdown(true);
+                }}
+                onFocus={() => setShowFilterDropdown(true)}
+                onBlur={() => setTimeout(() => setShowFilterDropdown(false), 200)}
+                disabled={isLoadingPatients}
+                className="w-full px-4 py-2.5 border border-cyan-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
+              />
+
+              {/* Dropdown de resultados de búsqueda */}
+              {showFilterDropdown && filterSearchText && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-cyan-200 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
+                  {filteredPatients.length > 0 ? (
+                    <>
+                      <button
+                        onClick={() => {
+                          setFilterPatientId(undefined);
+                          setFilterSearchText('');
+                          setShowFilterDropdown(false);
+                        }}
+                        className="w-full text-left px-4 py-2.5 hover:bg-cyan-50 text-sm text-slate-600 border-b border-cyan-100"
+                      >
+                        Limpiar filtro
+                      </button>
+                      {filteredPatients.map((patient) => (
+                        <button
+                          key={patient.id}
+                          onClick={() => {
+                            setFilterPatientId(patient.id);
+                            setFilterSearchText(`${patient.nombres} ${patient.apellidos}`);
+                            setShowFilterDropdown(false);
+                          }}
+                          className={`w-full text-left px-4 py-2.5 hover:bg-cyan-50 text-sm transition-colors ${
+                            filterPatientId === patient.id ? 'bg-cyan-100 text-cyan-900 font-medium' : 'text-slate-700'
+                          }`}
+                        >
+                          <div>{patient.nombres} {patient.apellidos}</div>
+                          <div className="text-xs text-slate-500">{patient.rut}</div>
+                        </button>
+                      ))}
+                    </>
+                  ) : (
+                    <div className="px-4 py-3 text-sm text-slate-500 text-center">
+                      No se encontraron pacientes
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Mostrar paciente seleccionado */}
+              {filterPatientId && (
+                <button
+                  onClick={() => {
+                    setFilterPatientId(undefined);
+                    setFilterSearchText('');
+                  }}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-cyan-500 hover:text-cyan-700 transition-colors"
+                  title="Limpiar filtro"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Tabla de Documentos - Responsiva */}
@@ -506,7 +577,7 @@ const DocumentsPage: React.FC = () => {
             <div className="flex justify-center py-12">
               <Loader className="w-8 h-8 text-cyan-500 animate-spin" />
             </div>
-          ) : queryDocuments.data && queryDocuments.data.length > 0 ? (
+          ) : filteredDocuments && filteredDocuments.length > 0 ? (
             <>
               {/* Vista Desktop (tabla) */}
               <div className="hidden md:block bg-white rounded-xl shadow-sm border border-cyan-200 overflow-hidden">
@@ -523,7 +594,7 @@ const DocumentsPage: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {queryDocuments.data.map((doc) => (
+                      {filteredDocuments.map((doc) => (
                         <tr key={doc.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4 text-sm text-slate-900 font-medium">{doc.title}</td>
                           <td className="px-6 py-4 text-sm text-slate-600">{doc.patient_name}</td>
@@ -632,7 +703,7 @@ const DocumentsPage: React.FC = () => {
 
               {/* Vista Mobile (cards) */}
               <div className="md:hidden space-y-4">
-                {queryDocuments.data.map((doc) => (
+                {filteredDocuments.map((doc) => (
                   <div key={doc.id} className="bg-white rounded-lg shadow-sm border border-cyan-200 p-4">
                     <div className="space-y-3">
                       <div>
