@@ -1,8 +1,8 @@
 import { Handler } from "@netlify/functions";
 import { sql } from "drizzle-orm";
-import { db } from "../../data/db";
-import { validateJWT } from "../../../config/jwt";
-import { HEADERS } from "../../../config/utils";
+import { db } from "../data/db";
+import { validateJWT } from "../../config/jwt";
+import { HEADERS } from "../../config/utils";
 
 interface TreatmentCount {
   nombre_servicio: string;

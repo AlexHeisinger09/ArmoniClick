@@ -48,7 +48,12 @@ export const usePopularTreatments = () => {
   const processChartData = (): TreatmentChartData[] => {
     const treatments = query.data || [];
 
+    console.log('🎨 Datos recibidos en processChartData:', treatments);
+    console.log('📊 IsLoading:', query.isLoading);
+    console.log('⚠️ Error:', query.error);
+
     if (treatments.length === 0) {
+      console.log('⚠️ No hay tratamientos, retornando array vacío');
       return [];
     }
 
