@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { db } from "../../data/db";
+import { db } from "../../../data/db";
 import { HandlerResponse } from "@netlify/functions";
 import { HEADERS } from "../../../config/utils";
 
