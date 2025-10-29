@@ -366,10 +366,11 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
                             </div>
                         </div>
 
-                        {/* Footer con acciones */}
-                        <div className="bg-slate-50 px-4 sm:px-6 py-4 border-t border-slate-200">
-                            <div className="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
-                                <div className="text-sm text-slate-500">
+                        {/* Footer con acciones - Responsive */}
+                        <div className="bg-slate-50 px-3 sm:px-6 py-3 sm:py-4 border-t border-slate-200">
+                            <div className="flex flex-col gap-3">
+                                {/* Total */}
+                                <div className="text-xs sm:text-sm text-slate-500">
                                     {items.length > 0 && (
                                         <span>
                                             Total: <strong className="text-cyan-600">
@@ -378,20 +379,21 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
                                         </span>
                                     )}
                                 </div>
-                                
-                                <div className="flex space-x-3">
+
+                                {/* Botones */}
+                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
                                     <button
                                         onClick={handleClose}
-                                        className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
+                                        className="flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
                                     >
                                         Cancelar
                                     </button>
-                                    
+
                                     {canEdit && items.length > 0 && (
                                         <button
                                             onClick={handleSaveBudget}
                                             disabled={isLoadingSave || !hasUnsavedChanges}
-                                            className="px-6 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="flex-1 px-3 sm:px-6 py-2 text-xs sm:text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                                         >
                                             {isLoadingSave ? 'Guardando...' : 'Guardar Presupuesto'}
                                         </button>

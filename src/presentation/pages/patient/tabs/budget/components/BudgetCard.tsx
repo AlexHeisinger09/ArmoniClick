@@ -137,21 +137,21 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
             </div>
 
             {/* Acciones responsivas */}
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                {/* Acciones básicas - siempre visibles */}
-                <div className="flex space-x-1">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-3 border-t border-slate-100">
+                {/* Acciones básicas - siempre visibles en fila compacta */}
+                <div className="flex gap-1">
                     <button
                         onClick={(e) => handleActionClick(e, () => onView(budget))}
-                        className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
+                        className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
                         title="Ver detalles"
                     >
                         <Eye className="w-4 h-4" />
                     </button>
-                    
+
                     {BudgetUtils.canModify(budget) && (
                         <button
                             onClick={(e) => handleActionClick(e, () => onEdit(budget))}
-                            className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
+                            className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
                             title="Editar"
                         >
                             <Edit className="w-4 h-4" />
@@ -160,28 +160,28 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
 
                     <button
                         onClick={(e) => handleActionClick(e, () => onExportPDF(budget))}
-                        className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
+                        className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
                         title="Exportar PDF"
                     >
                         <Download className="w-4 h-4" />
                     </button>
                 </div>
 
-                {/* Acciones de estado - stack en móvil */}
-                <div className="flex flex-wrap gap-1 sm:gap-2 justify-end">
+                {/* Acciones de estado - responsive con colores suaves */}
+                <div className="flex flex-wrap gap-2 justify-start sm:justify-end">
                     {BudgetUtils.canActivate(budget) && (
                         <button
                             onClick={(e) => handleActionClick(e, () => onActivate(budget))}
                             disabled={isLoadingActivate}
-                            className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white text-xs font-medium rounded-lg px-2 py-1.5 sm:px-3 transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs sm:text-sm font-medium rounded-lg px-3 py-1.5 border border-emerald-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            title="Activar este presupuesto"
                         >
                             {isLoadingActivate ? (
-                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-emerald-700"></div>
                             ) : (
-                                <Play className="w-3 h-3 mr-1" />
+                                <Play className="w-3 h-3" />
                             )}
-                            <span className="hidden sm:inline">Activar</span>
-                            <span className="sm:hidden">▶</span>
+                            <span>Activar</span>
                         </button>
                     )}
 
@@ -189,15 +189,15 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
                         <button
                             onClick={(e) => handleActionClick(e, () => onComplete(budget))}
                             disabled={isLoadingComplete}
-                            className="flex items-center bg-slate-600 hover:bg-slate-700 text-white text-xs font-medium rounded-lg px-2 py-1.5 sm:px-3 transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs sm:text-sm font-medium rounded-lg px-3 py-1.5 border border-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            title="Marcar presupuesto como completado"
                         >
                             {isLoadingComplete ? (
-                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-700"></div>
                             ) : (
-                                <CheckCircle className="w-3 h-3 mr-1" />
+                                <CheckCircle className="w-3 h-3" />
                             )}
-                            <span className="hidden sm:inline">Completar</span>
-                            <span className="sm:hidden">✓</span>
+                            <span>Completar</span>
                         </button>
                     )}
 
@@ -205,15 +205,15 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
                         <button
                             onClick={(e) => handleActionClick(e, () => onRevert(budget))}
                             disabled={isLoadingRevert}
-                            className="flex items-center bg-slate-400 hover:bg-slate-500 text-white text-xs font-medium rounded-lg px-2 py-1.5 sm:px-3 transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1.5 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 text-xs sm:text-sm font-medium rounded-lg px-3 py-1.5 border border-yellow-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            title="Revertir presupuesto a borrador"
                         >
                             {isLoadingRevert ? (
-                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-700"></div>
                             ) : (
-                                <RotateCcw className="w-3 h-3 mr-1" />
+                                <RotateCcw className="w-3 h-3" />
                             )}
-                            <span className="hidden lg:inline">Revertir</span>
-                            <span className="lg:hidden">↺</span>
+                            <span>Revertir</span>
                         </button>
                     )}
 
@@ -225,15 +225,15 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
                                 }
                             })}
                             disabled={isLoadingDelete}
-                            className="flex items-center bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded-lg px-2 py-1.5 sm:px-3 transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs sm:text-sm font-medium rounded-lg px-3 py-1.5 border border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            title="Eliminar este presupuesto"
                         >
                             {isLoadingDelete ? (
-                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-700"></div>
                             ) : (
-                                <Trash2 className="w-3 h-3 mr-1" />
+                                <Trash2 className="w-3 h-3" />
                             )}
-                            <span className="hidden sm:inline">Eliminar</span>
-                            <span className="sm:hidden">🗑</span>
+                            <span>Eliminar</span>
                         </button>
                     )}
                 </div>

@@ -103,12 +103,18 @@ export const useActivateBudget = () => {
   const queryClient = useQueryClient();
 
   const activateBudgetMutation = useMutation({
-    mutationFn: (budgetId: number) => 
+    mutationFn: (budgetId: number) =>
       activateBudgetUseCase(apiFetcher, budgetId),
     onSuccess: (data, budgetId) => {
-      // Invalidar todas las queries de presupuestos
+      // ✅ INVALIDAR QUERIES DE PRESUPUESTOS
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
       queryClient.invalidateQueries({ queryKey: ['budget'] });
+
+      // ✅ CRÍTICO: INVALIDAR QUERIES DE TREATMENTS
+      // Cuando se activa un presupuesto, se generan tratamientos automáticamente
+      // Por eso necesitamos refrescar TODAS las queries de treatments
+      queryClient.invalidateQueries({ queryKey: ['treatments'] });
+      queryClient.invalidateQueries({ queryKey: ['treatment'] });
     },
   });
 

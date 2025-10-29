@@ -69,36 +69,16 @@ const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-cyan-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-cyan-200 bg-slate-50">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-slate-700">Tratamientos</h3>
-                    <div className="flex items-center space-x-3">
-                        {canEdit && hasUnsavedChanges && (
-                            <button
-                                onClick={onSave}
-                                disabled={isLoadingSave}
-                                className="flex items-center bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors shadow-sm disabled:opacity-50"
-                            >
-                                {isLoadingSave ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                        Guardando...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Save className="w-4 h-4 mr-2" />
-                                        Guardar
-                                    </>
-                                )}
-                            </button>
-                        )}
-
+            <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-cyan-200 bg-slate-50">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <h3 className="text-base sm:text-lg font-semibold text-slate-700">Tratamientos</h3>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
                         <button
                             onClick={onExportPDF}
-                            className="flex items-center bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors shadow-sm"
+                            className="flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg text-xs sm:text-sm px-3 sm:px-4 py-2 transition-colors shadow-sm whitespace-nowrap"
                         >
-                            <Download className="w-4 h-4 mr-2" />
-                            Exportar PDF
+                            <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                            <span>Exportar PDF</span>
                         </button>
                     </div>
                 </div>
