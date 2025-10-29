@@ -64,35 +64,34 @@ const TreatmentCard: React.FC<TreatmentCardProps> = ({
       onClick={() => onView(treatment)}
     >
       {/* Header con nombre del servicio y estado */}
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-3">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center space-x-3 mb-2">
-            <h4 className="font-semibold text-slate-800 text-base truncate">
-              {treatment.nombre_servicio}
-            </h4>
-            
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold text-slate-800 text-base truncate">
+                {treatment.nombre_servicio}
+                {showBudgetInfo && treatment.budget_item_pieza && (
+                  <span className="text-slate-600 font-normal"> {treatment.budget_item_pieza}</span>
+                )}
+              </h4>
+              {/* Precio debajo del título */}
+              {showBudgetInfo && treatment.budget_item_valor && (
+                <div className="text-xs sm:text-sm text-slate-600 mt-1">
+                  <span className="font-medium">Valor:</span> ${parseFloat(treatment.budget_item_valor).toLocaleString('es-CL')}
+                </div>
+              )}
+            </div>
+
             {/* Badge de estado más compacto */}
-            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border shrink-0 ${statusInfo.color}`}>
+            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border shrink-0 w-fit ${statusInfo.color}`}>
               {statusInfo.icon}
               <span className="ml-1 hidden sm:inline">{statusInfo.label}</span>
             </span>
           </div>
-
-          {/* Información del presupuesto (si aplica) */}
-          {showBudgetInfo && treatment.budget_item_pieza && (
-            <div className="text-sm text-slate-600 mb-2">
-              <span className="font-medium">Pieza:</span> {treatment.budget_item_pieza}
-              {treatment.budget_item_valor && (
-                <span className="ml-3">
-                  <span className="font-medium">Valor:</span> ${parseFloat(treatment.budget_item_valor).toLocaleString('es-CL')}
-                </span>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Botones de acción más compactos */}
-        <div className="flex items-center space-x-1 ml-3 opacity-70 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center space-x-1 opacity-70 group-hover:opacity-100 transition-opacity">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -141,20 +140,21 @@ const TreatmentCard: React.FC<TreatmentCardProps> = ({
         </div>
       </div>
 
-      {/* Información de fechas en una línea más compacta */}
-      <div className="flex items-center text-sm text-slate-600 mb-3 space-x-4">
-        <div className="flex items-center">
-          <Calendar className="w-4 h-4 mr-1.5 text-slate-400" />
-          <span>Control: {formatDate(treatment.fecha_control)} a las {formatTime(treatment.hora_control)}</span>
+      {/* Información de fechas responsive */}
+      <div className="flex flex-col sm:flex-row gap-2 text-xs sm:text-sm text-slate-600 mb-3 space-y-1 sm:space-y-0 sm:space-x-4">
+        <div className="flex items-center flex-wrap gap-1">
+          <Calendar className="w-4 h-4 text-slate-400 flex-shrink-0" />
+          <span className="truncate">Control: {formatDate(treatment.fecha_control)}</span>
+          <span className="hidden sm:inline">{formatTime(treatment.hora_control)}</span>
         </div>
-        
+
         {treatment.fecha_proximo_control && (
-          <div className="flex items-center">
-            <Clock className="w-4 h-4 mr-1.5 text-slate-400" />
-            <span className="hidden sm:inline">Próximo: </span>
-            <span>{formatDate(treatment.fecha_proximo_control)}</span>
+          <div className="flex items-center flex-wrap gap-1">
+            <Clock className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            <span className="hidden sm:inline">Próximo:</span>
+            <span className="truncate">{formatDate(treatment.fecha_proximo_control)}</span>
             {treatment.hora_proximo_control && (
-              <span className="hidden lg:inline"> a las {formatTime(treatment.hora_proximo_control)}</span>
+              <span className="hidden lg:inline text-xs">{formatTime(treatment.hora_proximo_control)}</span>
             )}
           </div>
         )}
@@ -170,18 +170,18 @@ const TreatmentCard: React.FC<TreatmentCardProps> = ({
         </p>
       )}
 
-      {/* Footer con información adicional */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4 text-sm text-slate-500">
+      {/* Footer con información adicional - responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-slate-500">
           {treatment.producto && (
-            <span className="hidden sm:inline">
+            <span className="hidden sm:inline whitespace-nowrap">
               <span className="font-medium">Producto:</span> {treatment.producto}
             </span>
           )}
-          
+
           {(treatment.foto1 || treatment.foto2) && (
-            <div className="flex items-center text-purple-600">
-              <Camera className="w-4 h-4 mr-1" />
+            <div className="flex items-center text-purple-600 whitespace-nowrap">
+              <Camera className="w-4 h-4 mr-1 flex-shrink-0" />
               <span className="text-xs">{treatment.foto1 && treatment.foto2 ? '2 fotos' : '1 foto'}</span>
             </div>
           )}
@@ -189,14 +189,14 @@ const TreatmentCard: React.FC<TreatmentCardProps> = ({
 
         {/* Indicador de estado del producto */}
         {treatment.fecha_venc_producto && (
-          <div className="text-xs">
+          <div className="text-xs w-fit">
             {new Date(treatment.fecha_venc_producto) < new Date() ? (
-              <span className="text-red-600 bg-red-50 px-2 py-1 rounded-full border border-red-200">
-                ⚠️ Producto Vencido
+              <span className="text-red-600 bg-red-50 px-2 py-1 rounded-full border border-red-200 whitespace-nowrap">
+                ⚠️ Vencido
               </span>
             ) : (
-              <span className="text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-200">
-                ✓ Producto Vigente
+              <span className="text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-200 whitespace-nowrap">
+                ✓ Vigente
               </span>
             )}
           </div>
