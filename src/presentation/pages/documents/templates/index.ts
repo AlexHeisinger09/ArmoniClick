@@ -145,8 +145,7 @@ Para consultas:
 
 ---
 
-Firma del Padre/Madre/Tutor: ______________________________
-RUT: {{PARENT_RUT}}`
+`
   },
 
   'permiso-padres-estetica': {
@@ -190,7 +189,6 @@ Para consultas:
 
 ---
 
-Firma del Padre/Madre/Tutor: ______________________________
-RUT: {{PARENT_RUT}}`
+`
   }
 };
