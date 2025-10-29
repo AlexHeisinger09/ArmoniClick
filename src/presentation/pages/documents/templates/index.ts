@@ -5,7 +5,7 @@ export const documentTemplates = {
 
 Paciente: {{PATIENT_NAME}} | RUT: {{PATIENT_RUT}}
 Profesional: {{DOCTOR_NAME}} | RUT: {{DOCTOR_RUT}}
-Fecha: ________________
+Fecha: {{SIGNED_DATE}}
 
 ---
 
@@ -28,7 +28,7 @@ Para consultas:
 
 ---
 
-Firma del Paciente: ______________________     Fecha: ________________`
+Firma del Paciente: ______________________________`
   },
 
   'consentimiento-odontologico': {
@@ -37,7 +37,7 @@ Firma del Paciente: ______________________     Fecha: ________________`
 
 Paciente: {{PATIENT_NAME}} | RUT: {{PATIENT_RUT}}
 Profesional: {{DOCTOR_NAME}} | RUT: {{DOCTOR_RUT}}
-Fecha: ________________
+Fecha: {{SIGNED_DATE}}
 
 ---
 
@@ -63,7 +63,7 @@ Para consultas:
 
 ---
 
-Firma del Paciente: ______________________     Fecha: ________________`
+Firma del Paciente: ______________________________`
   },
 
   'consentimiento-anestesia': {
@@ -72,7 +72,7 @@ Firma del Paciente: ______________________     Fecha: ________________`
 
 Paciente: {{PATIENT_NAME}} | RUT: {{PATIENT_RUT}}
 Profesional: {{DOCTOR_NAME}} | RUT: {{DOCTOR_RUT}}
-Fecha: ________________
+Fecha: {{SIGNED_DATE}}
 
 ---
 
@@ -101,7 +101,7 @@ Para consultas:
 
 ---
 
-Firma del Paciente: ______________________     Fecha: ________________`
+Firma del Paciente: ______________________________`
   },
 
   'permiso-padres': {
@@ -111,17 +111,18 @@ Firma del Paciente: ______________________     Fecha: ________________`
 DATOS DEL PACIENTE (Menor de edad):
 Nombre Completo: {{PATIENT_NAME}}
 RUT: {{PATIENT_RUT}}
-Edad: ________ años
+Edad: {{PATIENT_AGE}} años
 
 DATOS DEL PADRE/MADRE/TUTOR:
 Nombre Completo: {{PARENT_NAME}}
 RUT: {{PARENT_RUT}}
-Teléfono: __________________
-Relación: □ Padre  □ Madre  □ Tutor
+Teléfono: {{PARENT_PHONE}}
+Relación: {{PARENT_RELATION}}
 
 PROFESIONAL RESPONSABLE:
 Nombre: {{DOCTOR_NAME}} | RUT: {{DOCTOR_RUT}}
 Teléfono: {{DOCTOR_PHONE}} | Email: {{DOCTOR_EMAIL}}
+Fecha: {{SIGNED_DATE}}
 
 ---
 
@@ -144,10 +145,8 @@ Para consultas:
 
 ---
 
-Firma del Padre/Madre/Tutor: ______________________
-Nombre (Imprenta): ____________________________
-RUT: ____________________________
-Fecha: ________________`
+Firma del Padre/Madre/Tutor: ______________________________
+RUT: {{PARENT_RUT}}`
   },
 
   'permiso-padres-estetica': {
@@ -157,17 +156,18 @@ Fecha: ________________`
 DATOS DEL PACIENTE (Menor de edad):
 Nombre Completo: {{PATIENT_NAME}}
 RUT: {{PATIENT_RUT}}
-Edad: ________ años
+Edad: {{PATIENT_AGE}} años
 
 DATOS DEL PADRE/MADRE/TUTOR:
 Nombre Completo: {{PARENT_NAME}}
 RUT: {{PARENT_RUT}}
-Teléfono: __________________
-Relación: □ Padre  □ Madre  □ Tutor
+Teléfono: {{PARENT_PHONE}}
+Relación: {{PARENT_RELATION}}
 
 PROFESIONAL RESPONSABLE:
 Nombre: {{DOCTOR_NAME}} | RUT: {{DOCTOR_RUT}}
 Teléfono: {{DOCTOR_PHONE}} | Email: {{DOCTOR_EMAIL}}
+Fecha: {{SIGNED_DATE}}
 
 ---
 
@@ -190,9 +190,7 @@ Para consultas:
 
 ---
 
-Firma del Padre/Madre/Tutor: ______________________
-Nombre (Imprenta): ____________________________
-RUT: ____________________________
-Fecha: ________________`
+Firma del Padre/Madre/Tutor: ______________________________
+RUT: {{PARENT_RUT}}`
   }
 };

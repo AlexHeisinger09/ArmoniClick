@@ -227,6 +227,11 @@ const DocumentsPage: React.FC = () => {
   const [sendingEmailDocId, setSendingEmailDocId] = useState<number | null>(null);
   const [parentName, setParentName] = useState<string>('');
   const [parentRut, setParentRut] = useState<string>('');
+  const [parentPhone, setParentPhone] = useState<string>('');
+  const [parentRelation, setParentRelation] = useState<string>('Padre');
+  const [patientAge, setPatientAge] = useState<string>('');
+  const [signedDate, setSignedDate] = useState<string>(new Date().toLocaleDateString('es-CL'));
+  const [shouldSendEmail, setShouldSendEmail] = useState(false);
   const signatureRef = useRef<SignatureCanvasRef | null>(null);
 
   // Use hooks
@@ -286,7 +291,11 @@ const DocumentsPage: React.FC = () => {
     patientRut: string,
     doctorName: string = 'Dr./Dra.',
     parentName?: string,
-    parentRut?: string
+    parentRut?: string,
+    parentPhone?: string,
+    parentRelation?: string,
+    patientAge?: string,
+    signedDate?: string
   ): string => {
     let result = content;
     result = result.replace(/{{PATIENT_NAME}}/g, patientName);
@@ -295,11 +304,21 @@ const DocumentsPage: React.FC = () => {
     result = result.replace(/{{DOCTOR_RUT}}/g, doctorRut || '');
     result = result.replace(/{{DOCTOR_PHONE}}/g, queryProfile.data?.phone || '');
     result = result.replace(/{{DOCTOR_EMAIL}}/g, queryProfile.data?.email || '');
+    result = result.replace(/{{SIGNED_DATE}}/g, signedDate || '');
     if (parentName) {
       result = result.replace(/{{PARENT_NAME}}/g, parentName);
     }
     if (parentRut) {
       result = result.replace(/{{PARENT_RUT}}/g, parentRut);
+    }
+    if (parentPhone) {
+      result = result.replace(/{{PARENT_PHONE}}/g, parentPhone);
+    }
+    if (parentRelation) {
+      result = result.replace(/{{PARENT_RELATION}}/g, parentRelation);
+    }
+    if (patientAge) {
+      result = result.replace(/{{PATIENT_AGE}}/g, patientAge);
     }
     return result;
   };
@@ -343,7 +362,11 @@ const DocumentsPage: React.FC = () => {
       patient.rut,
       doctorName || 'Dr./Dra.',
       parentName || undefined,
-      parentRut || undefined
+      parentRut || undefined,
+      parentPhone || undefined,
+      parentRelation || undefined,
+      patientAge || undefined,
+      signedDate || undefined
     );
 
     try {
@@ -379,14 +402,14 @@ const DocumentsPage: React.FC = () => {
       console.log('  - Document ID:', selectedDocument.id);
       console.log('  - Patient ID:', selectedDocument.id_patient);
       console.log('  - Patient Email:', patientEmail);
-      console.log('  - Send Email:', sendEmail);
+      console.log('  - Should Send Email:', shouldSendEmail);
       console.log('  - Signature length:', signature.length);
 
       const signedDoc = await signDocumentMutation.mutateAsync({
         documentId: selectedDocument.id,
         signatureData: signature,
-        sendEmail,
-        patientEmail,
+        sendEmail: shouldSendEmail,
+        patientEmail: shouldSendEmail ? patientEmail : undefined,
       });
 
       console.log('✅ Documento firmado exitosamente:', signedDoc);
@@ -402,7 +425,7 @@ const DocumentsPage: React.FC = () => {
         console.error('Error al generar PDF:', pdfError);
       }
 
-      showNotification('success', 'Documento firmado correctamente' + (sendEmail ? ' y enviado por correo' : ''));
+      showNotification('success', 'Documento firmado correctamente' + (shouldSendEmail ? ' y enviado por correo' : ''));
 
       // Refresh documents list and go back to list view
       setTimeout(() => {
@@ -410,9 +433,14 @@ const DocumentsPage: React.FC = () => {
         setCurrentView('list');
         setSelectedDocument(null);
         setSignature('');
-        setFilterPatientId(undefined); // Limpiar filtro al volver a la lista
-        setParentName(''); // Limpiar campos de padre
+        setFilterPatientId(undefined);
+        setParentName('');
         setParentRut('');
+        setParentPhone('');
+        setParentRelation('Padre');
+        setPatientAge('');
+        setShouldSendEmail(false);
+        setSignedDate(new Date().toLocaleDateString('es-CL'));
         signatureRef.current?.clear();
       }, 1000);
     } catch (error) {
@@ -805,21 +833,52 @@ const DocumentsPage: React.FC = () => {
 
             {/* Campos de Padre/Tutor (solo para documentos de autorización) */}
             {(selectedDocumentType === 'permiso-padres' || selectedDocumentType === 'permiso-padres-estetica') && (
-              <div className="border-l-4 border-blue-400 bg-blue-50 p-4 rounded">
-                <h3 className="text-sm font-semibold text-blue-900 mb-4">Datos del Padre/Madre/Tutor</h3>
-                <div className="space-y-4">
+              <div className="border-l-4 border-blue-400 bg-blue-50 p-4 rounded space-y-4">
+                <h3 className="text-sm font-semibold text-blue-900">Datos Requeridos</h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Nombre del Padre/Madre/Tutor *
+                      Edad del Paciente *
                     </label>
                     <input
-                      type="text"
-                      value={parentName}
-                      onChange={(e) => setParentName(e.target.value)}
-                      placeholder="Ej: Juan García Pérez"
+                      type="number"
+                      value={patientAge}
+                      onChange={(e) => setPatientAge(e.target.value)}
+                      placeholder="Ej: 16"
                       className="w-full px-4 py-2.5 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Relación del Padre/Tutor *
+                    </label>
+                    <select
+                      value={parentRelation}
+                      onChange={(e) => setParentRelation(e.target.value)}
+                      className="w-full px-4 py-2.5 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    >
+                      <option value="Padre">Padre</option>
+                      <option value="Madre">Madre</option>
+                      <option value="Tutor">Tutor</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Nombre del Padre/Madre/Tutor *
+                  </label>
+                  <input
+                    type="text"
+                    value={parentName}
+                    onChange={(e) => setParentName(e.target.value)}
+                    placeholder="Ej: Juan García Pérez"
+                    className="w-full px-4 py-2.5 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       RUT del Padre/Madre/Tutor *
@@ -832,9 +891,37 @@ const DocumentsPage: React.FC = () => {
                       className="w-full px-4 py-2.5 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Teléfono del Padre/Madre/Tutor
+                    </label>
+                    <input
+                      type="tel"
+                      value={parentPhone}
+                      onChange={(e) => setParentPhone(e.target.value)}
+                      placeholder="Ej: +56 9 1234 5678"
+                      className="w-full px-4 py-2.5 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                  </div>
                 </div>
               </div>
             )}
+
+            {/* Campo de Fecha de Firma (para todos los documentos) */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Fecha del Documento *
+              </label>
+              <input
+                type="date"
+                value={signedDate.split('/').reverse().join('-')}
+                onChange={(e) => {
+                  const date = new Date(e.target.value);
+                  setSignedDate(date.toLocaleDateString('es-CL'));
+                }}
+                className="w-full px-4 py-2.5 border border-cyan-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
+              />
+            </div>
 
             {/* Botones */}
             <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
@@ -898,8 +985,8 @@ const DocumentsPage: React.FC = () => {
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
-                checked={sendEmail}
-                onChange={(e) => setSendEmail(e.target.checked)}
+                checked={shouldSendEmail}
+                onChange={(e) => setShouldSendEmail(e.target.checked)}
                 className="w-4 h-4 text-cyan-500 border-cyan-300 rounded focus:ring-cyan-500"
               />
               <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
