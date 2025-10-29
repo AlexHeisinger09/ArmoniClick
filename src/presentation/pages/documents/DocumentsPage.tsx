@@ -50,17 +50,21 @@ const SignatureCanvas: React.FC<SignatureCanvasProps> = ({ onSignatureChange, si
 
     const rect = canvas.getBoundingClientRect();
 
+    // ✅ CORRECCIÓN: Calcular escala correcta entre tamaño visual y tamaño del canvas
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
     if ('touches' in event && event.touches && event.touches[0]) {
       return {
-        x: event.touches[0].clientX - rect.left,
-        y: event.touches[0].clientY - rect.top
+        x: (event.touches[0].clientX - rect.left) * scaleX,
+        y: (event.touches[0].clientY - rect.top) * scaleY
       };
     }
 
     if ('clientX' in event) {
       return {
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top
+        x: (event.clientX - rect.left) * scaleX,
+        y: (event.clientY - rect.top) * scaleY
       };
     }
 
@@ -90,7 +94,7 @@ const SignatureCanvas: React.FC<SignatureCanvasProps> = ({ onSignatureChange, si
     ctx.moveTo(lastPos.x, lastPos.y);
     ctx.lineTo(coords.x, coords.y);
     ctx.strokeStyle = '#1e293b';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.stroke();
@@ -132,20 +136,22 @@ const SignatureCanvas: React.FC<SignatureCanvasProps> = ({ onSignatureChange, si
         <p className="text-xs text-cyan-600">Usa tu dedo o mouse para firmar</p>
       </div>
 
-      <canvas
-        ref={canvasRef}
-        width={400}
-        height={150}
-        className="w-full h-24 sm:h-32 bg-white rounded-lg border-2 border-cyan-200 cursor-crosshair touch-none"
-        onMouseDown={startDrawing}
-        onMouseMove={draw}
-        onMouseUp={stopDrawing}
-        onMouseLeave={stopDrawing}
-        onTouchStart={startDrawing}
-        onTouchMove={draw}
-        onTouchEnd={stopDrawing}
-        style={{ touchAction: 'none' }}
-      />
+      <div className="w-full bg-white rounded-lg border-2 border-cyan-200 overflow-hidden">
+        <canvas
+          ref={canvasRef}
+          width={800}
+          height={300}
+          className="w-full h-32 sm:h-48 bg-white cursor-crosshair block touch-none"
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+          style={{ touchAction: 'none' }}
+        />
+      </div>
 
       <div className="flex justify-center mt-2 sm:mt-3">
         <button
