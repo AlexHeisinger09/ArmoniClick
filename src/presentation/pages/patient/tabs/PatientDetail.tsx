@@ -1,5 +1,6 @@
 // src/presentation/pages/patient/PatientDetail.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ArrowLeft, User, Calculator, Stethoscope, Clock, FileText } from 'lucide-react';
 import { Patient } from "@/core/use-cases/patients";
 
@@ -23,7 +24,15 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
   onEdit,
   onDelete
 }) => {
-  const [activeTab, setActiveTab] = useState('informacion');
+  const [searchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab') || 'informacion';
+  const [activeTab, setActiveTab] = useState(tabFromUrl);
+
+  // Effect para actualizar el tab si cambia el parámetro de la URL
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab') || 'informacion';
+    setActiveTab(tabFromUrl);
+  }, [searchParams]);
 
   // Configuración de pestañas
   const tabs = [

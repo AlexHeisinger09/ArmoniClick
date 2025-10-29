@@ -1,7 +1,7 @@
 // src/presentation/pages/budget/BudgetPage.tsx - PÁGINA COMPLETA DE PRESUPUESTOS
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users } from 'lucide-react';
+import { ArrowLeft, Users, Save, User } from 'lucide-react';
 
 // Hooks
 import { useLoginMutation, useProfile, usePatients } from "@/presentation/hooks";
@@ -59,6 +59,7 @@ const BudgetPage: React.FC = () => {
     const notification = useNotification();
     const confirmation = useConfirmation();
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [budgetSavedSuccessfully, setBudgetSavedSuccessfully] = useState(false);
 
     // Hooks para datos
     const { token } = useLoginMutation();
@@ -251,6 +252,7 @@ const BudgetPage: React.FC = () => {
 
             await saveBudget(budgetData);
             setHasUnsavedChanges(false);
+            setBudgetSavedSuccessfully(true);
             notification.success('Presupuesto guardado exitosamente');
         } catch (error: any) {
             const errorMessage = error?.response?.data?.message || error.message || 'Error desconocido al guardar';
@@ -395,6 +397,65 @@ const BudgetPage: React.FC = () => {
                         )}
                     </div>
                 </div>
+
+                {/* Botones de acción del presupuesto - Solo en BudgetPage */}
+                {selectedPatient && (hasUnsavedChanges || budgetSavedSuccessfully) && (
+                    <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-6">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                            <div>
+                                {budgetSavedSuccessfully ? (
+                                    <>
+                                        <h3 className="text-lg font-semibold text-green-700">¡Presupuesto guardado exitosamente!</h3>
+                                        <p className="text-sm text-slate-500 mt-1">Puedes ir al perfil del paciente para ver el presupuesto</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h3 className="text-lg font-semibold text-slate-700">Cambios sin guardar</h3>
+                                        <p className="text-sm text-slate-500 mt-1">Tienes cambios pendientes que deben ser guardados</p>
+                                    </>
+                                )}
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                                {budgetSavedSuccessfully ? (
+                                    <button
+                                        onClick={() => navigate(`/dashboard/pacientes?id=${selectedPatient.id}&tab=presupuesto`)}
+                                        className="flex items-center justify-center px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg transition-colors whitespace-nowrap"
+                                    >
+                                        <User className="w-4 h-4 mr-2" />
+                                        Ir al Tab de Presupuesto
+                                    </button>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={handleBackToPatient}
+                                            className="flex items-center justify-center px-4 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
+                                        >
+                                            <ArrowLeft className="w-4 h-4 mr-2" />
+                                            Volver sin guardar
+                                        </button>
+                                        <button
+                                            onClick={handleSaveBudget}
+                                            disabled={isLoadingSave}
+                                            className="flex items-center justify-center px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                        >
+                                            {isLoadingSave ? (
+                                                <>
+                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                                    Guardando...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Save className="w-4 h-4 mr-2" />
+                                                    Guardar Presupuesto
+                                                </>
+                                            )}
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Editor de presupuesto */}
                 {selectedPatient ? (

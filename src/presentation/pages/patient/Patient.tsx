@@ -109,9 +109,10 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
         });
         setSelectedPatient(patient);
         setCurrentView('detail');
-        // Limpiar el query param de la URL
-        searchParams.delete('id');
-        setSearchParams(searchParams);
+        // Limpiar el query param 'id' pero mantener 'tab' si existe
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('id');
+        setSearchParams(newSearchParams);
       } else {
         console.log('❌ Paciente no encontrado con ID:', patientId);
         notification.error(

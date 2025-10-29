@@ -144,8 +144,11 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
     };
 
     const handleCompleteBudget = async (budget: Budget) => {
-        // Preparar detalles con advertencia
-        const details = ['Se marcará el presupuesto como completado'];
+        // Advertencia sobre tratamientos incompletos
+        const details = [
+            'Asegúrate de completar todos los tratamientos antes de marcar el presupuesto como completado.',
+            'Se marcará el presupuesto como completado'
+        ];
 
         const confirmed = await confirmation.confirm({
             title: 'Completar presupuesto',
