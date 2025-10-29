@@ -9,3 +9,4 @@ export * from './update-budget-status';
 export * from './delete-budget';
 export * from './get-budget-stats';
 export * from './get-revenue-by-treatments';
+export * from './get-pending-revenue';

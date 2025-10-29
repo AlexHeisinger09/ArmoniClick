@@ -26,7 +26,7 @@ const Dashboard = () => {
   const { weeklyAppointmentsCount } = useWeeklyAppointments();
   const { monthlyPatientsCount, percentageChange: patientsPercentageChange } = useMonthlyPatients();
   const { currentMonthRevenueFormatted, percentageChange: revenuePercentageChange } = useMonthlyRevenue();
-  const { currentMonthPendingRevenueFormatted, percentageChange: pendingRevenuePercentageChange } = usePendingTreatmentsRevenue();
+  const { pendingRevenueFormatted } = usePendingTreatmentsRevenue();
 
   // Hooks dinámicos para los 4 componentes
   const { upcomingAppointments } = useTodayAndUpcomingAppointments();
@@ -133,8 +133,8 @@ const Dashboard = () => {
               <TrendingUp className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{currentMonthPendingRevenueFormatted}</div>
-              <p className="text-xs opacity-90">{pendingRevenuePercentageChange > 0 ? '+' : ''}{pendingRevenuePercentageChange}% vs mes anterior</p>
+              <div className="text-2xl font-bold">{pendingRevenueFormatted}</div>
+              <p className="text-xs opacity-90">Potencial de ingresos futuros</p>
             </CardContent>
           </Card>
 

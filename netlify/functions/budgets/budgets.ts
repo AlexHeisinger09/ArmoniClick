@@ -11,6 +11,7 @@ import {
   DeleteBudget,
   GetBudgetStats,
   GetRevenueByTreatments,
+  GetPendingRevenue,
 } from "./use-cases";
 
 import {
@@ -56,6 +57,14 @@ const handler: Handler = async (event: HandlerEvent) => {
     // ✅ GET /budgets/revenue-treatments - Obtener ingresos por treatments completados
     if (httpMethod === "GET" && path.includes('/revenue-treatments')) {
       return new GetRevenueByTreatments()
+        .execute(userId)
+        .then((res) => res)
+        .catch((error) => error);
+    }
+
+    // ✅ GET /budgets/pending-revenue - Obtener dinero pendiente (treatments no completados)
+    if (httpMethod === "GET" && path.includes('/pending-revenue')) {
+      return new GetPendingRevenue()
         .execute(userId)
         .then((res) => res)
         .catch((error) => error);

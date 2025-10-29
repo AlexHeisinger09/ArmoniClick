@@ -780,4 +780,41 @@ export class BudgetService {
             throw error;
         }
     }
+
+    // ✅ OBTENER DINERO PENDIENTE: Todos los treatments NO completados (dinero potencial futuro)
+    async getPendingRevenue(userId: number): Promise<number> {
+        try {
+            console.log('💵 Obteniendo dinero pendiente (treatments no completados) para doctor:', userId);
+
+            // ✅ Query: obtener SUM de todos los budget_items donde NO existe treatment COMPLETADO
+            const result = await db
+                .select({
+                    total: sql<string>`COALESCE(SUM(CAST(${budgetItemsTable.valor} AS DECIMAL)), 0)`,
+                })
+                .from(budgetItemsTable)
+                .innerJoin(budgetsTable, eq(budgetItemsTable.budget_id, budgetsTable.id))
+                .where(
+                    and(
+                        eq(budgetsTable.user_id, userId),
+                        eq(budgetItemsTable.is_active, true),
+                        // ✅ CLAVE: NO EXISTS donde status = 'completed'
+                        // Esto incluye todos los items que NO tienen un treatment completado
+                        sql`NOT EXISTS (
+                            SELECT 1 FROM ${treatmentsTable}
+                            WHERE ${treatmentsTable.budget_item_id} = ${budgetItemsTable.id}
+                            AND ${treatmentsTable.status} = 'completed'
+                            AND ${treatmentsTable.is_active} = true
+                        )`
+                    )
+                );
+
+            const totalPending = parseFloat(result[0]?.total || '0');
+            console.log(`💵 Dinero pendiente calculado: $${totalPending.toLocaleString('es-CL')}`);
+
+            return totalPending;
+        } catch (error) {
+            console.error('❌ Error en getPendingRevenue:', error);
+            throw error;
+        }
+    }
 }

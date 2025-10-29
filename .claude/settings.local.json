@@ -20,7 +20,8 @@
       "Bash(git clean:*)",
       "Bash(npx tsc:*)",
       "Bash(curl:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(timeout 120 npm run build)"
     ],
     "deny": [],
     "ask": []
