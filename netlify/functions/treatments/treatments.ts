@@ -10,6 +10,7 @@ import {
   GetBudgetsByPatient, // ✅ NUEVO
   GetTreatmentsByBudget, // ✅ NUEVO
   CompleteTreatment, // ✅ NUEVO
+  GetPopularTreatments, // ✅ NUEVO
 } from "./use-cases";
 
 import {
@@ -69,6 +70,14 @@ const handler: Handler = async (event: HandlerEvent) => {
   }
 
   try {
+    // ✅ GET /treatments/popular - Obtener tratamientos populares
+    if (httpMethod === "GET" && path.includes('/popular')) {
+      return new GetPopularTreatments()
+        .execute(doctorId)
+        .then((res) => res)
+        .catch((error) => error);
+    }
+
     // ✅ GET /treatments/patient/{patientId}/budgets - Obtener presupuestos de un paciente
     if (httpMethod === "GET" && patientId && pathParts.includes('budgets')) {
       if (isNaN(patientId)) {

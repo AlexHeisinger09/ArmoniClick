@@ -8,3 +8,4 @@ export * from './delete-treatment';
 export * from './get-budgets-by-patient';
 export * from './get-treatments-by-budget';
 export * from './complete-treatment';
+export * from './get-popular-treatments';
