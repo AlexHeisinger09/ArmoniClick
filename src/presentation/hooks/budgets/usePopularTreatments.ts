@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetcher } from '@/config/adapters/api.adapter';
-import { getPopularTreatmentsUseCase, type PopularTreatment } from '@/core/use-cases/getPopularTreatmentsUseCase';
+import { getPopularTreatmentsUseCase, type PopularTreatment } from '@/core/use-cases/treatments/get-popular-treatments.use-case';
 
 /**
  * Colores para el gráfico de pastel (tratamientos populares)
