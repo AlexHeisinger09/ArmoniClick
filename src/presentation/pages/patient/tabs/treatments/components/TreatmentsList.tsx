@@ -103,7 +103,7 @@ const TreatmentsList: React.FC<TreatmentsListProps> = ({
               isLoadingDelete={isLoadingDelete}
               isLoadingComplete={isLoadingComplete}
               canComplete={treatment.status === 'pending'}
-              showBudgetInfo={false}
+              showBudgetInfo={true}
             />
           ))}
 
