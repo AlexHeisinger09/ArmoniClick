@@ -694,12 +694,13 @@ export class BudgetService {
         return budget ? ['pendiente', 'borrador'].includes(budget.status) : false;
     }
 
-    // ✅ OBTENER INGRESOS DE BUDGET_ITEMS FILTRANDO POR DOCTOR
+    // ✅ OBTENER INGRESOS DE TREATMENTS COMPLETADOS (NO budget_items genéricos)
     async getRevenueByCompletedTreatments(userId: number): Promise<BudgetWithItems[]> {
         try {
-            console.log('💰 Obteniendo ingresos por budget_items para doctor:', userId);
+            console.log('💰 Obteniendo ingresos por treatments completados para doctor:', userId);
 
-            // ✅ Query directa: obtener budget_items que pertenecen a presupuestos del doctor
+            // ✅ Query CORRECTA: obtener budget_items que tienen treatments COMPLETADOS
+            // La fecha usada es la del treatment completado (updated_at), no la del budget_item
             const budgetItems = await db
                 .select({
                     id: budgetItemsTable.id,
@@ -708,21 +709,28 @@ export class BudgetService {
                     accion: budgetItemsTable.accion,
                     valor: budgetItemsTable.valor,
                     orden: budgetItemsTable.orden,
-                    created_at: budgetItemsTable.created_at,
+                    // ✅ CAMBIO CLAVE: Usar fecha del treatment completado, no del budget_item
+                    created_at: treatmentsTable.updated_at, // Fecha cuando se completó el tratamiento
                     budget_user_id: budgetsTable.user_id,
                     budget_status: budgetsTable.status,
                 })
                 .from(budgetItemsTable)
                 .innerJoin(budgetsTable, eq(budgetItemsTable.budget_id, budgetsTable.id))
+                // ✅ CAMBIO CLAVE: JOIN con treatments para filtrar solo completados
+                .innerJoin(treatmentsTable, eq(budgetItemsTable.id, treatmentsTable.budget_item_id))
                 .where(
                     and(
                         eq(budgetsTable.user_id, userId),
-                        eq(budgetItemsTable.is_active, true)
+                        eq(budgetItemsTable.is_active, true),
+                        // ✅ CAMBIO CLAVE: Filtrar solo treatments completados
+                        eq(treatmentsTable.status, 'completed'),
+                        eq(treatmentsTable.is_active, true)
                     )
                 )
-                .orderBy(desc(budgetItemsTable.created_at));
+                // ✅ Ordenar por fecha del treatment completado (más recientes primero)
+                .orderBy(desc(treatmentsTable.updated_at));
 
-            console.log(`📊 Budget items encontrados: ${budgetItems.length}`);
+            console.log(`📊 Budget items con treatments completados encontrados: ${budgetItems.length}`);
 
             // ✅ Agrupar items por presupuesto
             const budgetMap = new Map<number, BudgetWithItems>();
@@ -743,6 +751,7 @@ export class BudgetService {
                 }
 
                 const budget = budgetMap.get(item.budget_id)!;
+                // ✅ CAMBIO: Usar fecha del treatment (item.created_at ya tiene updated_at del treatment)
                 budget.items.push({
                     id: item.id,
                     budget_id: item.budget_id,
@@ -750,12 +759,20 @@ export class BudgetService {
                     accion: item.accion,
                     valor: item.valor.toString(),
                     orden: item.orden,
-                    created_at: item.created_at,
+                    created_at: item.created_at, // Ahora contiene updated_at del treatment
                 } as BudgetItemData);
             }
 
             const budgets = Array.from(budgetMap.values());
             console.log(`✅ Presupuestos agrupados: ${budgets.length}`);
+
+            // Debug: Log de items procesados
+            budgets.forEach(budget => {
+                console.log(`📦 Presupuesto #${budget.id}: ${budget.items.length} items completados`);
+                budget.items.forEach(item => {
+                    console.log(`  - ${item.accion}: $${item.valor} (completado: ${item.created_at})`);
+                });
+            });
 
             return budgets;
         } catch (error) {
