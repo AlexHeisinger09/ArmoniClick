@@ -14,13 +14,6 @@
 [functions."daily-reminders"]
 schedule = "30 13 * * *"  # 14:30 CL (18:30 UTC, ajustar en verano a 17:30)
 
-# Redirigir www a dominio sin www
-[[redirects]]
-  from = "//*"
-  to = "/:splat"
-  status = 301
-  conditions = {Host = ["www.armoniclick.cl"]}
-
 # RUTAS EXISTENTES
 [[redirects]]
   from = "/treatments/popular"
