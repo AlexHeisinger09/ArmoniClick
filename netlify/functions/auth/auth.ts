@@ -16,17 +16,18 @@ import {
   ResetPasswordDto,
 } from "./dtos";
 
-import { fromBodyToObject, HEADERS } from "../../config/utils";
+import { fromBodyToObject, HEADERS, getCORSHeaders } from "../../config/utils";
 
 const handler: Handler = async (event: HandlerEvent) => {
   const { httpMethod, path } = event;
   const body = event.body ? fromBodyToObject(event.body) : {};
   const token = path.split("/").pop();
+  const origin = event.headers.origin || event.headers.referer;
 
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 200,
-      headers: HEADERS.json,
+      headers: getCORSHeaders(origin),
     };
   }
 
