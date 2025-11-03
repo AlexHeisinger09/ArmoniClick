@@ -26,7 +26,7 @@ const handler: Handler = async (event: HandlerEvent) => {
   const { httpMethod, path, queryStringParameters } = event;
   const body = event.body ? fromBodyToObject(event.body) : {};
 
-  // Manejar preflight CORS a
+  // Manejar preflight CORS
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 200,
