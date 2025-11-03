@@ -14,13 +14,6 @@
 [functions."daily-reminders"]
 schedule = "30 13 * * *"  # 14:30 CL (18:30 UTC, ajustar en verano a 17:30)
 
-# Redirigir www.armoniclick.cl a armoniclick.cl
-[[redirects]]
-  from = "https://www.armoniclick.cl/*"
-  to = "https://armoniclick.cl/:splat"
-  status = 301
-  force = true
-
 # RUTAS EXISTENTES
 [[redirects]]
   from = "/treatments/popular"
