@@ -44,7 +44,7 @@ const handler: Handler = async (event: HandlerEvent) => {
   }
 
   try {
-    // ✅ EXTRAER ID DEL PATH O QUERY PARAMETERS a
+    // ✅ EXTRAER ID DEL PATH O QUERY PARAMETERS
     let appointmentId: number | null = null;
 
     // Método 1: Del path (preferido) - /.netlify/functions/appointments-status/54
