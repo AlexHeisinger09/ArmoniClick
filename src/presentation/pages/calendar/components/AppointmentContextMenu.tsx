@@ -39,6 +39,7 @@ interface AppointmentContextMenuProps {
   onUpdateStatus: (appointmentId: string, status: string, reason?: string) => Promise<void>;
   onNavigateToPatient?: (patientId: number) => void;
   onEditAppointment?: (appointment: CalendarAppointment) => void;
+  onDeleteAppointment?: (appointmentId: string) => Promise<void>;
 }
 
 // Estados disponibles (sin "completed")
@@ -95,11 +96,13 @@ export const AppointmentContextMenu: React.FC<AppointmentContextMenuProps> = ({
   position,
   onUpdateStatus,
   onNavigateToPatient,
-  onEditAppointment
+  onEditAppointment,
+  onDeleteAppointment
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState(position);
 
@@ -187,6 +190,23 @@ export const AppointmentContextMenu: React.FC<AppointmentContextMenuProps> = ({
     }
   };
 
+  const handleConfirmDelete = async () => {
+    try {
+      setIsUpdating(true);
+      setUpdateError(null);
+      if (onDeleteAppointment) {
+        await onDeleteAppointment(appointment.id);
+      }
+      onClose();
+    } catch (error: any) {
+      console.error('❌ Error deleting:', error);
+      setUpdateError(error.message || 'Error al eliminar');
+    } finally {
+      setIsUpdating(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   const handleViewProfile = () => {
     if (appointment.patientId && onNavigateToPatient) {
       console.log('🔗 Navigating to patient:', appointment.patientId);
@@ -252,7 +272,7 @@ export const AppointmentContextMenu: React.FC<AppointmentContextMenuProps> = ({
 
         {/* Opciones */}
         <div className="py-1">
-          {!showCancelConfirm ? (
+          {!showCancelConfirm && !showDeleteConfirm ? (
             <>
               {/* ✅ Ver perfil - SOLO si patientId existe y es > 0 */}
               {isRegisteredPatient && (
@@ -322,9 +342,21 @@ export const AppointmentContextMenu: React.FC<AppointmentContextMenuProps> = ({
                   <span className="text-[11px] sm:text-xs font-medium text-red-600">Cancelar</span>
                 </button>
               )}
+
+              {/* Eliminar */}
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isUpdating}
+                className="w-full px-2 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1.5 sm:gap-2 hover:bg-red-50 transition-all disabled:opacity-50 text-left"
+              >
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <XCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-600" />
+                </div>
+                <span className="text-[11px] sm:text-xs font-medium text-red-600">Eliminar</span>
+              </button>
             </>
-          ) : (
-            /* Confirmación */
+          ) : showCancelConfirm ? (
+            /* Confirmación de cancelar */
             <div className="px-2 py-1.5 sm:px-3 sm:py-2">
               <div className="mb-2 sm:mb-3">
                 <p className="text-[11px] sm:text-xs font-semibold text-gray-900 mb-0.5 sm:mb-1">¿Cancelar cita?</p>
@@ -347,11 +379,35 @@ export const AppointmentContextMenu: React.FC<AppointmentContextMenuProps> = ({
                 </button>
               </div>
             </div>
+          ) : (
+            /* Confirmación de eliminar */
+            <div className="px-2 py-1.5 sm:px-3 sm:py-2">
+              <div className="mb-2 sm:mb-3">
+                <p className="text-[11px] sm:text-xs font-semibold text-gray-900 mb-0.5 sm:mb-1">¿Eliminar cita?</p>
+                <p className="text-[10px] sm:text-xs text-gray-600">Esta acción no se puede deshacer</p>
+              </div>
+              <div className="flex gap-1.5 sm:gap-2">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isUpdating}
+                  className="flex-1 px-2 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors disabled:opacity-50"
+                >
+                  No
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  disabled={isUpdating}
+                  className="flex-1 px-2 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded transition-colors disabled:opacity-50"
+                >
+                  {isUpdating ? '...' : 'Eliminar'}
+                </button>
+              </div>
+            </div>
           )}
         </div>
 
         {/* Footer - Estado actual */}
-        {!showCancelConfirm && (
+        {!showCancelConfirm && !showDeleteConfirm && (
           <div className="px-2 py-1.5 sm:px-3 sm:py-2 bg-gray-50 border-t border-gray-100">
             <div className="flex items-center justify-between">
               <span className="text-[10px] sm:text-xs text-gray-500">Estado:</span>

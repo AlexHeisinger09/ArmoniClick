@@ -8,29 +8,28 @@ export const monthNames: string[] = [
 
 export const dayNames: string[] = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
+// Slots de 30 minutos - actualizado para mejor disponibilidad
+// Horario: 09:00 a 19:30 (se trabaja hasta las 20:00)
 export const timeSlots: string[] = [
-  '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'
+  '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
+  '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
+  '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'
 ];
 
-// Función para generar time slots dinámicamente basado en la duración
-export const getTimeSlotsForDuration = (duration: number = 60): string[] => {
+// Función para generar time slots dinámicamente - SIEMPRE en incrementos de 30 minutos
+export const getTimeSlotsForDuration = (duration: number = 30): string[] => {
   const slots: string[] = [];
   const startHour = 9;
-  const endHour = 21; // Hasta las 21:00 (9 PM)
+  const endHour = 19; // Hasta las 19:30 (se trabaja hasta las 20:00)
 
-  // Calcular el intervalo basado en la duración
-  // Si es 30 min, intervalo de 30 min; si es 60 min, intervalo de 60 min, etc
-  const interval = duration <= 30 ? 30 : 60;
-
+  // Mostrar SIEMPRE slots de 30 minutos, independientemente de la duración
+  // Esto permite que una cita de 60 min pueda empezar a las 9:30, 10:30, etc.
   for (let hour = startHour; hour < endHour; hour++) {
-    // Si el intervalo es 30, agregar también los slots de media hora
-    if (interval === 30) {
-      slots.push(`${String(hour).padStart(2, '0')}:00`);
-      slots.push(`${String(hour).padStart(2, '0')}:30`);
-    } else {
-      slots.push(`${String(hour).padStart(2, '0')}:00`);
-    }
+    slots.push(`${String(hour).padStart(2, '0')}:00`);
+    slots.push(`${String(hour).padStart(2, '0')}:30`);
   }
+  // Agregar el último slot a las 19:30
+  slots.push('19:30');
 
   return slots;
 };

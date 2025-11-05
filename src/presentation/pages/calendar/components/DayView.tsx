@@ -39,7 +39,7 @@ export const DayView: React.FC<DayViewProps> = ({
           {timeSlots.map((time) => (
             <div
               key={time}
-              className="h-20 flex items-center justify-center text-sm font-medium text-slate-500 border-b border-slate-50"
+              className="h-20 flex items-center justify-center text-xs font-medium text-slate-500 border-b border-slate-50"
             >
               <span className="text-center">{time}</span>
             </div>
@@ -51,8 +51,9 @@ export const DayView: React.FC<DayViewProps> = ({
             const currentHour = new Date().getHours();
             const currentMinutes = new Date().getMinutes();
             const slotHour = parseInt(time.split(':')[0]);
-            const isCurrentHourSlot = isCurrentDay && currentHour === slotHour;
-            
+            const slotMinutes = parseInt(time.split(':')[1]);
+            const isCurrentSlot = isCurrentDay && currentHour === slotHour && currentMinutes >= slotMinutes && currentMinutes < (slotMinutes + 30);
+
             return (
               <div
                 key={time}
@@ -63,12 +64,12 @@ export const DayView: React.FC<DayViewProps> = ({
                   <Plus className="w-4 h-4 mr-2 text-cyan-400" />
                   Agendar nueva cita
                 </div>
-                
-                {isCurrentHourSlot && (
-                  <div 
+
+                {isCurrentSlot && (
+                  <div
                     className="absolute left-0 right-4 z-20"
-                    style={{ 
-                      top: `${(currentMinutes / 60) * 100}%`
+                    style={{
+                      top: `${((currentMinutes % 30) / 30) * 100}%`
                     }}
                   >
                     <div className="flex items-center">

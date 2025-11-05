@@ -36,7 +36,7 @@ export const useCalendar = () => {
     service: '',
     description: '',
     time: '',
-    duration: 60,
+    duration: 30,  // Duración por defecto: 30 minutos
     date: null,
     patientId: undefined,
     guestName: undefined,
@@ -95,7 +95,7 @@ export const useCalendar = () => {
           service: '',
           description: '',
           time: '',
-          duration: 60,
+          duration: 30,  // Duración por defecto: 30 minutos
           date: day.date,
           patientId: undefined,
           guestName: undefined,
@@ -126,29 +126,88 @@ export const useCalendar = () => {
 
   const handleCreateAppointment = async (): Promise<void> => {
     const hasPatient = newAppointment.patientId || newAppointment.guestName || newAppointment.patient;
-    
+
     if (!hasPatient || !newAppointment.service || !newAppointment.time || !newAppointment.date) {
       alert('Por favor complete todos los campos obligatorios');
       return;
     }
 
+    const isEditing = !!(window as any).__editingAppointmentId;
+
     try {
-      await createAppointment(newAppointment);
+      if (isEditing) {
+        // Modo edición: hacer PUT en lugar de POST
+        const appointmentId = (window as any).__editingAppointmentId;
+        const numericId = Number(appointmentId);
 
-      const patientName = newAppointment.patientId
-        ? newAppointment.patient
-        : newAppointment.guestName || newAppointment.patient;
+        if (isNaN(numericId)) {
+          throw new Error('ID de cita inválido para edición');
+        }
 
-      const hasEmail = newAppointment.patientId
-        ? true
-        : !!(newAppointment.guestEmail?.trim());
+        // Validar que tenemos token
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No hay token de autenticación. Por favor inicia sesión nuevamente');
+        }
 
-      notification.notifyAppointmentCreated(patientName, hasEmail);
+        // Construir la fecha y hora en el formato que espera el backend
+        if (!newAppointment.date) {
+          throw new Error('Fecha de cita es obligatoria');
+        }
 
-      if (hasEmail) {
-        setTimeout(() => {
-          notification.notifyReminderInfo();
-        }, 2000);
+        const appointmentDate = new Date(newAppointment.date);
+        const [hours, mins] = newAppointment.time.split(':').map(Number);
+        appointmentDate.setHours(hours, mins, 0, 0);
+
+        // Convertir a ISO string con timezone
+        const isoDateTime = appointmentDate.toISOString();
+
+        const updatePayload = {
+          title: `${newAppointment.patient} - ${newAppointment.service}`,
+          description: newAppointment.description || null,
+          appointmentDate: isoDateTime,
+          duration: newAppointment.duration || 30,
+          notes: newAppointment.description || null
+        };
+
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/appointments/${numericId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(updatePayload)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Error al actualizar la cita');
+        }
+
+        console.log('✅ Appointment updated successfully');
+        notification.success('Cita actualizada exitosamente');
+
+        // Limpiar flag de edición
+        delete (window as any).__editingAppointmentId;
+      } else {
+        // Modo creación: usar el flujo normal
+        await createAppointment(newAppointment);
+
+        const patientName = newAppointment.patientId
+          ? newAppointment.patient
+          : newAppointment.guestName || newAppointment.patient;
+
+        const hasEmail = newAppointment.patientId
+          ? true
+          : !!(newAppointment.guestEmail?.trim());
+
+        notification.notifyAppointmentCreated(patientName, hasEmail);
+
+        if (hasEmail) {
+          setTimeout(() => {
+            notification.notifyReminderInfo();
+          }, 2000);
+        }
       }
 
       setNewAppointment({
@@ -156,7 +215,7 @@ export const useCalendar = () => {
         service: '',
         description: '',
         time: '',
-        duration: 60,
+        duration: 30,  // Duración por defecto: 30 minutos
         date: null,
         patientId: undefined,
         guestName: undefined,
@@ -166,11 +225,16 @@ export const useCalendar = () => {
       });
       setShowNewAppointmentModal(false);
 
+      // Recargar citas
+      refetch();
+
     } catch (error: any) {
-      console.error('❌ Error creating appointment:', error);
+      console.error('❌ Error:', error);
 
       if (error.message?.includes('email')) {
         notification.notifyEmailError(error.message, 'confirmation');
+      } else {
+        notification.error(error.message || 'Error al guardar la cita');
       }
     }
   };
@@ -186,7 +250,7 @@ export const useCalendar = () => {
       service: '',
       description: '',
       time: '',
-      duration: 60,
+      duration: 30,  // Duración por defecto: 30 minutos
       date: null,
       patientId: undefined,
       guestName: undefined,
@@ -270,8 +334,81 @@ export const useCalendar = () => {
 
   const handleAppointmentEdit = (appointment: CalendarAppointment): void => {
     console.log('✏️ Edit appointment:', appointment);
-    // TODO: Abrir modal de edición con los datos de la cita
+
+    // Convertir la cita a formato de edición
+    const appointmentDate = appointment.start ? new Date(appointment.start) : currentDate;
+
+    setNewAppointment({
+      patient: appointment.patient || '',
+      service: appointment.service || '',
+      description: appointment.notes || '',
+      time: appointment.time,
+      duration: appointment.duration,
+      date: appointmentDate,
+      patientId: appointment.patientId,
+      guestName: appointment.guestName,
+      guestEmail: appointment.email,
+      guestPhone: appointment.phone,
+      guestRut: undefined
+    });
+
+    setSelectedDate(appointmentDate);
+    setSelectedTimeSlot(appointment.time);
+
+    // Agregar un flag para indicar que es edición
+    (window as any).__editingAppointmentId = appointment.id;
+
+    setShowNewAppointmentModal(true);
     closeContextMenu();
+  };
+
+  const handleDeleteAppointment = async (appointmentId: string): Promise<void> => {
+    console.log('🗑️ Delete appointment:', appointmentId);
+
+    const numericId = Number(appointmentId);
+
+    if (isNaN(numericId)) {
+      throw new Error('ID de cita no es un número válido');
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        throw new Error('No hay token de autenticación');
+      }
+
+      // Llamar a la API para eliminar la cita
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/appointments/${numericId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.status === 401) {
+        throw new Error('No autorizado. Por favor inicia sesión nuevamente');
+      }
+
+      if (response.status === 404) {
+        throw new Error('La cita no existe');
+      }
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || 'Error al eliminar la cita');
+      }
+
+      console.log('✅ Appointment deleted successfully');
+      notification.success('Cita eliminada exitosamente');
+
+      // Recargar las citas
+      refetch();
+    } catch (error: any) {
+      console.error('❌ Error deleting appointment:', error);
+      throw error;
+    }
   };
 
   return {
@@ -316,7 +453,8 @@ export const useCalendar = () => {
     handleUpdateStatus,
     handleNavigateToPatient,
     handleAppointmentEdit,
-    
+    handleDeleteAppointment,
+
     // Funciones del backend
     refetch
   };

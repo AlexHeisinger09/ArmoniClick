@@ -22,8 +22,17 @@ export class JwtAdapter {
   static validateToken<T>(token: string): Promise<T | null> {
     return new Promise((resolve) => {
       jwt.verify(token, JWT_SEED, (err, decoded) => {
-        if (err) return resolve(null);
+        if (err) {
+          console.error('❌ JWT verification error:', {
+            errorName: err.name,
+            errorMessage: err.message,
+            tokenLength: token.length,
+            jwtSeedLength: JWT_SEED.length
+          });
+          return resolve(null);
+        }
 
+        console.log('✅ JWT verified successfully');
         resolve(decoded as T);
       });
     });

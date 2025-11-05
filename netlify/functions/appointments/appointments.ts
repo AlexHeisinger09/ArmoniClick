@@ -1,6 +1,6 @@
 // netlify/functions/appointments/appointments.ts - CORRECCIÓN TIMEZONE
 import { Handler, HandlerEvent } from "@netlify/functions";
-import { validateJWT } from "../../middlewares";
+import { validateJWT, getAuthorizationHeader } from "../../middlewares";
 import { HEADERS, fromBodyToObject } from "../../config/utils";
 import { AppointmentService, CreateAppointmentData, UpdateAppointmentData } from "../../services/appointment.service";
 
@@ -17,7 +17,8 @@ const handler: Handler = async (event: HandlerEvent) => {
   }
 
   // Validar JWT
-  const user = await validateJWT(event.headers.authorization!);
+  const authHeader = getAuthorizationHeader(event.headers);
+  const user = await validateJWT(authHeader || "");
   if (user.statusCode !== 200) return user;
 
   const userData = JSON.parse(user.body);

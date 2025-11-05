@@ -87,6 +87,11 @@ export const isTimeSlotAvailable = (
 
   // Verificar si hay conflictos con otras citas
   const hasConflict = dayAppointments.some((appointment: CalendarAppointment) => {
+    // Las citas canceladas NO bloquean el slot - se pueden reagendar
+    if (appointment.status === 'cancelled') {
+      return false;
+    }
+
     const [appHours, appMinutes] = appointment.time.split(':').map(Number);
     const appStart = appHours * 60 + appMinutes;
     const appEnd = appStart + appointment.duration;
@@ -108,6 +113,7 @@ export const isTimeSlotAvailable = (
           startMinutes: appStart,
           endMinutes: appEnd,
           duration: appointment.duration,
+          status: appointment.status,
           timeRange: `${String(appHours).padStart(2, '0')}:${String(appMinutes).padStart(2, '0')}-${String(Math.floor(appEnd / 60)).padStart(2, '0')}:${String(appEnd % 60).padStart(2, '0')}`
         }
       });
@@ -135,6 +141,11 @@ export const hasOverlap = (
 
   // Verificar si hay conflictos con otras citas
   const hasConflict = dayAppointments.some((appointment: CalendarAppointment) => {
+    // Las citas canceladas NO bloquean el slot - se pueden reagendar
+    if (appointment.status === 'cancelled') {
+      return false;
+    }
+
     const [appHours, appMinutes] = appointment.time.split(':').map(Number);
     const appStart = appHours * 60 + appMinutes;
     const appEnd = appStart + appointment.duration;

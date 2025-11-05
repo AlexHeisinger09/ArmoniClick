@@ -51,7 +51,8 @@ const Calendar: React.FC = () => {
     closeContextMenu,
     handleUpdateStatus,
     handleNavigateToPatient,
-    handleAppointmentEdit
+    handleAppointmentEdit,
+    handleDeleteAppointment
   } = useCalendar();
 
   const getErrorMessage = (error: unknown): string => {
@@ -201,6 +202,7 @@ const Calendar: React.FC = () => {
           onChange={setNewAppointment}
           onSubmit={handleCreateAppointment}
           isCreating={isCreating}
+          isEditing={!!(window as any).__editingAppointmentId}
         />
 
         {/* Menú contextual */}
@@ -212,6 +214,7 @@ const Calendar: React.FC = () => {
           onUpdateStatus={handleUpdateStatus}
           onNavigateToPatient={handleNavigateToPatient}
           onEditAppointment={handleAppointmentEdit as any}
+          onDeleteAppointment={handleDeleteAppointment}
         />
       </div>
     </div>

@@ -22,6 +22,7 @@ interface NewAppointmentModalProps {
   onChange: (appointment: NewAppointmentForm) => void;
   onSubmit: () => void;
   isCreating?: boolean;
+  isEditing?: boolean;
 }
 
 export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
@@ -31,7 +32,8 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   onClose,
   onChange,
   onSubmit,
-  isCreating = false
+  isCreating = false,
+  isEditing = false
 }) => {
   // Estados locales para el modal
   const [patientType, setPatientType] = useState<'registered' | 'guest'>('registered');
@@ -59,16 +61,44 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
     );
   }, [patients, searchTerm]);
 
-  // Reset estados cuando el modal se abre
+  // Reset estados cuando el modal se abre (pero no si es edición)
   useEffect(() => {
     if (isOpen) {
-      setPatientType('registered');
-      setSearchTerm('');
-      setSelectedPatient(null);
-      setShowPatientSearch(false);
-      setGuestData({ name: '', email: '', phone: '', rut: '' });
+      const isEditing = !!(window as any).__editingAppointmentId;
+
+      if (!isEditing) {
+        // Para creación nueva: resetear todo
+        setPatientType('registered');
+        setSearchTerm('');
+        setSelectedPatient(null);
+        setShowPatientSearch(false);
+        setGuestData({ name: '', email: '', phone: '', rut: '' });
+      } else {
+        // Para edición: cargar el paciente del formulario
+        setSearchTerm('');
+        setShowPatientSearch(false);
+
+        if (newAppointment.patientId) {
+          // Es un paciente registrado
+          setPatientType('registered');
+          // Buscar el paciente en la lista
+          const patient = patients.find(p => p.id === newAppointment.patientId);
+          if (patient) {
+            setSelectedPatient(patient);
+          }
+        } else if (newAppointment.guestName) {
+          // Es un paciente invitado
+          setPatientType('guest');
+          setGuestData({
+            name: newAppointment.guestName || '',
+            email: newAppointment.guestEmail || '',
+            phone: newAppointment.guestPhone || '',
+            rut: newAppointment.guestRut || ''
+          });
+        }
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, patients]);
 
   // Actualizar formulario cuando se selecciona paciente
   useEffect(() => {
@@ -382,19 +412,19 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
             {/* Selector de horario */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Horario * ({newAppointment.duration || 60} min)
+                Horario * ({newAppointment.duration || 30} min)
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {getTimeSlotsForDuration(newAppointment.duration || 60).map(time => {
+                {getTimeSlotsForDuration(newAppointment.duration || 30).map(time => {
                   const available = newAppointment.date ?
-                    isTimeSlotAvailable(appointments, newAppointment.date, time, newAppointment.duration || 60) : false;
+                    isTimeSlotAvailable(appointments, newAppointment.date, time, newAppointment.duration || 30) : false;
                   const isOverlap = newAppointment.date ?
-                    hasOverlap(appointments, newAppointment.date, time, newAppointment.duration || 60) : false;
+                    hasOverlap(appointments, newAppointment.date, time, newAppointment.duration || 30) : false;
 
                   // Debug log
                   if (newAppointment.date) {
                     console.log(`🔍 Time slot ${time}:`, {
-                      duration: newAppointment.duration || 60,
+                      duration: newAppointment.duration || 30,
                       available,
                       isOverlap,
                       appointmentsData: appointments
@@ -476,14 +506,14 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
                   {isCreating ? (
                     <>
                       <Loader className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 animate-spin" />
-                      <span className="hidden sm:inline">Creando...</span>
+                      <span className="hidden sm:inline">{isEditing ? 'Actualizando...' : 'Creando...'}</span>
                       <span className="sm:hidden">...</span>
                     </>
                   ) : (
                     <>
                       <FileText className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-                      <span className="hidden sm:inline">Crear Cita</span>
-                      <span className="sm:hidden">Crear</span>
+                      <span className="hidden sm:inline">{isEditing ? 'Actualizar Cita' : 'Crear Cita'}</span>
+                      <span className="sm:hidden">{isEditing ? 'Actualizar' : 'Crear'}</span>
                     </>
                   )}
                 </button>

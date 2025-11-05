@@ -41,7 +41,13 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
   const appEnd = appStart + appointment.duration;
 
   // Encontrar todas las citas que se solapan con esta
+  // Excluir citas canceladas - no deben afectar el layout
   const overlappingAppointments = dayAppointments.filter(app => {
+    // Las citas canceladas no se consideran en el cálculo de solapamiento
+    if (app.status === 'cancelled') {
+      return false;
+    }
+
     const [appHours, appMinutes] = app.time.split(':').map(Number);
     const otherStart = appHours * 60 + appMinutes;
     const otherEnd = otherStart + app.duration;
@@ -58,26 +64,31 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
     return hour - 9;
   };
 
-  // Calcular posición basada en minutos exactos (no solo horas)
+  // Calcular posición basada en minutos exactos (slots de 30 minutos)
   const getExactMinutePosition = (time: string, slotHeight: number): number => {
     const [hours, mins] = time.split(':').map(Number);
     const totalMinutes = hours * 60 + mins;
     const startMinute = 9 * 60; // 09:00 es el inicio del calendario
     const minutesFromStart = totalMinutes - startMinute;
-    const pixelPerMinute = slotHeight / 60;
+
+    // slotHeight representa 30 minutos, no 60
+    // Ej: Si slotHeight = 32px, entonces 32px = 30 minutos
+    // Por lo tanto: pixelPerMinute = 32 / 30
+    const pixelPerMinute = slotHeight / 30;
     return minutesFromStart * pixelPerMinute;
   };
 
   const slotIndex = getSlotIndex(appointment.time);
 
+  // Altura reducida a la mitad para slots de 30 minutos
   const SLOT_HEIGHTS = {
     week: {
-      desktop: 64,
-      mobile: 48
+      desktop: 32,      // 64 / 2 = 32px per 30-minute slot
+      mobile: 24        // 48 / 2 = 24px per 30-minute slot
     },
     day: {
-      desktop: 80,
-      mobile: 80
+      desktop: 80,      // 80px per 30-minute slot
+      mobile: 80        // 80px per 30-minute slot
     },
     month: {
       desktop: 24,
@@ -93,9 +104,9 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
     const heights = SLOT_HEIGHTS[viewType];
     const slotHeight = isMobile ? heights.mobile : heights.desktop;
 
-    // Calcular altura en función de la duración
-    // 60 minutos = 1 slot, 30 minutos = 0.5 slots, 90 minutos = 1.5 slots, 120 minutos = 2 slots
-    const durationFactor = appointment.duration / 60;
+    // Calcular altura en función de la duración (basado en slots de 30 minutos)
+    // 30 minutos = 1 slot, 60 minutos = 2 slots, 90 minutos = 3 slots, 120 minutos = 4 slots
+    const durationFactor = appointment.duration / 30;
     const appointmentHeight = slotHeight * durationFactor - 4;
 
     // Calcular posición exacta en minutos en lugar de solo usar horas
@@ -106,6 +117,7 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
       top: `${exactTopPosition + 2}px`,
       height: `${appointmentHeight}px`,
       overflow: 'hidden',
+      zIndex: appointment.status === 'cancelled' ? 0 : 10,
     };
 
     if (isOverbook) {
@@ -193,6 +205,9 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
         );
       
       case 'week':
+        // Para slots de 30 min, priorizar mostrar el nombre del paciente
+        const isSmallSlot = appointment.duration <= 30;
+
         if (isOverbook && appointmentIndex > 0) {
           return (
             <div className="text-xs h-full flex flex-col justify-center items-center space-y-0.5 p-1">
@@ -201,6 +216,17 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
               </div>
               <div className="text-[10px] text-center opacity-80">
                 {appointment.time} ({appointment.duration}m)
+              </div>
+            </div>
+          );
+        }
+
+        if (isSmallSlot) {
+          // Para citas de 30 min: prioritario mostrar el nombre completo del paciente
+          return (
+            <div className="h-full flex flex-col justify-center items-center p-0.5 text-center overflow-hidden">
+              <div className="text-xs truncate w-full leading-tight">
+                {appointment.patient}
               </div>
             </div>
           );

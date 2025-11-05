@@ -82,7 +82,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
             {timeSlots.map((time) => (
               <div
                 key={time}
-                className="h-16 flex items-center justify-center text-sm font-medium text-slate-500 border-b border-slate-50"
+                className="h-8 flex items-center justify-center text-xs font-medium text-slate-500 border-b border-slate-50"
               >
                 {time}
               </div>
@@ -99,28 +99,29 @@ export const WeekView: React.FC<WeekViewProps> = ({
                     const currentHour = new Date().getHours();
                     const currentMinutes = new Date().getMinutes();
                     const slotHour = parseInt(time.split(':')[0]);
-                    const isCurrentHourSlot = isToday(day) && currentHour === slotHour;
-                    
+                    const slotMinutes = parseInt(time.split(':')[1]);
+                    const isCurrentSlot = isToday(day) && currentHour === slotHour && Math.floor(currentMinutes / 30) === Math.floor(slotMinutes / 30);
+
                     return (
                       <div
                         key={time}
-                        className="h-16 border-b border-slate-50 hover:bg-cyan-25 cursor-pointer transition-colors group relative"
+                        className="h-8 border-b border-slate-50 hover:bg-cyan-25 cursor-pointer transition-colors group relative"
                         onClick={() => onTimeSlotClick(time, day)}
                       >
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <Plus className="w-4 h-4 text-cyan-400" />
                         </div>
                         
-                        {isCurrentHourSlot && (
-                          <div 
+                        {isCurrentSlot && (
+                          <div
                             className="absolute left-0 right-0 z-20"
-                            style={{ 
-                              top: `${(currentMinutes / 60) * 100}%`
+                            style={{
+                              top: `${((currentMinutes % 30) / 30) * 100}%`
                             }}
                           >
                             <div className="flex items-center">
-                              <div className="w-2 h-2 bg-cyan-500 rounded-full border border-white shadow-sm -ml-1"></div>
-                              <div className="flex-1 h-px bg-cyan-500"></div>
+                              <div className="w-1 h-1 bg-cyan-500 rounded-full border border-white shadow-sm -ml-0.5"></div>
+                              <div className="flex-1 h-px bg-cyan-500 opacity-70"></div>
                             </div>
                           </div>
                         )}
@@ -201,44 +202,45 @@ export const WeekView: React.FC<WeekViewProps> = ({
                 {timeSlots.map((time) => (
                   <div
                     key={time}
-                    className="h-12 flex items-center justify-center text-xs font-medium text-slate-500 border-b border-slate-50"
+                    className="h-6 flex items-center justify-center text-xs font-medium text-slate-500 border-b border-slate-50"
                   >
-                    {time.split(':')[0]}h
+                    {time}
                   </div>
                 ))}
               </div>
 
               {weekDays.map((day, dayIndex) => {
                 const dayAppointments = getAppointmentsForDate(appointments, day);
-                
+
                 return (
                   <div key={dayIndex} className="w-20 border-r border-slate-100 last:border-r-0 relative flex-shrink-0">
                     {timeSlots.map((time) => {
                       const currentHour = new Date().getHours();
                       const currentMinutes = new Date().getMinutes();
                       const slotHour = parseInt(time.split(':')[0]);
-                      const isCurrentHourSlot = isToday(day) && currentHour === slotHour;
-                      
+                      const slotMinutes = parseInt(time.split(':')[1]);
+                      const isCurrentSlot = isToday(day) && currentHour === slotHour && Math.floor(currentMinutes / 30) === Math.floor(slotMinutes / 30);
+
                       return (
                         <div
                           key={time}
-                          className="h-12 border-b border-slate-50 hover:bg-cyan-25 cursor-pointer transition-colors group relative"
+                          className="h-6 border-b border-slate-50 hover:bg-cyan-25 cursor-pointer transition-colors group relative"
                           onClick={() => onTimeSlotClick(time, day)}
                         >
                           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                             <Plus className="w-3 h-3 text-cyan-400" />
                           </div>
                           
-                          {isCurrentHourSlot && (
-                            <div 
+                          {isCurrentSlot && (
+                            <div
                               className="absolute left-0 right-0 z-10"
-                              style={{ 
-                                top: `${(currentMinutes / 60) * 100}%`
+                              style={{
+                                top: `${((currentMinutes % 30) / 30) * 100}%`
                               }}
                             >
                               <div className="flex items-center">
-                                <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full border border-white shadow-sm -ml-0.5"></div>
-                                <div className="flex-1 h-px bg-cyan-500"></div>
+                                <div className="w-1 h-1 bg-cyan-500 rounded-full border border-white shadow-sm -ml-0.5"></div>
+                                <div className="flex-1 h-px bg-cyan-500 opacity-70"></div>
                               </div>
                             </div>
                           )}
