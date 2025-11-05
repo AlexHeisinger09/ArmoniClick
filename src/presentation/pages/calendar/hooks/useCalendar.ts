@@ -1,16 +1,17 @@
 // src/presentation/pages/calendar/hooks/useCalendar.ts - CON MENÚ CONTEXTUAL
 import { useState, useEffect } from 'react';
-import { 
-  AppointmentsCalendarData, 
-  CalendarAppointment, 
-  NewAppointmentForm, 
-  ViewMode, 
-  CalendarDay 
+import {
+  AppointmentsCalendarData,
+  CalendarAppointment,
+  NewAppointmentForm,
+  ViewMode,
+  CalendarDay
 } from '../types/calendar';
 import { formatDateKey } from '../utils/calendar';
 import { useCalendarAppointments } from '@/presentation/hooks/appointments/useCalendarAppointments';
 import { useNotification } from '@/presentation/hooks/notifications/useNotification';
 import { useNavigate } from 'react-router-dom';
+import { apiFetcher } from '@/config/adapters/api.adapter';
 
 export const useCalendar = () => {
   const navigate = useNavigate();
@@ -144,12 +145,6 @@ export const useCalendar = () => {
           throw new Error('ID de cita inválido para edición');
         }
 
-        // Validar que tenemos token
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('No hay token de autenticación. Por favor inicia sesión nuevamente');
-        }
-
         // Construir la fecha y hora en el formato que espera el backend
         if (!newAppointment.date) {
           throw new Error('Fecha de cita es obligatoria');
@@ -170,19 +165,9 @@ export const useCalendar = () => {
           notes: newAppointment.description || null
         };
 
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/appointments/${numericId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(updatePayload)
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || 'Error al actualizar la cita');
-        }
+        // ✅ CAMBIO: Usar apiFetcher.put() en lugar de fetch()
+        // apiFetcher maneja automáticamente el token JWT
+        await apiFetcher.put(`/appointments/${numericId}`, updatePayload);
 
         console.log('✅ Appointment updated successfully');
         notification.success('Cita actualizada exitosamente');
@@ -372,33 +357,9 @@ export const useCalendar = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
-
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-
-      // Llamar a la API para eliminar la cita
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/appointments/${numericId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.status === 401) {
-        throw new Error('No autorizado. Por favor inicia sesión nuevamente');
-      }
-
-      if (response.status === 404) {
-        throw new Error('La cita no existe');
-      }
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || 'Error al eliminar la cita');
-      }
+      // ✅ CAMBIO: Usar apiFetcher.delete() en lugar de fetch()
+      // apiFetcher maneja automáticamente el token JWT
+      await apiFetcher.delete(`/appointments/${numericId}`);
 
       console.log('✅ Appointment deleted successfully');
       notification.success('Cita eliminada exitosamente');
