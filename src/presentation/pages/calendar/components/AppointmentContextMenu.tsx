@@ -54,15 +54,6 @@ const STATUS_OPTIONS = [
     iconBg: 'bg-green-100'
   },
   {
-    id: 'no-show',
-    label: 'No asistió',
-    icon: UserX,
-    color: 'text-orange-600',
-    bgColor: 'hover:bg-orange-50',
-    status: 'no-show',
-    iconBg: 'bg-orange-100'
-  },
-  {
     id: 'pending',
     label: 'Pendiente',
     icon: Clock,
@@ -70,6 +61,15 @@ const STATUS_OPTIONS = [
     bgColor: 'hover:bg-blue-50',
     status: 'pending',
     iconBg: 'bg-blue-100'
+  },
+  {
+    id: 'no-show',
+    label: 'No asistió',
+    icon: UserX,
+    color: 'text-orange-600',
+    bgColor: 'hover:bg-orange-50',
+    status: 'no-show',
+    iconBg: 'bg-orange-100'
   }
 ];
 
@@ -276,27 +276,27 @@ export const AppointmentContextMenu: React.FC<AppointmentContextMenuProps> = ({
             <>
               {/* ✅ Ver perfil - SOLO si patientId existe y es > 0 */}
               {isRegisteredPatient && (
-                <button
-                  onClick={handleViewProfile}
-                  disabled={isUpdating}
-                  className="w-full px-2 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1.5 sm:gap-2 hover:bg-cyan-50 transition-all disabled:opacity-50 text-left"
-                >
-                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0">
-                    <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-cyan-600" />
-                  </div>
-                  <span className="text-[11px] sm:text-xs font-medium text-gray-700 flex-1">Ver Perfil</span>
-                  <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400 flex-shrink-0" />
-                </button>
+                <>
+                  <button
+                    onClick={handleViewProfile}
+                    disabled={isUpdating}
+                    className="w-full px-2 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1.5 sm:gap-2 hover:bg-cyan-50 transition-all disabled:opacity-50 text-left"
+                  >
+                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0">
+                      <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-cyan-600" />
+                    </div>
+                    <span className="text-[11px] sm:text-xs font-medium text-gray-700 flex-1">Ver Perfil</span>
+                    <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400 flex-shrink-0" />
+                  </button>
+                  <div className="h-px bg-gray-100 my-1" />
+                </>
               )}
 
-              {/* Separador si hay perfil */}
-              {isRegisteredPatient && <div className="h-px bg-gray-100 my-1" />}
-
-              {/* Estados */}
+              {/* Estados (Confirmar, No asistió, Cancelar) */}
               {STATUS_OPTIONS.map((option) => {
                 const Icon = option.icon;
                 if (appointment.status === option.status) return null;
-                
+
                 return (
                   <button
                     key={option.id}
@@ -311,6 +311,20 @@ export const AppointmentContextMenu: React.FC<AppointmentContextMenuProps> = ({
                   </button>
                 );
               })}
+
+              {/* Cancelar Cita */}
+              {appointment.status !== 'cancelled' && (
+                <button
+                  onClick={() => setShowCancelConfirm(true)}
+                  disabled={isUpdating}
+                  className="w-full px-2 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1.5 sm:gap-2 hover:bg-red-50 transition-all disabled:opacity-50 text-left"
+                >
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                    <XCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-600" />
+                  </div>
+                  <span className="text-[11px] sm:text-xs font-medium text-red-600">Cancelar</span>
+                </button>
+              )}
 
               <div className="h-px bg-gray-100 my-1" />
 
@@ -328,20 +342,6 @@ export const AppointmentContextMenu: React.FC<AppointmentContextMenuProps> = ({
                 </div>
                 <span className="text-[11px] sm:text-xs font-medium text-gray-700">Editar</span>
               </button>
-
-              {/* Cancelar */}
-              {appointment.status !== 'cancelled' && (
-                <button
-                  onClick={() => setShowCancelConfirm(true)}
-                  disabled={isUpdating}
-                  className="w-full px-2 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1.5 sm:gap-2 hover:bg-red-50 transition-all disabled:opacity-50 text-left"
-                >
-                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
-                    <XCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-600" />
-                  </div>
-                  <span className="text-[11px] sm:text-xs font-medium text-red-600">Cancelar</span>
-                </button>
-              )}
 
               {/* Eliminar */}
               <button
