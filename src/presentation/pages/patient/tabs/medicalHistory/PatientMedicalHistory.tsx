@@ -271,132 +271,146 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
               </p>
             </div>
           ) : (
-            <div className="relative">
-              {/* Línea vertical del timeline */}
-              <div className="absolute left-4 sm:left-8 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-400 to-purple-400"></div>
+            <div className="space-y-6">
+              {sortedLogs.map((log, index) => {
+                const config = getEntityConfig(log.entity_type);
+                const isExpanded = expandedRecord === log.id;
+                const photos = getPhotosFromLog(log);
+                const hasPhotos = photos.length > 0;
 
-              {/* Eventos del timeline */}
-              <div className="space-y-6">
-                {sortedLogs.map((log, index) => {
-                  const config = getEntityConfig(log.entity_type);
-                  const isExpanded = expandedRecord === log.id;
-                  const photos = getPhotosFromLog(log);
-                  const hasPhotos = photos.length > 0;
-                  const isLastItem = index === sortedLogs.length - 1;
+                return (
+                  <div key={log.id} className="flex gap-4 relative">
+                    {/* Fecha a la izquierda */}
+                    <div className="flex-shrink-0 w-24 text-right pt-1">
+                      <p className="text-xs font-semibold text-gray-700">{formatDate(log.created_at)}</p>
+                      <p className="text-xs text-gray-500">{formatTime(log.created_at)}</p>
+                    </div>
 
-                  return (
-                    <div key={log.id} className="relative pl-20 sm:pl-24">
-                      {/* Círculo del timeline */}
+                    {/* Línea vertical + Círculo icono */}
+                    <div className="flex flex-col items-center flex-shrink-0">
                       <div
-                        className={`absolute -left-3.5 sm:-left-4 top-1 w-8 h-8 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center shadow-lg border-4 border-white`}
+                        className={`w-10 h-10 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center shadow-lg border-4 border-white z-10 relative`}
                       >
                         {config.icon}
                       </div>
-
-                      {/* Card del evento */}
-                      <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-200`}>
-                        {/* Fecha en la izquierda */}
-                        <div className="absolute -left-24 sm:-left-32 top-4 text-right w-20 hidden sm:block">
-                          <p className="text-xs font-semibold text-gray-600">{formatDate(log.created_at)}</p>
-                          <p className="text-xs text-gray-500">{formatTime(log.created_at)}</p>
-                        </div>
-
-                        {/* Header */}
-                        <div className="flex items-start justify-between gap-3 mb-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                              <h4 className="font-semibold text-gray-800 text-sm truncate">
-                                {config.label} #{log.entity_id}
-                              </h4>
-                              <span
-                                className={`px-2 py-1 text-xs font-medium rounded-full border whitespace-nowrap ${getActionBadgeColor(
-                                  log.action
-                                )}`}
-                              >
-                                {getActionLabel(log.action)}
-                              </span>
-                            </div>
-
-                            {/* En mobile, mostrar fecha aquí */}
-                            <div className="sm:hidden flex items-center gap-2 text-xs text-gray-600 mb-2">
-                              <Calendar className="w-3 h-3 flex-shrink-0" />
-                              <span>{formatDate(log.created_at)}</span>
-                              <Clock className="w-3 h-3 flex-shrink-0" />
-                              <span>{formatTime(log.created_at)}</span>
-                            </div>
-
-                            {/* Descripción */}
-                            {log.notes && (
-                              <p className="text-sm text-gray-700 mb-2">{log.notes}</p>
-                            )}
-
-                            {hasPhotos && (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-cyan-100 text-cyan-700 text-xs rounded-full border border-cyan-200 mt-1">
-                                <ImageIcon className="w-3 h-3" />
-                                {photos.length} foto{photos.length > 1 ? 's' : ''}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Botón expandir */}
-                          <button
-                            onClick={() => setExpandedRecord(isExpanded ? null : log.id)}
-                            className="p-1 rounded-full hover:bg-white/50 transition-colors flex-shrink-0"
-                          >
-                            {isExpanded ? (
-                              <ChevronUp className="w-5 h-5 text-gray-600" />
-                            ) : (
-                              <ChevronDown className="w-5 h-5 text-gray-600" />
-                            )}
-                          </button>
-                        </div>
-
-                        {/* Contenido expandido */}
-                        {isExpanded && (
-                          <div className="pt-3 border-t border-gray-300 space-y-3">
-                            {/* Cambios */}
-                            {(log.old_values || log.new_values) && (
-                              <div>
-                                <h5 className="font-semibold text-sm text-gray-800 mb-2">
-                                  Cambios realizados
-                                </h5>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                  {log.old_values && (
-                                    <div className="bg-white bg-opacity-60 p-2 rounded border border-gray-300">
-                                      <p className="font-medium text-gray-700 mb-1">Anterior:</p>
-                                      <pre className="text-xs text-gray-600 overflow-auto max-h-20 whitespace-pre-wrap break-words">
-                                        {JSON.stringify(log.old_values, null, 2)}
-                                      </pre>
-                                    </div>
-                                  )}
-                                  {log.new_values && (
-                                    <div className="bg-white bg-opacity-60 p-2 rounded border border-gray-300">
-                                      <p className="font-medium text-gray-700 mb-1">Nuevo:</p>
-                                      <pre className="text-xs text-gray-600 overflow-auto max-h-20 whitespace-pre-wrap break-words">
-                                        {JSON.stringify(log.new_values, null, 2)}
-                                      </pre>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Fotos */}
-                            {hasPhotos && (
-                              <AuditLogPhotoGallery photos={photos} title="Fotos" />
-                            )}
-
-                            {/* Detalles */}
-                            <div className="bg-white bg-opacity-40 p-2 rounded text-xs text-gray-700">
-                              <p className="text-gray-600">Doctor ID: {log.changed_by} • ID Log: #{log.id}</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                      {index < sortedLogs.length - 1 && (
+                        <div className="w-1 flex-1 bg-gradient-to-b from-cyan-400 to-purple-400 mt-2"></div>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
+
+                    {/* Card con contenido */}
+                    <div className={`flex-1 ${config.bgColor} ${config.borderColor} border rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-200`}>
+                      {/* Header */}
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <h4 className="font-semibold text-gray-800">
+                              {config.label} #{log.entity_id}
+                            </h4>
+                            <span
+                              className={`px-2 py-1 text-xs font-medium rounded-full border whitespace-nowrap ${getActionBadgeColor(
+                                log.action
+                              )}`}
+                            >
+                              {getActionLabel(log.action)}
+                            </span>
+                          </div>
+
+                          {/* Descripción */}
+                          {log.notes && (
+                            <p className="text-sm text-gray-700 mb-2">{log.notes}</p>
+                          )}
+                        </div>
+
+                        {/* Botón expandir */}
+                        <button
+                          onClick={() => setExpandedRecord(isExpanded ? null : log.id)}
+                          className="p-1 rounded-full hover:bg-white/50 transition-colors flex-shrink-0"
+                        >
+                          {isExpanded ? (
+                            <ChevronUp className="w-5 h-5 text-gray-600" />
+                          ) : (
+                            <ChevronDown className="w-5 h-5 text-gray-600" />
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Miniaturas (documentos/fotos) */}
+                      {hasPhotos && (
+                        <div className="mb-3 flex gap-2 flex-wrap">
+                          {photos.slice(0, 3).map((photo, idx) => (
+                            <div
+                              key={idx}
+                              className="relative group cursor-pointer"
+                              onClick={() => setExpandedRecord(isExpanded ? null : log.id)}
+                            >
+                              <img
+                                src={photo.url}
+                                alt={photo.alt}
+                                className="h-16 w-16 object-cover rounded border border-gray-300 hover:border-cyan-500 transition-all"
+                                onError={(e) => {
+                                  const img = e.target as HTMLImageElement;
+                                  img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="12"%3ENo disponible%3C/text%3E%3C/svg%3E';
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 rounded transition-all flex items-center justify-center">
+                                <ImageIcon className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-all" />
+                              </div>
+                            </div>
+                          ))}
+                          {photos.length > 3 && (
+                            <div className="h-16 w-16 rounded border border-gray-300 bg-gray-100 flex items-center justify-center text-xs font-semibold text-gray-700">
+                              +{photos.length - 3}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Contenido expandido */}
+                      {isExpanded && (
+                        <div className="pt-3 border-t border-gray-300 space-y-3">
+                          {/* Cambios */}
+                          {(log.old_values || log.new_values) && (
+                            <div>
+                              <h5 className="font-semibold text-sm text-gray-800 mb-2">
+                                Cambios realizados
+                              </h5>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                {log.old_values && (
+                                  <div className="bg-white bg-opacity-60 p-2 rounded border border-gray-300">
+                                    <p className="font-medium text-gray-700 mb-1">Anterior:</p>
+                                    <pre className="text-xs text-gray-600 overflow-auto max-h-20 whitespace-pre-wrap break-words">
+                                      {JSON.stringify(log.old_values, null, 2)}
+                                    </pre>
+                                  </div>
+                                )}
+                                {log.new_values && (
+                                  <div className="bg-white bg-opacity-60 p-2 rounded border border-gray-300">
+                                    <p className="font-medium text-gray-700 mb-1">Nuevo:</p>
+                                    <pre className="text-xs text-gray-600 overflow-auto max-h-20 whitespace-pre-wrap break-words">
+                                      {JSON.stringify(log.new_values, null, 2)}
+                                    </pre>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Galería completa de fotos */}
+                          {hasPhotos && (
+                            <AuditLogPhotoGallery photos={photos} title="Fotos completas" />
+                          )}
+
+                          {/* Detalles */}
+                          <div className="bg-white bg-opacity-40 p-2 rounded text-xs text-gray-700">
+                            <p className="text-gray-600">Doctor ID: {log.changed_by} • ID Log: #{log.id}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
