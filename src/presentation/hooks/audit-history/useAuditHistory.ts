@@ -29,7 +29,18 @@ export function useAuditHistory(patientId: number) {
       if (!patientId) {
         throw new Error('Patient ID is required');
       }
-      return getAuditHistoryUseCase(apiFetcher, patientId);
+      const data = await getAuditHistoryUseCase(apiFetcher, patientId);
+
+      // Normalizar entity_type a minúsculas para compatibilidad
+      if (data && data.logs) {
+        data.logs = data.logs.map(log => ({
+          ...log,
+          entity_type: log.entity_type.toLowerCase(),
+          action: log.action.toLowerCase()
+        }));
+      }
+
+      return data;
     },
     enabled: !!patientId,
     staleTime: 1000 * 60 * 5, // 5 minutes
