@@ -8,8 +8,6 @@ import {
   DollarSign,
   Clock,
   User,
-  ChevronDown,
-  ChevronUp,
   AlertCircle,
   Loader,
   Image as ImageIcon,
@@ -18,14 +16,12 @@ import { Patient } from "@/core/use-cases/patients";
 import { useAuditHistory, AuditLog } from "@/presentation/hooks/audit-history/useAuditHistory";
 import { AuditHistoryFilters, FilterState } from './components/AuditHistoryFilters';
 import { ExportHistoryButton } from './components/ExportHistoryButton';
-import { AuditLogPhotoGallery } from './components/AuditLogPhotoGallery';
 
 interface PatientMedicalHistoryProps {
   patient: Patient;
 }
 
 const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }) => {
-  const [expandedRecord, setExpandedRecord] = useState<number | null>(null);
   const [filters, setFilters] = useState<FilterState>({
     entityType: '',
     action: '',
@@ -196,6 +192,37 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
     return photos;
   };
 
+  const getAppointmentDisplay = (log: AuditLog, entityLabel: string): { title: string; subtitle: string } => {
+    if (log.entity_type === 'CITA' && log.new_values) {
+      const appointmentDate = log.new_values.appointmentDate;
+      const status = log.new_values.status;
+
+      if (appointmentDate) {
+        const date = new Date(appointmentDate);
+        const formattedDate = date.toLocaleDateString('es-CL', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        });
+        const formattedTime = date.toLocaleTimeString('es-CL', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        const statusLabel = status ? status.charAt(0).toUpperCase() + status.slice(1).toLowerCase() : '';
+
+        return {
+          title: `${formattedDate} - ${formattedTime}`,
+          subtitle: statusLabel
+        };
+      }
+    }
+
+    return {
+      title: `${entityLabel} #${log.entity_id}`,
+      subtitle: ''
+    };
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       {/* Header */}
@@ -274,9 +301,10 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
             <div className="space-y-6">
               {sortedLogs.map((log, index) => {
                 const config = getEntityConfig(log.entity_type);
-                const isExpanded = expandedRecord === log.id;
                 const photos = getPhotosFromLog(log);
                 const hasPhotos = photos.length > 0;
+
+                const appointmentDisplay = getAppointmentDisplay(log, config.label);
 
                 return (
                   <div key={log.id} className="flex gap-4 relative">
@@ -301,48 +329,41 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                     {/* Card con contenido */}
                     <div className={`flex-1 ${config.bgColor} ${config.borderColor} border rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-200`}>
                       {/* Header */}
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <h4 className="font-semibold text-gray-800">
-                              {config.label} #{log.entity_id}
-                            </h4>
-                            <span
-                              className={`px-2 py-1 text-xs font-medium rounded-full border whitespace-nowrap ${getActionBadgeColor(
-                                log.action
-                              )}`}
-                            >
-                              {getActionLabel(log.action)}
-                            </span>
-                          </div>
-
-                          {/* Descripción */}
-                          {log.notes && (
-                            <p className="text-sm text-gray-700 mb-2">{log.notes}</p>
-                          )}
+                      <div className="mb-3">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <h4 className="font-semibold text-gray-800">
+                            {log.entity_type === 'CITA' ? appointmentDisplay.title : `${config.label} #${log.entity_id}`}
+                          </h4>
+                          <span
+                            className={`px-2 py-1 text-xs font-medium rounded-full border whitespace-nowrap ${getActionBadgeColor(
+                              log.action
+                            )}`}
+                          >
+                            {getActionLabel(log.action)}
+                          </span>
                         </div>
 
-                        {/* Botón expandir */}
-                        <button
-                          onClick={() => setExpandedRecord(isExpanded ? null : log.id)}
-                          className="p-1 rounded-full hover:bg-white/50 transition-colors flex-shrink-0"
-                        >
-                          {isExpanded ? (
-                            <ChevronUp className="w-5 h-5 text-gray-600" />
-                          ) : (
-                            <ChevronDown className="w-5 h-5 text-gray-600" />
-                          )}
-                        </button>
+                        {/* Estado de cita o descripción */}
+                        {log.entity_type === 'CITA' && appointmentDisplay.subtitle && (
+                          <p className="text-sm text-gray-600 mb-2">Estado: <span className="font-medium">{appointmentDisplay.subtitle}</span></p>
+                        )}
+
+                        {/* Doctor que realizó la acción */}
+                        <p className="text-xs text-gray-500">Doctor ID: {log.changed_by}</p>
+
+                        {/* Descripción */}
+                        {log.notes && (
+                          <p className="text-sm text-gray-700 mt-2">{log.notes}</p>
+                        )}
                       </div>
 
                       {/* Miniaturas (documentos/fotos) */}
                       {hasPhotos && (
-                        <div className="mb-3 flex gap-2 flex-wrap">
+                        <div className="flex gap-2 flex-wrap">
                           {photos.slice(0, 3).map((photo, idx) => (
                             <div
                               key={idx}
                               className="relative group cursor-pointer"
-                              onClick={() => setExpandedRecord(isExpanded ? null : log.id)}
                             >
                               <img
                                 src={photo.url}
@@ -363,48 +384,6 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                               +{photos.length - 3}
                             </div>
                           )}
-                        </div>
-                      )}
-
-                      {/* Contenido expandido */}
-                      {isExpanded && (
-                        <div className="pt-3 border-t border-gray-300 space-y-3">
-                          {/* Cambios */}
-                          {(log.old_values || log.new_values) && (
-                            <div>
-                              <h5 className="font-semibold text-sm text-gray-800 mb-2">
-                                Cambios realizados
-                              </h5>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                {log.old_values && (
-                                  <div className="bg-white bg-opacity-60 p-2 rounded border border-gray-300">
-                                    <p className="font-medium text-gray-700 mb-1">Anterior:</p>
-                                    <pre className="text-xs text-gray-600 overflow-auto max-h-20 whitespace-pre-wrap break-words">
-                                      {JSON.stringify(log.old_values, null, 2)}
-                                    </pre>
-                                  </div>
-                                )}
-                                {log.new_values && (
-                                  <div className="bg-white bg-opacity-60 p-2 rounded border border-gray-300">
-                                    <p className="font-medium text-gray-700 mb-1">Nuevo:</p>
-                                    <pre className="text-xs text-gray-600 overflow-auto max-h-20 whitespace-pre-wrap break-words">
-                                      {JSON.stringify(log.new_values, null, 2)}
-                                    </pre>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Galería completa de fotos */}
-                          {hasPhotos && (
-                            <AuditLogPhotoGallery photos={photos} title="Fotos completas" />
-                          )}
-
-                          {/* Detalles */}
-                          <div className="bg-white bg-opacity-40 p-2 rounded text-xs text-gray-700">
-                            <p className="text-gray-600">Doctor ID: {log.changed_by} • ID Log: #{log.id}</p>
-                          </div>
                         </div>
                       )}
                     </div>
