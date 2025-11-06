@@ -49,8 +49,16 @@ const handler: Handler = async (event) => {
         totalLogs: logs.length,
         logs: logs.map((log) => ({
           ...log,
-          old_values: log.old_values ? JSON.parse(log.old_values as any) : null,
-          new_values: log.new_values ? JSON.parse(log.new_values as any) : null,
+          old_values: log.old_values
+            ? typeof log.old_values === 'string'
+              ? JSON.parse(log.old_values)
+              : log.old_values
+            : null,
+          new_values: log.new_values
+            ? typeof log.new_values === 'string'
+              ? JSON.parse(log.new_values)
+              : log.new_values
+            : null,
         })),
       }),
     };
