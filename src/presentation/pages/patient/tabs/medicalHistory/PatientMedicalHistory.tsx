@@ -62,16 +62,23 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
     return historyData.logs;
   }, [historyData]);
 
+  // Función auxiliar para normalizar entity_type
+  const normalizeEntityType = (type: string): string => {
+    return type.toLowerCase();
+  };
+
   // Aplicar filtros - Excluir tratamientos CREATED, solo mostrar los editados
   const filteredLogs = useMemo(() => {
     return auditLogs.filter((log) => {
+      const normalizedType = normalizeEntityType(log.entity_type);
+
       // Filtro: Excluir tratamientos en estado CREATED
-      if (log.entity_type === 'tratamiento' && log.action === 'created') {
+      if (normalizedType === 'tratamiento' && log.action === 'created') {
         return false;
       }
 
       // Filtro por tipo de entidad
-      if (filters.entityType && log.entity_type !== filters.entityType) {
+      if (filters.entityType && normalizedType !== filters.entityType) {
         return false;
       }
 
@@ -140,6 +147,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
   };
 
   const getEntityConfig = (entityType: string) => {
+    const normalizedType = entityType.toLowerCase();
     const configs: Record<string, any> = {
       paciente: {
         color: 'from-slate-400 to-slate-600',
@@ -177,7 +185,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
         label: 'Documento'
       }
     };
-    return configs[entityType] || configs.paciente;
+    return configs[normalizedType] || configs.paciente;
   };
 
   const getActionLabel = (action: string): string => {
@@ -219,7 +227,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
     const documents: DocumentPreview[] = [];
 
     // Solo mostrar documentos para logs de documentos firmados
-    if (log.entity_type === 'documento' && log.new_values && log.action === 'status_changed' && log.new_values.status === 'firmado') {
+    if (normalizeEntityType(log.entity_type) === 'documento' && log.new_values && log.action === 'status_changed' && log.new_values.status === 'firmado') {
       const title = log.new_values.title || `Documento #${log.entity_id}`;
 
       // Mostrar PDF si existe en los new_values
@@ -252,7 +260,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
   };
 
   const getAppointmentDisplay = (log: AuditLog, entityLabel: string): { title: string; subtitle: string } => {
-    if (log.entity_type === 'cita' && log.new_values) {
+    if (normalizeEntityType(log.entity_type) === 'cita' && log.new_values) {
       const appointmentDate = log.new_values.appointmentDate;
       const status = log.new_values.status;
 
@@ -402,11 +410,11 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                             <div className="mb-3">
                               <div className="flex items-center gap-2 mb-2 flex-wrap">
                                 <h4 className="font-semibold text-gray-800 text-base">
-                                  {log.entity_type === 'cita'
+                                  {normalizeEntityType(log.entity_type) === 'cita'
                                     ? appointmentDisplay.title
-                                    : log.entity_type === 'tratamiento'
+                                    : normalizeEntityType(log.entity_type) === 'tratamiento'
                                     ? (log.new_values?.nombre_servicio || `Tratamiento #${log.entity_id}`)
-                                    : log.entity_type === 'paciente'
+                                    : normalizeEntityType(log.entity_type) === 'paciente'
                                     ? `${log.new_values?.nombres || ''} ${log.new_values?.apellidos || ''}`.trim()
                                     : `${config.label} #${log.entity_id}`
                                   }
@@ -421,7 +429,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                               </div>
 
                               {/* Estado de cita */}
-                              {log.entity_type === 'cita' && appointmentDisplay.subtitle && (
+                              {normalizeEntityType(log.entity_type) === 'cita' && appointmentDisplay.subtitle && (
                                 <p className="text-sm text-gray-600 mb-2">Estado: <span className="font-medium">{appointmentDisplay.subtitle}</span></p>
                               )}
 
@@ -431,7 +439,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                               </p>
 
                               {/* Información adicional para paciente creado */}
-                              {log.entity_type === 'paciente' && log.action === 'created' && (
+                              {normalizeEntityType(log.entity_type) === 'paciente' && log.action === 'created' && (
                                 <div className="bg-white bg-opacity-50 rounded p-2 mb-2 text-sm space-y-1">
                                   {log.new_values?.email && (
                                     <p><span className="text-gray-600">Email:</span> <span className="text-gray-800">{log.new_values.email}</span></p>
