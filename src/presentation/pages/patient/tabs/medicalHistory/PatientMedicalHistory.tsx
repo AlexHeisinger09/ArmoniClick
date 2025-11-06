@@ -194,7 +194,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       {/* Header */}
-      <div className="flex flex-col gap-6 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
         <div>
           <h3 className="text-2xl font-bold text-gray-800 mb-2">
             Historial Médico del Paciente
@@ -204,46 +204,22 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
           </p>
         </div>
 
-        {/* Controles */}
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-          <AuditHistoryFilters
-            onFiltersChange={setFilters}
-            isLoading={isLoading}
-          />
+        {/* Botón Exportar en la esquina superior derecha */}
+        <div className="flex-shrink-0">
           <ExportHistoryButton
             logs={sortedLogs}
             patient={patient}
             isLoading={isLoading}
           />
         </div>
+      </div>
 
-        {/* Estadísticas */}
-        {!isLoading && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-              <p className="text-xs text-slate-600 font-medium">Total de cambios</p>
-              <p className="text-lg font-bold text-slate-700">{auditLogs.length}</p>
-            </div>
-            <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
-              <p className="text-xs text-amber-600 font-medium">Presupuestos</p>
-              <p className="text-lg font-bold text-amber-700">
-                {auditLogs.filter(l => l.entity_type === 'PRESUPUESTO').length}
-              </p>
-            </div>
-            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-              <p className="text-xs text-green-600 font-medium">Tratamientos</p>
-              <p className="text-lg font-bold text-green-700">
-                {auditLogs.filter(l => l.entity_type === 'TRATAMIENTO').length}
-              </p>
-            </div>
-            <div className="bg-cyan-50 p-3 rounded-lg border border-cyan-200">
-              <p className="text-xs text-cyan-600 font-medium">Citas</p>
-              <p className="text-lg font-bold text-cyan-700">
-                {auditLogs.filter(l => l.entity_type === 'CITA').length}
-              </p>
-            </div>
-          </div>
-        )}
+      {/* Filtros de fecha - Siempre visibles */}
+      <div className="mb-6">
+        <AuditHistoryFilters
+          onFiltersChange={setFilters}
+          isLoading={isLoading}
+        />
       </div>
 
       {/* Loading State */}
