@@ -38,7 +38,7 @@ schedule = "30 13 * * *"  # 14:30 CL (18:30 UTC, ajustar en verano a 17:30)
 
 [[redirects]]
   from = "/patient-history/*"
-  to = "/.netlify/functions/patients/patient-history"
+  to = "/.netlify/functions/patient-history"
   status = 200
   methods = ["GET", "OPTIONS"]
 
