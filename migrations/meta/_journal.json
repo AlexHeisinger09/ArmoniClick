@@ -15,6 +15,13 @@
       "when": 1761566620439,
       "tag": "0001_right_xavin",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1762449691443,
+      "tag": "0002_tidy_human_cannonball",
+      "breakpoints": true
     }
   ]
 }
