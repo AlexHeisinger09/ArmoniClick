@@ -1,10 +1,9 @@
 // netlify/functions/patients/patient-history.ts
 import { Handler } from '@netlify/functions';
-import { db } from '@/netlify/data/db';
-import { auditLogsTable } from '@/netlify/data/schemas';
+import { db } from '../../data/db';
+import { auditLogsTable } from '../../data/schemas';
 import { eq } from 'drizzle-orm';
-import { validateJWT } from '@/netlify/middlewares/auth.middleware';
-import { getAuthorizationHeader } from '@/netlify/middlewares/auth.middleware';
+import { validateJWT, getAuthorizationHeader } from '../../middlewares/auth.middleware';
 
 const handler: Handler = async (event) => {
   // Solo permitir GET
