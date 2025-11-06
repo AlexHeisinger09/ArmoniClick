@@ -43,9 +43,14 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
     return historyData.logs;
   }, [historyData]);
 
-  // Aplicar filtros
+  // Aplicar filtros - Excluir tratamientos CREATED, solo mostrar los editados
   const filteredLogs = useMemo(() => {
     return auditLogs.filter((log) => {
+      // Filtro: Excluir tratamientos en estado CREATED
+      if (log.entity_type === 'TRATAMIENTO' && log.action === 'CREATED') {
+        return false;
+      }
+
       // Filtro por tipo de entidad
       if (filters.entityType && log.entity_type !== filters.entityType) {
         return false;
@@ -247,9 +252,9 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
         </div>
       )}
 
-      {/* Timeline */}
+      {/* Timeline elegante */}
       {!isLoading && !error && (
-        <div className="space-y-4">
+        <div>
           {sortedLogs.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -266,134 +271,133 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
               </p>
             </div>
           ) : (
-            sortedLogs.map((log) => {
-              const config = getEntityConfig(log.entity_type);
-              const isExpanded = expandedRecord === log.id;
-              const photos = getPhotosFromLog(log);
-              const hasPhotos = photos.length > 0;
+            <div className="relative">
+              {/* Línea vertical del timeline */}
+              <div className="absolute left-4 sm:left-8 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-400 to-purple-400"></div>
 
-              return (
-                <div
-                  key={log.id}
-                  className={`${config.bgColor} ${config.borderColor} border rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-200`}
-                >
-                  {/* Header del registro */}
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    <div className="flex items-start gap-3 flex-1">
-                      {/* Icono */}
+              {/* Eventos del timeline */}
+              <div className="space-y-6">
+                {sortedLogs.map((log, index) => {
+                  const config = getEntityConfig(log.entity_type);
+                  const isExpanded = expandedRecord === log.id;
+                  const photos = getPhotosFromLog(log);
+                  const hasPhotos = photos.length > 0;
+                  const isLastItem = index === sortedLogs.length - 1;
+
+                  return (
+                    <div key={log.id} className="relative pl-20 sm:pl-24">
+                      {/* Círculo del timeline */}
                       <div
-                        className={`relative z-10 w-8 h-8 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center shadow-md border-2 border-white flex-shrink-0`}
+                        className={`absolute -left-3.5 sm:-left-4 top-1 w-8 h-8 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center shadow-lg border-4 border-white`}
                       >
                         {config.icon}
                       </div>
 
-                      {/* Información principal */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <h4 className="font-semibold text-gray-800 text-sm">
-                            {config.label} #{log.entity_id}
-                          </h4>
-                          <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full border ${getActionBadgeColor(
-                              log.action
-                            )}`}
+                      {/* Card del evento */}
+                      <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-200`}>
+                        {/* Fecha en la izquierda */}
+                        <div className="absolute -left-24 sm:-left-32 top-4 text-right w-20 hidden sm:block">
+                          <p className="text-xs font-semibold text-gray-600">{formatDate(log.created_at)}</p>
+                          <p className="text-xs text-gray-500">{formatTime(log.created_at)}</p>
+                        </div>
+
+                        {/* Header */}
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <h4 className="font-semibold text-gray-800 text-sm truncate">
+                                {config.label} #{log.entity_id}
+                              </h4>
+                              <span
+                                className={`px-2 py-1 text-xs font-medium rounded-full border whitespace-nowrap ${getActionBadgeColor(
+                                  log.action
+                                )}`}
+                              >
+                                {getActionLabel(log.action)}
+                              </span>
+                            </div>
+
+                            {/* En mobile, mostrar fecha aquí */}
+                            <div className="sm:hidden flex items-center gap-2 text-xs text-gray-600 mb-2">
+                              <Calendar className="w-3 h-3 flex-shrink-0" />
+                              <span>{formatDate(log.created_at)}</span>
+                              <Clock className="w-3 h-3 flex-shrink-0" />
+                              <span>{formatTime(log.created_at)}</span>
+                            </div>
+
+                            {/* Descripción */}
+                            {log.notes && (
+                              <p className="text-sm text-gray-700 mb-2">{log.notes}</p>
+                            )}
+
+                            {hasPhotos && (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-cyan-100 text-cyan-700 text-xs rounded-full border border-cyan-200 mt-1">
+                                <ImageIcon className="w-3 h-3" />
+                                {photos.length} foto{photos.length > 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Botón expandir */}
+                          <button
+                            onClick={() => setExpandedRecord(isExpanded ? null : log.id)}
+                            className="p-1 rounded-full hover:bg-white/50 transition-colors flex-shrink-0"
                           >
-                            {getActionLabel(log.action)}
-                          </span>
-                          {hasPhotos && (
-                            <span className="flex items-center gap-1 px-2 py-1 bg-cyan-100 text-cyan-700 text-xs rounded-full border border-cyan-200">
-                              <ImageIcon className="w-3 h-3" />
-                              {photos.length} foto{photos.length > 1 ? 's' : ''}
-                            </span>
-                          )}
+                            {isExpanded ? (
+                              <ChevronUp className="w-5 h-5 text-gray-600" />
+                            ) : (
+                              <ChevronDown className="w-5 h-5 text-gray-600" />
+                            )}
+                          </button>
                         </div>
 
-                        {/* Metadata */}
-                        <div className="flex items-center gap-2 text-xs text-gray-600 flex-wrap mb-2">
-                          <Calendar className="w-3 h-3 flex-shrink-0" />
-                          <span>{formatDate(log.created_at)}</span>
-                          <span className="text-gray-400">•</span>
-                          <Clock className="w-3 h-3 flex-shrink-0" />
-                          <span>{formatTime(log.created_at)}</span>
-                          <span className="text-gray-400">•</span>
-                          <User className="w-3 h-3 flex-shrink-0" />
-                          <span>Doctor ID: {log.changed_by}</span>
-                        </div>
+                        {/* Contenido expandido */}
+                        {isExpanded && (
+                          <div className="pt-3 border-t border-gray-300 space-y-3">
+                            {/* Cambios */}
+                            {(log.old_values || log.new_values) && (
+                              <div>
+                                <h5 className="font-semibold text-sm text-gray-800 mb-2">
+                                  Cambios realizados
+                                </h5>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                  {log.old_values && (
+                                    <div className="bg-white bg-opacity-60 p-2 rounded border border-gray-300">
+                                      <p className="font-medium text-gray-700 mb-1">Anterior:</p>
+                                      <pre className="text-xs text-gray-600 overflow-auto max-h-20 whitespace-pre-wrap break-words">
+                                        {JSON.stringify(log.old_values, null, 2)}
+                                      </pre>
+                                    </div>
+                                  )}
+                                  {log.new_values && (
+                                    <div className="bg-white bg-opacity-60 p-2 rounded border border-gray-300">
+                                      <p className="font-medium text-gray-700 mb-1">Nuevo:</p>
+                                      <pre className="text-xs text-gray-600 overflow-auto max-h-20 whitespace-pre-wrap break-words">
+                                        {JSON.stringify(log.new_values, null, 2)}
+                                      </pre>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
 
-                        {/* Descripción/Notas */}
-                        {log.notes && (
-                          <p className="text-sm text-gray-700 line-clamp-2">{log.notes}</p>
+                            {/* Fotos */}
+                            {hasPhotos && (
+                              <AuditLogPhotoGallery photos={photos} title="Fotos" />
+                            )}
+
+                            {/* Detalles */}
+                            <div className="bg-white bg-opacity-40 p-2 rounded text-xs text-gray-700">
+                              <p className="text-gray-600">Doctor ID: {log.changed_by} • ID Log: #{log.id}</p>
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
-
-                    {/* Botón expandir */}
-                    <button
-                      onClick={() => setExpandedRecord(isExpanded ? null : log.id)}
-                      className="p-1 rounded-full hover:bg-white/50 transition-colors flex-shrink-0"
-                    >
-                      {isExpanded ? (
-                        <ChevronUp className="w-5 h-5 text-gray-600" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-gray-600" />
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Contenido expandido */}
-                  {isExpanded && (
-                    <div className="pt-3 border-t border-gray-300">
-                      {/* Cambios */}
-                      {(log.old_values || log.new_values) && (
-                        <div className="mb-4">
-                          <h5 className="font-semibold text-sm text-gray-800 mb-2">
-                            Cambios realizados
-                          </h5>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                            {log.old_values && (
-                              <div className="bg-white bg-opacity-60 p-2 rounded border border-gray-300">
-                                <p className="font-medium text-gray-700 mb-1">Anterior:</p>
-                                <pre className="text-xs text-gray-600 overflow-auto max-h-24 whitespace-pre-wrap break-words">
-                                  {JSON.stringify(log.old_values, null, 2)}
-                                </pre>
-                              </div>
-                            )}
-                            {log.new_values && (
-                              <div className="bg-white bg-opacity-60 p-2 rounded border border-gray-300">
-                                <p className="font-medium text-gray-700 mb-1">Nuevo:</p>
-                                <pre className="text-xs text-gray-600 overflow-auto max-h-24 whitespace-pre-wrap break-words">
-                                  {JSON.stringify(log.new_values, null, 2)}
-                                </pre>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Fotos si existen */}
-                      {hasPhotos && (
-                        <div className="mt-4">
-                          <AuditLogPhotoGallery photos={photos} title="Fotos del cambio" />
-                        </div>
-                      )}
-
-                      {/* Detalles adicionales */}
-                      <div className="bg-white bg-opacity-40 p-3 rounded text-xs text-gray-700 space-y-1">
-                        <div>
-                          <span className="font-medium">ID del log:</span> #{log.id}
-                        </div>
-                        <div>
-                          <span className="font-medium">Tipo de entidad:</span> {config.label}
-                        </div>
-                        <div>
-                          <span className="font-medium">Hora exacta:</span> {formatDateTime(log.created_at)}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })
+                  );
+                })}
+              </div>
+            </div>
           )}
         </div>
       )}
