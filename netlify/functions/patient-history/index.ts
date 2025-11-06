@@ -1,8 +1,8 @@
 // netlify/functions/patients/patient-history.ts
 import { Handler } from '@netlify/functions';
 import { db } from '../../data/db';
-import { auditLogsTable } from '../../data/schemas';
-import { eq } from 'drizzle-orm';
+import { auditLogsTable, usersTable } from '../../data/schemas';
+import { eq, sql } from 'drizzle-orm';
 import { validateJWT, getAuthorizationHeader } from '../../middlewares/auth.middleware';
 
 const handler: Handler = async (event) => {
@@ -33,10 +33,23 @@ const handler: Handler = async (event) => {
 
     console.log('📋 Obteniendo historial del paciente:', patientId);
 
-    // Obtener logs de auditoría ordenados por fecha descendente
+    // Obtener logs de auditoría con información del doctor
     const logs = await db
-      .select()
+      .select({
+        id: auditLogsTable.id,
+        patient_id: auditLogsTable.patient_id,
+        entity_type: auditLogsTable.entity_type,
+        entity_id: auditLogsTable.entity_id,
+        action: auditLogsTable.action,
+        old_values: auditLogsTable.old_values,
+        new_values: auditLogsTable.new_values,
+        changed_by: auditLogsTable.changed_by,
+        created_at: auditLogsTable.created_at,
+        notes: auditLogsTable.notes,
+        doctor_name: sql`COALESCE(${usersTable.name}, 'Desconocido') || ' ' || COALESCE(${usersTable.lastName}, '')`,
+      })
       .from(auditLogsTable)
+      .leftJoin(usersTable, eq(auditLogsTable.changed_by, usersTable.id))
       .where(eq(auditLogsTable.patient_id, patientId))
       .orderBy((t) => t.created_at); // Orden ascendente para histórico
 

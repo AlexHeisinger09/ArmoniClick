@@ -349,7 +349,9 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                         )}
 
                         {/* Doctor que realizó la acción */}
-                        <p className="text-xs text-gray-500">Doctor ID: {log.changed_by}</p>
+                        <p className="text-xs text-gray-500">
+                          Doctor: <span className="text-gray-700 font-medium">{log.doctor_name || 'Desconocido'}</span>
+                        </p>
 
                         {/* Descripción */}
                         {log.notes && (

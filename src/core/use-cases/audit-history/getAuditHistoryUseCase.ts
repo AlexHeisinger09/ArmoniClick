@@ -11,6 +11,7 @@ export interface AuditLog {
   changed_by: number;
   created_at: string;
   notes?: string;
+  doctor_name?: string;
 }
 
 export interface AuditHistoryResponse {
