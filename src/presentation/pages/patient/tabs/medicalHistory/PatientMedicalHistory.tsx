@@ -1,5 +1,5 @@
 // src/presentation/pages/patient/tabs/medicalHistory/PatientMedicalHistory.tsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   FileText,
   Stethoscope,
@@ -11,14 +11,23 @@ import {
   AlertCircle,
   Loader,
   Image as ImageIcon,
+  X,
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Patient } from "@/core/use-cases/patients";
 import { useAuditHistory, AuditLog } from "@/presentation/hooks/audit-history/useAuditHistory";
+import { useDocuments } from "@/presentation/hooks/documents/useDocuments";
 import { AuditHistoryFilters, FilterState } from './components/AuditHistoryFilters';
 import { ExportHistoryButton } from './components/ExportHistoryButton';
 
 interface PatientMedicalHistoryProps {
   patient: Patient;
+}
+
+interface DocumentPreview {
+  url: string;
+  title: string;
+  type: 'image' | 'pdf' | 'document';
 }
 
 const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }) => {
@@ -29,8 +38,22 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
     endDate: '',
   });
 
+  const [selectedDocument, setSelectedDocument] = useState<DocumentPreview | null>(null);
+  const queryClient = useQueryClient();
+
   // Fetch audit history from backend
   const { data: historyData, isLoading, error } = useAuditHistory(patient.id);
+
+  // Hook de documentos para acceder a invalidateQueries
+  const { queryDocuments } = useDocuments(patient.id);
+
+  // Efecto para invalidar el caché de auditoría cuando los documentos cambian
+  useEffect(() => {
+    if (!queryDocuments.isLoading && queryDocuments.data) {
+      // Invalidar el caché de auditoría cuando hay cambios en documentos
+      queryClient.invalidateQueries({ queryKey: ['auditHistory', patient.id] });
+    }
+  }, [queryDocuments.data]);
 
   const auditLogs: AuditLog[] = useMemo(() => {
     if (!historyData?.logs) {
@@ -43,7 +66,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
   const filteredLogs = useMemo(() => {
     return auditLogs.filter((log) => {
       // Filtro: Excluir tratamientos en estado CREATED
-      if (log.entity_type === 'TRATAMIENTO' && log.action === 'CREATED') {
+      if (log.entity_type === 'tratamiento' && log.action === 'created') {
         return false;
       }
 
@@ -118,35 +141,35 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
 
   const getEntityConfig = (entityType: string) => {
     const configs: Record<string, any> = {
-      PACIENTE: {
+      paciente: {
         color: 'from-slate-400 to-slate-600',
         bgColor: 'bg-slate-50',
         borderColor: 'border-slate-200',
         icon: <User className="w-3 h-3 text-white" />,
         label: 'Paciente'
       },
-      PRESUPUESTO: {
+      presupuesto: {
         color: 'from-amber-400 to-amber-600',
         bgColor: 'bg-amber-50',
         borderColor: 'border-amber-200',
         icon: <DollarSign className="w-3 h-3 text-white" />,
         label: 'Presupuesto'
       },
-      TRATAMIENTO: {
+      tratamiento: {
         color: 'from-green-400 to-green-600',
         bgColor: 'bg-green-50',
         borderColor: 'border-green-200',
         icon: <Activity className="w-3 h-3 text-white" />,
         label: 'Tratamiento'
       },
-      CITA: {
+      cita: {
         color: 'from-cyan-400 to-cyan-600',
         bgColor: 'bg-cyan-50',
         borderColor: 'border-cyan-200',
         icon: <Clock className="w-3 h-3 text-white" />,
         label: 'Cita'
       },
-      DOCUMENTO: {
+      documento: {
         color: 'from-purple-400 to-purple-600',
         bgColor: 'bg-purple-50',
         borderColor: 'border-purple-200',
@@ -154,27 +177,27 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
         label: 'Documento'
       }
     };
-    return configs[entityType] || configs.PACIENTE;
+    return configs[entityType] || configs.paciente;
   };
 
   const getActionLabel = (action: string): string => {
     const labels: Record<string, string> = {
-      CREATED: 'Creado',
-      UPDATED: 'Actualizado',
-      STATUS_CHANGED: 'Cambio de estado',
-      DELETED: 'Eliminado'
+      created: 'Creado',
+      updated: 'Actualizado',
+      status_changed: 'Cambio de estado',
+      deleted: 'Eliminado'
     };
     return labels[action] || action;
   };
 
   const getActionBadgeColor = (action: string): string => {
     const colors: Record<string, string> = {
-      CREATED: 'bg-green-100 text-green-700 border-green-200',
-      UPDATED: 'bg-blue-100 text-blue-700 border-blue-200',
-      STATUS_CHANGED: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-      DELETED: 'bg-red-100 text-red-700 border-red-200'
+      created: 'bg-green-100 text-green-700 border-green-200',
+      updated: 'bg-blue-100 text-blue-700 border-blue-200',
+      status_changed: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+      deleted: 'bg-red-100 text-red-700 border-red-200'
     };
-    return colors[action] || colors.UPDATED;
+    return colors[action] || colors.updated;
   };
 
   const getPhotosFromLog = (log: AuditLog): Array<{ url: string; alt?: string }> => {
@@ -192,8 +215,44 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
     return photos;
   };
 
+  const getDocumentsFromLog = (log: AuditLog): DocumentPreview[] => {
+    const documents: DocumentPreview[] = [];
+
+    // Solo mostrar documentos para logs de documentos firmados
+    if (log.entity_type === 'documento' && log.new_values && log.action === 'status_changed' && log.new_values.status === 'firmado') {
+      const title = log.new_values.title || `Documento #${log.entity_id}`;
+
+      // Mostrar PDF si existe en los new_values
+      if (log.new_values.pdf_base64) {
+        const pdfUrl = `data:application/pdf;base64,${log.new_values.pdf_base64}`;
+
+        documents.push({
+          url: pdfUrl,
+          title: title,
+          type: 'pdf'
+        });
+      }
+
+      // Mostrar firma si existe en los new_values
+      // La firma se guarda como base64 en signature_data
+      if (log.new_values.signature_data) {
+        const signatureUrl = log.new_values.signature_data.startsWith('data:')
+          ? log.new_values.signature_data
+          : `data:image/png;base64,${log.new_values.signature_data}`;
+
+        documents.push({
+          url: signatureUrl,
+          title: `Firma - ${title}`,
+          type: 'image'
+        });
+      }
+    }
+
+    return documents;
+  };
+
   const getAppointmentDisplay = (log: AuditLog, entityLabel: string): { title: string; subtitle: string } => {
-    if (log.entity_type === 'CITA' && log.new_values) {
+    if (log.entity_type === 'cita' && log.new_values) {
       const appointmentDate = log.new_values.appointmentDate;
       const status = log.new_values.status;
 
@@ -298,102 +357,241 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
               </p>
             </div>
           ) : (
-            <div className="space-y-6">
-              {sortedLogs.map((log, index) => {
-                const config = getEntityConfig(log.entity_type);
-                const photos = getPhotosFromLog(log);
-                const hasPhotos = photos.length > 0;
+            <div className="relative px-4">
+              {/* Línea central vertical */}
+              <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-400 via-purple-400 to-pink-400 transform -translate-x-1/2"></div>
 
-                const appointmentDisplay = getAppointmentDisplay(log, config.label);
+              <div className="space-y-12">
+                {sortedLogs.map((log, index) => {
+                  const config = getEntityConfig(log.entity_type);
+                  const photos = getPhotosFromLog(log);
+                  const documents = getDocumentsFromLog(log);
+                  const hasPhotos = photos.length > 0;
+                  const hasDocuments = documents.length > 0;
+                  const isEven = index % 2 === 0;
 
-                return (
-                  <div key={log.id} className="flex gap-4 relative">
-                    {/* Fecha a la izquierda */}
-                    <div className="flex-shrink-0 w-24 text-right pt-1">
-                      <p className="text-xs font-semibold text-gray-700">{formatDate(log.created_at)}</p>
-                      <p className="text-xs text-gray-500">{formatTime(log.created_at)}</p>
-                    </div>
+                  const appointmentDisplay = getAppointmentDisplay(log, config.label);
 
-                    {/* Línea vertical + Círculo icono */}
-                    <div className="flex flex-col items-center flex-shrink-0">
-                      <div
-                        className={`w-10 h-10 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center shadow-lg border-4 border-white z-10 relative`}
-                      >
-                        {config.icon}
-                      </div>
-                      {index < sortedLogs.length - 1 && (
-                        <div className="w-1 flex-1 bg-gradient-to-b from-cyan-400 to-purple-400 mt-2"></div>
-                      )}
-                    </div>
+                  return (
+                    <div key={log.id} className="relative">
+                      <div className={`flex ${isEven ? 'flex-row' : 'flex-row-reverse'}`}>
+                        {/* Información: Fecha, Hora y Tipo */}
+                        <div className={`w-1/2 ${isEven ? 'text-right pr-8' : 'text-left pl-8'} pt-1`}>
+                          <div className={`inline-block ${isEven ? '' : ''}`}>
+                            <p className="text-xs font-semibold text-gray-700">{formatDate(log.created_at)}</p>
+                            <p className="text-xs text-gray-500 mb-2">{formatTime(log.created_at)}</p>
+                            <p className="text-xs font-semibold text-gray-800 bg-gray-100 rounded px-2 py-1 inline-block">
+                              {config.label}
+                            </p>
+                          </div>
+                        </div>
 
-                    {/* Card con contenido */}
-                    <div className={`flex-1 ${config.bgColor} ${config.borderColor} border rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-200`}>
-                      {/* Header */}
-                      <div className="mb-3">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <h4 className="font-semibold text-gray-800">
-                            {log.entity_type === 'CITA' ? appointmentDisplay.title : `${config.label} #${log.entity_id}`}
-                          </h4>
-                          <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full border whitespace-nowrap ${getActionBadgeColor(
-                              log.action
-                            )}`}
+                        {/* Espacio para el círculo en el centro */}
+                        <div className="w-0 flex justify-center relative">
+                          <div
+                            className={`absolute w-12 h-12 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center shadow-lg border-4 border-white z-10 top-0`}
                           >
-                            {getActionLabel(log.action)}
-                          </span>
+                            {config.icon}
+                          </div>
                         </div>
 
-                        {/* Estado de cita o descripción */}
-                        {log.entity_type === 'CITA' && appointmentDisplay.subtitle && (
-                          <p className="text-sm text-gray-600 mb-2">Estado: <span className="font-medium">{appointmentDisplay.subtitle}</span></p>
-                        )}
-
-                        {/* Doctor que realizó la acción */}
-                        <p className="text-xs text-gray-500">
-                          Doctor: <span className="text-gray-700 font-medium">{log.doctor_name || 'Desconocido'}</span>
-                        </p>
-
-                        {/* Descripción */}
-                        {log.notes && (
-                          <p className="text-sm text-gray-700 mt-2">{log.notes}</p>
-                        )}
-                      </div>
-
-                      {/* Miniaturas (documentos/fotos) */}
-                      {hasPhotos && (
-                        <div className="flex gap-2 flex-wrap">
-                          {photos.slice(0, 3).map((photo, idx) => (
-                            <div
-                              key={idx}
-                              className="relative group cursor-pointer"
-                            >
-                              <img
-                                src={photo.url}
-                                alt={photo.alt}
-                                className="h-16 w-16 object-cover rounded border border-gray-300 hover:border-cyan-500 transition-all"
-                                onError={(e) => {
-                                  const img = e.target as HTMLImageElement;
-                                  img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="12"%3ENo disponible%3C/text%3E%3C/svg%3E';
-                                }}
-                              />
-                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 rounded transition-all flex items-center justify-center">
-                                <ImageIcon className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-all" />
+                        {/* Card con contenido */}
+                        <div className={`w-1/2 ${isEven ? 'pl-8' : 'pr-8'}`}>
+                          <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-4 shadow-sm hover:shadow-lg transition-all duration-200`}>
+                            {/* Header */}
+                            <div className="mb-3">
+                              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                <h4 className="font-semibold text-gray-800 text-base">
+                                  {log.entity_type === 'cita'
+                                    ? appointmentDisplay.title
+                                    : log.entity_type === 'tratamiento'
+                                    ? (log.new_values?.nombre_servicio || `Tratamiento #${log.entity_id}`)
+                                    : log.entity_type === 'paciente'
+                                    ? `${log.new_values?.nombres || ''} ${log.new_values?.apellidos || ''}`.trim()
+                                    : `${config.label} #${log.entity_id}`
+                                  }
+                                </h4>
+                                <span
+                                  className={`px-2 py-1 text-xs font-medium rounded-full border whitespace-nowrap ${getActionBadgeColor(
+                                    log.action
+                                  )}`}
+                                >
+                                  {getActionLabel(log.action)}
+                                </span>
                               </div>
+
+                              {/* Estado de cita */}
+                              {log.entity_type === 'cita' && appointmentDisplay.subtitle && (
+                                <p className="text-sm text-gray-600 mb-2">Estado: <span className="font-medium">{appointmentDisplay.subtitle}</span></p>
+                              )}
+
+                              {/* Doctor que realizó la acción */}
+                              <p className="text-xs text-gray-500 mb-2">
+                                Doctor: <span className="text-gray-700 font-medium">{log.doctor_name || 'Desconocido'}</span>
+                              </p>
+
+                              {/* Información adicional para paciente creado */}
+                              {log.entity_type === 'paciente' && log.action === 'created' && (
+                                <div className="bg-white bg-opacity-50 rounded p-2 mb-2 text-sm space-y-1">
+                                  {log.new_values?.email && (
+                                    <p><span className="text-gray-600">Email:</span> <span className="text-gray-800">{log.new_values.email}</span></p>
+                                  )}
+                                  {log.new_values?.telefono && (
+                                    <p><span className="text-gray-600">Teléfono:</span> <span className="text-gray-800">{log.new_values.telefono}</span></p>
+                                  )}
+                                  {log.new_values?.alergias && (
+                                    <p><span className="text-gray-600">Alergias:</span> <span className="text-red-700 font-medium">{log.new_values.alergias}</span></p>
+                                  )}
+                                  {log.new_values?.medicamentos_actuales && (
+                                    <p><span className="text-gray-600">Medicamentos:</span> <span className="text-gray-800">{log.new_values.medicamentos_actuales}</span></p>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Descripción */}
+                              {log.notes && (
+                                <p className="text-sm text-gray-700 mt-2">{log.notes}</p>
+                              )}
                             </div>
-                          ))}
-                          {photos.length > 3 && (
-                            <div className="h-16 w-16 rounded border border-gray-300 bg-gray-100 flex items-center justify-center text-xs font-semibold text-gray-700">
-                              +{photos.length - 3}
-                            </div>
-                          )}
+
+                            {/* Miniaturas (documentos/fotos) */}
+                            {(hasPhotos || hasDocuments) && (
+                              <div className="flex gap-2 flex-wrap">
+                                {/* Miniaturas de documentos */}
+                                {documents.slice(0, 3).map((doc, idx) => (
+                                  <div
+                                    key={`doc-${idx}`}
+                                    className="relative group cursor-pointer"
+                                    onClick={() => setSelectedDocument(doc)}
+                                  >
+                                    {doc.type === 'pdf' ? (
+                                      <div className="h-16 w-16 bg-red-100 rounded border border-red-300 flex items-center justify-center hover:border-red-500 transition-all">
+                                        <FileText className="w-8 h-8 text-red-600" />
+                                      </div>
+                                    ) : (
+                                      <img
+                                        src={doc.url}
+                                        alt={doc.title}
+                                        className="h-16 w-16 object-cover rounded border border-gray-300 hover:border-cyan-500 transition-all"
+                                        onError={(e) => {
+                                          const img = e.target as HTMLImageElement;
+                                          img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="12"%3ENo disponible%3C/text%3E%3C/svg%3E';
+                                        }}
+                                      />
+                                    )}
+                                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 rounded transition-all flex items-center justify-center">
+                                      {doc.type === 'pdf' ? (
+                                        <FileText className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-all" />
+                                      ) : (
+                                        <ImageIcon className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-all" />
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+
+                                {/* Miniaturas de fotos */}
+                                {photos.slice(0, 3 - documents.length).map((photo, idx) => (
+                                  <div
+                                    key={`photo-${idx}`}
+                                    className="relative group cursor-pointer"
+                                    onClick={() => setSelectedDocument({
+                                      url: photo.url,
+                                      title: photo.alt || `Foto ${idx + 1}`,
+                                      type: 'image'
+                                    })}
+                                  >
+                                    <img
+                                      src={photo.url}
+                                      alt={photo.alt}
+                                      className="h-16 w-16 object-cover rounded border border-gray-300 hover:border-cyan-500 transition-all"
+                                      onError={(e) => {
+                                        const img = e.target as HTMLImageElement;
+                                        img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="12"%3ENo disponible%3C/text%3E%3C/svg%3E';
+                                      }}
+                                    />
+                                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 rounded transition-all flex items-center justify-center">
+                                      <ImageIcon className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-all" />
+                                    </div>
+                                  </div>
+                                ))}
+
+                                {/* Indicador de más elementos */}
+                                {(documents.length + photos.length) > 3 && (
+                                  <div className="h-16 w-16 rounded border border-gray-300 bg-gray-100 flex items-center justify-center text-xs font-semibold text-gray-700">
+                                    +{(documents.length + photos.length) - 3}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+
+              {/* Círculo final - Inicio de la historia del paciente */}
+              <div className="relative pt-8 pb-4">
+                <div className="absolute left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-full flex items-center justify-center shadow-lg border-4 border-white z-10">
+                  <Activity className="w-6 h-6 text-white" />
+                </div>
+              </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Modal de vista previa de documentos */}
+      {selectedDocument && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg shadow-2xl w-[95vw] h-[95vh] sm:w-[90vw] sm:h-[90vh] lg:w-[85vw] lg:h-[85vh] flex flex-col">
+            {/* Header del modal */}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-800 truncate pr-4">{selectedDocument.title}</h3>
+              <button
+                onClick={() => setSelectedDocument(null)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                aria-label="Cerrar"
+              >
+                <X className="w-6 h-6 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Contenido del modal */}
+            <div className="flex-1 overflow-auto p-4 sm:p-6 flex items-center justify-center bg-gray-50">
+              {selectedDocument.type === 'pdf' ? (
+                <div className="w-full h-full flex items-center justify-center">
+                  <iframe
+                    src={selectedDocument.url}
+                    className="w-full h-full rounded border border-gray-200"
+                    title={selectedDocument.title}
+                  />
+                </div>
+              ) : (
+                <img
+                  src={selectedDocument.url}
+                  alt={selectedDocument.title}
+                  className="max-w-full max-h-full object-contain rounded border border-gray-200"
+                />
+              )}
+            </div>
+
+            {/* Footer del modal */}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+              <p className="text-xs sm:text-sm text-gray-600">
+                {selectedDocument.type === 'pdf' ? 'Documento PDF' : 'Imagen'}
+              </p>
+              <a
+                href={selectedDocument.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 sm:px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors text-xs sm:text-sm font-medium flex-shrink-0"
+              >
+                Descargar
+              </a>
+            </div>
+          </div>
         </div>
       )}
     </div>

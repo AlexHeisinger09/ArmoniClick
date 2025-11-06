@@ -190,6 +190,17 @@ const handler: Handler = async (event: HandlerEvent) => {
           .where(eq(documentsTable.id, documentId))
           .returning();
 
+        // 📝 Generar PDF y guardar en auditoría
+        let pdfBase64 = '';
+        try {
+          const pdfBuffer = await generateDocumentPDF(updatedDocument);
+          pdfBase64 = pdfBuffer.toString('base64');
+          console.log(`✅ PDF generated and converted to base64, size: ${pdfBase64.length} characters`);
+        } catch (pdfError) {
+          console.error('⚠️ Error generating PDF for audit log:', pdfError);
+          // Continuar sin el PDF en el audit log
+        }
+
         // 📝 Registrar en auditoría (cambio de estado: pendiente → firmado)
         const auditService = new AuditService(db);
         await auditService.logChange({
@@ -198,7 +209,13 @@ const handler: Handler = async (event: HandlerEvent) => {
           entityId: documentId,
           action: AUDIT_ACTIONS.STATUS_CHANGED,
           oldValues: { status: documentWithPatient.status },
-          newValues: { status: updatedDocument.status, signed_date: updatedDocument.signed_date },
+          newValues: {
+            status: updatedDocument.status,
+            signed_date: updatedDocument.signed_date,
+            title: updatedDocument.title,
+            signature_data: updatedDocument.signature_data,
+            pdf_base64: pdfBase64
+          },
           changedBy: doctorId,
           notes: `Documento "${updatedDocument.title}" firmado`,
         });

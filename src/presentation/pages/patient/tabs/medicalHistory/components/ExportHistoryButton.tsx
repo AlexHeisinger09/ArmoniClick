@@ -41,12 +41,55 @@ const ExportHistoryButton: React.FC<ExportHistoryButtonProps> = ({
 
   const getActionLabel = (action: string): string => {
     const labels: Record<string, string> = {
+      created: 'Creado',
+      updated: 'Actualizado',
+      status_changed: 'Cambio de estado',
+      deleted: 'Eliminado',
       CREATED: 'Creado',
       UPDATED: 'Actualizado',
       STATUS_CHANGED: 'Cambio de estado',
       DELETED: 'Eliminado',
     };
     return labels[action] || action;
+  };
+
+  const formatValue = (value: any): string => {
+    if (value === null || value === undefined) return '-';
+    if (typeof value === 'boolean') return value ? 'Sí' : 'No';
+    if (typeof value === 'string') {
+      // Excluir datos codificados en base64 (muy largos)
+      if (value.length > 100 && (value.startsWith('data:') || /^[A-Za-z0-9+/=]{100,}$/.test(value))) {
+        return '[Archivo binario]';
+      }
+      return value;
+    }
+    if (typeof value === 'object') {
+      // Si es un objeto, mostrar pares clave-valor legibles
+      return Object.entries(value)
+        .filter(([_, v]) => {
+          // Filtrar valores base64
+          return !(typeof v === 'string' && v.length > 100 && (v.startsWith('data:') || /^[A-Za-z0-9+/=]{100,}$/.test(v)));
+        })
+        .map(([key, val]) => `${key}: ${formatValue(val)}`)
+        .join(', ');
+    }
+    return String(value);
+  };
+
+  const getReadableLabel = (key: string): string => {
+    const labels: Record<string, string> = {
+      status: 'Estado',
+      title: 'Título',
+      nombre_servicio: 'Nombre del Servicio',
+      email: 'Email',
+      telefono: 'Teléfono',
+      nombres: 'Nombres',
+      apellidos: 'Apellidos',
+      fecha: 'Fecha',
+      signed_date: 'Fecha de Firma',
+      document_type: 'Tipo de Documento',
+    };
+    return labels[key] || key;
   };
 
   const handleExport = async () => {
@@ -90,10 +133,14 @@ const ExportHistoryButton: React.FC<ExportHistoryButtonProps> = ({
       pdf.line(margin, yPosition, pageWidth - margin, yPosition);
       yPosition += 8;
 
-      // Tabla de registros
+      // Tabla de registros - ordenados de más antiguo a más reciente
       pdf.setFontSize(10);
 
-      logs.forEach((log, index) => {
+      const sortedLogsForExport = [...logs].sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+
+      sortedLogsForExport.forEach((log, index) => {
         // Verificar si necesitamos nueva página
         if (yPosition > pageHeight - 20) {
           pdf.addPage();
@@ -144,28 +191,42 @@ const ExportHistoryButton: React.FC<ExportHistoryButtonProps> = ({
 
           pdf.setFont('helvetica', 'normal');
           if (log.old_values) {
-            const oldText = `Anterior: ${JSON.stringify(log.old_values)}`;
-            const oldLines = pdf.splitTextToSize(oldText, contentWidth - 15) as string[];
-            oldLines.forEach((line: string) => {
-              if (yPosition > pageHeight - 15) {
-                pdf.addPage();
-                yPosition = margin;
+            Object.entries(log.old_values).forEach(([key, value]) => {
+              // Saltar valores base64
+              if (typeof value === 'string' && value.length > 100 && (value.startsWith('data:') || /^[A-Za-z0-9+/=]{100,}$/.test(value))) {
+                return;
               }
-              pdf.text(line, margin + 10, yPosition);
-              yPosition += 3;
+
+              const oldText = `${getReadableLabel(key)} anterior: ${formatValue(value)}`;
+              const oldLines = pdf.splitTextToSize(oldText, contentWidth - 15) as string[];
+              oldLines.forEach((line: string) => {
+                if (yPosition > pageHeight - 15) {
+                  pdf.addPage();
+                  yPosition = margin;
+                }
+                pdf.text(line, margin + 10, yPosition);
+                yPosition += 3;
+              });
             });
           }
 
           if (log.new_values) {
-            const newText = `Nuevo: ${JSON.stringify(log.new_values)}`;
-            const newLines = pdf.splitTextToSize(newText, contentWidth - 15) as string[];
-            newLines.forEach((line: string) => {
-              if (yPosition > pageHeight - 15) {
-                pdf.addPage();
-                yPosition = margin;
+            Object.entries(log.new_values).forEach(([key, value]) => {
+              // Saltar valores base64
+              if (typeof value === 'string' && value.length > 100 && (value.startsWith('data:') || /^[A-Za-z0-9+/=]{100,}$/.test(value))) {
+                return;
               }
-              pdf.text(line, margin + 10, yPosition);
-              yPosition += 3;
+
+              const newText = `${getReadableLabel(key)} nuevo: ${formatValue(value)}`;
+              const newLines = pdf.splitTextToSize(newText, contentWidth - 15) as string[];
+              newLines.forEach((line: string) => {
+                if (yPosition > pageHeight - 15) {
+                  pdf.addPage();
+                  yPosition = margin;
+                }
+                pdf.text(line, margin + 10, yPosition);
+                yPosition += 3;
+              });
             });
           }
         }
@@ -173,7 +234,7 @@ const ExportHistoryButton: React.FC<ExportHistoryButtonProps> = ({
         yPosition += 5;
 
         // Línea separadora entre registros
-        if (index < logs.length - 1) {
+        if (index < sortedLogsForExport.length - 1) {
           pdf.setDrawColor(220, 220, 220);
           pdf.line(margin, yPosition, pageWidth - margin, yPosition);
           yPosition += 3;
