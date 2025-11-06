@@ -9,6 +9,8 @@ import { fromBodyToObject, HEADERS } from "../../config/utils";
 import { DocumentEmailService } from "../../services/documentEmailService";
 import { EmailService } from "../../services/email.service";
 import { generateDocumentPDF } from "../../services/pdfService";
+import { AuditService } from "../../services/AuditService";
+import { AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } from "../../data/schemas";
 import { envs } from "../../config/envs";
 
 const handler: Handler = async (event: HandlerEvent) => {
@@ -102,6 +104,22 @@ const handler: Handler = async (event: HandlerEvent) => {
           })
           .returning();
 
+        // 📝 Registrar en auditoría (creación de documento)
+        const auditService = new AuditService(db);
+        await auditService.logChange({
+          patientId: Number(body.id_patient),
+          entityType: AUDIT_ENTITY_TYPES.DOCUMENTO,
+          entityId: document.id,
+          action: AUDIT_ACTIONS.CREATED,
+          newValues: {
+            title: document.title,
+            document_type: document.document_type,
+            status: document.status,
+          },
+          changedBy: doctorId,
+          notes: `Documento "${document.title}" creado (tipo: ${document.document_type})`,
+        });
+
         return {
           statusCode: 201,
           body: JSON.stringify(document),
@@ -171,6 +189,19 @@ const handler: Handler = async (event: HandlerEvent) => {
           })
           .where(eq(documentsTable.id, documentId))
           .returning();
+
+        // 📝 Registrar en auditoría (cambio de estado: pendiente → firmado)
+        const auditService = new AuditService(db);
+        await auditService.logChange({
+          patientId: documentWithPatient.id_patient,
+          entityType: AUDIT_ENTITY_TYPES.DOCUMENTO,
+          entityId: documentId,
+          action: AUDIT_ACTIONS.STATUS_CHANGED,
+          oldValues: { status: documentWithPatient.status },
+          newValues: { status: updatedDocument.status, signed_date: updatedDocument.signed_date },
+          changedBy: doctorId,
+          notes: `Documento "${updatedDocument.title}" firmado`,
+        });
 
         // Solo obtener email del paciente si se solicita envío de email
         const shouldSendEmail = body.send_email === true || body.send_email === 'true';
