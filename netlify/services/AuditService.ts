@@ -1,10 +1,10 @@
 // netlify/services/AuditService.ts
-import { Database } from '@/netlify/data/db';
-import { auditLogsTable, AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } from '@/netlify/data/schemas';
+import { db } from '../data/db';
+import { auditLogsTable } from '../data/schemas';
 import { eq } from 'drizzle-orm';
 
 export class AuditService {
-  constructor(private db: Database) {}
+  constructor(private database: typeof db = db) {}
 
   /**
    * Registra un cambio de datos en el historial de auditoría
@@ -26,7 +26,7 @@ export class AuditService {
         action: options.action,
       });
 
-      await this.db.insert(auditLogsTable).values({
+      await this.database.insert(auditLogsTable).values({
         patient_id: options.patientId,
         entity_type: options.entityType,
         entity_id: options.entityId,
@@ -53,7 +53,7 @@ export class AuditService {
     try {
       console.log('🔍 Obteniendo historial del paciente:', patientId);
 
-      const logs = await this.db
+      const logs = await this.database
         .select()
         .from(auditLogsTable)
         .where(eq(auditLogsTable.patient_id, patientId))
@@ -81,7 +81,7 @@ export class AuditService {
         entityId,
       });
 
-      const logs = await this.db
+      const logs = await this.database
         .select()
         .from(auditLogsTable)
         .where(
