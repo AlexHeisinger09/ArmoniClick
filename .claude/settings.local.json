@@ -22,7 +22,8 @@
       "Bash(curl:*)",
       "Bash(pkill:*)",
       "Bash(timeout 120 npm run build)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

@@ -3,6 +3,9 @@ import { Handler, HandlerEvent } from "@netlify/functions";
 import { validateJWT, getAuthorizationHeader } from "../../middlewares";
 import { HEADERS, fromBodyToObject } from "../../config/utils";
 import { AppointmentService, CreateAppointmentData, UpdateAppointmentData } from "../../services/appointment.service";
+import { AuditService } from "../../services/AuditService";
+import { db } from "../../data/db";
+import { AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } from "../../data/schemas";
 
 const handler: Handler = async (event: HandlerEvent) => {
   const { httpMethod, path, queryStringParameters } = event;
@@ -266,6 +269,25 @@ const handler: Handler = async (event: HandlerEvent) => {
           savedLocalTime: newAppointment.appointmentDate.toLocaleString('es-CL', { timeZone: 'America/Santiago' })
         });
 
+        // 📝 Registrar en auditoría (creación de cita)
+        const auditService = new AuditService(db);
+        if (newAppointment.patientId) {
+          await auditService.logChange({
+            patientId: newAppointment.patientId,
+            entityType: AUDIT_ENTITY_TYPES.CITA,
+            entityId: newAppointment.id,
+            action: AUDIT_ACTIONS.CREATED,
+            newValues: {
+              title: newAppointment.title,
+              appointmentDate: newAppointment.appointmentDate,
+              status: newAppointment.status,
+              type: newAppointment.type,
+            },
+            changedBy: userData.id,
+            notes: `Cita creada: ${newAppointment.title}`,
+          });
+        }
+
         return {
           statusCode: 201,
           body: JSON.stringify({
@@ -349,6 +371,16 @@ const handler: Handler = async (event: HandlerEvent) => {
         }
       }
 
+      // Obtener la cita actual para comparar cambios
+      const existingAppointment = await AppointmentService.findById(appointmentId, userData.id);
+      if (!existingAppointment) {
+        return {
+          statusCode: 404,
+          body: JSON.stringify({ message: "Cita no encontrada" }),
+          headers: HEADERS.json,
+        };
+      }
+
       const updatedAppointment = await AppointmentService.update(
         appointmentId,
         userData.id,
@@ -361,6 +393,53 @@ const handler: Handler = async (event: HandlerEvent) => {
           body: JSON.stringify({ message: "Cita no encontrada" }),
           headers: HEADERS.json,
         };
+      }
+
+      // 📝 Registrar en auditoría (cambios en cita)
+      const auditService = new AuditService(db);
+      const changedFields: any = {};
+      const oldValues: any = {};
+
+      if (updateData.title && existingAppointment.title !== updateData.title) {
+        changedFields.title = updateData.title;
+        oldValues.title = existingAppointment.title;
+      }
+      if (updateData.description !== undefined && existingAppointment.description !== updateData.description) {
+        changedFields.description = updateData.description;
+        oldValues.description = existingAppointment.description;
+      }
+      if (updateData.appointmentDate && existingAppointment.appointmentDate.getTime() !== updateData.appointmentDate.getTime()) {
+        changedFields.appointmentDate = updateData.appointmentDate;
+        oldValues.appointmentDate = existingAppointment.appointmentDate;
+      }
+      if (updateData.duration && existingAppointment.duration !== updateData.duration) {
+        changedFields.duration = updateData.duration;
+        oldValues.duration = existingAppointment.duration;
+      }
+      if (updateData.type && existingAppointment.type !== updateData.type) {
+        changedFields.type = updateData.type;
+        oldValues.type = existingAppointment.type;
+      }
+      if (updateData.notes !== undefined && existingAppointment.notes !== updateData.notes) {
+        changedFields.notes = updateData.notes;
+        oldValues.notes = existingAppointment.notes;
+      }
+      if (updateData.status && existingAppointment.status !== updateData.status) {
+        changedFields.status = updateData.status;
+        oldValues.status = existingAppointment.status;
+      }
+
+      if (updatedAppointment.patientId && Object.keys(changedFields).length > 0) {
+        await auditService.logChange({
+          patientId: updatedAppointment.patientId,
+          entityType: AUDIT_ENTITY_TYPES.CITA,
+          entityId: appointmentId,
+          action: updateData.status ? AUDIT_ACTIONS.STATUS_CHANGED : AUDIT_ACTIONS.UPDATED,
+          oldValues,
+          newValues: changedFields,
+          changedBy: userData.id,
+          notes: updateData.status ? `Cita ${updateData.status === 'cancelled' ? 'cancelada' : 'reprogramada'}` : `Cita actualizada: ${updatedAppointment.title}`,
+        });
       }
 
       return {
@@ -383,6 +462,9 @@ const handler: Handler = async (event: HandlerEvent) => {
         };
       }
 
+      // Obtener la cita antes de eliminarla para registrar en auditoría
+      const appointmentToDelete = await AppointmentService.findById(appointmentId, userData.id);
+
       const deletedAppointment = await AppointmentService.delete(appointmentId, userData.id);
 
       if (!deletedAppointment) {
@@ -391,6 +473,24 @@ const handler: Handler = async (event: HandlerEvent) => {
           body: JSON.stringify({ message: "Cita no encontrada" }),
           headers: HEADERS.json,
         };
+      }
+
+      // 📝 Registrar en auditoría (eliminación de cita)
+      const auditService = new AuditService(db);
+      if (appointmentToDelete && appointmentToDelete.patientId) {
+        await auditService.logChange({
+          patientId: appointmentToDelete.patientId,
+          entityType: AUDIT_ENTITY_TYPES.CITA,
+          entityId: appointmentId,
+          action: AUDIT_ACTIONS.DELETED,
+          oldValues: {
+            title: appointmentToDelete.title,
+            appointmentDate: appointmentToDelete.appointmentDate,
+            status: appointmentToDelete.status,
+          },
+          changedBy: userData.id,
+          notes: `Cita eliminada: ${appointmentToDelete.title}`,
+        });
       }
 
       return {

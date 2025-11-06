@@ -144,8 +144,11 @@ const handler: Handler = async (event: HandlerEvent) => {
         };
       }
 
+      // Obtener el patientId desde el body (enviado por el frontend)
+      const patientIdFromBody = body.patientId || body.patient_id;
+
       return new CompleteTreatment()
-        .execute(treatmentId, doctorId)
+        .execute(treatmentId, doctorId, patientIdFromBody)
         .then((res) => res)
         .catch((error) => error);
     }

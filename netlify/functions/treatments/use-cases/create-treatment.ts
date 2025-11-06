@@ -1,9 +1,12 @@
 // netlify/functions/treatments/use-cases/create-treatment.ts - ACTUALIZADO PARA CREAR BUDGET ITEM
 import { TreatmentService } from "../../../services/treatment.service";
 import { BudgetService } from "../../../services/budget.service";
+import { AuditService } from "../../../services/AuditService";
+import { db } from "../../../data/db";
 import { CreateTreatmentDto } from "../dtos";
 import { HEADERS } from "../../../config/utils";
 import { HandlerResponse } from "@netlify/functions";
+import { AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } from "../../../data/schemas";
 
 interface CreateTreatmentUseCase {
   execute: (dto: CreateTreatmentDto, doctorId: number) => Promise<HandlerResponse>;
@@ -12,7 +15,8 @@ interface CreateTreatmentUseCase {
 export class CreateTreatment implements CreateTreatmentUseCase {
   constructor(
     private readonly treatmentService: TreatmentService = new TreatmentService(),
-    private readonly budgetService: BudgetService = new BudgetService()
+    private readonly budgetService: BudgetService = new BudgetService(),
+    private readonly auditService: AuditService = new AuditService(db)
   ) {}
 
   public async execute(dto: CreateTreatmentDto, doctorId: number): Promise<HandlerResponse> {
@@ -69,10 +73,26 @@ export class CreateTreatment implements CreateTreatmentUseCase {
         descripcion: dto.descripcion,
       });
 
+      // 📝 Registrar en auditoría (creación con status=pending, no se muestra aún en historial)
+      await this.auditService.logChange({
+        patientId: dto.id_paciente,
+        entityType: AUDIT_ENTITY_TYPES.TRATAMIENTO,
+        entityId: newTreatment.id,
+        action: AUDIT_ACTIONS.CREATED,
+        newValues: {
+          status: "pending",
+          nombre_servicio: newTreatment.nombre_servicio,
+          fecha_control: newTreatment.fecha_control,
+          descripcion: newTreatment.descripcion,
+        },
+        changedBy: doctorId,
+        notes: `Tratamiento ${newTreatment.nombre_servicio} creado (estado: pendiente)`,
+      });
+
       return {
         statusCode: 201,
         body: JSON.stringify({
-          message: budgetItemId 
+          message: budgetItemId
             ? "Tratamiento creado y vinculado al presupuesto exitosamente"
             : "Tratamiento creado exitosamente",
           treatment: newTreatment,

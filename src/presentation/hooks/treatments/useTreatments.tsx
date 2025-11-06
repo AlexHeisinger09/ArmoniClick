@@ -181,18 +181,18 @@ export const useUpdateTreatment = () => {
 };
 
 // Hook para completar tratamiento - ✅ MEJORADO CON INVALIDACIÓN ESPECÍFICA
-export const useCompleteTreatment = () => {
+export const useCompleteTreatment = (patientId?: number) => {
   const [isLoadingComplete, setIsLoadingComplete] = useState(false);
   const queryClient = useQueryClient();
 
   const completeTreatmentMutation = useMutation({
-    mutationFn: (treatmentId: number) => {
-      return completeTreatmentUseCase(apiFetcher, treatmentId);
+    mutationFn: ({ treatmentId, patientId: pid }: { treatmentId: number; patientId?: number }) => {
+      return completeTreatmentUseCase(apiFetcher, treatmentId, pid);
     },
     onMutate: () => {
       setIsLoadingComplete(true);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       setIsLoadingComplete(false);
 
       console.log('🔄 Invalidando queries después de completar tratamiento...');
@@ -200,6 +200,15 @@ export const useCompleteTreatment = () => {
       // ✅ INVALIDAR TODAS LAS QUERIES RELACIONADAS (esto es crítico para completar tratamientos)
       queryClient.invalidateQueries({ queryKey: ['treatments'] });
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+
+      // ✅ INVALIDAR HISTORIAL DE AUDITORÍA (NUEVO - para que aparezca el log inmediatamente)
+      if (variables.patientId) {
+        queryClient.invalidateQueries({ queryKey: ['auditHistory', variables.patientId] });
+        console.log('✅ Historial de auditoría invalidado para patient:', variables.patientId);
+      } else if (patientId) {
+        queryClient.invalidateQueries({ queryKey: ['auditHistory', patientId] });
+        console.log('✅ Historial de auditoría invalidado para patient:', patientId);
+      }
 
       // ✅ FORZAR REFETCH INMEDIATO para datos críticos
       queryClient.refetchQueries({

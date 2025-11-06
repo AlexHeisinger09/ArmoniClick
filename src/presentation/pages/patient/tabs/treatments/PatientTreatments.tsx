@@ -60,7 +60,7 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   const { createTreatmentMutation, isLoadingCreate } = useCreateTreatment();
   const { updateTreatmentMutation, isLoadingUpdate } = useUpdateTreatment();
   const { deleteTreatmentMutation, isLoadingDelete } = useDeleteTreatment();
-  const { completeTreatmentMutation, isLoadingComplete } = useCompleteTreatment();
+  const { completeTreatmentMutation, isLoadingComplete } = useCompleteTreatment(patient.id);
 
   // ✅ DEPURACIÓN TEMPORAL - REMOVER EN PRODUCCIÓN
   //useDebugTreatments(budgets, budgetTreatments, activeBudget, patient.id);
@@ -177,9 +177,12 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
     }
 
     try {
-      console.log('✅ Completando tratamiento:', { treatmentId, treatment });
+      console.log('✅ Completando tratamiento:', { treatmentId, treatment, patientId: patient.id });
 
-      await completeTreatmentMutation.mutateAsync(treatmentId);
+      await completeTreatmentMutation.mutateAsync({
+        treatmentId,
+        patientId: patient.id
+      });
 
       console.log('✅ Tratamiento completado exitosamente');
 

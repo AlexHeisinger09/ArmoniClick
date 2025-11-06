@@ -1,20 +1,26 @@
 import { PatientService } from "../../../services/patient.service";
+import { AuditService } from "../../../services/AuditService";
+import { db } from "../../../data/db";
 import { CreatePatientDto } from "../dtos";
 import { HEADERS } from "../../../config/utils";
 import { HandlerResponse } from "@netlify/functions";
+import { AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } from "../../../data/schemas";
 
 interface CreatePatientUseCase {
   execute: (dto: CreatePatientDto, doctorId: number) => Promise<HandlerResponse>;
 }
 
 export class CreatePatient implements CreatePatientUseCase {
-  constructor(private readonly patientService: PatientService = new PatientService()) {}
+  constructor(
+    private readonly patientService: PatientService = new PatientService(),
+    private readonly auditService: AuditService = new AuditService(db)
+  ) {}
 
   public async execute(dto: CreatePatientDto, doctorId: number): Promise<HandlerResponse> {
     try {
       // Verificar si el RUT ya existe para este doctor
       const existingPatient = await this.patientService.findByRut(dto.rut, doctorId);
-      
+
       if (existingPatient) {
         return {
           statusCode: 400,
@@ -42,6 +48,23 @@ export class CreatePatient implements CreatePatientUseCase {
         hospitalizaciones_previas: dto.hospitalizaciones_previas,
         notas_medicas: dto.notas_medicas,
         id_doctor: doctorId,
+      });
+
+      // 📝 Registrar en auditoría
+      await this.auditService.logChange({
+        patientId: newPatient.id,
+        entityType: AUDIT_ENTITY_TYPES.PACIENTE,
+        entityId: newPatient.id,
+        action: AUDIT_ACTIONS.CREATED,
+        newValues: {
+          rut: newPatient.rut,
+          nombres: newPatient.nombres,
+          apellidos: newPatient.apellidos,
+          email: newPatient.email,
+          telefono: newPatient.telefono,
+        },
+        changedBy: doctorId,
+        notes: `Paciente ${newPatient.nombres} ${newPatient.apellidos} creado`,
       });
 
       return {
