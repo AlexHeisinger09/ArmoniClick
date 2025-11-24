@@ -868,56 +868,57 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
         </div>
       )}
 
-      {/* Modal de detalles del tratamiento */}
+      {/* Modal de detalles del tratamiento - Mismo estilo que en Treatments */}
       {selectedTreatment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-lg shadow-2xl w-[95vw] sm:w-[90vw] lg:w-[70vw] max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden">
-            {/* Header del modal */}
-            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
+          <div className="bg-white rounded-lg shadow-2xl w-[95vw] sm:w-[90vw] lg:w-[75vw] max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Header azul - Mismo estilo que en Treatments */}
+            <div className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white p-4 sm:p-6 flex items-center justify-between flex-shrink-0">
               <div>
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-800">{selectedTreatment.serviceName}</h3>
-                <p className="text-xs sm:text-sm text-gray-500 mt-1">Evolución del {formatDate(selectedTreatment.log.created_at)} a las {formatTime(selectedTreatment.log.created_at)}</p>
+                <h2 className="text-xl sm:text-2xl font-bold">{selectedTreatment.serviceName}</h2>
+                <p className="text-xs sm:text-sm text-cyan-100 mt-1">Evolución del {formatDate(selectedTreatment.log.created_at)} a las {formatTime(selectedTreatment.log.created_at)}</p>
               </div>
               <button
                 onClick={() => setSelectedTreatment(null)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors flex-shrink-0"
                 aria-label="Cerrar"
               >
-                <X className="w-6 h-6 text-gray-500" />
+                <X className="w-6 h-6 text-white" />
               </button>
             </div>
 
-            {/* Contenido del modal */}
-            <div className="flex-1 overflow-auto p-4 sm:p-6 space-y-6">
-              {/* Información del doctor */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Realizado por</h4>
-                <p className="text-sm text-gray-800">{selectedTreatment.log.doctor_name || 'Doctor desconocido'}</p>
+            {/* Contenido del modal con scroll */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              {/* Doctor */}
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">Realizado por</h3>
+                <p className="text-sm text-gray-900">{selectedTreatment.log.doctor_name || 'Doctor desconocido'}</p>
               </div>
 
-              {/* Detalles de piezas/dientes afectados */}
+              {/* Piezas */}
               {selectedTreatment.log.new_values?.piezas && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-green-800 mb-3">Piezas Dentales Tratadas</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {(Array.isArray(selectedTreatment.log.new_values.piezas)
-                      ? selectedTreatment.log.new_values.piezas
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <h3 className="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">
+                    <span className="w-5 h-5 bg-green-600 text-white rounded-full flex items-center justify-center text-xs">🦷</span>
+                    Piezas/Zona
+                  </h3>
+                  <p className="text-sm text-green-900">
+                    {Array.isArray(selectedTreatment.log.new_values.piezas)
+                      ? selectedTreatment.log.new_values.piezas.join(', ')
                       : typeof selectedTreatment.log.new_values.piezas === 'string'
-                      ? selectedTreatment.log.new_values.piezas.split(',').map((p: string) => p.trim())
-                      : []
-                    ).map((pieza: string, idx: number) => (
-                      <span key={idx} className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
-                        {pieza}
-                      </span>
-                    ))}
-                  </div>
+                      ? selectedTreatment.log.new_values.piezas
+                      : 'N/A'}
+                  </p>
                 </div>
               )}
 
-              {/* Productos/Materiales utilizados con detalles */}
+              {/* Productos */}
               {selectedTreatment.log.new_values?.productos && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-blue-800 mb-4">Productos/Materiales Utilizados</h4>
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <h3 className="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">
+                    <span className="w-5 h-5 bg-green-600 text-white rounded-full flex items-center justify-center text-xs">💊</span>
+                    Producto
+                  </h3>
                   <div className="space-y-3">
                     {(Array.isArray(selectedTreatment.log.new_values.productos)
                       ? selectedTreatment.log.new_values.productos
@@ -925,8 +926,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                       ? selectedTreatment.log.new_values.productos.split(',').map((p: string) => p.trim())
                       : []
                     ).map((producto: string, idx: number) => {
-                      // Intentar parsear si es un objeto JSON
-                      let productoData = { nombre: producto, fecha_vencimiento: '', dilusion: '' };
+                      let productoData = { nombre: producto, lote: '', fecha_vencimiento: '', dilusion: '' };
                       try {
                         if (typeof producto === 'string' && producto.includes('{')) {
                           productoData = JSON.parse(producto);
@@ -934,25 +934,33 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                           productoData = producto as any;
                         }
                       } catch (e) {
-                        // Mantener el formato original si no es JSON
+                        // Mantener el formato original
                       }
 
                       return (
-                        <div key={idx} className="bg-white rounded-lg p-3 border border-blue-100">
-                          <p className="text-sm text-blue-900 font-medium mb-2">
+                        <div key={idx} className="bg-white rounded p-3 border border-green-100">
+                          <p className="text-sm font-medium text-gray-900 mb-2">
                             {typeof productoData === 'object' && 'nombre' in productoData
                               ? productoData.nombre
                               : producto}
                           </p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-blue-800">
+                          <div className="grid grid-cols-2 gap-3 text-xs">
+                            {typeof productoData === 'object' && 'lote' in productoData && productoData.lote && (
+                              <div>
+                                <span className="text-gray-600">Lote:</span>
+                                <p className="text-gray-900 font-medium">{productoData.lote}</p>
+                              </div>
+                            )}
                             {typeof productoData === 'object' && 'fecha_vencimiento' in productoData && productoData.fecha_vencimiento && (
                               <div>
-                                <span className="font-semibold">Vencimiento:</span> {productoData.fecha_vencimiento}
+                                <span className="text-gray-600">Vencimiento:</span>
+                                <p className="text-gray-900 font-medium">{productoData.fecha_vencimiento}</p>
                               </div>
                             )}
                             {typeof productoData === 'object' && 'dilusion' in productoData && productoData.dilusion && (
-                              <div>
-                                <span className="font-semibold">Dilución:</span> {productoData.dilusion}
+                              <div className="col-span-2">
+                                <span className="text-gray-600">Dilución:</span>
+                                <p className="text-gray-900 font-medium">{productoData.dilusion}</p>
                               </div>
                             )}
                           </div>
@@ -963,38 +971,41 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                 </div>
               )}
 
-              {/* Notas del tratamiento */}
+              {/* Notas */}
               {selectedTreatment.log.notes && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-amber-800 mb-2">Notas</h4>
+                <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                  <h3 className="text-sm font-semibold text-amber-700 mb-2">Notas</h3>
                   <p className="text-sm text-amber-900">{selectedTreatment.log.notes}</p>
                 </div>
               )}
 
-              {/* Fotos antes/después */}
+              {/* Fotos */}
               {getPhotosFromLog(selectedTreatment.log).length > 0 && (
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Fotos del Tratamiento</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <span className="w-5 h-5 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs">📸</span>
+                    Fotografías
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {getPhotosFromLog(selectedTreatment.log).map((photo, idx) => (
-                      <div key={idx} className="rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                      <div
+                        key={idx}
+                        className="rounded-lg overflow-hidden border border-gray-300 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => setSelectedDocument({
+                          url: photo.url,
+                          title: photo.alt || `Foto ${idx + 1}`,
+                          type: 'image'
+                        })}
+                      >
                         <img
                           src={photo.url}
                           alt={photo.alt || `Foto ${idx + 1}`}
-                          className="w-full h-48 object-cover cursor-pointer hover:opacity-90"
-                          onClick={() => setSelectedDocument({
-                            url: photo.url,
-                            title: photo.alt || `Foto ${idx + 1}`,
-                            type: 'image'
-                          })}
+                          className="w-full h-24 sm:h-32 object-cover hover:opacity-80 transition-opacity"
                           onError={(e) => {
                             const img = e.target as HTMLImageElement;
                             img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="12"%3ENo disponible%3C/text%3E%3C/svg%3E';
                           }}
                         />
-                        <div className="p-2 bg-gray-50">
-                          <p className="text-xs text-gray-600">{photo.alt || `Foto ${idx + 1}`}</p>
-                        </div>
                       </div>
                     ))}
                   </div>
@@ -1006,21 +1017,21 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                 !selectedTreatment.log.new_values?.productos &&
                 !selectedTreatment.log.notes &&
                 getPhotosFromLog(selectedTreatment.log).length === 0 && (
-                <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="text-center py-8">
                   <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 text-sm">No hay detalles adicionales disponibles para este tratamiento</p>
+                  <p className="text-gray-500 text-sm">No hay detalles disponibles</p>
                 </div>
               )}
             </div>
 
-            {/* Footer del modal */}
+            {/* Footer */}
             <div className="flex items-center justify-between p-4 sm:p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
               <p className="text-xs sm:text-sm text-gray-600">
                 Detalles de evolución del tratamiento
               </p>
               <button
                 onClick={() => setSelectedTreatment(null)}
-                className="px-3 sm:px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors text-xs sm:text-sm font-medium"
+                className="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors text-sm font-medium"
               >
                 Cerrar
               </button>
