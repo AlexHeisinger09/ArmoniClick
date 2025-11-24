@@ -83,7 +83,7 @@ export const ScheduleBlockVisual: React.FC<ScheduleBlockVisualProps> = ({
           return (
             <div
               key={`${block.id}-${index}`}
-              className="absolute inset-x-0 bg-green-100 border-l-4 border-green-400 pointer-events-none z-10 group"
+              className="absolute inset-x-0 bg-slate-500 border-l-4 border-slate-700 pointer-events-none z-20 group"
               style={{
                 top: `${topPercent}%`,
                 height: `${heightPercent}%`,
@@ -91,7 +91,7 @@ export const ScheduleBlockVisual: React.FC<ScheduleBlockVisualProps> = ({
               }}
               title={`Bloqueado: ${block.startTime} - ${block.endTime}`}
             >
-              <div className="px-2 py-1 text-xs font-medium text-green-700 opacity-75 truncate">
+              <div className="px-2 py-1 text-xs font-medium text-white opacity-95 truncate font-semibold">
                 BLOQUEADO
               </div>
             </div>
@@ -120,7 +120,7 @@ export const ScheduleBlockVisual: React.FC<ScheduleBlockVisualProps> = ({
           return (
             <div
               key={`${block.id}-${index}`}
-              className="absolute inset-x-0 bg-green-100 border-l-2 border-green-400 pointer-events-none z-10"
+              className="absolute inset-x-0 bg-slate-500 border-l-2 border-slate-700 pointer-events-none z-20"
               style={{
                 top: `${topPercent}%`,
                 height: `${heightPercent}%`,

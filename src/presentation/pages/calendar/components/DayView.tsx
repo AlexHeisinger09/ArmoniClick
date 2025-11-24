@@ -64,7 +64,7 @@ export const DayView: React.FC<DayViewProps> = ({
                 key={time}
                 className={`h-20 border-b border-slate-50 transition-colors group px-4 sm:px-6 flex items-center relative ${
                   isBlocked
-                    ? 'bg-green-50 cursor-not-allowed'
+                    ? 'cursor-not-allowed'
                     : 'hover:bg-cyan-25 cursor-pointer'
                 }`}
                 onClick={() => !isBlocked && onTimeSlotClick(time, currentDate)}
