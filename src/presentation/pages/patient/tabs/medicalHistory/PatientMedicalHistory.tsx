@@ -875,7 +875,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
       {/* Modal de detalles del tratamiento - Obtiene datos del endpoint */}
       {selectedTreatment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-lg shadow-2xl w-[95vw] sm:w-[90vw] lg:w-[75vw] max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden">
+          <div className="bg-white rounded-lg shadow-2xl w-[95vw] sm:w-[85vw] md:w-[60vw] lg:w-[50vw] max-h-[80vh] sm:max-h-[75vh] flex flex-col overflow-hidden">
             {/* Header azul */}
             <div className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white p-4 sm:p-6 flex items-center justify-between flex-shrink-0">
               <div>
