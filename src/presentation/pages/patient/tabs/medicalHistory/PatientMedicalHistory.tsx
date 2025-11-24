@@ -786,23 +786,52 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                 </div>
               )}
 
-              {/* Productos/Materiales utilizados */}
+              {/* Productos/Materiales utilizados con detalles */}
               {selectedTreatment.log.new_values?.productos && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-blue-800 mb-3">Productos/Materiales Utilizados</h4>
-                  <ul className="space-y-2">
+                  <h4 className="text-sm font-semibold text-blue-800 mb-4">Productos/Materiales Utilizados</h4>
+                  <div className="space-y-3">
                     {(Array.isArray(selectedTreatment.log.new_values.productos)
                       ? selectedTreatment.log.new_values.productos
                       : typeof selectedTreatment.log.new_values.productos === 'string'
                       ? selectedTreatment.log.new_values.productos.split(',').map((p: string) => p.trim())
                       : []
-                    ).map((producto: string, idx: number) => (
-                      <li key={idx} className="text-sm text-blue-800 flex items-start gap-2">
-                        <span className="text-blue-600 mt-1">•</span>
-                        <span>{producto}</span>
-                      </li>
-                    ))}
-                  </ul>
+                    ).map((producto: string, idx: number) => {
+                      // Intentar parsear si es un objeto JSON
+                      let productoData = { nombre: producto, fecha_vencimiento: '', dilusion: '' };
+                      try {
+                        if (typeof producto === 'string' && producto.includes('{')) {
+                          productoData = JSON.parse(producto);
+                        } else if (typeof producto === 'object') {
+                          productoData = producto as any;
+                        }
+                      } catch (e) {
+                        // Mantener el formato original si no es JSON
+                      }
+
+                      return (
+                        <div key={idx} className="bg-white rounded-lg p-3 border border-blue-100">
+                          <p className="text-sm text-blue-900 font-medium mb-2">
+                            {typeof productoData === 'object' && 'nombre' in productoData
+                              ? productoData.nombre
+                              : producto}
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-blue-800">
+                            {typeof productoData === 'object' && 'fecha_vencimiento' in productoData && productoData.fecha_vencimiento && (
+                              <div>
+                                <span className="font-semibold">Vencimiento:</span> {productoData.fecha_vencimiento}
+                              </div>
+                            )}
+                            {typeof productoData === 'object' && 'dilusion' in productoData && productoData.dilusion && (
+                              <div>
+                                <span className="font-semibold">Dilución:</span> {productoData.dilusion}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
@@ -849,7 +878,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                 !selectedTreatment.log.new_values?.productos &&
                 !selectedTreatment.log.notes &&
                 getPhotosFromLog(selectedTreatment.log).length === 0 && (
-                <div className="text-center py-8">
+                <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
                   <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                   <p className="text-gray-500 text-sm">No hay detalles adicionales disponibles para este tratamiento</p>
                 </div>
