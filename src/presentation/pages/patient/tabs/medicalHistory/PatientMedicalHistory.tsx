@@ -365,11 +365,14 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
               </p>
             </div>
           ) : (
-            <div className="relative px-4">
-              {/* Línea central vertical */}
-              <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-400 via-purple-400 to-pink-400 transform -translate-x-1/2"></div>
+            <div className="relative px-2 sm:px-4">
+              {/* Línea central vertical - Hidden en mobile */}
+              <div className="hidden sm:block absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-400 via-purple-400 to-pink-400 transform -translate-x-1/2"></div>
 
-              <div className="space-y-12">
+              {/* Línea vertical izquierda en mobile */}
+              <div className="sm:hidden absolute left-6 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-400 via-purple-400 to-pink-400"></div>
+
+              <div className="space-y-8 sm:space-y-12">
                 {sortedLogs.map((log, index) => {
                   const config = getEntityConfig(log.entity_type);
                   const photos = getPhotosFromLog(log);
@@ -382,7 +385,8 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
 
                   return (
                     <div key={log.id} className="relative">
-                      <div className={`flex ${isEven ? 'flex-row' : 'flex-row-reverse'}`}>
+                      {/* Desktop: Layout de 2 columnas */}
+                      <div className={`hidden sm:flex ${isEven ? 'flex-row' : 'flex-row-reverse'}`}>
                         {/* Información: Fecha, Hora y Tipo */}
                         <div className={`w-1/2 ${isEven ? 'text-right pr-8' : 'text-left pl-8'} pt-1`}>
                           <div className={`inline-block ${isEven ? '' : ''}`}>
@@ -534,6 +538,153 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                           </div>
                         </div>
                       </div>
+
+                      {/* Mobile: Layout de una columna */}
+                      <div className="sm:hidden flex flex-col pl-16">
+                        {/* Círculo en el lado izquierdo */}
+                        <div className="absolute left-1 top-0 w-12 h-12 bg-gradient-to-br rounded-full flex items-center justify-center shadow-lg border-4 border-white z-10"
+                          style={{ background: `linear-gradient(to bottom right, var(--tw-gradient-stops))`, backgroundImage: `linear-gradient(135deg, ${config.color.includes('cyan') ? '#22d3ee #06b6d4' : config.color.includes('amber') ? '#fbbf24 #d97706' : config.color.includes('green') ? '#4ade80 #16a34a' : config.color.includes('purple') ? '#d8b4fe #a855f7' : '#60a5fa #3b82f6'})`}}>
+                          {config.icon}
+                        </div>
+
+                        {/* Card con contenido */}
+                        <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-3 shadow-sm`}>
+                          {/* Header */}
+                          <div className="mb-3">
+                            <div className="flex items-start gap-2 mb-2 flex-wrap">
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-gray-800 text-sm break-words">
+                                  {normalizeEntityType(log.entity_type) === 'cita'
+                                    ? appointmentDisplay.title
+                                    : normalizeEntityType(log.entity_type) === 'tratamiento'
+                                    ? (log.new_values?.nombre_servicio || `Tratamiento #${log.entity_id}`)
+                                    : normalizeEntityType(log.entity_type) === 'paciente'
+                                    ? `${log.new_values?.nombres || ''} ${log.new_values?.apellidos || ''}`.trim()
+                                    : `${config.label} #${log.entity_id}`
+                                  }
+                                </h4>
+                              </div>
+                            </div>
+
+                            {/* Fecha y hora */}
+                            <p className="text-xs font-semibold text-gray-700 mb-1">{formatDate(log.created_at)}</p>
+                            <p className="text-xs text-gray-500 mb-2">{formatTime(log.created_at)}</p>
+
+                            {/* Badge de acción */}
+                            <span className={`text-xs font-medium rounded-full border inline-block mb-2 px-2 py-1 ${getActionBadgeColor(log.action)}`}>
+                              {getActionLabel(log.action)}
+                            </span>
+
+                            {/* Label de tipo */}
+                            <p className="text-xs font-semibold text-gray-800 bg-gray-100 rounded px-2 py-1 inline-block">
+                              {config.label}
+                            </p>
+
+                            {/* Estado de cita */}
+                            {normalizeEntityType(log.entity_type) === 'cita' && appointmentDisplay.subtitle && (
+                              <p className="text-xs text-gray-600 mt-2">Estado: <span className="font-medium">{appointmentDisplay.subtitle}</span></p>
+                            )}
+
+                            {/* Doctor que realizó la acción */}
+                            <p className="text-xs text-gray-500 mt-2">
+                              Doctor: <span className="text-gray-700 font-medium">{log.doctor_name || 'Desconocido'}</span>
+                            </p>
+
+                            {/* Información adicional para paciente creado */}
+                            {normalizeEntityType(log.entity_type) === 'paciente' && log.action === 'created' && (
+                              <div className="bg-white bg-opacity-50 rounded p-2 mt-2 text-xs space-y-1">
+                                {log.new_values?.email && (
+                                  <p><span className="text-gray-600">Email:</span> <span className="text-gray-800 break-all">{log.new_values.email}</span></p>
+                                )}
+                                {log.new_values?.telefono && (
+                                  <p><span className="text-gray-600">Teléfono:</span> <span className="text-gray-800">{log.new_values.telefono}</span></p>
+                                )}
+                                {log.new_values?.alergias && (
+                                  <p><span className="text-gray-600">Alergias:</span> <span className="text-red-700 font-medium">{log.new_values.alergias}</span></p>
+                                )}
+                                {log.new_values?.medicamentos_actuales && (
+                                  <p><span className="text-gray-600">Medicamentos:</span> <span className="text-gray-800">{log.new_values.medicamentos_actuales}</span></p>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Descripción */}
+                            {log.notes && (
+                              <p className="text-xs text-gray-700 mt-2">{log.notes}</p>
+                            )}
+                          </div>
+
+                          {/* Miniaturas (documentos/fotos) */}
+                          {(hasPhotos || hasDocuments) && (
+                            <div className="flex gap-2 flex-wrap">
+                              {/* Miniaturas de documentos */}
+                              {documents.slice(0, 3).map((doc, idx) => (
+                                <div
+                                  key={`doc-${idx}`}
+                                  className="relative group cursor-pointer"
+                                  onClick={() => setSelectedDocument(doc)}
+                                >
+                                  {doc.type === 'pdf' ? (
+                                    <div className="h-12 w-12 bg-red-100 rounded border border-red-300 flex items-center justify-center hover:border-red-500 transition-all">
+                                      <FileText className="w-6 h-6 text-red-600" />
+                                    </div>
+                                  ) : (
+                                    <img
+                                      src={doc.url}
+                                      alt={doc.title}
+                                      className="h-12 w-12 object-cover rounded border border-gray-300 hover:border-cyan-500 transition-all"
+                                      onError={(e) => {
+                                        const img = e.target as HTMLImageElement;
+                                        img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="12"%3ENo disponible%3C/text%3E%3C/svg%3E';
+                                      }}
+                                    />
+                                  )}
+                                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 rounded transition-all flex items-center justify-center">
+                                    {doc.type === 'pdf' ? (
+                                      <FileText className="w-3 h-3 text-white opacity-0 group-hover:opacity-100 transition-all" />
+                                    ) : (
+                                      <ImageIcon className="w-3 h-3 text-white opacity-0 group-hover:opacity-100 transition-all" />
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+
+                              {/* Miniaturas de fotos */}
+                              {photos.slice(0, 3 - documents.length).map((photo, idx) => (
+                                <div
+                                  key={`photo-${idx}`}
+                                  className="relative group cursor-pointer"
+                                  onClick={() => setSelectedDocument({
+                                    url: photo.url,
+                                    title: photo.alt || `Foto ${idx + 1}`,
+                                    type: 'image'
+                                  })}
+                                >
+                                  <img
+                                    src={photo.url}
+                                    alt={photo.alt}
+                                    className="h-12 w-12 object-cover rounded border border-gray-300 hover:border-cyan-500 transition-all"
+                                    onError={(e) => {
+                                      const img = e.target as HTMLImageElement;
+                                      img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="12"%3ENo disponible%3C/text%3E%3C/svg%3E';
+                                    }}
+                                  />
+                                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 rounded transition-all flex items-center justify-center">
+                                    <ImageIcon className="w-3 h-3 text-white opacity-0 group-hover:opacity-100 transition-all" />
+                                  </div>
+                                </div>
+                              ))}
+
+                              {/* Indicador de más elementos */}
+                              {(documents.length + photos.length) > 3 && (
+                                <div className="h-12 w-12 rounded border border-gray-300 bg-gray-100 flex items-center justify-center text-xs font-semibold text-gray-700">
+                                  +{(documents.length + photos.length) - 3}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
@@ -541,7 +692,12 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
 
               {/* Círculo final - Inicio de la historia del paciente */}
               <div className="relative pt-8 pb-4">
-                <div className="absolute left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-full flex items-center justify-center shadow-lg border-4 border-white z-10">
+                {/* Desktop */}
+                <div className="hidden sm:block absolute left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-full flex items-center justify-center shadow-lg border-4 border-white z-10">
+                  <Activity className="w-6 h-6 text-white" />
+                </div>
+                {/* Mobile */}
+                <div className="sm:hidden absolute left-1 w-12 h-12 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-full flex items-center justify-center shadow-lg border-4 border-white z-10">
                   <Activity className="w-6 h-6 text-white" />
                 </div>
               </div>
