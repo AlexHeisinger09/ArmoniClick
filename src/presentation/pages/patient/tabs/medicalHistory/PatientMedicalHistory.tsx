@@ -30,6 +30,11 @@ interface DocumentPreview {
   type: 'image' | 'pdf' | 'document';
 }
 
+interface TreatmentDetails {
+  log: AuditLog;
+  serviceName: string;
+}
+
 const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }) => {
   const [filters, setFilters] = useState<FilterState>({
     entityType: '',
@@ -39,6 +44,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
   });
 
   const [selectedDocument, setSelectedDocument] = useState<DocumentPreview | null>(null);
+  const [selectedTreatment, setSelectedTreatment] = useState<TreatmentDetails | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch audit history from backend
@@ -188,7 +194,12 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
     return configs[normalizedType] || configs.paciente;
   };
 
-  const getActionLabel = (action: string): string => {
+  const getActionLabel = (action: string, entityType?: string): string => {
+    // Si es un tratamiento actualizado, mostrar "Evolución"
+    if (action === 'updated' && entityType && normalizeEntityType(entityType) === 'tratamiento') {
+      return 'Evolución';
+    }
+
     const labels: Record<string, string> = {
       created: 'Creado',
       updated: 'Actualizado',
@@ -409,7 +420,19 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
 
                         {/* Card con contenido */}
                         <div className={`w-1/2 ${isEven ? 'pl-8' : 'pr-8'}`}>
-                          <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-4 shadow-sm hover:shadow-lg transition-all duration-200`}>
+                          <div
+                            className={`${config.bgColor} ${config.borderColor} border rounded-lg p-4 shadow-sm hover:shadow-lg transition-all duration-200 ${
+                              normalizeEntityType(log.entity_type) === 'tratamiento' ? 'cursor-pointer hover:border-green-400' : ''
+                            }`}
+                            onClick={() => {
+                              if (normalizeEntityType(log.entity_type) === 'tratamiento') {
+                                setSelectedTreatment({
+                                  log,
+                                  serviceName: log.new_values?.nombre_servicio || `Tratamiento #${log.entity_id}`
+                                });
+                              }
+                            }}
+                          >
                             {/* Header */}
                             <div className="mb-3">
                               <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -428,7 +451,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                                     log.action
                                   )}`}
                                 >
-                                  {getActionLabel(log.action)}
+                                  {getActionLabel(log.action, log.entity_type)}
                                 </span>
                               </div>
 
@@ -547,7 +570,19 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                         </div>
 
                         {/* Card con contenido */}
-                        <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-3 shadow-sm`}>
+                        <div
+                          className={`${config.bgColor} ${config.borderColor} border rounded-lg p-3 shadow-sm ${
+                            normalizeEntityType(log.entity_type) === 'tratamiento' ? 'cursor-pointer hover:border-green-400 hover:shadow-md' : ''
+                          }`}
+                          onClick={() => {
+                            if (normalizeEntityType(log.entity_type) === 'tratamiento') {
+                              setSelectedTreatment({
+                                log,
+                                serviceName: log.new_values?.nombre_servicio || `Tratamiento #${log.entity_id}`
+                              });
+                            }
+                          }}
+                        >
                           {/* Header */}
                           <div className="mb-3">
                             <div className="flex items-start gap-2 mb-2 flex-wrap">
@@ -571,7 +606,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
 
                             {/* Badge de acción */}
                             <span className={`text-xs font-medium rounded-full border inline-block mb-2 px-2 py-1 ${getActionBadgeColor(log.action)}`}>
-                              {getActionLabel(log.action)}
+                              {getActionLabel(log.action, log.entity_type)}
                             </span>
 
                             {/* Label de tipo */}
@@ -702,6 +737,138 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Modal de detalles del tratamiento */}
+      {selectedTreatment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg shadow-2xl w-[95vw] sm:w-[90vw] lg:w-[70vw] max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Header del modal */}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
+              <div>
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-800">{selectedTreatment.serviceName}</h3>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">Evolución del {formatDate(selectedTreatment.log.created_at)} a las {formatTime(selectedTreatment.log.created_at)}</p>
+              </div>
+              <button
+                onClick={() => setSelectedTreatment(null)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                aria-label="Cerrar"
+              >
+                <X className="w-6 h-6 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Contenido del modal */}
+            <div className="flex-1 overflow-auto p-4 sm:p-6 space-y-6">
+              {/* Información del doctor */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Realizado por</h4>
+                <p className="text-sm text-gray-800">{selectedTreatment.log.doctor_name || 'Doctor desconocido'}</p>
+              </div>
+
+              {/* Detalles de piezas/dientes afectados */}
+              {selectedTreatment.log.new_values?.piezas && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-green-800 mb-3">Piezas Dentales Tratadas</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {(Array.isArray(selectedTreatment.log.new_values.piezas)
+                      ? selectedTreatment.log.new_values.piezas
+                      : typeof selectedTreatment.log.new_values.piezas === 'string'
+                      ? selectedTreatment.log.new_values.piezas.split(',').map((p: string) => p.trim())
+                      : []
+                    ).map((pieza: string, idx: number) => (
+                      <span key={idx} className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                        {pieza}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Productos/Materiales utilizados */}
+              {selectedTreatment.log.new_values?.productos && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-blue-800 mb-3">Productos/Materiales Utilizados</h4>
+                  <ul className="space-y-2">
+                    {(Array.isArray(selectedTreatment.log.new_values.productos)
+                      ? selectedTreatment.log.new_values.productos
+                      : typeof selectedTreatment.log.new_values.productos === 'string'
+                      ? selectedTreatment.log.new_values.productos.split(',').map((p: string) => p.trim())
+                      : []
+                    ).map((producto: string, idx: number) => (
+                      <li key={idx} className="text-sm text-blue-800 flex items-start gap-2">
+                        <span className="text-blue-600 mt-1">•</span>
+                        <span>{producto}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Notas del tratamiento */}
+              {selectedTreatment.log.notes && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-amber-800 mb-2">Notas</h4>
+                  <p className="text-sm text-amber-900">{selectedTreatment.log.notes}</p>
+                </div>
+              )}
+
+              {/* Fotos antes/después */}
+              {getPhotosFromLog(selectedTreatment.log).length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Fotos del Tratamiento</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {getPhotosFromLog(selectedTreatment.log).map((photo, idx) => (
+                      <div key={idx} className="rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                        <img
+                          src={photo.url}
+                          alt={photo.alt || `Foto ${idx + 1}`}
+                          className="w-full h-48 object-cover cursor-pointer hover:opacity-90"
+                          onClick={() => setSelectedDocument({
+                            url: photo.url,
+                            title: photo.alt || `Foto ${idx + 1}`,
+                            type: 'image'
+                          })}
+                          onError={(e) => {
+                            const img = e.target as HTMLImageElement;
+                            img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="12"%3ENo disponible%3C/text%3E%3C/svg%3E';
+                          }}
+                        />
+                        <div className="p-2 bg-gray-50">
+                          <p className="text-xs text-gray-600">{photo.alt || `Foto ${idx + 1}`}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Estado vacío */}
+              {!selectedTreatment.log.new_values?.piezas &&
+                !selectedTreatment.log.new_values?.productos &&
+                !selectedTreatment.log.notes &&
+                getPhotosFromLog(selectedTreatment.log).length === 0 && (
+                <div className="text-center py-8">
+                  <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 text-sm">No hay detalles adicionales disponibles para este tratamiento</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer del modal */}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+              <p className="text-xs sm:text-sm text-gray-600">
+                Detalles de evolución del tratamiento
+              </p>
+              <button
+                onClick={() => setSelectedTreatment(null)}
+                className="px-3 sm:px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors text-xs sm:text-sm font-medium"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
