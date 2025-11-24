@@ -47,7 +47,7 @@ export const PublicAppointmentBooking: React.FC = () => {
       try {
         setIsLoading(true);
         const response = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/public-booking-info/${doctorId}`
+          `/public-booking-info/${doctorId}`
         );
 
         if (!response.ok) {
@@ -101,7 +101,7 @@ export const PublicAppointmentBooking: React.FC = () => {
       setErrorMessage('');
 
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/public-booking/create-appointment`,
+        `/public-booking/create-appointment`,
         {
           method: 'POST',
           headers: {

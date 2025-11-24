@@ -101,19 +101,7 @@ schedule = "30 13 * * *"  # 14:30 CL (18:30 UTC, ajustar en verano a 17:30)
   status = 200
   methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 
-# BUDGETS ROUTES (existing, just moved after documents)
-[[redirects]]
-  from = "/budgets/revenue-treatments"
-  to = "/.netlify/functions/budgets"
-  status = 200
-  methods = ["GET", "OPTIONS"]
-
-[[redirects]]
-  from = "/api/budgets/*"
-  to = "/.netlify/functions/budgets"
-  status = 200
-
-# PUBLIC BOOKING ROUTES (public appointment booking for patients)
+# PUBLIC BOOKING ROUTES (public appointment booking for patients) - MUST be before SPA fallback
 [[redirects]]
   from = "/public-booking-info/*"
   to = "/.netlify/functions/public-booking"
@@ -126,7 +114,19 @@ schedule = "30 13 * * *"  # 14:30 CL (18:30 UTC, ajustar en verano a 17:30)
   status = 200
   methods = ["POST", "OPTIONS"]
 
-# SPA fallback
+# BUDGETS ROUTES (existing, just moved after documents)
+[[redirects]]
+  from = "/budgets/revenue-treatments"
+  to = "/.netlify/functions/budgets"
+  status = 200
+  methods = ["GET", "OPTIONS"]
+
+[[redirects]]
+  from = "/api/budgets/*"
+  to = "/.netlify/functions/budgets"
+  status = 200
+
+# SPA fallback (MUST be last)
 [[redirects]]
   from = "/*"
   to = "/index.html"
