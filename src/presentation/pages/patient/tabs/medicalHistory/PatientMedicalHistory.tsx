@@ -542,8 +542,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                       {/* Mobile: Layout de una columna */}
                       <div className="sm:hidden flex flex-col pl-16">
                         {/* Círculo en el lado izquierdo */}
-                        <div className="absolute left-1 top-0 w-12 h-12 bg-gradient-to-br rounded-full flex items-center justify-center shadow-lg border-4 border-white z-10"
-                          style={{ background: `linear-gradient(to bottom right, var(--tw-gradient-stops))`, backgroundImage: `linear-gradient(135deg, ${config.color.includes('cyan') ? '#22d3ee #06b6d4' : config.color.includes('amber') ? '#fbbf24 #d97706' : config.color.includes('green') ? '#4ade80 #16a34a' : config.color.includes('purple') ? '#d8b4fe #a855f7' : '#60a5fa #3b82f6'})`}}>
+                        <div className={`absolute left-1 top-0 w-12 h-12 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center shadow-lg border-4 border-white z-10`}>
                           {config.icon}
                         </div>
 
