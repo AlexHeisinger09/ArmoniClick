@@ -2,8 +2,10 @@
 import React from 'react';
 import { AppointmentsData, CalendarAppointment } from '../types/calendar';
 import { timeSlots, dayNames } from '../constants/calendar';
-import { getWeekDays, isToday, getAppointmentsForDate } from '../utils/calendar';
+import { getWeekDays, isToday, getAppointmentsForDate, isTimeSlotBlockedByScheduleBlock } from '../utils/calendar';
 import { AppointmentBlock } from './AppointmentBlock';
+import { ScheduleBlockVisual } from './ScheduleBlockVisual';
+import { ScheduleBlock } from '@/core/entities/ScheduleBlock';
 import { Plus } from 'lucide-react';
 
 interface WeekViewProps {
@@ -12,6 +14,7 @@ interface WeekViewProps {
   onDateSelect: (date: Date) => void;
   onTimeSlotClick: (time: string, date: Date) => void;
   onAppointmentClick?: (appointment: CalendarAppointment, event: React.MouseEvent) => void;
+  scheduleBlocks?: ScheduleBlock[];
 }
 
 export const WeekView: React.FC<WeekViewProps> = ({
@@ -19,7 +22,8 @@ export const WeekView: React.FC<WeekViewProps> = ({
   appointments,
   onDateSelect,
   onTimeSlotClick,
-  onAppointmentClick
+  onAppointmentClick,
+  scheduleBlocks = []
 }) => {
   const weekDays = getWeekDays(currentDate);
 
@@ -101,16 +105,23 @@ export const WeekView: React.FC<WeekViewProps> = ({
                     const slotHour = parseInt(time.split(':')[0]);
                     const slotMinutes = parseInt(time.split(':')[1]);
                     const isCurrentSlot = isToday(day) && currentHour === slotHour && Math.floor(currentMinutes / 30) === Math.floor(slotMinutes / 30);
+                    const isBlocked = isTimeSlotBlockedByScheduleBlock(scheduleBlocks, day, time, 30);
 
                     return (
                       <div
                         key={time}
-                        className="h-8 border-b border-slate-50 hover:bg-cyan-25 cursor-pointer transition-colors group relative"
-                        onClick={() => onTimeSlotClick(time, day)}
+                        className={`h-8 border-b border-slate-50 transition-colors group relative ${
+                          isBlocked
+                            ? 'bg-green-50 cursor-not-allowed'
+                            : 'hover:bg-cyan-25 cursor-pointer'
+                        }`}
+                        onClick={() => !isBlocked && onTimeSlotClick(time, day)}
                       >
-                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <Plus className="w-4 h-4 text-cyan-400" />
-                        </div>
+                        {!isBlocked && (
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <Plus className="w-4 h-4 text-cyan-400" />
+                          </div>
+                        )}
                         
                         {isCurrentSlot && (
                           <div
@@ -130,6 +141,14 @@ export const WeekView: React.FC<WeekViewProps> = ({
                   })}
 
                   <div className="absolute inset-0 pointer-events-none">
+                    {/* Renderizar bloques de agenda */}
+                    <ScheduleBlockVisual
+                      blocks={scheduleBlocks}
+                      date={day}
+                      viewType="week"
+                    />
+
+                    {/* Renderizar citas */}
                     {dayAppointments.map(appointment => (
                       <div key={appointment.id} className="pointer-events-auto">
                         <AppointmentBlock
@@ -220,16 +239,23 @@ export const WeekView: React.FC<WeekViewProps> = ({
                       const slotHour = parseInt(time.split(':')[0]);
                       const slotMinutes = parseInt(time.split(':')[1]);
                       const isCurrentSlot = isToday(day) && currentHour === slotHour && Math.floor(currentMinutes / 30) === Math.floor(slotMinutes / 30);
+                      const isBlocked = isTimeSlotBlockedByScheduleBlock(scheduleBlocks, day, time, 30);
 
                       return (
                         <div
                           key={time}
-                          className="h-6 border-b border-slate-50 hover:bg-cyan-25 cursor-pointer transition-colors group relative"
-                          onClick={() => onTimeSlotClick(time, day)}
+                          className={`h-6 border-b border-slate-50 transition-colors group relative ${
+                            isBlocked
+                              ? 'bg-green-50 cursor-not-allowed'
+                              : 'hover:bg-cyan-25 cursor-pointer'
+                          }`}
+                          onClick={() => !isBlocked && onTimeSlotClick(time, day)}
                         >
-                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <Plus className="w-3 h-3 text-cyan-400" />
-                          </div>
+                          {!isBlocked && (
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Plus className="w-3 h-3 text-cyan-400" />
+                            </div>
+                          )}
                           
                           {isCurrentSlot && (
                             <div
@@ -249,6 +275,14 @@ export const WeekView: React.FC<WeekViewProps> = ({
                     })}
 
                     <div className="absolute inset-0 pointer-events-none">
+                      {/* Renderizar bloques de agenda */}
+                      <ScheduleBlockVisual
+                        blocks={scheduleBlocks}
+                        date={day}
+                        viewType="week"
+                      />
+
+                      {/* Renderizar citas */}
                       {dayAppointments.map(appointment => (
                         <div key={appointment.id} className="pointer-events-auto">
                           <AppointmentBlock

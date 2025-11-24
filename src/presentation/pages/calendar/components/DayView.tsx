@@ -2,8 +2,10 @@
 import React from 'react';
 import { AppointmentsData, CalendarAppointment } from '../types/calendar';
 import { timeSlots } from '../constants/calendar';
-import { formatDateKey, getAppointmentsForDate, isToday } from '../utils/calendar';
+import { formatDateKey, getAppointmentsForDate, isToday, isTimeSlotBlockedByScheduleBlock } from '../utils/calendar';
 import { AppointmentBlock } from './AppointmentBlock';
+import { ScheduleBlockVisual } from './ScheduleBlockVisual';
+import { ScheduleBlock } from '@/core/entities/ScheduleBlock';
 import { Plus } from 'lucide-react';
 
 interface DayViewProps {
@@ -11,13 +13,15 @@ interface DayViewProps {
   appointments: AppointmentsData;
   onTimeSlotClick: (time: string, date: Date) => void;
   onAppointmentClick?: (appointment: CalendarAppointment, event: React.MouseEvent) => void;
+  scheduleBlocks?: ScheduleBlock[];
 }
 
 export const DayView: React.FC<DayViewProps> = ({
   currentDate,
   appointments,
   onTimeSlotClick,
-  onAppointmentClick
+  onAppointmentClick,
+  scheduleBlocks = []
 }) => {
   const dayAppointments = getAppointmentsForDate(appointments, currentDate);
   const isCurrentDay = isToday(currentDate);
@@ -53,17 +57,24 @@ export const DayView: React.FC<DayViewProps> = ({
             const slotHour = parseInt(time.split(':')[0]);
             const slotMinutes = parseInt(time.split(':')[1]);
             const isCurrentSlot = isCurrentDay && currentHour === slotHour && currentMinutes >= slotMinutes && currentMinutes < (slotMinutes + 30);
+            const isBlocked = isTimeSlotBlockedByScheduleBlock(scheduleBlocks, currentDate, time, 30);
 
             return (
               <div
                 key={time}
-                className="h-20 border-b border-slate-50 hover:bg-cyan-25 cursor-pointer transition-colors group px-4 sm:px-6 flex items-center relative"
-                onClick={() => onTimeSlotClick(time, currentDate)}
+                className={`h-20 border-b border-slate-50 transition-colors group px-4 sm:px-6 flex items-center relative ${
+                  isBlocked
+                    ? 'bg-green-50 cursor-not-allowed'
+                    : 'hover:bg-cyan-25 cursor-pointer'
+                }`}
+                onClick={() => !isBlocked && onTimeSlotClick(time, currentDate)}
               >
-                <div className="text-sm text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity flex items-center font-medium">
-                  <Plus className="w-4 h-4 mr-2 text-cyan-400" />
-                  Agendar nueva cita
-                </div>
+                {!isBlocked && (
+                  <div className="text-sm text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity flex items-center font-medium">
+                    <Plus className="w-4 h-4 mr-2 text-cyan-400" />
+                    Agendar nueva cita
+                  </div>
+                )}
 
                 {isCurrentSlot && (
                   <div
@@ -83,6 +94,14 @@ export const DayView: React.FC<DayViewProps> = ({
           })}
 
           <div className="absolute inset-0 pointer-events-none">
+            {/* Renderizar bloques de agenda */}
+            <ScheduleBlockVisual
+              blocks={scheduleBlocks}
+              date={currentDate}
+              viewType="day"
+            />
+
+            {/* Renderizar citas */}
             {dayAppointments.map(appointment => (
               <div key={appointment.id} className="pointer-events-auto">
                 <AppointmentBlock

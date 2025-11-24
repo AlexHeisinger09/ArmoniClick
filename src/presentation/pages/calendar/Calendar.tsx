@@ -129,6 +129,7 @@ const Calendar: React.FC = () => {
             }}
             onTimeSlotClick={handleNewAppointment}
             onAppointmentClick={handleAppointmentClick}
+            scheduleBlocks={scheduleBlocks}
           />
         );
       case 'day':
@@ -138,6 +139,7 @@ const Calendar: React.FC = () => {
             appointments={appointments}
             onTimeSlotClick={handleNewAppointment}
             onAppointmentClick={handleAppointmentClick}
+            scheduleBlocks={scheduleBlocks}
           />
         );
       default:
