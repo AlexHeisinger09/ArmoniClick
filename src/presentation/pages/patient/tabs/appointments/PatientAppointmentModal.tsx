@@ -5,6 +5,7 @@ import { Patient } from '@/core/use-cases/patients';
 import { getTimeSlotsForDuration } from '@/presentation/pages/calendar/constants/calendar';
 import { isTimeSlotAvailable, hasOverlap } from '@/presentation/pages/calendar/utils/calendar';
 import { AppointmentsData } from '@/presentation/pages/calendar/types/calendar';
+import { ScheduleBlock } from '@/core/entities/ScheduleBlock';
 
 interface PatientAppointmentForm {
   date: Date;
@@ -21,6 +22,7 @@ interface PatientAppointmentModalProps {
   onClose: () => void;
   onSubmit: (appointmentData: PatientAppointmentForm) => void;
   isCreating?: boolean;
+  scheduleBlocks?: ScheduleBlock[];
 }
 
 export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = ({
@@ -29,7 +31,8 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
   appointments,
   onClose,
   onSubmit,
-  isCreating = false
+  isCreating = false,
+  scheduleBlocks = []
 }) => {
   // Estado del formulario específico para pacientes
   const [appointmentForm, setAppointmentForm] = useState<PatientAppointmentForm>({
@@ -264,7 +267,7 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {getTimeSlotsForDuration(appointmentForm.duration).map(time => {
-                  const available = isTimeSlotAvailable(appointments, appointmentForm.date, time, appointmentForm.duration);
+                  const available = isTimeSlotAvailable(appointments, appointmentForm.date, time, appointmentForm.duration, scheduleBlocks);
                   const isOverlap = hasOverlap(appointments, appointmentForm.date, time, appointmentForm.duration);
 
                   return (

@@ -6,6 +6,7 @@ import { useAppointments } from '@/presentation/hooks/appointments/useAppointmen
 import { PatientAppointmentModal } from '../../tabs/appointments/PatientAppointmentModal';
 import { useCreateAppointment } from '@/presentation/hooks/appointments/useCreateAppointment';
 import { useCalendarAppointments } from '@/presentation/hooks/appointments/useCalendarAppointments';
+import { useScheduleBlocksForCalendar } from '@/presentation/pages/calendar/hooks/useScheduleBlocksForCalendar';
 import { AppointmentResponse } from '@/infrastructure/interfaces/appointment.response';
 import { AppointmentMapper } from '@/infrastructure/mappers/appointment.mapper';
 import { Spinner } from '@/presentation/components/ui/spinner';
@@ -30,7 +31,7 @@ const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patient }) =>
   // Estados para el modal específico de pacientes
   const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
   const [filter, setFilter] = useState<AppointmentFilter>('all');
-  
+
   // Hook para obtener todas las citas del doctor (sin filtros de fecha)
   const { data: allAppointments, isLoading, error, refetch } = useAppointments();
 
@@ -39,6 +40,9 @@ const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patient }) =>
 
   // Hook para obtener el estado de appointments para disponibilidad
   const { appointments: calendarAppointments } = useCalendarAppointments(new Date(), 'month');
+
+  // Hook para obtener bloques de agenda (horarios bloqueados)
+  const { blocks: scheduleBlocks } = useScheduleBlocksForCalendar();
 
   // Filtrar citas del paciente específico - PRIORIDAD: ID del paciente registrado
   const patientAppointments = useMemo(() => {
@@ -411,6 +415,7 @@ const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patient }) =>
         onClose={() => setShowNewAppointmentModal(false)}
         onSubmit={handleCreateAppointment}
         isCreating={createAppointmentMutation.isPending}
+        scheduleBlocks={scheduleBlocks}
       />
     </div>
   );
