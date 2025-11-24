@@ -33,10 +33,6 @@ const handler: Handler = async (event: HandlerEvent) => {
       const doctorIdIndex = pathSegments.indexOf('public-booking-info') + 1;
       const doctorId = pathSegments[doctorIdIndex];
 
-      console.log('DEBUG: Path segments:', pathSegments);
-      console.log('DEBUG: Doctor ID Index:', doctorIdIndex);
-      console.log('DEBUG: Doctor ID:', doctorId);
-
       if (!doctorId || isNaN(parseInt(doctorId))) {
         return {
           statusCode: 400,
@@ -114,7 +110,17 @@ const handler: Handler = async (event: HandlerEvent) => {
 
     // POST /public-booking/create-appointment
     if (httpMethod === "POST" && isCreateEndpoint) {
-      const data = rawBody ? fromBodyToObject(rawBody) : {};
+      let data: any = {};
+
+      if (rawBody) {
+        try {
+          // Try JSON first (application/json)
+          data = JSON.parse(rawBody);
+        } catch {
+          // Fall back to URLSearchParams (application/x-www-form-urlencoded)
+          data = fromBodyToObject(rawBody);
+        }
+      }
 
       const {
         doctorId,
@@ -130,7 +136,18 @@ const handler: Handler = async (event: HandlerEvent) => {
       if (!doctorId || !patientName || !patientEmail || !patientPhone || !appointmentDate || !startTime || !duration) {
         return {
           statusCode: 400,
-          body: JSON.stringify({ message: "Faltan datos requeridos" }),
+          body: JSON.stringify({
+            message: "Faltan datos requeridos",
+            debug: {
+              doctorId: !!doctorId,
+              patientName: !!patientName,
+              patientEmail: !!patientEmail,
+              patientPhone: !!patientPhone,
+              appointmentDate: !!appointmentDate,
+              startTime: !!startTime,
+              duration: !!duration
+            }
+          }),
           headers: HEADERS.json,
         };
       }
@@ -255,18 +272,20 @@ const handler: Handler = async (event: HandlerEvent) => {
       // Generar token de confirmación
       const confirmationToken = uuidv4();
 
+      // Crear fecha con hora correcta: combinar dateStr (YYYY-MM-DD) con startTime (HH:mm)
+      const appointmentDateTime = new Date(`${dateStr}T${startTime}:00`);
+
       // Crear la cita como invitado
       const newAppointment = await db.insert(appointmentsTable).values({
         doctorId,
         patientId: null,
-        guestPatientName: patientName,
+        guestName: patientName,
         guestEmail: patientEmail,
         guestPhone: patientPhone,
         guestRut: null,
-        service: 'Cita Agendada',
-        appointmentDate: dateStr,
-        startTime,
-        endTime,
+        title: `${patientName} - Cita Agendada`,
+        description: `Horario: ${startTime} - ${endTime}`,
+        appointmentDate: appointmentDateTime,
         duration,
         status: 'pending',
         confirmationToken,
