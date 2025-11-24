@@ -465,6 +465,70 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                                 Doctor: <span className="text-gray-700 font-medium">{log.doctor_name || 'Desconocido'}</span>
                               </p>
 
+                              {/* Información de piezas para tratamiento */}
+                              {normalizeEntityType(log.entity_type) === 'tratamiento' && log.new_values?.piezas && (
+                                <div className="mt-2 mb-2">
+                                  <p className="text-xs font-semibold text-green-700 mb-1">Piezas:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {(Array.isArray(log.new_values.piezas)
+                                      ? log.new_values.piezas
+                                      : typeof log.new_values.piezas === 'string'
+                                      ? log.new_values.piezas.split(',').map((p: string) => p.trim())
+                                      : []
+                                    ).map((pieza: string, idx: number) => (
+                                      <span key={idx} className="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                                        {pieza}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Información de productos para tratamiento */}
+                              {normalizeEntityType(log.entity_type) === 'tratamiento' && log.new_values?.productos && (
+                                <div className="mt-2 mb-2">
+                                  <p className="text-xs font-semibold text-blue-700 mb-1">Productos:</p>
+                                  <div className="space-y-1">
+                                    {(Array.isArray(log.new_values.productos)
+                                      ? log.new_values.productos
+                                      : typeof log.new_values.productos === 'string'
+                                      ? log.new_values.productos.split(',').map((p: string) => p.trim())
+                                      : []
+                                    ).map((producto: string, idx: number) => {
+                                      // Intentar parsear si es un objeto JSON
+                                      let productoData = { nombre: producto, fecha_vencimiento: '', dilusion: '' };
+                                      try {
+                                        if (typeof producto === 'string' && producto.includes('{')) {
+                                          productoData = JSON.parse(producto);
+                                        } else if (typeof producto === 'object') {
+                                          productoData = producto as any;
+                                        }
+                                      } catch (e) {
+                                        // Mantener el formato original si no es JSON
+                                      }
+
+                                      return (
+                                        <div key={idx} className="text-xs text-blue-800 bg-blue-50 p-1.5 rounded">
+                                          <p className="font-medium">
+                                            {typeof productoData === 'object' && 'nombre' in productoData
+                                              ? productoData.nombre
+                                              : producto}
+                                          </p>
+                                          <div className="text-xs text-blue-700 mt-0.5">
+                                            {typeof productoData === 'object' && 'fecha_vencimiento' in productoData && productoData.fecha_vencimiento && (
+                                              <p><span className="font-semibold">Vto:</span> {productoData.fecha_vencimiento}</p>
+                                            )}
+                                            {typeof productoData === 'object' && 'dilusion' in productoData && productoData.dilusion && (
+                                              <p><span className="font-semibold">Dilución:</span> {productoData.dilusion}</p>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+
                               {/* Información adicional para paciente creado */}
                               {normalizeEntityType(log.entity_type) === 'paciente' && log.action === 'created' && (
                                 <div className="bg-white bg-opacity-50 rounded p-2 mb-2 text-sm space-y-1">
@@ -623,6 +687,70 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                             <p className="text-xs text-gray-500 mt-2">
                               Doctor: <span className="text-gray-700 font-medium">{log.doctor_name || 'Desconocido'}</span>
                             </p>
+
+                            {/* Información de piezas para tratamiento (mobile) */}
+                            {normalizeEntityType(log.entity_type) === 'tratamiento' && log.new_values?.piezas && (
+                              <div className="mt-2 mb-2">
+                                <p className="text-xs font-semibold text-green-700 mb-1">Piezas:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {(Array.isArray(log.new_values.piezas)
+                                    ? log.new_values.piezas
+                                    : typeof log.new_values.piezas === 'string'
+                                    ? log.new_values.piezas.split(',').map((p: string) => p.trim())
+                                    : []
+                                  ).map((pieza: string, idx: number) => (
+                                    <span key={idx} className="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                                      {pieza}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Información de productos para tratamiento (mobile) */}
+                            {normalizeEntityType(log.entity_type) === 'tratamiento' && log.new_values?.productos && (
+                              <div className="mt-2 mb-2">
+                                <p className="text-xs font-semibold text-blue-700 mb-1">Productos:</p>
+                                <div className="space-y-1">
+                                  {(Array.isArray(log.new_values.productos)
+                                    ? log.new_values.productos
+                                    : typeof log.new_values.productos === 'string'
+                                    ? log.new_values.productos.split(',').map((p: string) => p.trim())
+                                    : []
+                                  ).map((producto: string, idx: number) => {
+                                    // Intentar parsear si es un objeto JSON
+                                    let productoData = { nombre: producto, fecha_vencimiento: '', dilusion: '' };
+                                    try {
+                                      if (typeof producto === 'string' && producto.includes('{')) {
+                                        productoData = JSON.parse(producto);
+                                      } else if (typeof producto === 'object') {
+                                        productoData = producto as any;
+                                      }
+                                    } catch (e) {
+                                      // Mantener el formato original si no es JSON
+                                    }
+
+                                    return (
+                                      <div key={idx} className="text-xs text-blue-800 bg-blue-50 p-1.5 rounded">
+                                        <p className="font-medium">
+                                          {typeof productoData === 'object' && 'nombre' in productoData
+                                            ? productoData.nombre
+                                            : producto}
+                                        </p>
+                                        <div className="text-xs text-blue-700 mt-0.5">
+                                          {typeof productoData === 'object' && 'fecha_vencimiento' in productoData && productoData.fecha_vencimiento && (
+                                            <p><span className="font-semibold">Vto:</span> {productoData.fecha_vencimiento}</p>
+                                          )}
+                                          {typeof productoData === 'object' && 'dilusion' in productoData && productoData.dilusion && (
+                                            <p><span className="font-semibold">Dilución:</span> {productoData.dilusion}</p>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
 
                             {/* Información adicional para paciente creado */}
                             {normalizeEntityType(log.entity_type) === 'paciente' && log.action === 'created' && (
