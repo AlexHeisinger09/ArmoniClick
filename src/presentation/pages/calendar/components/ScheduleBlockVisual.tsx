@@ -120,21 +120,31 @@ export const ScheduleBlockVisual: React.FC<ScheduleBlockVisualProps> = ({
           const [endHours, endMinutes] = block.endTime.split(':').map(Number);
 
           const startTotal = startHours * 60 + startMinutes;
-          const endTotal = endHours * 60 + endMinutes;
+          let endTotal = endHours * 60 + endMinutes;
 
-          // WeekView muestra desde 09:00 a 19:30 (22 slots de 30 min = 660 minutos)
+          // WeekView muestra desde 09:00 a 19:30 (22 slots de 30 min = 630 minutos)
           // Usar porcentaje de esta ventana para que sea responsive
           const START_OF_CALENDAR = 9 * 60; // 09:00 = 540 minutos
           const END_OF_CALENDAR = 19.5 * 60; // 19:30 = 1170 minutos
           const CALENDAR_WINDOW = END_OF_CALENDAR - START_OF_CALENDAR; // 630 minutos
 
+          // Si el bloque se extiende más allá del horario visible, cortarlo
+          if (endTotal > END_OF_CALENDAR) {
+            endTotal = END_OF_CALENDAR;
+          }
+
           // Calcular posición relativa a las 09:00
-          const minutesFromStart = startTotal - START_OF_CALENDAR;
+          const minutesFromStart = Math.max(0, startTotal - START_OF_CALENDAR);
           const topPercent = (minutesFromStart / CALENDAR_WINDOW) * 100;
 
           // Calcular altura
-          const durationMinutes = endTotal - startTotal;
+          const durationMinutes = Math.max(0, endTotal - startTotal);
           const heightPercent = (durationMinutes / CALENDAR_WINDOW) * 100;
+
+          // Solo renderizar si hay duración visible
+          if (heightPercent <= 0) {
+            return null;
+          }
 
           return (
             <div
@@ -143,7 +153,7 @@ export const ScheduleBlockVisual: React.FC<ScheduleBlockVisualProps> = ({
               style={{
                 top: `${topPercent}%`,
                 height: `${heightPercent}%`,
-                minHeight: '8px'
+                minHeight: '1px'
               }}
               title={`Bloqueado: ${block.startTime} - ${block.endTime}`}
             />
