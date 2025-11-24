@@ -8,8 +8,8 @@ import {
   Cog,
   Check,
   AlertCircle,
-  Palette,
-  Briefcase, // ✅ NUEVO ICONO PARA SERVICIOS
+  Clock,
+  Briefcase,
 } from "lucide-react";
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
 
@@ -17,8 +17,8 @@ import { useLoginMutation, useProfile } from "@/presentation/hooks";
 import { ProfileTab } from "./tabs/ProfileTab";
 import { PhotoTab } from "./tabs/PhotoTab";
 import { SecurityTab } from "./tabs/SecurityTab";
-import { PreferencesTab } from "./tabs/PreferencesTab";
-import { ServicesTab } from "./tabs/ServicesTab"; // ✅ NUEVO TAB
+import { ScheduleBlocksTab } from "./tabs/ScheduleBlocksTab"; // ✅ REEMPLAZA PREFERENCES
+import { ServicesTab } from "./tabs/ServicesTab";
 
 // Componente de animación de engranajes
 const GearsAnimation: React.FC = () => (
@@ -106,13 +106,13 @@ const Configuration: React.FC = () => {
     }, 5000);
   };
 
-  // ✅ PESTAÑAS ACTUALIZADAS - INCLUYE SERVICIOS
+  // ✅ PESTAÑAS ACTUALIZADAS - REEMPLAZA PREFERENCIAS CON BLOQUEOS
   const tabs = [
     { id: 'perfil', label: 'Información Personal', icon: User },
     { id: 'foto', label: 'Foto de Perfil', icon: Camera },
     { id: 'seguridad', label: 'Seguridad', icon: Lock },
-    { id: 'servicios', label: 'Servicios', icon: Briefcase }, // ✅ NUEVO TAB
-    { id: 'preferencias', label: 'Preferencias', icon: Palette },
+    { id: 'bloques', label: 'Bloqueos de Agenda', icon: Clock },
+    { id: 'servicios', label: 'Servicios', icon: Briefcase },
   ];
 
   const renderTabContent = () => {
@@ -123,10 +123,10 @@ const Configuration: React.FC = () => {
         return <PhotoTab showMessage={showMessage} />;
       case 'seguridad':
         return <SecurityTab showMessage={showMessage} />;
-      case 'servicios': // ✅ NUEVO CASO
+      case 'bloques':
+        return <ScheduleBlocksTab showMessage={showMessage} />;
+      case 'servicios':
         return <ServicesTab showMessage={showMessage} />;
-      case 'preferencias':
-        return <PreferencesTab showMessage={showMessage} />;
       default:
         return null;
     }

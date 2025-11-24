@@ -81,6 +81,19 @@ schedule = "30 13 * * *"  # 14:30 CL (18:30 UTC, ajustar en verano a 17:30)
   status = 200
   methods = ["GET", "OPTIONS"]
 
+# SCHEDULE BLOCKS ROUTES
+[[redirects]]
+  from = "/schedule-blocks"
+  to = "/.netlify/functions/schedule-blocks/schedule-blocks"
+  status = 200
+  methods = ["GET", "POST", "OPTIONS"]
+
+[[redirects]]
+  from = "/schedule-blocks/*"
+  to = "/.netlify/functions/schedule-blocks/schedule-blocks"
+  status = 200
+  methods = ["GET", "PUT", "DELETE", "OPTIONS"]
+
 # DOCUMENTOS ROUTES
 [[redirects]]
   from = "/documents/*"
