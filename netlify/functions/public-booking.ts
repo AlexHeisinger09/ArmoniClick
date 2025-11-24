@@ -33,10 +33,14 @@ const handler: Handler = async (event: HandlerEvent) => {
       const doctorIdIndex = pathSegments.indexOf('public-booking-info') + 1;
       const doctorId = pathSegments[doctorIdIndex];
 
+      console.log('DEBUG: Path segments:', pathSegments);
+      console.log('DEBUG: Doctor ID Index:', doctorIdIndex);
+      console.log('DEBUG: Doctor ID:', doctorId);
+
       if (!doctorId || isNaN(parseInt(doctorId))) {
         return {
           statusCode: 400,
-          body: JSON.stringify({ message: "Doctor ID inválido" }),
+          body: JSON.stringify({ message: "Doctor ID inválido", debug: { pathSegments, doctorIdIndex, doctorId } }),
           headers: HEADERS.json,
         };
       }
