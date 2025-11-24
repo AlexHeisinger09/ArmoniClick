@@ -2,7 +2,7 @@
 import { Handler, HandlerEvent } from "@netlify/functions";
 import { HEADERS, fromBodyToObject } from "../config/utils";
 import { db } from "../data/db";
-import { users, appointments, scheduleBlocks } from "../data/schemas";
+import { usersTable, appointmentsTable, scheduleBlocksTable } from "../data/schemas";
 import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 
@@ -45,9 +45,9 @@ const handler: Handler = async (event: HandlerEvent) => {
 
       // Verificar que el doctor existe
       const doctor = await db
-        .select({ id: users.id, nombres: users.nombres, apellidos: users.apellidos })
-        .from(users)
-        .where(eq(users.id, parsedDoctorId))
+        .select({ id: usersTable.id, nombres: usersTable.name, apellidos: usersTable.lastName })
+        .from(usersTable)
+        .where(eq(usersTable.id, parsedDoctorId))
         .limit(1);
 
       if (doctor.length === 0) {
@@ -63,8 +63,8 @@ const handler: Handler = async (event: HandlerEvent) => {
       // Obtener citas del doctor
       const doctorAppointments = await db
         .select()
-        .from(appointments)
-        .where(eq(appointments.doctorId, parsedDoctorId));
+        .from(appointmentsTable)
+        .where(eq(appointmentsTable.doctorId, parsedDoctorId));
 
       // Formatear citas para el formato esperado por el frontend
       const appointmentsData: Record<string, any[]> = {};
@@ -90,8 +90,8 @@ const handler: Handler = async (event: HandlerEvent) => {
       // Obtener bloques de agenda del doctor
       const doctorScheduleBlocks = await db
         .select()
-        .from(scheduleBlocks)
-        .where(eq(scheduleBlocks.doctorId, parsedDoctorId));
+        .from(scheduleBlocksTable)
+        .where(eq(scheduleBlocksTable.doctorId, parsedDoctorId));
 
       // Disponibilidades por defecto
       const availableDurations = [30, 60];
@@ -157,8 +157,8 @@ const handler: Handler = async (event: HandlerEvent) => {
       // Verificar disponibilidad: validar que no haya conflictos con citas existentes
       const existingAppointments = await db
         .select()
-        .from(appointments)
-        .where(eq(appointments.doctorId, doctorId));
+        .from(appointmentsTable)
+        .where(eq(appointmentsTable.doctorId, doctorId));
 
       const [startHours, startMinutes] = startTime.split(':').map(Number);
       const startTotalMinutes = startHours * 60 + startMinutes;
@@ -187,8 +187,8 @@ const handler: Handler = async (event: HandlerEvent) => {
       // Verificar disponibilidad: validar que no haya bloques de agenda
       const doctorBlocks = await db
         .select()
-        .from(scheduleBlocks)
-        .where(eq(scheduleBlocks.doctorId, doctorId));
+        .from(scheduleBlocksTable)
+        .where(eq(scheduleBlocksTable.doctorId, doctorId));
 
       for (const block of doctorBlocks) {
         let blockApplies = false;
@@ -252,7 +252,7 @@ const handler: Handler = async (event: HandlerEvent) => {
       const confirmationToken = uuidv4();
 
       // Crear la cita como invitado
-      const newAppointment = await db.insert(appointments).values({
+      const newAppointment = await db.insert(appointmentsTable).values({
         doctorId,
         patientId: null,
         guestPatientName: patientName,
