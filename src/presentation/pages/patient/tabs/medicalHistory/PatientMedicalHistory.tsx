@@ -246,7 +246,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
     const documents: DocumentPreview[] = [];
 
     // Solo mostrar documentos para logs de documentos firmados
-    if (normalizeEntityType(log.entity_type) === 'documento' && log.new_values && log.action === 'status_changed' && log.new_values.status === 'firmado') {
+    if (normalizeEntityType(log.entity_type) === 'documento' && log.new_values && (log.action === 'status_changed' || log.action === 'signed') && log.new_values.status === 'firmado') {
       const title = log.new_values.title || `Documento #${log.entity_id}`;
 
       // Mostrar PDF si existe en los new_values
