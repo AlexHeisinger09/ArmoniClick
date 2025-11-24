@@ -210,7 +210,8 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
       created: 'Creado',
       updated: 'Actualizado',
       status_changed: 'Cambio de estado',
-      deleted: 'Eliminado'
+      deleted: 'Eliminado',
+      signed: 'Firma de documento'
     };
     return labels[action] || action;
   };
@@ -220,7 +221,8 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
       created: 'bg-green-100 text-green-700 border-green-200',
       updated: 'bg-blue-100 text-blue-700 border-blue-200',
       status_changed: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-      deleted: 'bg-red-100 text-red-700 border-red-200'
+      deleted: 'bg-red-100 text-red-700 border-red-200',
+      signed: 'bg-purple-100 text-purple-700 border-purple-200'
     };
     return colors[action] || colors.updated;
   };

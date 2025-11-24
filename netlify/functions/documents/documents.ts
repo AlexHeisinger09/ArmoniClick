@@ -201,13 +201,13 @@ const handler: Handler = async (event: HandlerEvent) => {
           // Continuar sin el PDF en el audit log
         }
 
-        // 📝 Registrar en auditoría (cambio de estado: pendiente → firmado)
+        // 📝 Registrar en auditoría (firma de documento)
         const auditService = new AuditService(db);
         await auditService.logChange({
           patientId: documentWithPatient.id_patient,
           entityType: AUDIT_ENTITY_TYPES.DOCUMENTO,
           entityId: documentId,
-          action: AUDIT_ACTIONS.STATUS_CHANGED,
+          action: AUDIT_ACTIONS.SIGNED,
           oldValues: { status: documentWithPatient.status },
           newValues: {
             status: updatedDocument.status,

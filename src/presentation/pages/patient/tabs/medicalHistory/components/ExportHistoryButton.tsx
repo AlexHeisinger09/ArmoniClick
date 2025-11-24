@@ -45,10 +45,12 @@ const ExportHistoryButton: React.FC<ExportHistoryButtonProps> = ({
       updated: 'Actualizado',
       status_changed: 'Cambio de estado',
       deleted: 'Eliminado',
+      signed: 'Firma de documento',
       CREATED: 'Creado',
       UPDATED: 'Actualizado',
       STATUS_CHANGED: 'Cambio de estado',
       DELETED: 'Eliminado',
+      SIGNED: 'Firma de documento',
     };
     return labels[action] || action;
   };

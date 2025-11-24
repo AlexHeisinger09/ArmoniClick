@@ -85,5 +85,6 @@ export const AUDIT_ACTIONS = {
   CREATED: 'created',
   UPDATED: 'updated',
   DELETED: 'deleted',
-  STATUS_CHANGED: 'status_changed'
+  STATUS_CHANGED: 'status_changed',
+  SIGNED: 'signed'
 } as const;
