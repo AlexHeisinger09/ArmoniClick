@@ -168,10 +168,10 @@ const handler: Handler = async (event: HandlerEvent) => {
       for (const apt of existingAppointments) {
         if (apt.appointmentDate === dateStr) {
           const [aptHours, aptMinutes] = apt.startTime.split(':').map(Number);
-          const [aptEndHours, aptEndMinutes] = apt.endTime?.split(':').map(Number) || [aptHours, aptMinutes + 30];
+          const [aptEndHours, aptEndMinutesVal] = apt.endTime?.split(':').map(Number) || [aptHours, aptMinutes + 30];
 
           const aptStartMinutes = aptHours * 60 + aptMinutes;
-          const aptEndMinutes = aptEndHours * 60 + aptEndMinutes;
+          const aptEndMinutes = aptEndHours * 60 + aptEndMinutesVal;
 
           // Revisar si hay solapamiento
           if (startTotalMinutes < aptEndMinutes && endTotalMinutes > aptStartMinutes) {
@@ -228,10 +228,10 @@ const handler: Handler = async (event: HandlerEvent) => {
 
         if (blockApplies) {
           const [blockHours, blockMinutes] = block.startTime.split(':').map(Number);
-          const [blockEndHours, blockEndMinutes] = block.endTime.split(':').map(Number);
+          const [blockEndHours, blockEndMinutesVal] = block.endTime.split(':').map(Number);
 
           const blockStartMinutes = blockHours * 60 + blockMinutes;
-          const blockEndMinutes = blockEndHours * 60 + blockEndMinutes;
+          const blockEndMinutes = blockEndHours * 60 + blockEndMinutesVal;
 
           if (startTotalMinutes < blockEndMinutes && endTotalMinutes > blockStartMinutes) {
             return {
