@@ -64,7 +64,7 @@ export const ScheduleBlockVisual: React.FC<ScheduleBlockVisualProps> = ({
     return null;
   }
 
-  // Renderizar bloques en DayView (altura: 20 por slot de 30 min)
+  // Renderizar bloques en DayView (altura: 80px por slot de 30 min)
   if (viewType === 'day') {
     return (
       <>
@@ -75,18 +75,28 @@ export const ScheduleBlockVisual: React.FC<ScheduleBlockVisualProps> = ({
           const startTotal = startHours * 60 + startMinutes;
           const endTotal = endHours * 60 + endMinutes;
 
-          // Calcular posición y altura (20px = 30 min)
-          const topPercent = (startTotal / (24 * 60)) * 100;
+          // Usar la misma lógica que AppointmentBlock:
+          // El calendario muestra desde 09:00 en adelante
+          const START_OF_CALENDAR = 9 * 60; // 09:00 = 540 minutos
+          const SLOT_HEIGHT_PX = 80; // 80px per 30-minute slot
+          const MINUTES_PER_SLOT = 30;
+
+          // Calcular posición relativa a las 09:00
+          const minutesFromStart = startTotal - START_OF_CALENDAR;
+          const pixelPerMinute = SLOT_HEIGHT_PX / MINUTES_PER_SLOT;
+          const topPx = minutesFromStart * pixelPerMinute;
+
+          // Calcular altura
           const durationMinutes = endTotal - startTotal;
-          const heightPercent = (durationMinutes / (24 * 60)) * 100;
+          const heightPx = (durationMinutes / MINUTES_PER_SLOT) * SLOT_HEIGHT_PX;
 
           return (
             <div
               key={`${block.id}-${index}`}
               className="absolute inset-x-0 bg-slate-200 bg-opacity-40 border-l-4 border-slate-300 pointer-events-none z-20 group"
               style={{
-                top: `${topPercent}%`,
-                height: `${heightPercent}%`,
+                top: `${topPx}px`,
+                height: `${heightPx}px`,
                 minHeight: '20px'
               }}
               title={`Bloqueado: ${block.startTime} - ${block.endTime}`}
@@ -101,8 +111,11 @@ export const ScheduleBlockVisual: React.FC<ScheduleBlockVisualProps> = ({
     );
   }
 
-  // Renderizar bloques en WeekView (altura: 8px por slot de 30 min)
+  // Renderizar bloques en WeekView (altura: 8px por slot de 30 min en desktop, 6px en mobile)
   if (viewType === 'week') {
+    const WEEK_SLOT_HEIGHT = 8; // 8px per 30-minute slot on desktop
+    const MINUTES_PER_SLOT = 30;
+
     return (
       <>
         {applicableBlocks.map((block, index) => {
@@ -112,7 +125,7 @@ export const ScheduleBlockVisual: React.FC<ScheduleBlockVisualProps> = ({
           const startTotal = startHours * 60 + startMinutes;
           const endTotal = endHours * 60 + endMinutes;
 
-          // Calcular posición y altura (8px = 30 min)
+          // Usar porcentaje basado en 24 horas (WeekView muestra el día completo)
           const topPercent = (startTotal / (24 * 60)) * 100;
           const durationMinutes = endTotal - startTotal;
           const heightPercent = (durationMinutes / (24 * 60)) * 100;
