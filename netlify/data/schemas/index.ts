@@ -3,6 +3,6 @@ export * from './patient.schema';
 export * from './budget.schema';
 export * from './appointment.schema';
 export * from './document.schema';
-
 export * from './treatment.schema';
 export * from './service.schema';
+export * from './audit.schema';

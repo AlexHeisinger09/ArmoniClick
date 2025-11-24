@@ -22,7 +22,9 @@
       "Bash(curl:*)",
       "Bash(pkill:*)",
       "Bash(timeout 120 npm run build)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git checkout:*)",
+      "Bash(gh pr create --title \"Mejoras en timeline del historial médico y exportación a PDF\" --body \"$(cat <<''EOF''\n## Summary\n\n- ✨ Agregar círculo inicial al final de la timeline para marcar visualmente el inicio del historial del paciente\n- 📄 Mejorar exportación a PDF con orden cronológico (más antiguo a más reciente)\n- 🎨 Filtrar datos base64 en exportación para mostrar \"[Archivo binario]\" en lugar de strings largos\n- 🏷️ Implementar traducciones de campos en labels legibles en PDF\n- ⚡ Optimizar presentación visual de cambios (old_values y new_values) en exportación\n\n## Test plan\n\n- [x] Verificar que el círculo aparece al final de la timeline\n- [x] Validar que la exportación a PDF muestra los registros de más antiguo a más reciente\n- [x] Confirmar que los datos binarios (base64) se muestran como \"[Archivo binario]\"\n- [x] Revisar que los labels de campos están traducidos al español\n- [x] Build sin errores (npm run build)\n\n🤖 Generated with Claude Code\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []

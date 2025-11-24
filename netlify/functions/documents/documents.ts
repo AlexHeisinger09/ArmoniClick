@@ -9,6 +9,8 @@ import { fromBodyToObject, HEADERS } from "../../config/utils";
 import { DocumentEmailService } from "../../services/documentEmailService";
 import { EmailService } from "../../services/email.service";
 import { generateDocumentPDF } from "../../services/pdfService";
+import { AuditService } from "../../services/AuditService";
+import { AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } from "../../data/schemas";
 import { envs } from "../../config/envs";
 
 const handler: Handler = async (event: HandlerEvent) => {
@@ -102,6 +104,22 @@ const handler: Handler = async (event: HandlerEvent) => {
           })
           .returning();
 
+        // 📝 Registrar en auditoría (creación de documento)
+        const auditService = new AuditService(db);
+        await auditService.logChange({
+          patientId: Number(body.id_patient),
+          entityType: AUDIT_ENTITY_TYPES.DOCUMENTO,
+          entityId: document.id,
+          action: AUDIT_ACTIONS.CREATED,
+          newValues: {
+            title: document.title,
+            document_type: document.document_type,
+            status: document.status,
+          },
+          changedBy: doctorId,
+          notes: `Documento "${document.title}" creado (tipo: ${document.document_type})`,
+        });
+
         return {
           statusCode: 201,
           body: JSON.stringify(document),
@@ -171,6 +189,36 @@ const handler: Handler = async (event: HandlerEvent) => {
           })
           .where(eq(documentsTable.id, documentId))
           .returning();
+
+        // 📝 Generar PDF y guardar en auditoría
+        let pdfBase64 = '';
+        try {
+          const pdfBuffer = await generateDocumentPDF(updatedDocument);
+          pdfBase64 = pdfBuffer.toString('base64');
+          console.log(`✅ PDF generated and converted to base64, size: ${pdfBase64.length} characters`);
+        } catch (pdfError) {
+          console.error('⚠️ Error generating PDF for audit log:', pdfError);
+          // Continuar sin el PDF en el audit log
+        }
+
+        // 📝 Registrar en auditoría (cambio de estado: pendiente → firmado)
+        const auditService = new AuditService(db);
+        await auditService.logChange({
+          patientId: documentWithPatient.id_patient,
+          entityType: AUDIT_ENTITY_TYPES.DOCUMENTO,
+          entityId: documentId,
+          action: AUDIT_ACTIONS.STATUS_CHANGED,
+          oldValues: { status: documentWithPatient.status },
+          newValues: {
+            status: updatedDocument.status,
+            signed_date: updatedDocument.signed_date,
+            title: updatedDocument.title,
+            signature_data: updatedDocument.signature_data,
+            pdf_base64: pdfBase64
+          },
+          changedBy: doctorId,
+          notes: `Documento "${updatedDocument.title}" firmado`,
+        });
 
         // Solo obtener email del paciente si se solicita envío de email
         const shouldSendEmail = body.send_email === true || body.send_email === 'true';

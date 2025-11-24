@@ -20,7 +20,7 @@ export const timeSlots: string[] = [
 export const getTimeSlotsForDuration = (duration: number = 30): string[] => {
   const slots: string[] = [];
   const startHour = 9;
-  const endHour = 19; // Hasta las 19:30 (se trabaja hasta las 20:00)
+  const endHour = 19; // Hasta las 19:00
 
   // Mostrar SIEMPRE slots de 30 minutos, independientemente de la duración
   // Esto permite que una cita de 60 min pueda empezar a las 9:30, 10:30, etc.
@@ -28,7 +28,8 @@ export const getTimeSlotsForDuration = (duration: number = 30): string[] => {
     slots.push(`${String(hour).padStart(2, '0')}:00`);
     slots.push(`${String(hour).padStart(2, '0')}:30`);
   }
-  // Agregar el último slot a las 19:30
+  // Agregar explícitamente 19:00 y 19:30
+  slots.push('19:00');
   slots.push('19:30');
 
   return slots;

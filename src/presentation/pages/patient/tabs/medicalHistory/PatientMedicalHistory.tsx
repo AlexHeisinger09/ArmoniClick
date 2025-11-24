@@ -1,5 +1,5 @@
-// src/presentation/pages/patient/tabs/PatientMedicalHistory.tsx
-import React, { useState, useMemo } from 'react';
+// src/presentation/pages/patient/tabs/medicalHistory/PatientMedicalHistory.tsx
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   FileText,
   Stethoscope,
@@ -8,82 +8,153 @@ import {
   DollarSign,
   Clock,
   User,
-  ChevronDown,
-  ChevronUp,
-  Filter,
   AlertCircle,
-  Loader
+  Loader,
+  Image as ImageIcon,
+  X,
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Patient } from "@/core/use-cases/patients";
-import { useMedicalHistory } from "@/presentation/hooks/medical-history";
-import { MedicalHistoryRecord } from "@/core/use-cases/medical-history";
+import { useAuditHistory, AuditLog } from "@/presentation/hooks/audit-history/useAuditHistory";
+import { useDocuments } from "@/presentation/hooks/documents/useDocuments";
+import { AuditHistoryFilters, FilterState } from './components/AuditHistoryFilters';
+import { ExportHistoryButton } from './components/ExportHistoryButton';
 
 interface PatientMedicalHistoryProps {
   patient: Patient;
 }
 
-const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }) => {
-  const [selectedFilter, setSelectedFilter] = useState<string>('todos');
-  const [expandedRecord, setExpandedRecord] = useState<string | null>(null);
+interface DocumentPreview {
+  url: string;
+  title: string;
+  type: 'image' | 'pdf' | 'document';
+}
 
-  // Fetch real medical history data
-  const { data: medicalHistoryData, isLoading, error } = useMedicalHistory({
-    patientId: patient.id,
+const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }) => {
+  const [filters, setFilters] = useState<FilterState>({
+    entityType: '',
+    action: '',
+    startDate: '',
+    endDate: '',
   });
 
-  const medicalRecords: MedicalHistoryRecord[] = useMemo(() => {
-    if (!medicalHistoryData?.records) {
+  const [selectedDocument, setSelectedDocument] = useState<DocumentPreview | null>(null);
+  const queryClient = useQueryClient();
+
+  // Fetch audit history from backend
+  const { data: historyData, isLoading, error } = useAuditHistory(patient.id);
+
+  // Hook de documentos para acceder a invalidateQueries
+  const { queryDocuments } = useDocuments(patient.id);
+
+  // Efecto para invalidar el caché de auditoría cuando los documentos cambian
+  useEffect(() => {
+    if (!queryDocuments.isLoading && queryDocuments.data) {
+      // Invalidar el caché de auditoría cuando hay cambios en documentos
+      queryClient.invalidateQueries({ queryKey: ['auditHistory', patient.id] });
+    }
+  }, [queryDocuments.data]);
+
+  const auditLogs: AuditLog[] = useMemo(() => {
+    if (!historyData?.logs) {
       return [];
     }
-    return medicalHistoryData.records;
-  }, [medicalHistoryData]);
+    return historyData.logs;
+  }, [historyData]);
+
+  // Función auxiliar para normalizar entity_type
+  const normalizeEntityType = (type: string): string => {
+    return type.toLowerCase();
+  };
+
+  // Aplicar filtros - Excluir tratamientos CREATED, solo mostrar los editados
+  const filteredLogs = useMemo(() => {
+    return auditLogs.filter((log) => {
+      const normalizedType = normalizeEntityType(log.entity_type);
+
+      // Filtro: Excluir tratamientos en estado CREATED
+      if (normalizedType === 'tratamiento' && log.action === 'created') {
+        return false;
+      }
+
+      // Filtro por tipo de entidad
+      if (filters.entityType && normalizedType !== filters.entityType) {
+        return false;
+      }
+
+      // Filtro por acción
+      if (filters.action && log.action !== filters.action) {
+        return false;
+      }
+
+      // Filtro por fecha inicio
+      if (filters.startDate) {
+        const logDate = new Date(log.created_at);
+        const startDate = new Date(filters.startDate);
+        if (logDate < startDate) {
+          return false;
+        }
+      }
+
+      // Filtro por fecha fin
+      if (filters.endDate) {
+        const logDate = new Date(log.created_at);
+        const endDate = new Date(filters.endDate);
+        endDate.setHours(23, 59, 59, 999);
+        if (logDate > endDate) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [auditLogs, filters]);
+
+  // Ordenar por fecha descendente
+  const sortedLogs = useMemo(() => {
+    return [...filteredLogs].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [filteredLogs]);
 
   const formatDate = (dateString: string): string => {
-    const options: Intl.DateTimeFormatOptions = { 
-      day: '2-digit', 
-      month: 'short', 
-      year: 'numeric' 
+    const options: Intl.DateTimeFormatOptions = {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
     };
     return new Date(dateString).toLocaleDateString("es-CL", options);
   };
 
-  const formatMoney = (amount: number): string => {
-    return new Intl.NumberFormat('es-CL', {
-      style: 'currency',
-      currency: 'CLP',
-      minimumFractionDigits: 0
-    }).format(amount);
+  const formatDateTime = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-CL', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }) + ' ' + date.toLocaleTimeString('es-CL', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
-  const getCategoryConfig = (categoria: string) => {
-    const configs = {
-      registro: {
+  const formatTime = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('es-CL', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getEntityConfig = (entityType: string) => {
+    const normalizedType = entityType.toLowerCase();
+    const configs: Record<string, any> = {
+      paciente: {
         color: 'from-slate-400 to-slate-600',
         bgColor: 'bg-slate-50',
         borderColor: 'border-slate-200',
         icon: <User className="w-3 h-3 text-white" />,
-        label: 'Registro'
-      },
-      consulta: {
-        color: 'from-blue-400 to-blue-600',
-        bgColor: 'bg-blue-50',
-        borderColor: 'border-blue-200',
-        icon: <Stethoscope className="w-3 h-3 text-white" />,
-        label: 'Consulta'
-      },
-      examen: {
-        color: 'from-purple-400 to-purple-600',
-        bgColor: 'bg-purple-50',
-        borderColor: 'border-purple-200',
-        icon: <Activity className="w-3 h-3 text-white" />,
-        label: 'Examen'
-      },
-      tratamiento: {
-        color: 'from-green-400 to-green-600',
-        bgColor: 'bg-green-50',
-        borderColor: 'border-green-200',
-        icon: <FileText className="w-3 h-3 text-white" />,
-        label: 'Tratamiento'
+        label: 'Paciente'
       },
       presupuesto: {
         color: 'from-amber-400 to-amber-600',
@@ -92,6 +163,13 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
         icon: <DollarSign className="w-3 h-3 text-white" />,
         label: 'Presupuesto'
       },
+      tratamiento: {
+        color: 'from-green-400 to-green-600',
+        bgColor: 'bg-green-50',
+        borderColor: 'border-green-200',
+        icon: <Activity className="w-3 h-3 text-white" />,
+        label: 'Tratamiento'
+      },
       cita: {
         color: 'from-cyan-400 to-cyan-600',
         bgColor: 'bg-cyan-50',
@@ -99,89 +177,156 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
         icon: <Clock className="w-3 h-3 text-white" />,
         label: 'Cita'
       },
-      cirugia: {
-        color: 'from-red-400 to-red-600',
-        bgColor: 'bg-red-50',
-        borderColor: 'border-red-200',
+      documento: {
+        color: 'from-purple-400 to-purple-600',
+        bgColor: 'bg-purple-50',
+        borderColor: 'border-purple-200',
         icon: <FileText className="w-3 h-3 text-white" />,
-        label: 'Cirugía'
-      },
-      diagnostico: {
-        color: 'from-orange-400 to-orange-600',
-        bgColor: 'bg-orange-50',
-        borderColor: 'border-orange-200',
-        icon: <FileText className="w-3 h-3 text-white" />,
-        label: 'Diagnóstico'
+        label: 'Documento'
       }
     };
-    return configs[categoria as keyof typeof configs] || configs.consulta;
+    return configs[normalizedType] || configs.paciente;
   };
 
-  const getStatusBadge = (estado: string) => {
-    const statusConfig = {
-      completado: 'bg-green-100 text-green-700 border-green-200',
-      pendiente: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-      cancelado: 'bg-red-100 text-red-700 border-red-200',
-      aprobado: 'bg-blue-100 text-blue-700 border-blue-200',
-      rechazado: 'bg-gray-100 text-gray-700 border-gray-200'
+  const getActionLabel = (action: string): string => {
+    const labels: Record<string, string> = {
+      created: 'Creado',
+      updated: 'Actualizado',
+      status_changed: 'Cambio de estado',
+      deleted: 'Eliminado'
     };
-    return statusConfig[estado as keyof typeof statusConfig] || statusConfig.completado;
+    return labels[action] || action;
   };
 
-  const sortedRecords = medicalRecords
-    .filter(record => selectedFilter === 'todos' || record.categoria === selectedFilter)
-    .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+  const getActionBadgeColor = (action: string): string => {
+    const colors: Record<string, string> = {
+      created: 'bg-green-100 text-green-700 border-green-200',
+      updated: 'bg-blue-100 text-blue-700 border-blue-200',
+      status_changed: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+      deleted: 'bg-red-100 text-red-700 border-red-200'
+    };
+    return colors[action] || colors.updated;
+  };
 
-  const filterOptions = [
-    { value: 'todos', label: 'Todos los registros' },
-    { value: 'registro', label: 'Registros' },
-    { value: 'consulta', label: 'Consultas' },
-    { value: 'examen', label: 'Exámenes' },
-    { value: 'tratamiento', label: 'Tratamientos' },
-    { value: 'presupuesto', label: 'Presupuestos' },
-    { value: 'cita', label: 'Citas' }
-  ];
+  const getPhotosFromLog = (log: AuditLog): Array<{ url: string; alt?: string }> => {
+    const photos: Array<{ url: string; alt?: string }> = [];
+
+    if (log.new_values) {
+      if (log.new_values.foto1) {
+        photos.push({ url: log.new_values.foto1, alt: 'Foto 1' });
+      }
+      if (log.new_values.foto2) {
+        photos.push({ url: log.new_values.foto2, alt: 'Foto 2' });
+      }
+    }
+
+    return photos;
+  };
+
+  const getDocumentsFromLog = (log: AuditLog): DocumentPreview[] => {
+    const documents: DocumentPreview[] = [];
+
+    // Solo mostrar documentos para logs de documentos firmados
+    if (normalizeEntityType(log.entity_type) === 'documento' && log.new_values && log.action === 'status_changed' && log.new_values.status === 'firmado') {
+      const title = log.new_values.title || `Documento #${log.entity_id}`;
+
+      // Mostrar PDF si existe en los new_values
+      if (log.new_values.pdf_base64) {
+        const pdfUrl = `data:application/pdf;base64,${log.new_values.pdf_base64}`;
+
+        documents.push({
+          url: pdfUrl,
+          title: title,
+          type: 'pdf'
+        });
+      }
+
+      // Mostrar firma si existe en los new_values
+      // La firma se guarda como base64 en signature_data
+      if (log.new_values.signature_data) {
+        const signatureUrl = log.new_values.signature_data.startsWith('data:')
+          ? log.new_values.signature_data
+          : `data:image/png;base64,${log.new_values.signature_data}`;
+
+        documents.push({
+          url: signatureUrl,
+          title: `Firma - ${title}`,
+          type: 'image'
+        });
+      }
+    }
+
+    return documents;
+  };
+
+  const getAppointmentDisplay = (log: AuditLog, entityLabel: string): { title: string; subtitle: string } => {
+    if (normalizeEntityType(log.entity_type) === 'cita' && log.new_values) {
+      const appointmentDate = log.new_values.appointmentDate;
+      const status = log.new_values.status;
+
+      if (appointmentDate) {
+        const date = new Date(appointmentDate);
+        const formattedDate = date.toLocaleDateString('es-CL', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        });
+        const formattedTime = date.toLocaleTimeString('es-CL', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        const statusLabel = status ? status.charAt(0).toUpperCase() + status.slice(1).toLowerCase() : '';
+
+        return {
+          title: `${formattedDate} - ${formattedTime}`,
+          subtitle: statusLabel
+        };
+      }
+    }
+
+    return {
+      title: `${entityLabel} #${log.entity_id}`,
+      subtitle: ''
+    };
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
         <div>
           <h3 className="text-2xl font-bold text-gray-800 mb-2">
-            Línea de Tiempo Médica
+            Historial Médico del Paciente
           </h3>
           <p className="text-gray-500">
-            Historial completo de {patient.nombres} {patient.apellidos}
+            Registro completo de cambios para {patient.nombres} {patient.apellidos}
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Filtro */}
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <select
-              value={selectedFilter}
-              onChange={(e) => setSelectedFilter(e.target.value)}
-              disabled={isLoading}
-              className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent disabled:opacity-50"
-            >
-              {filterOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
+        {/* Botón Exportar en la esquina superior derecha */}
+        <div className="flex-shrink-0">
+          <ExportHistoryButton
+            logs={sortedLogs}
+            patient={patient}
+            isLoading={isLoading}
+          />
         </div>
+      </div>
+
+      {/* Filtros de fecha - Siempre visibles */}
+      <div className="mb-6">
+        <AuditHistoryFilters
+          onFiltersChange={setFilters}
+          isLoading={isLoading}
+        />
       </div>
 
       {/* Loading State */}
       {isLoading && (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-16">
           <div className="flex flex-col items-center gap-3">
             <Loader className="w-8 h-8 text-cyan-500 animate-spin" />
-            <p className="text-gray-600">Cargando historial médico...</p>
+            <p className="text-gray-600">Cargando historial del paciente...</p>
           </div>
         </div>
       )}
@@ -194,412 +339,269 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
             <div>
               <h4 className="font-semibold text-red-800 mb-1">Error al cargar historial</h4>
               <p className="text-sm text-red-700">
-                {error instanceof Error ? error.message : 'Ocurrió un error al cargar el historial médico'}
+                {error instanceof Error ? error.message : 'Ocurrió un error al cargar el historial'}
               </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Timeline */}
+      {/* Timeline elegante */}
       {!isLoading && !error && (
-      <div className="relative">
-        {/* Vista móvil - Timeline centrada */}
-        <div className="block sm:hidden">
-          {/* Línea vertical centrada para móvil */}
-          <div className="absolute left-1/2 transform -translate-x-0.5 top-0 bottom-0 w-0.5 bg-gradient-to-b from-gray-200 via-gray-300 to-gray-200"></div>
-          
-          <div className="space-y-6">
-            {sortedRecords.map((record, index) => {
-              const config = getCategoryConfig(record.categoria);
-              const isExpanded = expandedRecord === record.id;
-              const isLeft = index % 2 === 0;
-              
-              return (
-                <div key={record.id} className="relative flex items-start">
-                  {isLeft ? (
-                    <>
-                      {/* Tarjeta izquierda móvil */}
-                      <div className="w-1/2 pr-3">
-                        <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-3 shadow-sm ml-auto`}>
-                          <div className="mb-2">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-semibold text-gray-800 text-xs leading-tight">
-                                {record.tipo}
-                              </h4>
-                              <button
-                                onClick={() => setExpandedRecord(isExpanded ? null : record.id)}
-                                className="p-1 rounded-full hover:bg-white/50 transition-colors flex-shrink-0 ml-2"
-                              >
-                                {isExpanded ? (
-                                  <ChevronUp className="w-3 h-3 text-gray-500" />
-                                ) : (
-                                  <ChevronDown className="w-3 h-3 text-gray-500" />
-                                )}
-                              </button>
-                            </div>
-                            
-                            {record.estado && (
-                              <span className={`inline-block px-1.5 py-0.5 text-xs font-medium rounded-full border mb-2 ${getStatusBadge(record.estado)}`}>
-                                {record.estado}
-                              </span>
-                            )}
-                            
-                            <div className="text-xs text-gray-600 mb-2 space-y-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <Calendar className="w-2.5 h-2.5 flex-shrink-0" />
-                                <span className="text-xs">{formatDate(record.fechaEvento || record.fecha)}</span>
-                                {(record.horaEvento || record.hora) && (
-                                  <>
-                                    <span className="text-gray-400">•</span>
-                                    <Clock className="w-2.5 h-2.5 flex-shrink-0" />
-                                    <span className="text-xs">{record.horaEvento || record.hora}</span>
-                                  </>
-                                )}
-                              </div>
-                              <div className="text-xs">
-                                <span className="font-medium">{record.medico}</span>
-                              </div>
-                              {record.monto && (
-                                <div className="font-semibold text-green-600 text-xs">
-                                  {formatMoney(record.monto)}
-                                </div>
-                              )}
-                            </div>
-                            
-                            <p className={`text-gray-700 text-xs leading-relaxed ${isExpanded ? '' : 'line-clamp-3'}`}>
-                              {record.descripcion}
-                            </p>
-                          </div>
-                          
-                          {/* Información expandida móvil */}
-                          {isExpanded && (
-                            <div className="pt-2 border-t border-gray-200">
-                              <div className="space-y-1 text-xs">
-                                <div>
-                                  <span className="font-medium text-gray-600">Categoría:</span>
-                                  <span className="ml-1 capitalize">{config.label}</span>
-                                </div>
-                                <div>
-                                  <span className="font-medium text-gray-600">Estado:</span>
-                                  <span className="ml-1 capitalize">{record.estado}</span>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Nodo central móvil */}
-                      <div className={`relative z-10 w-6 h-6 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center shadow-md border-2 border-white flex-shrink-0`}>
-                        {config.icon}
-                      </div>
-                      
-                      {/* Espacio derecho vacío */}
-                      <div className="w-1/2 pl-3"></div>
-                    </>
-                  ) : (
-                    <>
-                      {/* Espacio izquierdo vacío */}
-                      <div className="w-1/2 pr-3"></div>
-                      
-                      {/* Nodo central móvil */}
-                      <div className={`relative z-10 w-6 h-6 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center shadow-md border-2 border-white flex-shrink-0`}>
-                        {config.icon}
-                      </div>
-                      
-                      {/* Tarjeta derecha móvil */}
-                      <div className="w-1/2 pl-3">
-                        <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-3 shadow-sm mr-auto`}>
-                          <div className="mb-2">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-semibold text-gray-800 text-xs leading-tight">
-                                {record.tipo}
-                              </h4>
-                              <button
-                                onClick={() => setExpandedRecord(isExpanded ? null : record.id)}
-                                className="p-1 rounded-full hover:bg-white/50 transition-colors flex-shrink-0 ml-2"
-                              >
-                                {isExpanded ? (
-                                  <ChevronUp className="w-3 h-3 text-gray-500" />
-                                ) : (
-                                  <ChevronDown className="w-3 h-3 text-gray-500" />
-                                )}
-                              </button>
-                            </div>
-                            
-                            {record.estado && (
-                              <span className={`inline-block px-1.5 py-0.5 text-xs font-medium rounded-full border mb-2 ${getStatusBadge(record.estado)}`}>
-                                {record.estado}
-                              </span>
-                            )}
-                            
-                            <div className="text-xs text-gray-600 mb-2 space-y-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <Calendar className="w-2.5 h-2.5 flex-shrink-0" />
-                                <span className="text-xs">{formatDate(record.fechaEvento || record.fecha)}</span>
-                                {(record.horaEvento || record.hora) && (
-                                  <>
-                                    <span className="text-gray-400">•</span>
-                                    <Clock className="w-2.5 h-2.5 flex-shrink-0" />
-                                    <span className="text-xs">{record.horaEvento || record.hora}</span>
-                                  </>
-                                )}
-                              </div>
-                              <div className="text-xs">
-                                <span className="font-medium">{record.medico}</span>
-                              </div>
-                              {record.monto && (
-                                <div className="font-semibold text-green-600 text-xs">
-                                  {formatMoney(record.monto)}
-                                </div>
-                              )}
-                            </div>
-                            
-                            <p className={`text-gray-700 text-xs leading-relaxed ${isExpanded ? '' : 'line-clamp-3'}`}>
-                              {record.descripcion}
-                            </p>
-                          </div>
-                          
-                          {/* Información expandida móvil */}
-                          {isExpanded && (
-                            <div className="pt-2 border-t border-gray-200">
-                              <div className="space-y-1 text-xs">
-                                <div>
-                                  <span className="font-medium text-gray-600">Categoría:</span>
-                                  <span className="ml-1 capitalize">{config.label}</span>
-                                </div>
-                                <div>
-                                  <span className="font-medium text-gray-600">Estado:</span>
-                                  <span className="ml-1 capitalize">{record.estado}</span>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Vista desktop - Timeline centrada */}
-        <div className="hidden sm:block max-w-6xl mx-auto">
-          {/* Línea vertical principal centrada */}
-          <div className="absolute left-1/2 transform -translate-x-0.5 top-0 bottom-0 w-0.5 bg-gradient-to-b from-gray-200 via-gray-300 to-gray-200"></div>
-          
-          <div className="space-y-8">
-            {sortedRecords.map((record, index) => {
-              const config = getCategoryConfig(record.categoria);
-              const isExpanded = expandedRecord === record.id;
-              const isLeft = index % 2 === 0;
-              
-              return (
-                <div key={record.id} className="relative flex items-center">
-                  {isLeft ? (
-                    <>
-                      {/* Tarjeta izquierda */}
-                      <div className="w-1/2 pr-8">
-                        <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200 ml-auto max-w-md`}>
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-semibold text-gray-800 text-sm">
-                                  {record.tipo}
-                                </h4>
-                                {record.estado && (
-                                  <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusBadge(record.estado)}`}>
-                                    {record.estado}
-                                  </span>
-                                )}
-                              </div>
-                              
-                              <div className="flex items-center text-xs text-gray-600 mb-1 flex-wrap gap-2">
-                                <Calendar className="w-3 h-3" />
-                                <span>{formatDate(record.fechaEvento || record.fecha)}</span>
-                                {(record.horaEvento || record.hora) && (
-                                  <>
-                                    <span className="text-gray-400">•</span>
-                                    <Clock className="w-3 h-3" />
-                                    <span>{record.horaEvento || record.hora}</span>
-                                  </>
-                                )}
-                                <span className="text-gray-400">•</span>
-                                <span className="font-medium">{record.medico}</span>
-                                {record.monto && (
-                                  <>
-                                    <span className="text-gray-400">•</span>
-                                    <span className="font-semibold text-green-600">
-                                      {formatMoney(record.monto)}
-                                    </span>
-                                  </>
-                                )}
-                              </div>
-                              
-                              <p className={`text-gray-700 text-xs leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>
-                                {record.descripcion}
-                              </p>
-                            </div>
-                            
-                            <button
-                              onClick={() => setExpandedRecord(isExpanded ? null : record.id)}
-                              className="ml-4 p-1 rounded-full hover:bg-white/50 transition-colors"
-                            >
-                              {isExpanded ? (
-                                <ChevronUp className="w-4 h-4 text-gray-500" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4 text-gray-500" />
-                              )}
-                            </button>
-                          </div>
-                          
-                          {/* Información adicional expandida */}
-                          {isExpanded && (
-                            <div className="pt-2 border-t border-gray-200">
-                              <div className="grid grid-cols-1 gap-2 text-xs">
-                                <div>
-                                  <span className="font-medium text-gray-600">Categoría:</span>
-                                  <span className="ml-2 capitalize">{config.label}</span>
-                                </div>
-                                <div>
-                                  <span className="font-medium text-gray-600">Estado:</span>
-                                  <span className="ml-2 capitalize">{record.estado}</span>
-                                </div>
-                                <div>
-                                  <span className="font-medium text-gray-600">Profesional:</span>
-                                  <span className="ml-2">{record.medico}</span>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Nodo central */}
-                      <div className={`relative z-10 w-8 h-8 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center shadow-md border-2 border-white flex-shrink-0`}>
-                        {config.icon}
-                      </div>
-                      
-                      {/* Espacio derecho vacío */}
-                      <div className="w-1/2 pl-8"></div>
-                    </>
-                  ) : (
-                    <>
-                      {/* Espacio izquierdo vacío */}
-                      <div className="w-1/2 pr-8"></div>
-                      
-                      {/* Nodo central */}
-                      <div className={`relative z-10 w-8 h-8 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center shadow-md border-2 border-white flex-shrink-0`}>
-                        {config.icon}
-                      </div>
-                      
-                      {/* Tarjeta derecha */}
-                      <div className="w-1/2 pl-8">
-                        <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200 mr-auto max-w-md`}>
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-semibold text-gray-800 text-sm">
-                                  {record.tipo}
-                                </h4>
-                                {record.estado && (
-                                  <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusBadge(record.estado)}`}>
-                                    {record.estado}
-                                  </span>
-                                )}
-                              </div>
-                              
-                              <div className="flex items-center text-xs text-gray-600 mb-1 flex-wrap gap-2">
-                                <Calendar className="w-3 h-3" />
-                                <span>{formatDate(record.fechaEvento || record.fecha)}</span>
-                                {(record.horaEvento || record.hora) && (
-                                  <>
-                                    <span className="text-gray-400">•</span>
-                                    <Clock className="w-3 h-3" />
-                                    <span>{record.horaEvento || record.hora}</span>
-                                  </>
-                                )}
-                                <span className="text-gray-400">•</span>
-                                <span className="font-medium">{record.medico}</span>
-                                {record.monto && (
-                                  <>
-                                    <span className="text-gray-400">•</span>
-                                    <span className="font-semibold text-green-600">
-                                      {formatMoney(record.monto)}
-                                    </span>
-                                  </>
-                                )}
-                              </div>
-                              
-                              <p className={`text-gray-700 text-xs leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>
-                                {record.descripcion}
-                              </p>
-                            </div>
-                            
-                            <button
-                              onClick={() => setExpandedRecord(isExpanded ? null : record.id)}
-                              className="ml-4 p-1 rounded-full hover:bg-white/50 transition-colors"
-                            >
-                              {isExpanded ? (
-                                <ChevronUp className="w-4 h-4 text-gray-500" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4 text-gray-500" />
-                              )}
-                            </button>
-                          </div>
-                          
-                          {/* Información adicional expandida */}
-                          {isExpanded && (
-                            <div className="pt-2 border-t border-gray-200">
-                              <div className="grid grid-cols-1 gap-2 text-xs">
-                                <div>
-                                  <span className="font-medium text-gray-600">Categoría:</span>
-                                  <span className="ml-2 capitalize">{config.label}</span>
-                                </div>
-                                <div>
-                                  <span className="font-medium text-gray-600">Estado:</span>
-                                  <span className="ml-2 capitalize">{record.estado}</span>
-                                </div>
-                                <div>
-                                  <span className="font-medium text-gray-600">Profesional:</span>
-                                  <span className="ml-2">{record.medico}</span>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Estado vacío */}
-        {sortedRecords.length === 0 && (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FileText className="w-8 h-8 text-gray-400" />
+        <div>
+          {sortedLogs.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText className="w-8 h-8 text-gray-400" />
+              </div>
+              <h4 className="text-lg font-medium text-gray-600 mb-2">
+                No hay registros para mostrar
+              </h4>
+              <p className="text-gray-500 mb-6 text-sm sm:text-base">
+                {filters.entityType || filters.action || filters.startDate || filters.endDate
+                  ? 'No hay registros que coincidan con los filtros seleccionados'
+                  : 'No hay registros de auditoría para este paciente'
+                }
+              </p>
             </div>
-            <h4 className="text-lg font-medium text-gray-600 mb-2">
-              No hay registros para mostrar
-            </h4>
-            <p className="text-gray-500 mb-6 text-sm sm:text-base">
-              {selectedFilter === 'todos'
-                ? 'No hay registros médicos para este paciente'
-                : `No hay registros de tipo "${filterOptions.find(f => f.value === selectedFilter)?.label.toLowerCase()}"`
-              }
-            </p>
-          </div>
-        )}
-      </div>
+          ) : (
+            <div className="relative px-4">
+              {/* Línea central vertical */}
+              <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-400 via-purple-400 to-pink-400 transform -translate-x-1/2"></div>
+
+              <div className="space-y-12">
+                {sortedLogs.map((log, index) => {
+                  const config = getEntityConfig(log.entity_type);
+                  const photos = getPhotosFromLog(log);
+                  const documents = getDocumentsFromLog(log);
+                  const hasPhotos = photos.length > 0;
+                  const hasDocuments = documents.length > 0;
+                  const isEven = index % 2 === 0;
+
+                  const appointmentDisplay = getAppointmentDisplay(log, config.label);
+
+                  return (
+                    <div key={log.id} className="relative">
+                      <div className={`flex ${isEven ? 'flex-row' : 'flex-row-reverse'}`}>
+                        {/* Información: Fecha, Hora y Tipo */}
+                        <div className={`w-1/2 ${isEven ? 'text-right pr-8' : 'text-left pl-8'} pt-1`}>
+                          <div className={`inline-block ${isEven ? '' : ''}`}>
+                            <p className="text-xs font-semibold text-gray-700">{formatDate(log.created_at)}</p>
+                            <p className="text-xs text-gray-500 mb-2">{formatTime(log.created_at)}</p>
+                            <p className="text-xs font-semibold text-gray-800 bg-gray-100 rounded px-2 py-1 inline-block">
+                              {config.label}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Espacio para el círculo en el centro */}
+                        <div className="w-0 flex justify-center relative">
+                          <div
+                            className={`absolute w-12 h-12 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center shadow-lg border-4 border-white z-10 top-0`}
+                          >
+                            {config.icon}
+                          </div>
+                        </div>
+
+                        {/* Card con contenido */}
+                        <div className={`w-1/2 ${isEven ? 'pl-8' : 'pr-8'}`}>
+                          <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-4 shadow-sm hover:shadow-lg transition-all duration-200`}>
+                            {/* Header */}
+                            <div className="mb-3">
+                              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                <h4 className="font-semibold text-gray-800 text-base">
+                                  {normalizeEntityType(log.entity_type) === 'cita'
+                                    ? appointmentDisplay.title
+                                    : normalizeEntityType(log.entity_type) === 'tratamiento'
+                                    ? (log.new_values?.nombre_servicio || `Tratamiento #${log.entity_id}`)
+                                    : normalizeEntityType(log.entity_type) === 'paciente'
+                                    ? `${log.new_values?.nombres || ''} ${log.new_values?.apellidos || ''}`.trim()
+                                    : `${config.label} #${log.entity_id}`
+                                  }
+                                </h4>
+                                <span
+                                  className={`px-2 py-1 text-xs font-medium rounded-full border whitespace-nowrap ${getActionBadgeColor(
+                                    log.action
+                                  )}`}
+                                >
+                                  {getActionLabel(log.action)}
+                                </span>
+                              </div>
+
+                              {/* Estado de cita */}
+                              {normalizeEntityType(log.entity_type) === 'cita' && appointmentDisplay.subtitle && (
+                                <p className="text-sm text-gray-600 mb-2">Estado: <span className="font-medium">{appointmentDisplay.subtitle}</span></p>
+                              )}
+
+                              {/* Doctor que realizó la acción */}
+                              <p className="text-xs text-gray-500 mb-2">
+                                Doctor: <span className="text-gray-700 font-medium">{log.doctor_name || 'Desconocido'}</span>
+                              </p>
+
+                              {/* Información adicional para paciente creado */}
+                              {normalizeEntityType(log.entity_type) === 'paciente' && log.action === 'created' && (
+                                <div className="bg-white bg-opacity-50 rounded p-2 mb-2 text-sm space-y-1">
+                                  {log.new_values?.email && (
+                                    <p><span className="text-gray-600">Email:</span> <span className="text-gray-800">{log.new_values.email}</span></p>
+                                  )}
+                                  {log.new_values?.telefono && (
+                                    <p><span className="text-gray-600">Teléfono:</span> <span className="text-gray-800">{log.new_values.telefono}</span></p>
+                                  )}
+                                  {log.new_values?.alergias && (
+                                    <p><span className="text-gray-600">Alergias:</span> <span className="text-red-700 font-medium">{log.new_values.alergias}</span></p>
+                                  )}
+                                  {log.new_values?.medicamentos_actuales && (
+                                    <p><span className="text-gray-600">Medicamentos:</span> <span className="text-gray-800">{log.new_values.medicamentos_actuales}</span></p>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Descripción */}
+                              {log.notes && (
+                                <p className="text-sm text-gray-700 mt-2">{log.notes}</p>
+                              )}
+                            </div>
+
+                            {/* Miniaturas (documentos/fotos) */}
+                            {(hasPhotos || hasDocuments) && (
+                              <div className="flex gap-2 flex-wrap">
+                                {/* Miniaturas de documentos */}
+                                {documents.slice(0, 3).map((doc, idx) => (
+                                  <div
+                                    key={`doc-${idx}`}
+                                    className="relative group cursor-pointer"
+                                    onClick={() => setSelectedDocument(doc)}
+                                  >
+                                    {doc.type === 'pdf' ? (
+                                      <div className="h-16 w-16 bg-red-100 rounded border border-red-300 flex items-center justify-center hover:border-red-500 transition-all">
+                                        <FileText className="w-8 h-8 text-red-600" />
+                                      </div>
+                                    ) : (
+                                      <img
+                                        src={doc.url}
+                                        alt={doc.title}
+                                        className="h-16 w-16 object-cover rounded border border-gray-300 hover:border-cyan-500 transition-all"
+                                        onError={(e) => {
+                                          const img = e.target as HTMLImageElement;
+                                          img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="12"%3ENo disponible%3C/text%3E%3C/svg%3E';
+                                        }}
+                                      />
+                                    )}
+                                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 rounded transition-all flex items-center justify-center">
+                                      {doc.type === 'pdf' ? (
+                                        <FileText className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-all" />
+                                      ) : (
+                                        <ImageIcon className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-all" />
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+
+                                {/* Miniaturas de fotos */}
+                                {photos.slice(0, 3 - documents.length).map((photo, idx) => (
+                                  <div
+                                    key={`photo-${idx}`}
+                                    className="relative group cursor-pointer"
+                                    onClick={() => setSelectedDocument({
+                                      url: photo.url,
+                                      title: photo.alt || `Foto ${idx + 1}`,
+                                      type: 'image'
+                                    })}
+                                  >
+                                    <img
+                                      src={photo.url}
+                                      alt={photo.alt}
+                                      className="h-16 w-16 object-cover rounded border border-gray-300 hover:border-cyan-500 transition-all"
+                                      onError={(e) => {
+                                        const img = e.target as HTMLImageElement;
+                                        img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="12"%3ENo disponible%3C/text%3E%3C/svg%3E';
+                                      }}
+                                    />
+                                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 rounded transition-all flex items-center justify-center">
+                                      <ImageIcon className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-all" />
+                                    </div>
+                                  </div>
+                                ))}
+
+                                {/* Indicador de más elementos */}
+                                {(documents.length + photos.length) > 3 && (
+                                  <div className="h-16 w-16 rounded border border-gray-300 bg-gray-100 flex items-center justify-center text-xs font-semibold text-gray-700">
+                                    +{(documents.length + photos.length) - 3}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Círculo final - Inicio de la historia del paciente */}
+              <div className="relative pt-8 pb-4">
+                <div className="absolute left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-full flex items-center justify-center shadow-lg border-4 border-white z-10">
+                  <Activity className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
+      {/* Modal de vista previa de documentos */}
+      {selectedDocument && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg shadow-2xl w-[95vw] h-[95vh] sm:w-[90vw] sm:h-[90vh] lg:w-[85vw] lg:h-[85vh] flex flex-col">
+            {/* Header del modal */}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-800 truncate pr-4">{selectedDocument.title}</h3>
+              <button
+                onClick={() => setSelectedDocument(null)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                aria-label="Cerrar"
+              >
+                <X className="w-6 h-6 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Contenido del modal */}
+            <div className="flex-1 overflow-auto p-4 sm:p-6 flex items-center justify-center bg-gray-50">
+              {selectedDocument.type === 'pdf' ? (
+                <div className="w-full h-full flex items-center justify-center">
+                  <iframe
+                    src={selectedDocument.url}
+                    className="w-full h-full rounded border border-gray-200"
+                    title={selectedDocument.title}
+                  />
+                </div>
+              ) : (
+                <img
+                  src={selectedDocument.url}
+                  alt={selectedDocument.title}
+                  className="max-w-full max-h-full object-contain rounded border border-gray-200"
+                />
+              )}
+            </div>
+
+            {/* Footer del modal */}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+              <p className="text-xs sm:text-sm text-gray-600">
+                {selectedDocument.type === 'pdf' ? 'Documento PDF' : 'Imagen'}
+              </p>
+              <a
+                href={selectedDocument.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 sm:px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors text-xs sm:text-sm font-medium flex-shrink-0"
+              >
+                Descargar
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
