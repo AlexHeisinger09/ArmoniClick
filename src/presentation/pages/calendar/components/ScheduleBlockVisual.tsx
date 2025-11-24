@@ -135,11 +135,11 @@ export const ScheduleBlockVisual: React.FC<ScheduleBlockVisualProps> = ({
 
           // Calcular posición relativa a las 09:00
           const minutesFromStart = Math.max(0, startTotal - START_OF_CALENDAR);
-          const topPercent = (minutesFromStart / CALENDAR_WINDOW) * 100;
+          const topPercent = parseFloat(((minutesFromStart / CALENDAR_WINDOW) * 100).toFixed(4));
 
           // Calcular altura
           const durationMinutes = Math.max(0, endTotal - startTotal);
-          const heightPercent = (durationMinutes / CALENDAR_WINDOW) * 100;
+          const heightPercent = parseFloat(((durationMinutes / CALENDAR_WINDOW) * 100).toFixed(4));
 
           // Solo renderizar si hay duración visible
           if (heightPercent <= 0) {
