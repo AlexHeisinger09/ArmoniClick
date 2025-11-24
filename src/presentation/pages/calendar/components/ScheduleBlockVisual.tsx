@@ -83,7 +83,7 @@ export const ScheduleBlockVisual: React.FC<ScheduleBlockVisualProps> = ({
           return (
             <div
               key={`${block.id}-${index}`}
-              className="absolute inset-x-0 bg-slate-200 border-l-4 border-slate-300 pointer-events-none z-20 group"
+              className="absolute inset-x-0 bg-slate-200 bg-opacity-60 border-l-4 border-slate-300 pointer-events-none z-20 group"
               style={{
                 top: `${topPercent}%`,
                 height: `${heightPercent}%`,
@@ -120,7 +120,7 @@ export const ScheduleBlockVisual: React.FC<ScheduleBlockVisualProps> = ({
           return (
             <div
               key={`${block.id}-${index}`}
-              className="absolute inset-x-0 bg-slate-200 border-l-2 border-slate-300 pointer-events-none z-20"
+              className="absolute inset-x-0 bg-slate-200 bg-opacity-60 border-l-2 border-slate-300 pointer-events-none z-20"
               style={{
                 top: `${topPercent}%`,
                 height: `${heightPercent}%`,
