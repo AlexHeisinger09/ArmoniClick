@@ -64,6 +64,16 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
     );
   }, [patients, searchTerm]);
 
+  // Debug: Log schedule blocks when modal opens
+  useEffect(() => {
+    if (isOpen && scheduleBlocks && scheduleBlocks.length > 0) {
+      console.log('📅 NewAppointmentModal - Schedule blocks received:', {
+        count: scheduleBlocks.length,
+        blocks: scheduleBlocks
+      });
+    }
+  }, [isOpen, scheduleBlocks]);
+
   // Reset estados cuando el modal se abre (pero no si es edición)
   useEffect(() => {
     if (isOpen) {
@@ -427,11 +437,13 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
                   // Debug log
                   if (newAppointment.date) {
                     console.log(`🔍 Time slot ${time}:`, {
+                      date: newAppointment.date.toISOString().split('T')[0],
                       duration: newAppointment.duration || 30,
                       available,
                       isOverlap,
-                      blockedBySchedule: scheduleBlocks && scheduleBlocks.length > 0,
-                      appointmentsData: appointments
+                      scheduleBlocksCount: scheduleBlocks?.length || 0,
+                      scheduleBlocks: scheduleBlocks || [],
+                      hasConflictWithAppointment: !available && !isOverlap
                     });
                   }
 
