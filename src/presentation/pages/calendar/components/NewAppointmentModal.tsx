@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, User, UserPlus, Search, Clock, FileText, Mail, Phone, ChevronDown, Loader } from 'lucide-react';
+import { X, User, UserPlus, Search, Clock, FileText, Mail, Phone, ChevronDown, Loader, AlertCircle } from 'lucide-react';
 import { NewAppointmentForm, AppointmentsData } from '../types/calendar';
 import { getTimeSlotsForDuration } from '../constants/calendar';
 import { isTimeSlotAvailable, hasOverlap } from '../utils/calendar';
 import { usePatients } from '@/presentation/hooks/patients/usePatients';
+import { ScheduleBlock } from '@/core/entities/ScheduleBlock';
 
 interface Patient {
   id: number;
@@ -23,6 +24,7 @@ interface NewAppointmentModalProps {
   onSubmit: () => void;
   isCreating?: boolean;
   isEditing?: boolean;
+  scheduleBlocks?: ScheduleBlock[];
 }
 
 export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
@@ -33,7 +35,8 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   onChange,
   onSubmit,
   isCreating = false,
-  isEditing = false
+  isEditing = false,
+  scheduleBlocks = []
 }) => {
   // Estados locales para el modal
   const [patientType, setPatientType] = useState<'registered' | 'guest'>('registered');
@@ -417,7 +420,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {getTimeSlotsForDuration(newAppointment.duration || 30).map(time => {
                   const available = newAppointment.date ?
-                    isTimeSlotAvailable(appointments, newAppointment.date, time, newAppointment.duration || 30) : false;
+                    isTimeSlotAvailable(appointments, newAppointment.date, time, newAppointment.duration || 30, scheduleBlocks) : false;
                   const isOverlap = newAppointment.date ?
                     hasOverlap(appointments, newAppointment.date, time, newAppointment.duration || 30) : false;
 
@@ -427,6 +430,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
                       duration: newAppointment.duration || 30,
                       available,
                       isOverlap,
+                      blockedBySchedule: scheduleBlocks && scheduleBlocks.length > 0,
                       appointmentsData: appointments
                     });
                   }

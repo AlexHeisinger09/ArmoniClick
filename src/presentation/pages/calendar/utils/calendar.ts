@@ -1,6 +1,7 @@
 // src/presentation/pages/calendar/utils/calendar.ts - TIPOS CORREGIDOS
 import { CalendarDay, AppointmentsCalendarData, CalendarAppointment } from '../types/calendar';
 import { monthNames } from '../constants/calendar';
+import { ScheduleBlock } from '@/core/entities/ScheduleBlock';
 
 export const formatDateKey = (date: Date): string => {
   const year = date.getFullYear();
@@ -75,7 +76,8 @@ export const isTimeSlotAvailable = (
   appointments: AppointmentsCalendarData,
   date: Date,
   time: string,
-  duration: number = 60
+  duration: number = 60,
+  scheduleBlocks?: ScheduleBlock[]
 ): boolean => {
   const dateKey = formatDateKey(date);
   const dayAppointments = appointments[dateKey] || [];
@@ -85,7 +87,7 @@ export const isTimeSlotAvailable = (
   const startMinutes = hours * 60 + minutes;
   const endMinutes = startMinutes + duration;
 
-  // Verificar si hay conflictos con otras citas
+  // Verificar conflictos con citas
   const hasConflict = dayAppointments.some((appointment: CalendarAppointment) => {
     // Las citas canceladas NO bloquean el slot - se pueden reagendar
     if (appointment.status === 'cancelled') {
@@ -100,7 +102,7 @@ export const isTimeSlotAvailable = (
     const conflicts = startMinutes < appEnd && endMinutes > appStart;
 
     if (conflicts) {
-      console.log(`⚠️ CONFLICTO DETECTADO:`, {
+      console.log(`⚠️ CONFLICTO CON CITA DETECTADO:`, {
         newAppointment: {
           time,
           startMinutes,
@@ -122,7 +124,104 @@ export const isTimeSlotAvailable = (
     return conflicts;
   });
 
-  return !hasConflict;
+  if (hasConflict) return false;
+
+  // Verificar conflictos con bloques de agenda
+  if (scheduleBlocks && scheduleBlocks.length > 0) {
+    const isBlocked = isTimeSlotBlockedByScheduleBlock(scheduleBlocks, date, time, duration);
+    if (isBlocked) {
+      console.log(`🚫 HORARIO BLOQUEADO:`, {
+        date: dateKey,
+        time,
+        duration,
+        reason: 'Schedule block conflict'
+      });
+      return false;
+    }
+  }
+
+  return true;
+};
+
+export const isTimeSlotBlockedByScheduleBlock = (
+  blocks: ScheduleBlock[],
+  date: Date,
+  time: string,
+  duration: number = 60
+): boolean => {
+  if (!blocks || blocks.length === 0) return false;
+
+  // Convertir tiempo a minutos desde las 00:00
+  const [hours, minutes] = time.split(':').map(Number);
+  const startMinutes = hours * 60 + minutes;
+  const endMinutes = startMinutes + duration;
+
+  const dateKey = formatDateKey(date);
+
+  // Obtener el día de la semana (0 = lunes, 6 = domingo)
+  const dayOfWeekMap = {
+    0: 'monday',
+    1: 'tuesday',
+    2: 'wednesday',
+    3: 'thursday',
+    4: 'friday',
+    5: 'saturday',
+    6: 'sunday'
+  };
+
+  // JavaScript getDay() devuelve 0 = domingo, necesitamos ajustar
+  const jsDay = date.getDay();
+  const adjustedDay = jsDay === 0 ? 6 : jsDay - 1;
+  const currentDayName = dayOfWeekMap[adjustedDay as keyof typeof dayOfWeekMap];
+
+  // Verificar cada bloque
+  for (const block of blocks) {
+    // Para bloques single_date, debe coincidir exactamente la fecha
+    if (block.blockType === 'single_date') {
+      const blockDateKey = formatDateKey(new Date(block.blockDate));
+      if (blockDateKey !== dateKey) continue;
+    }
+    // Para bloques recurrentes, verificar patrón y fecha
+    else if (block.blockType === 'recurring') {
+      // Si la fecha actual es anterior a la fecha de inicio del bloque, no aplica
+      if (new Date(dateKey) < new Date(formatDateKey(new Date(block.blockDate)))) {
+        continue;
+      }
+
+      // Si hay una fecha de fin y la actual es después, no aplica
+      if (block.recurringEndDate && new Date(dateKey) > new Date(formatDateKey(new Date(block.recurringEndDate)))) {
+        continue;
+      }
+
+      // Validar el patrón de recurrencia
+      if (block.recurringPattern === 'daily') {
+        // Todos los días
+      } else if (block.recurringPattern === 'weekly') {
+        // Solo los mismos días de la semana
+        const blockDay = new Date(block.blockDate).getDay();
+        const blockAdjustedDay = blockDay === 0 ? 6 : blockDay - 1;
+        const blockDayName = dayOfWeekMap[blockAdjustedDay as keyof typeof dayOfWeekMap];
+        if (blockDayName !== currentDayName) continue;
+      } else if (block.recurringPattern && dayOfWeekMap[adjustedDay as keyof typeof dayOfWeekMap] !== block.recurringPattern) {
+        // Patrón específico de día (lunes, martes, etc)
+        continue;
+      }
+    }
+
+    // Validar rango de horario
+    const [blockHours, blockMinutes] = block.startTime.split(':').map(Number);
+    const [blockEndHours, blockEndMinutes] = block.endTime.split(':').map(Number);
+
+    const blockStart = blockHours * 60 + blockMinutes;
+    const blockEnd = blockEndHours * 60 + blockEndMinutes;
+
+    // Verificar si hay solapamiento entre el horario solicitado y el bloqueo
+    if (startMinutes < blockEnd && endMinutes > blockStart) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 export const hasOverlap = (

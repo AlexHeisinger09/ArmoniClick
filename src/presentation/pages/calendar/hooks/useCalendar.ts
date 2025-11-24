@@ -9,6 +9,7 @@ import {
 } from '../types/calendar';
 import { formatDateKey } from '../utils/calendar';
 import { useCalendarAppointments } from '@/presentation/hooks/appointments/useCalendarAppointments';
+import { useScheduleBlocksForCalendar } from './useScheduleBlocksForCalendar';
 import { useNotification } from '@/presentation/hooks/notifications/useNotification';
 import { useNavigate } from 'react-router-dom';
 import { apiFetcher } from '@/config/adapters/api.adapter';
@@ -57,6 +58,9 @@ export const useCalendar = () => {
     updateAppointmentStatus,
     refetch
   } = useCalendarAppointments(currentDate, viewMode);
+
+  // Hook para obtener bloques de agenda
+  const { blocks: scheduleBlocks } = useScheduleBlocksForCalendar();
 
   // Debug logs
   useEffect(() => {
@@ -382,12 +386,13 @@ export const useCalendar = () => {
     selectedTimeSlot,
     viewMode,
     newAppointment,
-    
+    scheduleBlocks,
+
     // Estados del menú contextual
     showContextMenu,
     contextMenuPosition,
     selectedAppointment,
-    
+
     // Estados del backend
     isLoading,
     error,
@@ -408,7 +413,7 @@ export const useCalendar = () => {
     handleDateSelect,
     closeModal,
     closeNewAppointmentModal,
-    
+
     // Acciones del menú contextual
     closeContextMenu,
     handleUpdateStatus,

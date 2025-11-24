@@ -22,16 +22,17 @@ const Calendar: React.FC = () => {
     appointments,
     viewMode,
     newAppointment,
+    scheduleBlocks,
     isLoading,
     error,
     isCreating,
     isUpdatingStatus,
-    
+
     // Estados del menú contextual
     showContextMenu,
     contextMenuPosition,
     selectedAppointment,
-    
+
     // Acciones
     setViewMode,
     setSelectedDate,
@@ -46,7 +47,7 @@ const Calendar: React.FC = () => {
     handleDateSelect,
     closeModal,
     closeNewAppointmentModal,
-    
+
     // Acciones del menú contextual
     closeContextMenu,
     handleUpdateStatus,
@@ -203,6 +204,7 @@ const Calendar: React.FC = () => {
           onSubmit={handleCreateAppointment}
           isCreating={isCreating}
           isEditing={!!(window as any).__editingAppointmentId}
+          scheduleBlocks={scheduleBlocks}
         />
 
         {/* Menú contextual */}
