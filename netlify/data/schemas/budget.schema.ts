@@ -8,9 +8,7 @@ import {
   integer,
   decimal,
   index,
-  uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm"; // ✅ MOVER IMPORT AQUÍ
 import { usersTable } from "./user.schema";
 import { patientsTable } from "./patient.schema";
 
@@ -30,18 +28,13 @@ export const budgetsTable = pgTable("budgets", {
   created_at: timestamp("created_at").notNull().defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  // Un paciente solo puede tener un presupuesto activo
-  patientActiveUniqueIdx: uniqueIndex('budgets_patient_active_unique')
-    .on(table.patient_id, table.status)
-    .where(sql`status = 'activo'`), // ✅ CAMBIO: Solo para presupuestos activos
-  
   // Índices para búsquedas
   userIdx: index('idx_budgets_user')
     .on(table.user_id),
-    
+
   statusIdx: index('idx_budgets_status')
     .on(table.status),
-    
+
   createdIdx: index('idx_budgets_created')
     .on(table.created_at),
 }));

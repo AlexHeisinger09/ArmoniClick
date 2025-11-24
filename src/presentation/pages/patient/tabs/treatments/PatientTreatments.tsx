@@ -14,7 +14,7 @@ import {
 
 // Componentes
 import { TreatmentsList } from './components/TreatmentsList';
-import { BudgetSidebar } from './components/BudgetSidebar';
+import { BudgetCarousel } from './components/BudgetCarousel';
 import { NewTreatmentModal } from './modals/NewTreatmentModal';
 import { EditTreatmentModal } from './modals/EditTreatmentModal';
 import { TreatmentDetailModal } from './modals/TreatmentDetailModal';
@@ -308,13 +308,12 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
 
   return (
     <div className="h-full">
-      {/* Layout responsivo: Sidebar + Main Content */}
+      {/* Layout responsivo: Carrusel + Main Content */}
       <div className="flex flex-col lg:flex-row h-full gap-4 lg:gap-6 treatments-layout">
-        {/* Sidebar del presupuesto */}
-        <div className="w-full lg:w-80 flex-shrink-0 budget-sidebar">
-          <BudgetSidebar
+        {/* Carrusel de presupuestos activos */}
+        <div className="w-full lg:w-96 flex-shrink-0 budget-carousel">
+          <BudgetCarousel
             budgets={budgets}
-            activeBudget={activeBudget}
             selectedBudgetId={selectedBudgetId}
             onBudgetChange={handleBudgetChange}
             loading={isLoadingBudgets}

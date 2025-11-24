@@ -349,12 +349,6 @@ export class BudgetService {
             throw new Error('No se puede activar un presupuesto sin tratamientos');
         }
 
-        // ✅ VERIFICAR QUE NO HAYA OTRO PRESUPUESTO ACTIVO
-        const activeBudget = await this.findActiveByPatientId(budget.patient_id, userId);
-        if (activeBudget && activeBudget.id !== budgetId) {
-            throw new Error(`Ya existe un presupuesto activo para este paciente. Debe completar o desactivar el presupuesto #${activeBudget.id} primero.`);
-        }
-
         // ✅ CREAR TRATAMIENTOS AUTOMÁTICAMENTE
         console.log('📝 Creando tratamientos automáticamente...');
 

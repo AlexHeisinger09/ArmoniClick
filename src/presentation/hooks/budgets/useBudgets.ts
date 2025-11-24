@@ -239,6 +239,21 @@ export const useMultipleBudgetOperations = (patientId: number) => {
   };
 };
 
+// ✅ Hook para obtener TODOS los presupuestos ACTIVOS de un paciente (plural)
+export const useActiveBudgets = (patientId: number) => {
+  const { budgets, isLoadingAll, errorAll } = useAllBudgets(patientId);
+
+  // Filtrar solo presupuestos activos
+  const activeBudgets = budgets.filter(budget => budget.status === 'activo');
+
+  return {
+    activeBudgets,
+    activeBudgetsCount: activeBudgets.length,
+    isLoading: isLoadingAll,
+    error: errorAll,
+  };
+};
+
 // ✅ Hook legacy para compatibilidad con el código existente
 export const useBudgetOperations = (patientId: number) => {
   const budget = useBudget(patientId);
@@ -249,7 +264,7 @@ export const useBudgetOperations = (patientId: number) => {
   return {
     // Datos del presupuesto (compatibilidad)
     ...budget,
-    
+
     // Operaciones principales
     saveBudget: saveBudget.saveBudget,
     updateBudgetStatus: async ({ budgetId, statusData }: { budgetId: number; statusData: { status: string } }) => {
@@ -260,12 +275,12 @@ export const useBudgetOperations = (patientId: number) => {
       throw new Error('Estado no soportado');
     },
     deleteBudget: (budgetId: number) => deleteBudget.deleteBudget(budgetId),
-    
+
     // Estados de carga
     isLoadingSave: saveBudget.isLoadingSave,
     isLoadingUpdateStatus: activateBudget.isLoadingActivate,
     isLoadingDelete: deleteBudget.isLoadingDelete,
-    
+
     // Mutaciones
     saveBudgetMutation: saveBudget.saveBudgetMutation,
     updateStatusMutation: activateBudget.activateBudgetMutation,
