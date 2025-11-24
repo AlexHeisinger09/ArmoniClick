@@ -1,6 +1,6 @@
 // src/presentation/pages/configuration/tabs/ScheduleBlocksTab.tsx
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Clock, AlertCircle, Loader, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Clock, AlertCircle, Loader, X, Copy, Check, Share2 } from 'lucide-react';
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
 import { useScheduleBlocks } from '@/presentation/hooks/schedule-blocks/useScheduleBlocks';
 import { ConfirmationModal } from '@/presentation/components/ui/ConfirmationModal';
@@ -42,6 +42,8 @@ const ScheduleBlocksTab: React.FC<ScheduleBlocksTabProps> = ({ showMessage }) =>
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBlock, setEditingBlock] = useState<any | null>(null);
   const [filterType, setFilterType] = useState<'all' | 'single_date' | 'recurring'>('all');
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [availableDurations, setAvailableDurations] = useState<number[]>([30, 60]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -163,6 +165,24 @@ const ScheduleBlocksTab: React.FC<ScheduleBlocksTabProps> = ({ showMessage }) =>
     }
   };
 
+  // Generar link de reserva pública
+  const generatePublicBookingLink = (): string => {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/book-appointment/${doctorId}`;
+  };
+
+  const handleCopyLink = async () => {
+    const link = generatePublicBookingLink();
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopiedLink(true);
+      showMessage('Link copiado al portapapeles', 'success');
+      setTimeout(() => setCopiedLink(false), 3000);
+    } catch (error) {
+      showMessage('Error al copiar el link', 'error');
+    }
+  };
+
   // Filtrar bloques
   const filteredBlocks = blocks.filter(block =>
     filterType === 'all' || block.blockType === filterType
@@ -178,6 +198,83 @@ const ScheduleBlocksTab: React.FC<ScheduleBlocksTabProps> = ({ showMessage }) =>
 
   return (
     <div className="space-y-6">
+      {/* Public Booking Link Section */}
+      <div className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-xl border border-cyan-200 p-6">
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0">
+            <Share2 className="w-6 h-6 text-cyan-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-semibold text-slate-800 mb-2">
+              Link de Reserva Pública
+            </h3>
+            <p className="text-sm text-slate-600 mb-4">
+              Comparte este link con tus pacientes para que puedan agendar citas sin iniciar sesión.
+            </p>
+
+            {/* Link Display */}
+            <div className="flex gap-2 mb-4">
+              <div className="flex-1 bg-white border border-slate-300 rounded-lg px-4 py-2.5 flex items-center gap-2">
+                <input
+                  type="text"
+                  value={generatePublicBookingLink()}
+                  readOnly
+                  className="flex-1 bg-transparent outline-none text-sm text-slate-700 font-mono"
+                />
+              </div>
+              <button
+                onClick={handleCopyLink}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                  copiedLink
+                    ? 'bg-green-500 text-white'
+                    : 'bg-cyan-500 hover:bg-cyan-600 text-white'
+                }`}
+              >
+                {copiedLink ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Copiado
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    Copiar
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Available Durations Configuration */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-3">
+                Duraciones disponibles para reserva:
+              </label>
+              <div className="flex flex-wrap gap-3">
+                {[30, 60, 90, 120].map((duration) => (
+                  <button
+                    key={duration}
+                    onClick={() => {
+                      setAvailableDurations(prev =>
+                        prev.includes(duration)
+                          ? prev.filter(d => d !== duration)
+                          : [...prev, duration].sort((a, b) => a - b)
+                      );
+                    }}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      availableDurations.includes(duration)
+                        ? 'bg-cyan-500 text-white shadow-md'
+                        : 'bg-white border border-slate-300 text-slate-700 hover:border-cyan-400'
+                    }`}
+                  >
+                    {duration} min
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>

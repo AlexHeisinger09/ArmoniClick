@@ -113,6 +113,19 @@ schedule = "30 13 * * *"  # 14:30 CL (18:30 UTC, ajustar en verano a 17:30)
   to = "/.netlify/functions/budgets"
   status = 200
 
+# PUBLIC BOOKING ROUTES (public appointment booking for patients)
+[[redirects]]
+  from = "/public-booking-info/*"
+  to = "/.netlify/functions/public-booking/public-booking-info"
+  status = 200
+  methods = ["GET", "OPTIONS"]
+
+[[redirects]]
+  from = "/public-booking/*"
+  to = "/.netlify/functions/public-booking/public-booking-create"
+  status = 200
+  methods = ["POST", "OPTIONS"]
+
 # SPA fallback
 [[redirects]]
   from = "/*"

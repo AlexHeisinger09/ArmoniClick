@@ -17,6 +17,7 @@ import DocumentsPage from "../pages/documents/DocumentsPage";
 // ✅ NUEVAS IMPORTACIONES para confirmación/cancelación de citas
 import  ConfirmAppointment  from "../pages/appointment/ConfirmAppointment";
 import  CancelAppointment  from "../pages/appointment/CancelAppointment";
+import { PublicAppointmentBooking } from "../pages/public/PublicAppointmentBooking";
 
 export const router = createBrowserRouter([
   // Ruta raíz - Redirige al login
@@ -38,8 +39,12 @@ export const router = createBrowserRouter([
     element: <ConfirmAppointment />,
   },
   {
-    path: "/cancel-appointment/:token", 
+    path: "/cancel-appointment/:token",
     element: <CancelAppointment />,
+  },
+  {
+    path: "/book-appointment/:doctorId",
+    element: <PublicAppointmentBooking />,
   },
 
   // Rutas de autenticación con prefijo /auth y AuthLayout
