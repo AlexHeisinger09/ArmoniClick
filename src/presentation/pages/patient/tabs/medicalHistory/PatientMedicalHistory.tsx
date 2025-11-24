@@ -17,6 +17,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Patient } from "@/core/use-cases/patients";
 import { useAuditHistory, AuditLog } from "@/presentation/hooks/audit-history/useAuditHistory";
 import { useDocuments } from "@/presentation/hooks/documents/useDocuments";
+import { useTreatment } from "@/presentation/hooks/treatments/useTreatments";
 import { AuditHistoryFilters, FilterState } from './components/AuditHistoryFilters';
 import { ExportHistoryButton } from './components/ExportHistoryButton';
 
@@ -31,8 +32,7 @@ interface DocumentPreview {
 }
 
 interface TreatmentDetails {
-  log: AuditLog;
-  serviceName: string;
+  treatmentId: number;
 }
 
 const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }) => {
@@ -52,6 +52,12 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
 
   // Hook de documentos para acceder a invalidateQueries
   const { queryDocuments } = useDocuments(patient.id);
+
+  // Hook para obtener detalles del tratamiento cuando se selecciona uno
+  const { queryTreatment } = useTreatment(
+    selectedTreatment?.treatmentId || 0,
+    !!selectedTreatment?.treatmentId
+  );
 
   // Efecto para invalidar el caché de auditoría cuando los documentos cambian
   useEffect(() => {
@@ -427,8 +433,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                             onClick={() => {
                               if (normalizeEntityType(log.entity_type) === 'tratamiento') {
                                 setSelectedTreatment({
-                                  log,
-                                  serviceName: log.new_values?.nombre_servicio || `Tratamiento #${log.entity_id}`
+                                  treatmentId: log.entity_id
                                 });
                               }
                             }}
@@ -641,8 +646,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                           onClick={() => {
                             if (normalizeEntityType(log.entity_type) === 'tratamiento') {
                               setSelectedTreatment({
-                                log,
-                                serviceName: log.new_values?.nombre_servicio || `Tratamiento #${log.entity_id}`
+                                treatmentId: log.entity_id
                               });
                             }
                           }}
@@ -868,15 +872,21 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
         </div>
       )}
 
-      {/* Modal de detalles del tratamiento - Mismo estilo que en Treatments */}
+      {/* Modal de detalles del tratamiento - Obtiene datos del endpoint */}
       {selectedTreatment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
           <div className="bg-white rounded-lg shadow-2xl w-[95vw] sm:w-[90vw] lg:w-[75vw] max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden">
-            {/* Header azul - Mismo estilo que en Treatments */}
+            {/* Header azul */}
             <div className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white p-4 sm:p-6 flex items-center justify-between flex-shrink-0">
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold">{selectedTreatment.serviceName}</h2>
-                <p className="text-xs sm:text-sm text-cyan-100 mt-1">Evolución del {formatDate(selectedTreatment.log.created_at)} a las {formatTime(selectedTreatment.log.created_at)}</p>
+                <h2 className="text-xl sm:text-2xl font-bold">
+                  {queryTreatment.isLoading ? 'Cargando...' : queryTreatment.data?.treatment?.nombre_servicio || 'Tratamiento'}
+                </h2>
+                {queryTreatment.data?.treatment && (
+                  <p className="text-xs sm:text-sm text-cyan-100 mt-1">
+                    {formatDate(queryTreatment.data.treatment.fecha_control)} a las {formatTime(queryTreatment.data.treatment.fecha_control)}
+                  </p>
+                )}
               </div>
               <button
                 onClick={() => setSelectedTreatment(null)}
@@ -889,145 +899,130 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
 
             {/* Contenido del modal con scroll */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-              {/* Doctor */}
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Realizado por</h3>
-                <p className="text-sm text-gray-900">{selectedTreatment.log.doctor_name || 'Doctor desconocido'}</p>
-              </div>
-
-              {/* Piezas */}
-              {selectedTreatment.log.new_values?.piezas && (
-                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                  <h3 className="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 bg-green-600 text-white rounded-full flex items-center justify-center text-xs">🦷</span>
-                    Piezas/Zona
-                  </h3>
-                  <p className="text-sm text-green-900">
-                    {Array.isArray(selectedTreatment.log.new_values.piezas)
-                      ? selectedTreatment.log.new_values.piezas.join(', ')
-                      : typeof selectedTreatment.log.new_values.piezas === 'string'
-                      ? selectedTreatment.log.new_values.piezas
-                      : 'N/A'}
-                  </p>
+              {queryTreatment.isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader className="w-6 h-6 text-cyan-500 animate-spin" />
                 </div>
-              )}
+              ) : queryTreatment.error ? (
+                <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                  <p className="text-sm text-red-700">Error al cargar los detalles del tratamiento</p>
+                </div>
+              ) : queryTreatment.data?.treatment ? (
+                <>
+                  {/* Servicio */}
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2">Servicio</h3>
+                    <p className="text-sm text-gray-900">{queryTreatment.data.treatment.nombre_servicio}</p>
+                  </div>
 
-              {/* Productos */}
-              {selectedTreatment.log.new_values?.productos && (
-                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                  <h3 className="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 bg-green-600 text-white rounded-full flex items-center justify-center text-xs">💊</span>
-                    Producto
-                  </h3>
-                  <div className="space-y-3">
-                    {(Array.isArray(selectedTreatment.log.new_values.productos)
-                      ? selectedTreatment.log.new_values.productos
-                      : typeof selectedTreatment.log.new_values.productos === 'string'
-                      ? selectedTreatment.log.new_values.productos.split(',').map((p: string) => p.trim())
-                      : []
-                    ).map((producto: string, idx: number) => {
-                      let productoData = { nombre: producto, lote: '', fecha_vencimiento: '', dilusion: '' };
-                      try {
-                        if (typeof producto === 'string' && producto.includes('{')) {
-                          productoData = JSON.parse(producto);
-                        } else if (typeof producto === 'object') {
-                          productoData = producto as any;
-                        }
-                      } catch (e) {
-                        // Mantener el formato original
-                      }
-
-                      return (
-                        <div key={idx} className="bg-white rounded p-3 border border-green-100">
-                          <p className="text-sm font-medium text-gray-900 mb-2">
-                            {typeof productoData === 'object' && 'nombre' in productoData
-                              ? productoData.nombre
-                              : producto}
-                          </p>
-                          <div className="grid grid-cols-2 gap-3 text-xs">
-                            {typeof productoData === 'object' && 'lote' in productoData && productoData.lote && (
-                              <div>
-                                <span className="text-gray-600">Lote:</span>
-                                <p className="text-gray-900 font-medium">{productoData.lote}</p>
-                              </div>
-                            )}
-                            {typeof productoData === 'object' && 'fecha_vencimiento' in productoData && productoData.fecha_vencimiento && (
-                              <div>
-                                <span className="text-gray-600">Vencimiento:</span>
-                                <p className="text-gray-900 font-medium">{productoData.fecha_vencimiento}</p>
-                              </div>
-                            )}
-                            {typeof productoData === 'object' && 'dilusion' in productoData && productoData.dilusion && (
-                              <div className="col-span-2">
-                                <span className="text-gray-600">Dilución:</span>
-                                <p className="text-gray-900 font-medium">{productoData.dilusion}</p>
-                              </div>
-                            )}
-                          </div>
+                  {/* Producto */}
+                  {queryTreatment.data.treatment.producto && (
+                    <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                      <h3 className="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">
+                        <span className="w-5 h-5 bg-green-600 text-white rounded-full flex items-center justify-center text-xs">💊</span>
+                        Producto
+                      </h3>
+                      <div className="bg-white rounded p-3 border border-green-100 space-y-2">
+                        <p className="text-sm font-medium text-gray-900">{queryTreatment.data.treatment.producto}</p>
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          {queryTreatment.data.treatment.lote_producto && (
+                            <div>
+                              <span className="text-gray-600">Lote:</span>
+                              <p className="text-gray-900 font-medium">{queryTreatment.data.treatment.lote_producto}</p>
+                            </div>
+                          )}
+                          {queryTreatment.data.treatment.fecha_venc_producto && (
+                            <div>
+                              <span className="text-gray-600">Vencimiento:</span>
+                              <p className="text-gray-900 font-medium">{queryTreatment.data.treatment.fecha_venc_producto}</p>
+                            </div>
+                          )}
+                          {queryTreatment.data.treatment.dilucion && (
+                            <div className="col-span-2">
+                              <span className="text-gray-600">Dilución:</span>
+                              <p className="text-gray-900 font-medium">{queryTreatment.data.treatment.dilucion}</p>
+                            </div>
+                          )}
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Notas */}
-              {selectedTreatment.log.notes && (
-                <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
-                  <h3 className="text-sm font-semibold text-amber-700 mb-2">Notas</h3>
-                  <p className="text-sm text-amber-900">{selectedTreatment.log.notes}</p>
-                </div>
-              )}
-
-              {/* Fotos */}
-              {getPhotosFromLog(selectedTreatment.log).length > 0 && (
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs">📸</span>
-                    Fotografías
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {getPhotosFromLog(selectedTreatment.log).map((photo, idx) => (
-                      <div
-                        key={idx}
-                        className="rounded-lg overflow-hidden border border-gray-300 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                        onClick={() => setSelectedDocument({
-                          url: photo.url,
-                          title: photo.alt || `Foto ${idx + 1}`,
-                          type: 'image'
-                        })}
-                      >
-                        <img
-                          src={photo.url}
-                          alt={photo.alt || `Foto ${idx + 1}`}
-                          className="w-full h-24 sm:h-32 object-cover hover:opacity-80 transition-opacity"
-                          onError={(e) => {
-                            const img = e.target as HTMLImageElement;
-                            img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="12"%3ENo disponible%3C/text%3E%3C/svg%3E';
-                          }}
-                        />
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    </div>
+                  )}
 
-              {/* Estado vacío */}
-              {!selectedTreatment.log.new_values?.piezas &&
-                !selectedTreatment.log.new_values?.productos &&
-                !selectedTreatment.log.notes &&
-                getPhotosFromLog(selectedTreatment.log).length === 0 && (
-                <div className="text-center py-8">
-                  <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 text-sm">No hay detalles disponibles</p>
-                </div>
-              )}
+                  {/* Descripción */}
+                  {queryTreatment.data.treatment.descripcion && (
+                    <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                      <h3 className="text-sm font-semibold text-amber-700 mb-2">Descripción</h3>
+                      <p className="text-sm text-amber-900">{queryTreatment.data.treatment.descripcion}</p>
+                    </div>
+                  )}
+
+                  {/* Fotos */}
+                  {(queryTreatment.data.treatment.foto1 || queryTreatment.data.treatment.foto2) && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <span className="w-5 h-5 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs">📸</span>
+                        Fotografías
+                      </h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {queryTreatment.data.treatment.foto1 && (
+                          <div
+                            className="rounded-lg overflow-hidden border border-gray-300 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                            onClick={() => setSelectedDocument({
+                              url: queryTreatment.data.treatment.foto1!,
+                              title: 'Foto 1',
+                              type: 'image'
+                            })}
+                          >
+                            <img
+                              src={queryTreatment.data.treatment.foto1}
+                              alt="Foto 1"
+                              className="w-full h-24 sm:h-32 object-cover hover:opacity-80 transition-opacity"
+                              onError={(e) => {
+                                const img = e.target as HTMLImageElement;
+                                img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="12"%3ENo disponible%3C/text%3E%3C/svg%3E';
+                              }}
+                            />
+                          </div>
+                        )}
+                        {queryTreatment.data.treatment.foto2 && (
+                          <div
+                            className="rounded-lg overflow-hidden border border-gray-300 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                            onClick={() => setSelectedDocument({
+                              url: queryTreatment.data.treatment.foto2!,
+                              title: 'Foto 2',
+                              type: 'image'
+                            })}
+                          >
+                            <img
+                              src={queryTreatment.data.treatment.foto2}
+                              alt="Foto 2"
+                              className="w-full h-24 sm:h-32 object-cover hover:opacity-80 transition-opacity"
+                              onError={(e) => {
+                                const img = e.target as HTMLImageElement;
+                                img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="12"%3ENo disponible%3C/text%3E%3C/svg%3E';
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Estado vacío */}
+                  {!queryTreatment.data.treatment.producto && !queryTreatment.data.treatment.descripcion && !queryTreatment.data.treatment.foto1 && !queryTreatment.data.treatment.foto2 && (
+                    <div className="text-center py-8">
+                      <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500 text-sm">No hay detalles disponibles</p>
+                    </div>
+                  )}
+                </>
+              ) : null}
             </div>
 
             {/* Footer */}
             <div className="flex items-center justify-between p-4 sm:p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
               <p className="text-xs sm:text-sm text-gray-600">
-                Detalles de evolución del tratamiento
+                Detalles del tratamiento
               </p>
               <button
                 onClick={() => setSelectedTreatment(null)}
