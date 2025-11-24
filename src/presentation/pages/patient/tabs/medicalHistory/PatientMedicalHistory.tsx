@@ -2,9 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   FileText,
-  Stethoscope,
   Activity,
-  Calendar,
   DollarSign,
   Clock,
   User,
@@ -12,6 +10,8 @@ import {
   Loader,
   Image as ImageIcon,
   X,
+  Package,
+  Camera,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Patient } from "@/core/use-cases/patients";
@@ -874,165 +874,176 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
 
       {/* Modal de detalles del tratamiento - Obtiene datos del endpoint */}
       {selectedTreatment && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-lg shadow-2xl w-[95vw] sm:w-[85vw] md:w-[60vw] lg:w-[50vw] max-h-[80vh] sm:max-h-[75vh] flex flex-col overflow-hidden">
-            {/* Header azul */}
-            <div className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white p-4 sm:p-6 flex items-center justify-between flex-shrink-0">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold">
-                  {queryTreatment.isLoading ? 'Cargando...' : queryTreatment.data?.treatment?.nombre_servicio || 'Tratamiento'}
-                </h2>
-                {queryTreatment.data?.treatment && (
-                  <p className="text-xs sm:text-sm text-cyan-100 mt-1">
-                    {formatDate(queryTreatment.data.treatment.fecha_control)} a las {formatTime(queryTreatment.data.treatment.fecha_control)}
-                  </p>
-                )}
-              </div>
-              <button
-                onClick={() => setSelectedTreatment(null)}
-                className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors flex-shrink-0"
-                aria-label="Cerrar"
-              >
-                <X className="w-6 h-6 text-white" />
-              </button>
-            </div>
-
-            {/* Contenido del modal con scroll */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-              {queryTreatment.isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader className="w-6 h-6 text-cyan-500 animate-spin" />
-                </div>
-              ) : queryTreatment.error ? (
-                <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-                  <p className="text-sm text-red-700">Error al cargar los detalles del tratamiento</p>
-                </div>
-              ) : queryTreatment.data?.treatment ? (
-                <>
-                  {/* Servicio */}
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-2">Servicio</h3>
-                    <p className="text-sm text-gray-900">{queryTreatment.data.treatment.nombre_servicio}</p>
-                  </div>
-
-                  {/* Producto */}
-                  {queryTreatment.data.treatment.producto && (
-                    <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                      <h3 className="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">
-                        <span className="w-5 h-5 bg-green-600 text-white rounded-full flex items-center justify-center text-xs">💊</span>
-                        Producto
+        <>
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={() => setSelectedTreatment(null)}
+          />
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4">
+              <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md sm:max-w-2xl">
+                <div className="bg-gradient-to-r from-cyan-500 to-blue-500 px-4 sm:px-6 py-3 sm:py-4 rounded-t-xl">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-base sm:text-lg font-semibold text-white">
+                        Detalles del Tratamiento
                       </h3>
-                      <div className="bg-white rounded p-3 border border-green-100 space-y-2">
-                        <p className="text-sm font-medium text-gray-900">{queryTreatment.data.treatment.producto}</p>
-                        <div className="grid grid-cols-2 gap-3 text-xs">
-                          {queryTreatment.data.treatment.lote_producto && (
+                      {queryTreatment.data?.treatment && (
+                        <p className="text-xs sm:text-sm text-cyan-100 mt-1">
+                          {formatDate(queryTreatment.data.treatment.fecha_control)} a las {formatTime(queryTreatment.data.treatment.fecha_control)}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setSelectedTreatment(null)}
+                      className="p-1.5 sm:p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors flex-shrink-0 ml-2"
+                    >
+                      <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="max-h-[60vh] overflow-y-auto p-4 sm:p-6 space-y-4">
+                  {queryTreatment.isLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader className="w-6 h-6 text-cyan-500 animate-spin" />
+                    </div>
+                  ) : queryTreatment.error ? (
+                    <div className="bg-red-50 p-3 rounded-md border border-red-200">
+                      <p className="text-sm text-red-700">Error al cargar los detalles</p>
+                    </div>
+                  ) : queryTreatment.data?.treatment ? (
+                    <>
+                      {/* Servicio */}
+                      <div className="bg-cyan-50 p-3 rounded-md">
+                        <h3 className="text-base font-semibold text-cyan-800 mb-2">{queryTreatment.data.treatment.nombre_servicio}</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <span className="text-gray-600">Fecha del control:</span>
+                            <p className="font-medium">{formatDate(queryTreatment.data.treatment.fecha_control)} a las {formatTime(queryTreatment.data.treatment.hora_control)}</p>
+                          </div>
+                          {queryTreatment.data.treatment.fecha_proximo_control && (
                             <div>
-                              <span className="text-gray-600">Lote:</span>
-                              <p className="text-gray-900 font-medium">{queryTreatment.data.treatment.lote_producto}</p>
-                            </div>
-                          )}
-                          {queryTreatment.data.treatment.fecha_venc_producto && (
-                            <div>
-                              <span className="text-gray-600">Vencimiento:</span>
-                              <p className="text-gray-900 font-medium">{queryTreatment.data.treatment.fecha_venc_producto}</p>
-                            </div>
-                          )}
-                          {queryTreatment.data.treatment.dilucion && (
-                            <div className="col-span-2">
-                              <span className="text-gray-600">Dilución:</span>
-                              <p className="text-gray-900 font-medium">{queryTreatment.data.treatment.dilucion}</p>
+                              <span className="text-gray-600">Próximo control:</span>
+                              <p className="font-medium">
+                                {formatDate(queryTreatment.data.treatment.fecha_proximo_control)}
+                                {queryTreatment.data.treatment.hora_proximo_control && ` a las ${formatTime(queryTreatment.data.treatment.hora_proximo_control)}`}
+                              </p>
                             </div>
                           )}
                         </div>
                       </div>
-                    </div>
-                  )}
 
-                  {/* Descripción */}
-                  {queryTreatment.data.treatment.descripcion && (
-                    <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
-                      <h3 className="text-sm font-semibold text-amber-700 mb-2">Descripción</h3>
-                      <p className="text-sm text-amber-900">{queryTreatment.data.treatment.descripcion}</p>
-                    </div>
-                  )}
-
-                  {/* Fotos */}
-                  {(queryTreatment.data.treatment.foto1 || queryTreatment.data.treatment.foto2) && (
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                        <span className="w-5 h-5 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs">📸</span>
-                        Fotografías
-                      </h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {queryTreatment.data.treatment.foto1 && (
-                          <div
-                            className="rounded-lg overflow-hidden border border-gray-300 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                            onClick={() => setSelectedDocument({
-                              url: queryTreatment.data.treatment.foto1!,
-                              title: 'Foto 1',
-                              type: 'image'
-                            })}
-                          >
-                            <img
-                              src={queryTreatment.data.treatment.foto1}
-                              alt="Foto 1"
-                              className="w-full h-24 sm:h-32 object-cover hover:opacity-80 transition-opacity"
-                              onError={(e) => {
-                                const img = e.target as HTMLImageElement;
-                                img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="12"%3ENo disponible%3C/text%3E%3C/svg%3E';
-                              }}
-                            />
+                      {/* Producto */}
+                      {(queryTreatment.data.treatment.producto || queryTreatment.data.treatment.lote_producto || queryTreatment.data.treatment.dilucion || queryTreatment.data.treatment.fecha_venc_producto) && (
+                        <div className="bg-green-50 p-3 rounded-md">
+                          <h4 className="font-semibold text-green-800 mb-2 flex items-center">
+                            <Package className="w-4 h-4 mr-1" />
+                            Producto
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                            {queryTreatment.data.treatment.producto && (
+                              <div>
+                                <span className="text-gray-600">Producto:</span>
+                                <p className="font-medium">{queryTreatment.data.treatment.producto}</p>
+                              </div>
+                            )}
+                            {queryTreatment.data.treatment.lote_producto && (
+                              <div>
+                                <span className="text-gray-600">Lote:</span>
+                                <p className="font-medium">{queryTreatment.data.treatment.lote_producto}</p>
+                              </div>
+                            )}
+                            {queryTreatment.data.treatment.fecha_venc_producto && (
+                              <div>
+                                <span className="text-gray-600">Vencimiento:</span>
+                                <p className="font-medium text-green-600">{formatDate(queryTreatment.data.treatment.fecha_venc_producto)}</p>
+                              </div>
+                            )}
+                            {queryTreatment.data.treatment.dilucion && (
+                              <div className="md:col-span-2">
+                                <span className="text-gray-600">Dilución:</span>
+                                <p className="font-medium">{queryTreatment.data.treatment.dilucion}</p>
+                              </div>
+                            )}
                           </div>
-                        )}
-                        {queryTreatment.data.treatment.foto2 && (
-                          <div
-                            className="rounded-lg overflow-hidden border border-gray-300 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                            onClick={() => setSelectedDocument({
-                              url: queryTreatment.data.treatment.foto2!,
-                              title: 'Foto 2',
-                              type: 'image'
-                            })}
-                          >
-                            <img
-                              src={queryTreatment.data.treatment.foto2}
-                              alt="Foto 2"
-                              className="w-full h-24 sm:h-32 object-cover hover:opacity-80 transition-opacity"
-                              onError={(e) => {
-                                const img = e.target as HTMLImageElement;
-                                img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="12"%3ENo disponible%3C/text%3E%3C/svg%3E';
-                              }}
-                            />
+                        </div>
+                      )}
+
+                      {/* Fotos */}
+                      {(queryTreatment.data.treatment.foto1 || queryTreatment.data.treatment.foto2) && (
+                        <div className="bg-purple-50 p-3 rounded-md">
+                          <h4 className="font-semibold text-purple-800 mb-2 flex items-center">
+                            <Camera className="w-4 h-4 mr-1" />
+                            Fotografías
+                          </h4>
+                          <div className="flex space-x-4">
+                            {queryTreatment.data.treatment.foto1 && (
+                              <div className="text-center">
+                                <img
+                                  src={queryTreatment.data.treatment.foto1}
+                                  alt="Foto 1"
+                                  className="w-32 h-32 object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => setSelectedDocument({
+                                    url: queryTreatment.data.treatment.foto1!,
+                                    title: 'Foto 1',
+                                    type: 'image'
+                                  })}
+                                  onError={(e) => {
+                                    const img = e.target as HTMLImageElement;
+                                    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="12"%3ENo disponible%3C/text%3E%3C/svg%3E';
+                                  }}
+                                />
+                                <p className="text-xs text-gray-600 mt-1 font-medium">Foto 1</p>
+                              </div>
+                            )}
+                            {queryTreatment.data.treatment.foto2 && (
+                              <div className="text-center">
+                                <img
+                                  src={queryTreatment.data.treatment.foto2}
+                                  alt="Foto 2"
+                                  className="w-32 h-32 object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => setSelectedDocument({
+                                    url: queryTreatment.data.treatment.foto2!,
+                                    title: 'Foto 2',
+                                    type: 'image'
+                                  })}
+                                  onError={(e) => {
+                                    const img = e.target as HTMLImageElement;
+                                    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="12"%3ENo disponible%3C/text%3E%3C/svg%3E';
+                                  }}
+                                />
+                                <p className="text-xs text-gray-600 mt-1 font-medium">Foto 2</p>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                        </div>
+                      )}
 
-                  {/* Estado vacío */}
-                  {!queryTreatment.data.treatment.producto && !queryTreatment.data.treatment.descripcion && !queryTreatment.data.treatment.foto1 && !queryTreatment.data.treatment.foto2 && (
-                    <div className="text-center py-8">
-                      <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500 text-sm">No hay detalles disponibles</p>
-                    </div>
-                  )}
-                </>
-              ) : null}
-            </div>
+                      {/* Descripción */}
+                      {queryTreatment.data.treatment.descripcion && (
+                        <div className="bg-gray-50 p-3 rounded-md">
+                          <h4 className="font-semibold text-gray-800 mb-1">Observaciones</h4>
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{queryTreatment.data.treatment.descripcion}</p>
+                        </div>
+                      )}
+                    </>
+                  ) : null}
+                </div>
 
-            {/* Footer */}
-            <div className="flex items-center justify-between p-4 sm:p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
-              <p className="text-xs sm:text-sm text-gray-600">
-                Detalles del tratamiento
-              </p>
-              <button
-                onClick={() => setSelectedTreatment(null)}
-                className="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors text-sm font-medium"
-              >
-                Cerrar
-              </button>
+                {/* Footer */}
+                <div className="border-t border-slate-200 px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0 bg-slate-50 rounded-b-xl">
+                  <div className="text-xs sm:text-sm text-slate-600">
+                    <p>Creado: {queryTreatment.data?.treatment ? formatDate(queryTreatment.data.treatment.created_at) : '-'}</p>
+                    {queryTreatment.data?.treatment?.updated_at && (
+                      <p>Actualizado: {formatDate(queryTreatment.data.treatment.updated_at)}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Modal de vista previa de documentos */}
