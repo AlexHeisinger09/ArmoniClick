@@ -213,6 +213,8 @@ const handler: Handler = async (event: HandlerEvent) => {
             status: updatedDocument.status,
             signed_date: updatedDocument.signed_date,
             title: updatedDocument.title,
+            content: updatedDocument.content,
+            document_type: updatedDocument.document_type,
             signature_data: updatedDocument.signature_data,
             pdf_base64: pdfBase64
           },
