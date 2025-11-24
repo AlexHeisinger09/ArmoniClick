@@ -112,7 +112,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
                         key={time}
                         className={`h-8 border-b border-slate-50 transition-colors group relative ${
                           isBlocked
-                            ? 'cursor-not-allowed'
+                            ? 'bg-slate-500 cursor-not-allowed'
                             : 'hover:bg-cyan-25 cursor-pointer'
                         }`}
                         onClick={() => !isBlocked && onTimeSlotClick(time, day)}
@@ -246,7 +246,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
                           key={time}
                           className={`h-6 border-b border-slate-50 transition-colors group relative ${
                             isBlocked
-                              ? 'cursor-not-allowed'
+                              ? 'bg-slate-500 cursor-not-allowed'
                               : 'hover:bg-cyan-25 cursor-pointer'
                           }`}
                           onClick={() => !isBlocked && onTimeSlotClick(time, day)}
