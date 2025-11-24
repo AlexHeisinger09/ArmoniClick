@@ -122,28 +122,27 @@ export const ScheduleBlockVisual: React.FC<ScheduleBlockVisualProps> = ({
           const startTotal = startHours * 60 + startMinutes;
           const endTotal = endHours * 60 + endMinutes;
 
-          // Usar la misma lógica que AppointmentBlock:
-          // El calendario muestra desde 09:00 en adelante (22 slots × 8px = 176px total)
+          // WeekView muestra desde 09:00 a 19:30 (22 slots de 30 min = 660 minutos)
+          // Usar porcentaje de esta ventana para que sea responsive
           const START_OF_CALENDAR = 9 * 60; // 09:00 = 540 minutos
-          const SLOT_HEIGHT_PX = 8; // 8px per 30-minute slot in week view
-          const MINUTES_PER_SLOT = 30;
+          const END_OF_CALENDAR = 19.5 * 60; // 19:30 = 1170 minutos
+          const CALENDAR_WINDOW = END_OF_CALENDAR - START_OF_CALENDAR; // 630 minutos
 
           // Calcular posición relativa a las 09:00
           const minutesFromStart = startTotal - START_OF_CALENDAR;
-          const pixelPerMinute = SLOT_HEIGHT_PX / MINUTES_PER_SLOT;
-          const topPx = minutesFromStart * pixelPerMinute;
+          const topPercent = (minutesFromStart / CALENDAR_WINDOW) * 100;
 
           // Calcular altura
           const durationMinutes = endTotal - startTotal;
-          const heightPx = (durationMinutes / MINUTES_PER_SLOT) * SLOT_HEIGHT_PX;
+          const heightPercent = (durationMinutes / CALENDAR_WINDOW) * 100;
 
           return (
             <div
               key={`${block.id}-${index}`}
               className="absolute inset-x-0 bg-slate-200 bg-opacity-40 border-l-2 border-slate-300 pointer-events-none z-20"
               style={{
-                top: `${topPx}px`,
-                height: `${heightPx}px`,
+                top: `${topPercent}%`,
+                height: `${heightPercent}%`,
                 minHeight: '8px'
               }}
               title={`Bloqueado: ${block.startTime} - ${block.endTime}`}
