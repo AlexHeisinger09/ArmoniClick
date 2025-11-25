@@ -119,7 +119,7 @@ export const ScheduleBlockVisual: React.FC<ScheduleBlockVisualProps> = ({
           const [startHours, startMinutes] = block.startTime.split(':').map(Number);
           const [endHours, endMinutes] = block.endTime.split(':').map(Number);
 
-          const startTotal = startHours * 60 + startMinutes;
+          let startTotal = startHours * 60 + startMinutes;
           let endTotal = endHours * 60 + endMinutes;
 
           // WeekView muestra desde 09:00 a 19:30 (22 slots de 30 min = 630 minutos)
@@ -128,16 +128,15 @@ export const ScheduleBlockVisual: React.FC<ScheduleBlockVisualProps> = ({
           const END_OF_CALENDAR = 19.5 * 60; // 19:30 = 1170 minutos
           const CALENDAR_WINDOW = END_OF_CALENDAR - START_OF_CALENDAR; // 630 minutos
 
-          // Si el bloque se extiende más allá del horario visible, cortarlo
-          if (endTotal > END_OF_CALENDAR) {
-            endTotal = END_OF_CALENDAR;
-          }
+          // Clipear el bloque al rango visible del calendario
+          startTotal = Math.max(START_OF_CALENDAR, Math.min(startTotal, END_OF_CALENDAR));
+          endTotal = Math.max(START_OF_CALENDAR, Math.min(endTotal, END_OF_CALENDAR));
 
           // Calcular posición relativa a las 09:00
-          const minutesFromStart = Math.max(0, startTotal - START_OF_CALENDAR);
+          const minutesFromStart = startTotal - START_OF_CALENDAR;
           const topPercent = parseFloat(((minutesFromStart / CALENDAR_WINDOW) * 100).toFixed(4));
 
-          // Calcular altura
+          // Calcular altura basada en los tiempos clipeados
           const durationMinutes = Math.max(0, endTotal - startTotal);
           const heightPercent = parseFloat(((durationMinutes / CALENDAR_WINDOW) * 100).toFixed(4));
 
