@@ -69,20 +69,37 @@ const handler: Handler = async (event: HandlerEvent) => {
       // Formatear citas para el formato esperado por el frontend
       const appointmentsData: Record<string, any[]> = {};
       doctorAppointments.forEach(apt => {
-        const dateKey = apt.appointmentDate;
+        // Convertir appointmentDate a formato YYYY-MM-DD y extraer hora
+        const dateObj = new Date(apt.appointmentDate);
+        const dateKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+
+        // Extraer hora de appointmentDate en formato HH:mm
+        const hours = String(dateObj.getHours()).padStart(2, '0');
+        const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+        const startTime = `${hours}:${minutes}`;
+
+        // Calcular hora de fin basada en duración
+        const duration = apt.duration || 60;
+        const endMinutes = dateObj.getMinutes() + duration;
+        const endDateObj = new Date(dateObj);
+        endDateObj.setMinutes(endMinutes);
+        const endHours = String(endDateObj.getHours()).padStart(2, '0');
+        const endMins = String(endDateObj.getMinutes()).padStart(2, '0');
+        const endTime = `${endHours}:${endMins}`;
+
         if (!appointmentsData[dateKey]) {
           appointmentsData[dateKey] = [];
         }
         appointmentsData[dateKey].push({
           id: apt.id,
-          time: apt.startTime,
-          duration: apt.duration || 60,
-          patient: apt.guestPatientName || 'Paciente',
-          service: apt.service || 'Cita',
+          time: startTime,
+          duration,
+          patient: apt.guestName || 'Paciente',
+          service: apt.title || 'Cita',
           status: apt.status || 'pending',
-          title: `${apt.guestPatientName || 'Paciente'} - ${apt.service || 'Cita'}`,
-          start: new Date(`${apt.appointmentDate}T${apt.startTime}`),
-          end: new Date(`${apt.appointmentDate}T${apt.endTime || '20:00'}`),
+          title: apt.title || `${apt.guestName || 'Paciente'} - Cita`,
+          start: new Date(`${dateKey}T${startTime}`),
+          end: new Date(`${dateKey}T${endTime}`),
           allDay: false
         });
       });
