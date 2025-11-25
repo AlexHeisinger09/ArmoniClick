@@ -111,7 +111,7 @@ export const ScheduleBlockVisual: React.FC<ScheduleBlockVisualProps> = ({
     );
   }
 
-  // Renderizar bloques en WeekView (altura: 8px por slot de 30 min)
+  // Renderizar bloques en WeekView (altura: h-8 = 32px por slot de 30 min)
   if (viewType === 'week') {
     return (
       <>
@@ -122,23 +122,25 @@ export const ScheduleBlockVisual: React.FC<ScheduleBlockVisualProps> = ({
           let startTotal = startHours * 60 + startMinutes;
           let endTotal = endHours * 60 + endMinutes;
 
-          // WeekView muestra desde 09:00 a 19:30 (22 slots de 30 min = 630 minutos)
-          // Usar porcentaje de esta ventana para que sea responsive
+          // WeekView muestra desde 09:00 a 19:30 (22 slots de 30 min)
           const START_OF_CALENDAR = 9 * 60; // 09:00 = 540 minutos
           const END_OF_CALENDAR = 19.5 * 60; // 19:30 = 1170 minutos
-          const CALENDAR_WINDOW = END_OF_CALENDAR - START_OF_CALENDAR; // 630 minutos
+          const TOTAL_SLOTS = 22; // 22 slots de 30 minutos
+          const SLOT_HEIGHT_PERCENT = 100 / TOTAL_SLOTS; // 4.545%
 
           // Clipear el bloque al rango visible del calendario
           startTotal = Math.max(START_OF_CALENDAR, Math.min(startTotal, END_OF_CALENDAR));
           endTotal = Math.max(START_OF_CALENDAR, Math.min(endTotal, END_OF_CALENDAR));
 
-          // Calcular posición relativa a las 09:00
+          // Calcular posición relativa a las 09:00 en términos de slots
           const minutesFromStart = startTotal - START_OF_CALENDAR;
-          const topPercent = parseFloat(((minutesFromStart / CALENDAR_WINDOW) * 100).toFixed(4));
+          const slotsFromStart = minutesFromStart / 30;
+          const topPercent = parseFloat((slotsFromStart * SLOT_HEIGHT_PERCENT).toFixed(4));
 
-          // Calcular altura basada en los tiempos clipeados
+          // Calcular altura en términos de slots
           const durationMinutes = Math.max(0, endTotal - startTotal);
-          const heightPercent = parseFloat(((durationMinutes / CALENDAR_WINDOW) * 100).toFixed(4));
+          const durationSlots = durationMinutes / 30;
+          const heightPercent = parseFloat((durationSlots * SLOT_HEIGHT_PERCENT).toFixed(4));
 
           // Solo renderizar si hay duración visible
           if (heightPercent <= 0) {
