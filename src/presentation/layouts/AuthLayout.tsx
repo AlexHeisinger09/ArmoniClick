@@ -104,7 +104,7 @@ export const AuthLayout = () => {
               src="/login7.png"
               alt="ArmoniClick"
               className="w-auto object-contain"
-              style={{ maxHeight: '750px' }}
+              style={{ maxHeight: '780px' }}
             />
           </div>
         </div>
