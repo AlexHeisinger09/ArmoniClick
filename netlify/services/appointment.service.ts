@@ -181,7 +181,7 @@ export class AppointmentService {
             emailMinutes: appointment.appointmentDate.getMinutes()
           });
 
-          // 5. Enviar email de confirmación
+          // 5. Enviar email de confirmación al paciente
           await this.notificationService.sendAppointmentConfirmation({
             appointmentId: appointment.id,
             patientName: appointmentDetails.patientName,
@@ -193,9 +193,23 @@ export class AppointmentService {
             notes: appointment.notes || undefined,
             confirmationToken: confirmationToken
           });
+
+          // 6. Enviar email de confirmación al doctor
+          await this.notificationService.sendAppointmentConfirmationToDoctor({
+            appointmentId: appointment.id,
+            patientName: appointmentDetails.patientName,
+            patientEmail: appointmentDetails.patientEmail,
+            doctorName: appointmentDetails.doctorName,
+            doctorEmail: appointmentDetails.doctorEmail,
+            appointmentDate: appointment.appointmentDate,
+            service: appointment.title,
+            duration: appointment.duration || 60,
+            notes: appointment.notes || undefined,
+            confirmationToken: confirmationToken
+          });
         }
       } catch (emailError) {
-        console.error('⚠️ Error sending confirmation email (appointment created successfully):', emailError);
+        console.error('⚠️ Error sending confirmation emails (appointment created successfully):', emailError);
       }
 
       return appointment;
@@ -228,7 +242,8 @@ export class AppointmentService {
 
           // Datos del doctor
           doctorName: usersTable.name,
-          doctorLastName: usersTable.lastName
+          doctorLastName: usersTable.lastName,
+          doctorEmail: usersTable.email
         })
         .from(appointmentsTable)
         .leftJoin(patientsTable, eq(appointmentsTable.patientId, patientsTable.id))
@@ -257,7 +272,8 @@ export class AppointmentService {
       return {
         patientName,
         patientEmail,
-        doctorName: `${appointment.doctorName} ${appointment.doctorLastName || ''}`.trim()
+        doctorName: `${appointment.doctorName} ${appointment.doctorLastName || ''}`.trim(),
+        doctorEmail: appointment.doctorEmail
       };
     } catch (error) {
       console.error('❌ Error getting appointment details for email:', error);

@@ -99,6 +99,38 @@ export class NotificationService {
     }
   }
 
+  // Enviar confirmación de cita al doctor
+  async sendAppointmentConfirmationToDoctor(data: NotificationData & { doctorEmail: string }): Promise<boolean> {
+    try {
+      const emailData: AppointmentEmailData = {
+        patientName: data.patientName,
+        patientEmail: data.patientEmail,
+        doctorName: data.doctorName,
+        appointmentDate: data.appointmentDate.toISOString().split('T')[0],
+        appointmentTime: data.appointmentDate.toTimeString().split(' ')[0].substring(0, 5),
+        service: data.service,
+        duration: data.duration,
+        notes: data.notes,
+        type: 'confirmation_doctor'
+      };
+
+      const htmlContent = EmailTemplatesService.getConfirmationEmailTemplate(emailData);
+
+      const emailSent = await this.emailService.sendEmail({
+        from: envs.MAILER_EMAIL,
+        to: data.doctorEmail,
+        subject: '📅 Nueva Cita Agendada - Sistema de Citas',
+        htmlBody: htmlContent
+      });
+
+      console.log(`📧 Doctor confirmation email sent to ${data.doctorEmail}:`, emailSent);
+      return emailSent;
+    } catch (error) {
+      console.error('❌ Error sending doctor confirmation email:', error);
+      return false;
+    }
+  }
+
   // Validar datos antes del envío
   private validateNotificationData(data: NotificationData): boolean {
     const required = [
