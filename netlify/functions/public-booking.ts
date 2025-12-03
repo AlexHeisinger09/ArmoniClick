@@ -28,6 +28,8 @@ const handler: Handler = async (event: HandlerEvent) => {
     const isInfoEndpoint = pathSegments.some(seg => seg === 'public-booking-info');
     const isCreateEndpoint = pathSegments.some(seg => seg === 'public-booking') &&
                              pathSegments.some(seg => seg === 'create-appointment');
+    const isGenerateLinkEndpoint = pathSegments.some(seg => seg === 'public-booking') &&
+                                   pathSegments.some(seg => seg === 'generate-link');
 
     // GET /public-booking-info/:token
     if (httpMethod === "GET" && isInfoEndpoint) {
@@ -331,6 +333,76 @@ const handler: Handler = async (event: HandlerEvent) => {
           message: "Cita agendada exitosamente",
           appointmentId: newAppointment[0]?.id,
           confirmationToken
+        }),
+        headers: HEADERS.json,
+      };
+    }
+
+    // POST /public-booking/generate-link
+    if (httpMethod === "POST" && isGenerateLinkEndpoint) {
+      let data: any = {};
+
+      if (rawBody) {
+        try {
+          data = JSON.parse(rawBody);
+        } catch {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({ message: "JSON inválido" }),
+            headers: HEADERS.json,
+          };
+        }
+      }
+
+      const { doctorId, durations } = data;
+
+      if (!doctorId || !Array.isArray(durations) || durations.length === 0) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: "doctorId y durations son requeridos",
+          }),
+          headers: HEADERS.json,
+        };
+      }
+
+      // Validar que las duraciones sean válidas
+      const validDurations = durations.filter(
+        (d: number) => [30, 60, 90, 120].includes(d)
+      );
+
+      if (validDurations.length === 0) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: "Duraciones inválidas",
+          }),
+          headers: HEADERS.json,
+        };
+      }
+
+      // Generar token firmado (válido por 1 año)
+      const token = await JwtAdapter.generateToken(
+        {
+          doctorId: parseInt(doctorId),
+          durations: validDurations.sort((a: number, b: number) => a - b),
+        },
+        "365d"
+      );
+
+      if (!token) {
+        return {
+          statusCode: 500,
+          body: JSON.stringify({ message: "Error al generar token" }),
+          headers: HEADERS.json,
+        };
+      }
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          token,
+          link: `${process.env.FRONTEND_URL || "http://localhost:3000"}/book-appointment/${token}`,
         }),
         headers: HEADERS.json,
       };
