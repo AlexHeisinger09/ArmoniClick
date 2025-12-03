@@ -391,7 +391,7 @@ export const PublicAppointmentBooking: React.FC = () => {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Duración de la Cita *
                   </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                     {availableDurations.map(duration => (
                       <button
                         key={duration}
@@ -399,14 +399,13 @@ export const PublicAppointmentBooking: React.FC = () => {
                         onClick={() => !isSubmitting && handleFormChange({ duration, time: '' })}
                         disabled={isSubmitting}
                         className={`
-                          p-2.5 text-sm rounded-lg transition-all border-2 font-medium disabled:cursor-not-allowed flex items-center justify-center
+                          px-2 py-2 text-xs rounded-md transition-all border font-medium disabled:cursor-not-allowed flex items-center justify-center
                           ${appointmentForm.duration === duration
-                            ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg scale-105'
-                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300 disabled:opacity-50'
+                            ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white border-cyan-600 shadow-lg'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-cyan-400 disabled:opacity-50'
                           }
                         `}
                       >
-                        <Clock className="w-4 h-4 mr-1" />
                         {duration} min
                       </button>
                     ))}
@@ -418,9 +417,9 @@ export const PublicAppointmentBooking: React.FC = () => {
               {appointmentForm.date && (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Horario * ({appointmentForm.duration} min)
+                    Horario *
                   </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
                     {getTimeSlotsForDuration(appointmentForm.duration)
                       .filter(time => {
                         // Filter: only show available times
@@ -444,14 +443,13 @@ export const PublicAppointmentBooking: React.FC = () => {
                             }}
                             disabled={isSubmitting}
                             className={`
-                              p-3 text-sm rounded-lg transition-all border-2 font-medium flex items-center justify-center
+                              px-2 py-2 text-xs rounded-md transition-all border font-medium
                               ${appointmentForm.time === time
-                                ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white border-cyan-600 shadow-lg scale-105'
-                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-cyan-400 hover:shadow-md'
+                                ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white border-cyan-600 shadow-lg'
+                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-cyan-400'
                               }
                             `}
                           >
-                            <Clock className="w-4 h-4 mr-2" />
                             {time}
                           </button>
                         );
