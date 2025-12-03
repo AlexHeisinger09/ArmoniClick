@@ -206,32 +206,21 @@ export const PublicAppointmentBooking: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        {/* Header Profesional */}
-        <div className="text-center mb-10 pt-4">
-          {/* Logo */}
-          <div className="mb-6 flex justify-center">
+        {/* Header Compacto */}
+        <div className="text-center mb-6">
+          <div className="flex items-center justify-center gap-3 mb-3">
             <img
               src="https://res.cloudinary.com/drfvhhrck/image/upload/v1764792657/letras_o42jqi.png"
               alt="ArmoniClick Logo"
-              className="h-16 object-contain"
+              className="h-10 object-contain"
             />
+            <h1 className="text-2xl font-bold text-slate-800">
+              Reservar Cita
+            </h1>
           </div>
 
-          {/* Título Principal */}
-          <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent mb-3">
-            Reservar Cita
-          </h1>
-
-          {/* Doctor Name */}
-          <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-200 rounded-xl p-4 inline-block mb-2">
-            <p className="text-sm text-slate-600 font-medium">Agendando con</p>
-            <p className="text-xl font-bold text-slate-800">
-              {doctorName}
-            </p>
-          </div>
-
-          <p className="text-slate-500 mt-4 text-sm max-w-md mx-auto">
-            Selecciona la fecha y horario que mejor se adapte a tu disponibilidad
+          <p className="text-sm text-slate-600 font-medium">
+            Agendando con <span className="text-cyan-600 font-bold">{doctorName}</span>
           </p>
         </div>
 
