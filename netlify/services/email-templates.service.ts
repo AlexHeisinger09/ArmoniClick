@@ -57,19 +57,16 @@ export class EmailTemplatesService {
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             }
             .header {
-                background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+                background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
                 color: white;
                 text-align: center;
-                padding: 40px 20px 30px;
+                padding: 35px 20px 30px;
             }
             .logo {
-                max-width: 180px;
+                max-width: 240px;
                 height: auto;
-                margin-bottom: 25px;
+                margin-bottom: 20px;
                 display: inline-block;
-                background: white;
-                padding: 10px 15px;
-                border-radius: 6px;
             }
             .header h1 {
                 font-size: 32px;
@@ -77,7 +74,7 @@ export class EmailTemplatesService {
                 margin-bottom: 12px;
                 margin-top: 0;
                 color: #ffffff;
-                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
             }
             .header p {
                 font-size: 16px;
@@ -283,19 +280,16 @@ export class EmailTemplatesService {
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             }
             .header {
-                background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+                background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
                 color: white;
                 text-align: center;
-                padding: 40px 20px 30px;
+                padding: 35px 20px 30px;
             }
             .logo {
-                max-width: 180px;
+                max-width: 240px;
                 height: auto;
-                margin-bottom: 25px;
+                margin-bottom: 20px;
                 display: inline-block;
-                background: white;
-                padding: 10px 15px;
-                border-radius: 6px;
             }
             .header h1 {
                 font-size: 32px;
@@ -303,7 +297,7 @@ export class EmailTemplatesService {
                 margin-bottom: 12px;
                 margin-top: 0;
                 color: #ffffff;
-                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
             }
             .header p {
                 font-size: 16px;
@@ -322,7 +316,7 @@ export class EmailTemplatesService {
                 font-weight: 500;
             }
             .greeting strong {
-                color: #f59e0b;
+                color: #dc2626;
             }
             .appointment-card {
                 background: #fef3c7;
