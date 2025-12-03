@@ -39,13 +39,16 @@ const handler: Handler = async (event: HandlerEvent) => {
         body: JSON.stringify({
           message: error,
         }),
-        headers: HEADERS.json,
+        headers: getCORSHeaders(origin),
       };
 
-    return new RegisterUser()
-      .execute(registerUserDto!)
-      .then((res) => res)
-      .catch((error) => error);
+    const result = await new RegisterUser()
+      .execute(registerUserDto!);
+
+    return {
+      ...result,
+      headers: getCORSHeaders(origin),
+    };
   }
 
   if (httpMethod === "POST" && path.includes("/login")) {
@@ -56,13 +59,16 @@ const handler: Handler = async (event: HandlerEvent) => {
         body: JSON.stringify({
           message: error,
         }),
-        headers: HEADERS.json,
+        headers: getCORSHeaders(origin),
       };
 
-    return new LoginUser()
-      .execute(loginUserDto!)
-      .then((res) => res)
-      .catch((error) => error);
+    const result = await new LoginUser()
+      .execute(loginUserDto!);
+
+    return {
+      ...result,
+      headers: getCORSHeaders(origin),
+    };
   }
 
   if (httpMethod === "POST" && path.includes("/reset-password")) {
@@ -73,13 +79,16 @@ const handler: Handler = async (event: HandlerEvent) => {
         body: JSON.stringify({
           message: error,
         }),
-        headers: HEADERS.json,
+        headers: getCORSHeaders(origin),
       };
 
-    return new ResetPassword()
-      .execute(resetPasswordDto!)
-      .then((res) => res)
-      .catch((error) => error);
+    const result = await new ResetPassword()
+      .execute(resetPasswordDto!);
+
+    return {
+      ...result,
+      headers: getCORSHeaders(origin),
+    };
   }
   if (httpMethod === "POST" && path.includes("/change-password") && token) {
     const [error, changePasswordDto] = ChangePasswordDto.create(body);
@@ -89,26 +98,35 @@ const handler: Handler = async (event: HandlerEvent) => {
         body: JSON.stringify({
           message: error,
         }),
-        headers: HEADERS.json,
+        headers: getCORSHeaders(origin),
       };
-    return new ChangePassword()
-      .execute(token, changePasswordDto!.newPassword)
-      .then((res) => res)
-      .catch((error) => error);
+    const result = await new ChangePassword()
+      .execute(token, changePasswordDto!.newPassword);
+
+    return {
+      ...result,
+      headers: getCORSHeaders(origin),
+    };
   }
 
   if (httpMethod === "GET" && path.includes("/validate-email") && token) {
-    return new ValidateEmail()
-      .execute(token)
-      .then((res) => res)
-      .catch((error) => error);
+    const result = await new ValidateEmail()
+      .execute(token);
+
+    return {
+      ...result,
+      headers: getCORSHeaders(origin),
+    };
   }
 
   if (httpMethod === "GET" && path.includes("/change-password") && token) {
-    return new CheckUserToken()
-      .execute(token)
-      .then((res) => res)
-      .catch((error) => error);
+    const result = await new CheckUserToken()
+      .execute(token);
+
+    return {
+      ...result,
+      headers: getCORSHeaders(origin),
+    };
   }
 
   return {
@@ -116,7 +134,7 @@ const handler: Handler = async (event: HandlerEvent) => {
     body: JSON.stringify({
       message: "Method Not Allowed",
     }),
-    headers: HEADERS.json,
+    headers: getCORSHeaders(origin),
   };
 };
 
