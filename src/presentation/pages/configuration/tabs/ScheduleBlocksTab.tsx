@@ -168,7 +168,8 @@ const ScheduleBlocksTab: React.FC<ScheduleBlocksTabProps> = ({ showMessage }) =>
   // Generar link de reserva pública
   const generatePublicBookingLink = (): string => {
     const baseUrl = window.location.origin;
-    return `${baseUrl}/book-appointment/${doctorId}`;
+    const durations = availableDurations.sort((a, b) => a - b).join(',');
+    return `${baseUrl}/book-appointment/${doctorId}?durations=${durations}`;
   };
 
   const handleCopyLink = async () => {

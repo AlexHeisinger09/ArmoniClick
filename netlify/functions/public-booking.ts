@@ -43,6 +43,26 @@ const handler: Handler = async (event: HandlerEvent) => {
 
       const parsedDoctorId = parseInt(doctorId);
 
+      // Parsear parámetros de query string (ej: ?durations=30,60,90)
+      const queryParams = event.queryStringParameters || {};
+      let availableDurations = [30, 60]; // Default
+
+      if (queryParams.durations) {
+        try {
+          const durationsFromUrl = queryParams.durations
+            .split(',')
+            .map(d => parseInt(d.trim()))
+            .filter(d => !isNaN(d) && [30, 60, 90, 120].includes(d));
+
+          if (durationsFromUrl.length > 0) {
+            availableDurations = durationsFromUrl.sort((a, b) => a - b);
+          }
+        } catch (error) {
+          console.error('Error parsing durations from query:', error);
+          // Keep default durations on error
+        }
+      }
+
       // Verificar que el doctor existe
       const doctor = await db
         .select({ id: usersTable.id, nombres: usersTable.name, apellidos: usersTable.lastName })
@@ -109,9 +129,6 @@ const handler: Handler = async (event: HandlerEvent) => {
         .select()
         .from(scheduleBlocksTable)
         .where(eq(scheduleBlocksTable.doctorId, parsedDoctorId));
-
-      // Disponibilidades por defecto
-      const availableDurations = [30, 60];
 
       return {
         statusCode: 200,
