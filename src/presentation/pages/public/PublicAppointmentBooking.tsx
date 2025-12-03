@@ -1,6 +1,6 @@
 // src/presentation/pages/public/PublicAppointmentBooking.tsx
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { X, Clock, Calendar, Loader, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getTimeSlotsForDuration } from '@/presentation/pages/calendar/constants/calendar';
 import { isTimeSlotAvailable } from '@/presentation/pages/calendar/utils/calendar';
@@ -18,6 +18,7 @@ interface PublicAppointmentForm {
 
 export const PublicAppointmentBooking: React.FC = () => {
   const { doctorId } = useParams<{ doctorId: string }>();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -46,9 +47,14 @@ export const PublicAppointmentBooking: React.FC = () => {
     const fetchDoctorData = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(
-          `/public-booking-info/${doctorId}`
-        );
+
+        // Construir URL con parámetros de query
+        let url = `/public-booking-info/${doctorId}`;
+        if (location.search) {
+          url += location.search; // Incluye ?durations=30,60,90
+        }
+
+        const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error('Doctor no encontrado o link inválido');
@@ -77,7 +83,7 @@ export const PublicAppointmentBooking: React.FC = () => {
     if (doctorId) {
       fetchDoctorData();
     }
-  }, [doctorId]);
+  }, [doctorId, location.search]);
 
   const handleFormChange = (updates: Partial<PublicAppointmentForm>) => {
     setAppointmentForm(prev => ({ ...prev, ...updates }));
