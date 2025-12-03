@@ -204,15 +204,34 @@ export const PublicAppointmentBooking: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-cyan-50 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-800 mb-2">
-            Agendar Cita
+        {/* Header Profesional */}
+        <div className="text-center mb-10 pt-4">
+          {/* Logo */}
+          <div className="mb-6 flex justify-center">
+            <img
+              src="https://res.cloudinary.com/drfvhhrck/image/upload/v1764792657/letras_o42jqi.png"
+              alt="ArmoniClick Logo"
+              className="h-16 object-contain"
+            />
+          </div>
+
+          {/* Título Principal */}
+          <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent mb-3">
+            Reservar Cita
           </h1>
-          <p className="text-slate-600">
-            {doctorName}
+
+          {/* Doctor Name */}
+          <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-200 rounded-xl p-4 inline-block mb-2">
+            <p className="text-sm text-slate-600 font-medium">Agendando con</p>
+            <p className="text-xl font-bold text-slate-800">
+              {doctorName}
+            </p>
+          </div>
+
+          <p className="text-slate-500 mt-4 text-sm max-w-md mx-auto">
+            Selecciona la fecha y horario que mejor se adapte a tu disponibilidad
           </p>
         </div>
 
@@ -230,12 +249,12 @@ export const PublicAppointmentBooking: React.FC = () => {
         )}
 
         {/* Form */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 border border-slate-100">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Personal Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-slate-800">
-                Información Personal
+            <div className="space-y-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-5 border border-blue-100">
+              <h3 className="text-lg font-semibold text-slate-800 flex items-center">
+                👤 Información Personal
               </h3>
 
               <div>
@@ -247,7 +266,8 @@ export const PublicAppointmentBooking: React.FC = () => {
                   value={appointmentForm.patientName}
                   onChange={(e) => handleFormChange({ patientName: e.target.value })}
                   disabled={isSubmitting}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all bg-white"
+                  placeholder="Tu nombre completo"
                   required
                 />
               </div>
@@ -262,7 +282,8 @@ export const PublicAppointmentBooking: React.FC = () => {
                     value={appointmentForm.patientEmail}
                     onChange={(e) => handleFormChange({ patientEmail: e.target.value })}
                     disabled={isSubmitting}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all bg-white"
+                    placeholder="tu@email.com"
                     required
                   />
                 </div>
@@ -276,7 +297,8 @@ export const PublicAppointmentBooking: React.FC = () => {
                     value={appointmentForm.patientPhone}
                     onChange={(e) => handleFormChange({ patientPhone: e.target.value })}
                     disabled={isSubmitting}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all bg-white"
+                    placeholder="+56 9 XXXX XXXX"
                     required
                   />
                 </div>
@@ -284,9 +306,9 @@ export const PublicAppointmentBooking: React.FC = () => {
             </div>
 
             {/* Appointment Selection */}
-            <div className="space-y-4 pt-4 border-t border-slate-200">
-              <h3 className="text-lg font-semibold text-slate-800">
-                Seleccionar Cita
+            <div className="space-y-4 pt-2">
+              <h3 className="text-lg font-semibold text-slate-800 flex items-center">
+                📅 Seleccionar Cita
               </h3>
 
               {/* Date Selector */}
@@ -406,69 +428,84 @@ export const PublicAppointmentBooking: React.FC = () => {
                 </div>
               )}
 
-              {/* Time Selector */}
+              {/* Time Selector - Only available times */}
               {appointmentForm.date && (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Horario * ({appointmentForm.duration} min)
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {getTimeSlotsForDuration(appointmentForm.duration).map(time => {
-                      const available = isTimeSlotAvailable(
-                        appointments,
-                        appointmentForm.date,
-                        time,
-                        appointmentForm.duration,
-                        scheduleBlocks
-                      );
-
-                      return (
-                        <button
-                          key={time}
-                          type="button"
-                          onClick={() => {
-                            if (available && !isSubmitting) {
-                              handleFormChange({ time });
-                            }
-                          }}
-                          disabled={!available || isSubmitting}
-                          className={`
-                            p-2 text-sm rounded-lg transition-all border-2 font-medium relative disabled:cursor-not-allowed flex items-center justify-center
-                            ${appointmentForm.time === time && available
-                              ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg scale-105'
-                              : available && !isSubmitting
-                                ? 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                                : 'bg-slate-100 text-slate-400 border-slate-200 opacity-50'
-                            }
-                          `}
-                          title={!available ? 'No disponible' : 'Disponible'}
-                        >
-                          <Clock className="w-3 h-3 mr-1" />
-                          {time}
-                        </button>
-                      );
-                    })}
+                    {getTimeSlotsForDuration(appointmentForm.duration)
+                      .filter(time => {
+                        // Filter: only show available times
+                        return isTimeSlotAvailable(
+                          appointments,
+                          appointmentForm.date,
+                          time,
+                          appointmentForm.duration,
+                          scheduleBlocks
+                        );
+                      })
+                      .map(time => {
+                        return (
+                          <button
+                            key={time}
+                            type="button"
+                            onClick={() => {
+                              if (!isSubmitting) {
+                                handleFormChange({ time });
+                              }
+                            }}
+                            disabled={isSubmitting}
+                            className={`
+                              p-3 text-sm rounded-lg transition-all border-2 font-medium flex items-center justify-center
+                              ${appointmentForm.time === time
+                                ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white border-cyan-600 shadow-lg scale-105'
+                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-cyan-400 hover:shadow-md'
+                              }
+                            `}
+                          >
+                            <Clock className="w-4 h-4 mr-2" />
+                            {time}
+                          </button>
+                        );
+                      })}
                   </div>
+                  {getTimeSlotsForDuration(appointmentForm.duration).filter(time =>
+                    isTimeSlotAvailable(
+                      appointments,
+                      appointmentForm.date,
+                      time,
+                      appointmentForm.duration,
+                      scheduleBlocks
+                    )
+                  ).length === 0 && (
+                    <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm text-yellow-700">
+                        No hay horarios disponibles para esta fecha y duración. Intenta con otra fecha.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
             {/* Submit Button */}
-            <div className="flex gap-3 pt-4 border-t border-slate-200">
+            <div className="flex gap-3 pt-6 border-t border-slate-200">
               <button
                 type="submit"
                 disabled={isSubmitting || !appointmentForm.patientName || !appointmentForm.patientEmail || !appointmentForm.patientPhone || !appointmentForm.date || !appointmentForm.time}
-                className="flex-1 px-6 py-3 bg-cyan-500 hover:bg-cyan-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
+                className="flex-1 px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed text-white rounded-xl transition-all font-bold text-lg flex items-center justify-center gap-2 shadow-lg disabled:shadow-none"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader className="w-4 h-4 animate-spin" />
+                    <Loader className="w-5 h-5 animate-spin" />
                     Agendando...
                   </>
                 ) : (
                   <>
-                    <Calendar className="w-4 h-4" />
-                    Agendar Cita
+                    <Calendar className="w-5 h-5" />
+                    Confirmar Cita
                   </>
                 )}
               </button>
