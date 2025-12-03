@@ -47,6 +47,43 @@ const ScheduleBlocksTab: React.FC<ScheduleBlocksTabProps> = ({ showMessage }) =>
   const [publicLink, setPublicLink] = useState<string>('');
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
 
+  // Auto-generate link when durations change
+  React.useEffect(() => {
+    const generateLinkAutomatically = async () => {
+      if (!doctorId || availableDurations.length === 0) {
+        return;
+      }
+
+      try {
+        setIsGeneratingLink(true);
+        const response = await fetch('/public-booking/generate-link', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            doctorId,
+            durations: availableDurations
+          })
+        });
+
+        if (!response.ok) {
+          console.error('Error generating link:', response.status);
+          return;
+        }
+
+        const data = await response.json();
+        setPublicLink(data.link);
+      } catch (error) {
+        console.error('Error generating link:', error);
+      } finally {
+        setIsGeneratingLink(false);
+      }
+    };
+
+    generateLinkAutomatically();
+  }, [doctorId, availableDurations]);
+
   // Form state
   const [formData, setFormData] = useState({
     blockType: 'recurring' as 'single_date' | 'recurring',
