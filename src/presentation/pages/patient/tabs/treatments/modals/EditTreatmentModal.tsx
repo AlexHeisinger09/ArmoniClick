@@ -145,16 +145,6 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
       }
     }
 
-    // Validar fecha de vencimiento si se proporciona
-    if (formData.fecha_venc_producto) {
-      const vencDate = new Date(formData.fecha_venc_producto);
-      const today = new Date();
-
-      if (vencDate < today) {
-        errors.fecha_venc_producto = 'La fecha de vencimiento no debería ser anterior a hoy';
-      }
-    }
-
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };

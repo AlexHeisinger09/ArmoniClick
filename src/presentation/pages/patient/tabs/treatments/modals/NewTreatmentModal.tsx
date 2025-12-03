@@ -177,7 +177,8 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
     if (formData.fecha_venc_producto) {
       const vencDate = new Date(formData.fecha_venc_producto);
       const today = new Date();
-      
+      today.setHours(0, 0, 0, 0);
+
       if (vencDate < today) {
         errors.fecha_venc_producto = 'La fecha de vencimiento no debería ser anterior a hoy';
       }
