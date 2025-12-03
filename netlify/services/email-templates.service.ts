@@ -63,20 +63,27 @@ export class EmailTemplatesService {
                 padding: 40px 20px 30px;
             }
             .logo {
-                max-width: 140px;
+                max-width: 180px;
                 height: auto;
-                margin-bottom: 20px;
+                margin-bottom: 25px;
                 display: inline-block;
+                background: white;
+                padding: 10px 15px;
+                border-radius: 6px;
             }
             .header h1 {
-                font-size: 28px;
+                font-size: 32px;
                 font-weight: 700;
-                margin-bottom: 10px;
+                margin-bottom: 12px;
                 margin-top: 0;
+                color: #ffffff;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             }
             .header p {
-                font-size: 15px;
-                opacity: 0.95;
+                font-size: 16px;
+                opacity: 1;
+                color: #ffffff;
+                font-weight: 500;
             }
             .content {
                 padding: 40px 30px;
@@ -84,14 +91,15 @@ export class EmailTemplatesService {
             .greeting {
                 font-size: 16px;
                 margin-bottom: 20px;
-                color: #1e293b;
+                color: #0f172a;
                 line-height: 1.6;
+                font-weight: 500;
             }
             .greeting strong {
                 color: #0891b2;
             }
             .appointment-card {
-                background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+                background: #dbeafe;
                 border-radius: 8px;
                 padding: 28px;
                 margin: 30px 0;
@@ -99,45 +107,46 @@ export class EmailTemplatesService {
             }
             .appointment-detail {
                 display: flex;
-                margin-bottom: 16px;
+                margin-bottom: 18px;
                 align-items: flex-start;
             }
             .appointment-detail:last-child {
                 margin-bottom: 0;
             }
             .detail-icon {
-                font-size: 18px;
-                margin-right: 12px;
-                min-width: 20px;
+                font-size: 20px;
+                margin-right: 14px;
+                min-width: 24px;
             }
             .detail-content {
                 flex: 1;
             }
             .detail-label {
-                font-weight: 600;
-                color: #475569;
-                font-size: 13px;
+                font-weight: 700;
+                color: #0c4a6e;
+                font-size: 12px;
                 text-transform: uppercase;
-                letter-spacing: 0.5px;
+                letter-spacing: 0.8px;
                 display: block;
-                margin-bottom: 3px;
+                margin-bottom: 4px;
             }
             .detail-value {
-                color: #1e293b;
-                font-weight: 500;
+                color: #0f172a;
+                font-weight: 600;
                 font-size: 16px;
             }
             .info-box {
-                background: #f8fafc;
-                border-left: 4px solid #06b6d4;
-                padding: 16px;
+                background: #eff6ff;
+                border-left: 4px solid #0891b2;
+                padding: 18px;
                 margin: 25px 0;
                 border-radius: 4px;
             }
             .info-box p {
-                margin: 8px 0;
-                color: #475569;
+                margin: 10px 0;
+                color: #0c4a6e;
                 font-size: 14px;
+                font-weight: 500;
             }
             .footer {
                 background: #f8fafc;
@@ -280,20 +289,27 @@ export class EmailTemplatesService {
                 padding: 40px 20px 30px;
             }
             .logo {
-                max-width: 140px;
+                max-width: 180px;
                 height: auto;
-                margin-bottom: 20px;
+                margin-bottom: 25px;
                 display: inline-block;
+                background: white;
+                padding: 10px 15px;
+                border-radius: 6px;
             }
             .header h1 {
-                font-size: 28px;
+                font-size: 32px;
                 font-weight: 700;
-                margin-bottom: 10px;
+                margin-bottom: 12px;
                 margin-top: 0;
+                color: #ffffff;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             }
             .header p {
-                font-size: 15px;
-                opacity: 0.95;
+                font-size: 16px;
+                opacity: 1;
+                color: #ffffff;
+                font-weight: 500;
             }
             .content {
                 padding: 40px 30px;
@@ -301,14 +317,15 @@ export class EmailTemplatesService {
             .greeting {
                 font-size: 16px;
                 margin-bottom: 20px;
-                color: #1e293b;
+                color: #0f172a;
                 line-height: 1.6;
+                font-weight: 500;
             }
             .greeting strong {
                 color: #f59e0b;
             }
             .appointment-card {
-                background: linear-gradient(135deg, #fef3c7 0%, #fef08a 100%);
+                background: #fef3c7;
                 border-radius: 8px;
                 padding: 28px;
                 margin: 30px 0;
@@ -316,45 +333,46 @@ export class EmailTemplatesService {
             }
             .appointment-detail {
                 display: flex;
-                margin-bottom: 16px;
+                margin-bottom: 18px;
                 align-items: flex-start;
             }
             .appointment-detail:last-child {
                 margin-bottom: 0;
             }
             .detail-icon {
-                font-size: 18px;
-                margin-right: 12px;
-                min-width: 20px;
+                font-size: 20px;
+                margin-right: 14px;
+                min-width: 24px;
             }
             .detail-content {
                 flex: 1;
             }
             .detail-label {
-                font-weight: 600;
-                color: #92400e;
-                font-size: 13px;
+                font-weight: 700;
+                color: #78350f;
+                font-size: 12px;
                 text-transform: uppercase;
-                letter-spacing: 0.5px;
+                letter-spacing: 0.8px;
                 display: block;
-                margin-bottom: 3px;
+                margin-bottom: 4px;
             }
             .detail-value {
-                color: #78350f;
-                font-weight: 500;
+                color: #451a03;
+                font-weight: 600;
                 font-size: 16px;
             }
             .urgency-box {
-                background: #fef2f2;
-                border-left: 4px solid #ef4444;
-                padding: 16px;
+                background: #fee2e2;
+                border-left: 4px solid #dc2626;
+                padding: 18px;
                 margin: 25px 0;
                 border-radius: 4px;
             }
             .urgency-box p {
-                margin: 8px 0;
+                margin: 10px 0;
                 color: #7f1d1d;
                 font-size: 14px;
+                font-weight: 500;
             }
             .urgency-box strong {
                 color: #dc2626;
