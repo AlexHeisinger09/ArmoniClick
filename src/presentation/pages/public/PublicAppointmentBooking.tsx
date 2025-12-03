@@ -401,7 +401,7 @@ export const PublicAppointmentBooking: React.FC = () => {
                         className={`
                           px-2 py-2 text-xs rounded-md transition-all border font-medium disabled:cursor-not-allowed flex items-center justify-center
                           ${appointmentForm.duration === duration
-                            ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white border-cyan-600 shadow-lg'
+                            ? 'bg-cyan-500 text-white border-cyan-600 shadow-lg'
                             : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-cyan-400 disabled:opacity-50'
                           }
                         `}
@@ -445,7 +445,7 @@ export const PublicAppointmentBooking: React.FC = () => {
                             className={`
                               px-2 py-2 text-xs rounded-md transition-all border font-medium
                               ${appointmentForm.time === time
-                                ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white border-cyan-600 shadow-lg'
+                                ? 'bg-cyan-500 text-white border-cyan-600 shadow-lg'
                                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-cyan-400'
                               }
                             `}
