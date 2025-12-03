@@ -43,7 +43,7 @@ export const router = createBrowserRouter([
     element: <CancelAppointment />,
   },
   {
-    path: "/book-appointment/:doctorId",
+    path: "/book-appointment/:token",
     element: <PublicAppointmentBooking />,
   },
 

@@ -17,8 +17,9 @@ interface PublicAppointmentForm {
 }
 
 export const PublicAppointmentBooking: React.FC = () => {
-  const { doctorId } = useParams<{ doctorId: string }>();
+  const { token } = useParams<{ token: string }>();
   const location = useLocation();
+  const [doctorId, setDoctorId] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -48,19 +49,20 @@ export const PublicAppointmentBooking: React.FC = () => {
       try {
         setIsLoading(true);
 
-        // Construir URL con parámetros de query
-        let url = `/public-booking-info/${doctorId}`;
-        if (location.search) {
-          url += location.search; // Incluye ?durations=30,60,90
+        // El token está en la URL: /book-appointment/:token
+        if (!token) {
+          throw new Error('Link de reserva inválido');
         }
 
-        const response = await fetch(url);
+        const response = await fetch(`/public-booking-info/${token}`);
 
         if (!response.ok) {
-          throw new Error('Doctor no encontrado o link inválido');
+          const error = await response.json();
+          throw new Error(error.message || 'Doctor no encontrado o link inválido');
         }
 
         const data = await response.json();
+        setDoctorId(data.doctorId || 0);
         setDoctorName(data.doctorName || 'Doctor');
         setAvailableDurations(data.availableDurations || [30, 60]);
         setAppointments(data.appointments || {});
@@ -80,10 +82,10 @@ export const PublicAppointmentBooking: React.FC = () => {
       }
     };
 
-    if (doctorId) {
+    if (token) {
       fetchDoctorData();
     }
-  }, [doctorId, location.search]);
+  }, [token]);
 
   const handleFormChange = (updates: Partial<PublicAppointmentForm>) => {
     setAppointmentForm(prev => ({ ...prev, ...updates }));
@@ -114,7 +116,7 @@ export const PublicAppointmentBooking: React.FC = () => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            doctorId: parseInt(doctorId || '0'),
+            doctorId,
             patientName: appointmentForm.patientName,
             patientEmail: appointmentForm.patientEmail,
             patientPhone: appointmentForm.patientPhone,

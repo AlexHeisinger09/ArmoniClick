@@ -1,6 +1,7 @@
 // netlify/functions/public-booking.ts
 import { Handler, HandlerEvent } from "@netlify/functions";
 import { HEADERS, fromBodyToObject } from "../config/utils";
+import { JwtAdapter } from "../config/adapters/jwt.adapter";
 import { db } from "../data/db";
 import { usersTable, appointmentsTable, scheduleBlocksTable } from "../data/schemas";
 import { eq } from "drizzle-orm";
@@ -28,40 +29,37 @@ const handler: Handler = async (event: HandlerEvent) => {
     const isCreateEndpoint = pathSegments.some(seg => seg === 'public-booking') &&
                              pathSegments.some(seg => seg === 'create-appointment');
 
-    // GET /public-booking-info/:doctorId
+    // GET /public-booking-info/:token
     if (httpMethod === "GET" && isInfoEndpoint) {
-      const doctorIdIndex = pathSegments.indexOf('public-booking-info') + 1;
-      const doctorId = pathSegments[doctorIdIndex];
+      const tokenIndex = pathSegments.indexOf('public-booking-info') + 1;
+      const token = pathSegments[tokenIndex];
 
-      if (!doctorId || isNaN(parseInt(doctorId))) {
+      if (!token) {
         return {
           statusCode: 400,
-          body: JSON.stringify({ message: "Doctor ID inválido", debug: { pathSegments, doctorIdIndex, doctorId } }),
+          body: JSON.stringify({ message: "Token inválido" }),
           headers: HEADERS.json,
         };
       }
 
-      const parsedDoctorId = parseInt(doctorId);
-
-      // Parsear parámetros de query string (ej: ?durations=30,60,90)
-      const queryParams = event.queryStringParameters || {};
-      let availableDurations = [30, 60]; // Default
-
-      if (queryParams.durations) {
-        try {
-          const durationsFromUrl = queryParams.durations
-            .split(',')
-            .map(d => parseInt(d.trim()))
-            .filter(d => !isNaN(d) && [30, 60, 90, 120].includes(d));
-
-          if (durationsFromUrl.length > 0) {
-            availableDurations = durationsFromUrl.sort((a, b) => a - b);
-          }
-        } catch (error) {
-          console.error('Error parsing durations from query:', error);
-          // Keep default durations on error
-        }
+      // Validar y decodificar el token para obtener doctorId y durations
+      interface BookingToken {
+        doctorId: number;
+        durations: number[];
       }
+
+      const decoded = await JwtAdapter.validateToken<BookingToken>(token);
+
+      if (!decoded || !decoded.doctorId) {
+        return {
+          statusCode: 401,
+          body: JSON.stringify({ message: "Token inválido o expirado" }),
+          headers: HEADERS.json,
+        };
+      }
+
+      const parsedDoctorId = decoded.doctorId;
+      const availableDurations = decoded.durations || [30, 60];
 
       // Verificar que el doctor existe
       const doctor = await db
@@ -133,6 +131,7 @@ const handler: Handler = async (event: HandlerEvent) => {
       return {
         statusCode: 200,
         body: JSON.stringify({
+          doctorId: parsedDoctorId,
           doctorName,
           availableDurations,
           appointments: appointmentsData,

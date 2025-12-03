@@ -44,6 +44,8 @@ const ScheduleBlocksTab: React.FC<ScheduleBlocksTabProps> = ({ showMessage }) =>
   const [filterType, setFilterType] = useState<'all' | 'single_date' | 'recurring'>('all');
   const [copiedLink, setCopiedLink] = useState(false);
   const [availableDurations, setAvailableDurations] = useState<number[]>([30, 60]);
+  const [publicLink, setPublicLink] = useState<string>('');
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -165,17 +167,48 @@ const ScheduleBlocksTab: React.FC<ScheduleBlocksTabProps> = ({ showMessage }) =>
     }
   };
 
-  // Generar link de reserva pública
-  const generatePublicBookingLink = (): string => {
-    const baseUrl = window.location.origin;
-    const durations = availableDurations.sort((a, b) => a - b).join(',');
-    return `${baseUrl}/book-appointment/${doctorId}?durations=${durations}`;
+  // Generar link de reserva pública seguro
+  const generateSecureBookingLink = async () => {
+    if (!doctorId || availableDurations.length === 0) {
+      showMessage('Por favor selecciona las duraciones disponibles', 'error');
+      return;
+    }
+
+    try {
+      setIsGeneratingLink(true);
+      const response = await fetch('/public-booking/generate-link', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          doctorId,
+          durations: availableDurations
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al generar el link');
+      }
+
+      const data = await response.json();
+      setPublicLink(data.link);
+    } catch (error: any) {
+      showMessage(error.message || 'Error al generar el link', 'error');
+    } finally {
+      setIsGeneratingLink(false);
+    }
   };
 
   const handleCopyLink = async () => {
-    const link = generatePublicBookingLink();
+    if (!publicLink) {
+      await generateSecureBookingLink();
+      return;
+    }
+
     try {
-      await navigator.clipboard.writeText(link);
+      await navigator.clipboard.writeText(publicLink);
       setCopiedLink(true);
       showMessage('Link copiado al portapapeles', 'success');
       setTimeout(() => setCopiedLink(false), 3000);
@@ -218,20 +251,28 @@ const ScheduleBlocksTab: React.FC<ScheduleBlocksTabProps> = ({ showMessage }) =>
               <div className="flex-1 bg-white border border-slate-300 rounded-lg px-4 py-2.5 flex items-center gap-2">
                 <input
                   type="text"
-                  value={generatePublicBookingLink()}
+                  value={publicLink || 'Selecciona duraciones y genera el link'}
                   readOnly
                   className="flex-1 bg-transparent outline-none text-sm text-slate-700 font-mono"
                 />
               </div>
               <button
                 onClick={handleCopyLink}
+                disabled={isGeneratingLink}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
                   copiedLink
                     ? 'bg-green-500 text-white'
+                    : isGeneratingLink
+                    ? 'bg-slate-400 text-white cursor-not-allowed'
                     : 'bg-cyan-500 hover:bg-cyan-600 text-white'
                 }`}
               >
-                {copiedLink ? (
+                {isGeneratingLink ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Generando...
+                  </>
+                ) : copiedLink ? (
                   <>
                     <Check className="w-4 h-4" />
                     Copiado
