@@ -60,15 +60,23 @@ export class EmailTemplatesService {
                 background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
                 color: white;
                 text-align: center;
-                padding: 30px 20px;
+                padding: 20px;
+            }
+            .logo {
+                max-width: 160px;
+                height: auto;
+                margin-bottom: 15px;
+                display: block;
             }
             .header h1 {
                 font-size: 24px;
                 margin-bottom: 8px;
+                margin-top: 0;
             }
             .header p {
                 opacity: 0.9;
                 font-size: 16px;
+                margin: 0;
             }
             .content {
                 padding: 30px;
@@ -147,6 +155,7 @@ export class EmailTemplatesService {
     <body>
         <div class="container">
             <div class="header">
+                <img src="https://res.cloudinary.com/drfvhhrck/image/upload/v1764792657/letras_o42jqi.png" alt="ArmoniClick Logo" class="logo">
                 <h1>¡Cita Confirmada!</h1>
                 <p>Tu cita ha sido agendada exitosamente</p>
             </div>
@@ -249,11 +258,18 @@ export class EmailTemplatesService {
                 background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
                 color: white;
                 text-align: center;
-                padding: 30px 20px;
+                padding: 20px;
+            }
+            .logo {
+                max-width: 160px;
+                height: auto;
+                margin-bottom: 15px;
+                display: block;
             }
             .header h1 {
                 font-size: 24px;
                 margin-bottom: 8px;
+                margin-top: 0;
             }
             .reminder-icon {
                 display: inline-block;
@@ -356,10 +372,11 @@ export class EmailTemplatesService {
     <body>
         <div class="container">
             <div class="header">
+                <img src="https://res.cloudinary.com/drfvhhrck/image/upload/v1764792657/letras_o42jqi.png" alt="ArmoniClick Logo" class="logo">
                 <h1>Recordatorio de Cita</h1>
                 <p>Tu cita es mañana</p>
             </div>
-            
+
             <div class="content">
                 <div style="text-align: center;">
                     <div class="reminder-icon"></div>
