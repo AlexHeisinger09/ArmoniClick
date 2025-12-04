@@ -9,13 +9,19 @@ export function getCORSHeaders(origin?: string): Record<string, string> {
     allowedOrigins.push('https://www.armoniclick.cl');
   }
 
+  // Permitir landing pages en diferentes dominios (desarrollo y producción)
+  allowedOrigins.push('https://softwarearmoniclick.netlify.app'); // Landing en Netlify
+  allowedOrigins.push('https://software.armoniclick.cl'); // Landing en dominio personalizado
+  allowedOrigins.push('http://localhost:5173'); // Landing en desarrollo local (Vite)
+  allowedOrigins.push('http://localhost:3000'); // Landing en desarrollo local (alternativo)
+
   // Verificar si el origin de la petición está en la lista de permitidos
   const allowOrigin = origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
 
   return {
     "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Content-Type": "application/json",
   };
 }
