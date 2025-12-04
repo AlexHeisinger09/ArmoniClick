@@ -22,6 +22,7 @@ export const usersTable = pgTable("users", {
   city: varchar("city"),
   img: varchar("img"),
   signature: varchar("signature"), // ✅ NUEVO CAMPO PARA LA FIRMA
+  expirationDate: timestamp("expirationDate"), // ✅ Fecha de vigencia (para cuentas de prueba)
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt"),
   isActive: boolean("isActive").default(true),

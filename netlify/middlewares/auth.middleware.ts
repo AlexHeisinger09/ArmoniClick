@@ -86,6 +86,22 @@ export const validateJWT = async (authorization: string) => {
 
     console.log('✅ Usuario encontrado en auth middleware:', { id: user.id, email: user.email });
 
+    // ✅ VALIDAR SI LA CUENTA HA EXPIRADO
+    if (user.expirationDate) {
+      const now = new Date();
+      if (now > new Date(user.expirationDate)) {
+        console.warn('⏰ Cuenta expirada para usuario:', user.email);
+        return {
+          statusCode: 401,
+          body: JSON.stringify({
+            message: "Tu cuenta de prueba ha expirado",
+            code: "ACCOUNT_EXPIRED"
+          }),
+          headers: HEADERS.json,
+        };
+      }
+    }
+
     return {
       statusCode: 200,
       body: JSON.stringify(user),

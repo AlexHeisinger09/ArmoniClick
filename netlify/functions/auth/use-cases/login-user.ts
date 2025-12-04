@@ -37,7 +37,22 @@ export class LoginUser implements LoginUserUseCase {
       }),
       headers: HEADERS.json,
     };
-    
+
+    // ✅ VALIDAR SI LA CUENTA HA EXPIRADO
+    if (user.expirationDate) {
+      const now = new Date();
+      if (now > new Date(user.expirationDate)) {
+        return {
+          statusCode: 403,
+          body: JSON.stringify({
+            message: "Tu cuenta de prueba ha expirado",
+            code: "ACCOUNT_EXPIRED",
+          }),
+          headers: HEADERS.json,
+        };
+      }
+    }
+
     const { password, ...newUser } = user;
 
     const isMatching = BcriptAdapter.compare(dto.password, password);

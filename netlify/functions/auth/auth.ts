@@ -3,6 +3,7 @@ import type { HandlerEvent, Handler } from "@netlify/functions";
 import {
   ChangePassword,
   CheckUserToken,
+  CreateDemoUser,
   LoginUser,
   RegisterUser,
   ResetPassword,
@@ -17,6 +18,21 @@ import {
 } from "./dtos";
 
 import { fromBodyToObject, HEADERS, getCORSHeaders } from "../../config/utils";
+
+// Validar DTO para crear usuario demo
+const validateDemoDto = (body: any): [string | null, any | null] => {
+  if (!body.email) return ["Email es requerido", null];
+  if (!body.name) return ["Nombre es requerido", null];
+  if (!body.lastName) return ["Apellido es requerido", null];
+
+  return [null, {
+    email: body.email,
+    name: body.name,
+    lastName: body.lastName,
+    password: body.password,
+    trialDays: body.trialDays || 15,
+  }];
+};
 
 const handler: Handler = async (event: HandlerEvent) => {
   const { httpMethod, path } = event;
@@ -122,6 +138,27 @@ const handler: Handler = async (event: HandlerEvent) => {
   if (httpMethod === "GET" && path.includes("/change-password") && token) {
     const result = await new CheckUserToken()
       .execute(token);
+
+    return {
+      ...result,
+      headers: getCORSHeaders(origin),
+    };
+  }
+
+  if (httpMethod === "POST" && path.includes("/demo")) {
+    const [error, demoDtoError] = validateDemoDto(body);
+    if (error) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: error,
+        }),
+        headers: getCORSHeaders(origin),
+      };
+    }
+
+    const result = await new CreateDemoUser()
+      .execute(demoDtoError!);
 
     return {
       ...result,
