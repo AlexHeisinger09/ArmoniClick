@@ -1,5 +1,5 @@
-import { db } from "../../../../data/postgres.db";
-import { patients, treatments, appointments, budgets, budgetItems, services } from "../../../../data/schemas";
+import { db } from "../../../data/db";
+import { patients, treatments, appointments, budgets, budgetItems, services } from "../../../data/schemas";
 import { eq, and, desc } from "drizzle-orm";
 import { AIService, PatientSummaryRequest } from "../../../services";
 import { HEADERS } from "../../../config/utils";
