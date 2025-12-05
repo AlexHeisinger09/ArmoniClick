@@ -1,10 +1,9 @@
 import { db } from "../../../data/db";
 import { patientsTable } from "../../../data/schemas/patient.schema";
-import { treatmentsTable } from "../../../data/schemas/treatment.schema";
+import { auditLogsTable, AUDIT_ENTITY_TYPES } from "../../../data/schemas/audit.schema";
 import { appointmentsTable } from "../../../data/schemas/appointment.schema";
-import { budgetsTable, budgetItemsTable } from "../../../data/schemas/budget.schema";
-import { servicesTable } from "../../../data/schemas/service.schema";
-import { eq, and, desc } from "drizzle-orm";
+import { budgetsTable } from "../../../data/schemas/budget.schema";
+import { eq, and, desc, gte } from "drizzle-orm";
 import { AIService, PatientSummaryRequest } from "../../../services";
 import { HEADERS } from "../../../config/utils";
 
@@ -39,14 +38,23 @@ export class AskPatientQuestion {
         };
       }
 
-      // 3. Obtener contexto del paciente
-      const patientTreatments = await db
-        .select()
-        .from(treatmentsTable)
-        .where(eq(treatmentsTable.patientId, patientId))
-        .orderBy(desc(treatmentsTable.createdAt))
-        .limit(20);
+      // 3. Obtener historial de auditoría
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
+      const auditHistory = await db
+        .select()
+        .from(auditLogsTable)
+        .where(
+          and(
+            eq(auditLogsTable.patient_id, patientId),
+            gte(auditLogsTable.created_at, sixMonthsAgo)
+          )
+        )
+        .orderBy(desc(auditLogsTable.created_at))
+        .limit(50);
+
+      // 4. Obtener citas recientes
       const patientAppointments = await db
         .select()
         .from(appointmentsTable)
@@ -54,6 +62,7 @@ export class AskPatientQuestion {
         .orderBy(desc(appointmentsTable.startTime))
         .limit(10);
 
+      // 5. Obtener presupuesto activo
       const activeBudgets = await db
         .select()
         .from(budgetsTable)
@@ -69,23 +78,38 @@ export class AskPatientQuestion {
       let activeBudgetData = undefined;
       if (activeBudgets.length > 0) {
         const budget = activeBudgets[0];
-        const items = await db
-          .select({
-            itemName: budgetItemsTable.itemName,
-            serviceName: servicesTable.name,
-          })
-          .from(budgetItemsTable)
-          .leftJoin(servicesTable, eq(budgetItemsTable.serviceId, servicesTable.id))
-          .where(eq(budgetItemsTable.budgetId, budget.id));
-
         activeBudgetData = {
           total: budget.total,
           status: budget.status,
-          items: items.map(item => item.serviceName || item.itemName),
+          items: [`Presupuesto #${budget.id}`],
         };
       }
 
-      // 4. Preparar contexto para la IA
+      // 6. Preparar datos del historial
+      const treatmentHistory = auditHistory
+        .filter(log => log.entity_type === AUDIT_ENTITY_TYPES.TRATAMIENTO)
+        .map(log => ({
+          date: log.created_at.toISOString(),
+          action: log.action,
+          description: JSON.stringify(log.new_values),
+          status: 'registrado'
+        }));
+
+      const budgetHistory = auditHistory
+        .filter(log => log.entity_type === AUDIT_ENTITY_TYPES.PRESUPUESTO)
+        .map(log => ({
+          date: log.created_at.toISOString(),
+          action: log.action,
+          description: JSON.stringify(log.new_values),
+          status: 'registrado'
+        }));
+
+      const combinedTreatments = [
+        ...treatmentHistory,
+        ...budgetHistory
+      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      // 7. Preparar contexto para la IA
       const fullName = `${patient.nombres} ${patient.apellidos}`;
       const age = patient.fecha_nacimiento
         ? Math.floor((Date.now() - new Date(patient.fecha_nacimiento).getTime()) / (1000 * 60 * 60 * 24 * 365))
@@ -95,21 +119,23 @@ export class AskPatientQuestion {
         patientName: fullName,
         patientRut: patient.rut,
         patientAge: age,
-        treatments: patientTreatments.map(t => ({
-          date: t.createdAt.toISOString(),
-          description: t.description,
-          status: t.status,
-        })),
+        treatments: combinedTreatments,
         appointments: patientAppointments.map(a => ({
           date: a.startTime.toISOString(),
           status: a.status,
           notes: a.notes || undefined,
         })),
         activeBudget: activeBudgetData,
-        medicalHistory: patient.notas_medicas || undefined,
+        medicalHistory: [
+          patient.alergias ? `Alergias: ${patient.alergias}` : null,
+          patient.medicamentos_actuales ? `Medicamentos: ${patient.medicamentos_actuales}` : null,
+          patient.enfermedades_cronicas ? `Enfermedades crónicas: ${patient.enfermedades_cronicas}` : null,
+          patient.cirugias_previas ? `Cirugías previas: ${patient.cirugias_previas}` : null,
+          patient.notas_medicas ? `Notas: ${patient.notas_medicas}` : null,
+        ].filter(Boolean).join('. '),
       };
 
-      // 5. Hacer la pregunta a la IA
+      // 8. Hacer la pregunta a la IA
       const aiService = new AIService();
       const answer = await aiService.askQuestion(aiRequest, question);
 
