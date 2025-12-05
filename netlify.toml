@@ -14,6 +14,10 @@
 [functions."daily-reminders"]
 schedule = "30 13 * * *"  # 14:30 CL (18:30 UTC, ajustar en verano a 17:30)
 
+# ⏱️ Timeout extendido para función de IA
+[functions."ai-analysis"]
+timeout = 25  # 25 segundos para dar tiempo a la API de DeepSeek
+
 # RUTAS EXISTENTES
 [[redirects]]
   from = "/treatments/popular"

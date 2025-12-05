@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, Brain, AlertCircle, FileText, Clock, Sparkles, Loader2 } from 'lucide-react';
-import { usePatientSummary, useAskPatientQuestion } from '@/presentation/hooks/ai-analysis';
+import { X, Brain, AlertCircle, FileText, Clock, Loader2 } from 'lucide-react';
+import { usePatientSummary } from '@/presentation/hooks/ai-analysis';
 import type { GetPatientSummaryResponse } from '@/core/use-cases/ai-analysis';
 import { toast } from 'sonner';
 
@@ -18,11 +18,8 @@ export const ClinicalSummaryModal: React.FC<ClinicalSummaryModalProps> = ({
   patientName,
 }) => {
   const [summaryData, setSummaryData] = useState<GetPatientSummaryResponse | null>(null);
-  const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState('');
 
   const { generateSummaryMutation, isLoadingSummary } = usePatientSummary();
-  const { askQuestionMutation, isLoadingQuestion } = useAskPatientQuestion();
 
   // Generar resumen al abrir el modal
   React.useEffect(() => {
@@ -38,23 +35,6 @@ export const ClinicalSummaryModal: React.FC<ClinicalSummaryModalProps> = ({
     } catch (error) {
       console.error('Error al generar resumen:', error);
       toast.error('No se pudo generar el resumen clínico');
-    }
-  };
-
-  const handleAskQuestion = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!question.trim()) return;
-
-    try {
-      const result = await askQuestionMutation.mutateAsync({
-        patientId,
-        question: question.trim(),
-      });
-      setAnswer(result.answer);
-      setQuestion(''); // Limpiar input
-    } catch (error) {
-      console.error('Error al hacer pregunta:', error);
-      toast.error('No se pudo procesar la pregunta');
     }
   };
 
@@ -87,16 +67,42 @@ export const ClinicalSummaryModal: React.FC<ClinicalSummaryModalProps> = ({
           {/* Disclaimer */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800">
-              <strong>El resumen se basa en los últimos 6 meses de la historia del paciente.</strong>{' '}
-              El contenido es generado con IA a partir de estudios previos y debe ser verificado por un profesional de la salud.
+              <strong>El resumen se basa en los últimos 3 meses de la historia del paciente.</strong>{' '}
+              El contenido es generado con IA y debe ser verificado por un profesional de la salud.
             </p>
           </div>
 
           {/* Loading State */}
           {isLoadingSummary && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-              <p className="text-gray-600">Generando resumen clínico...</p>
+            <div className="flex flex-col items-center justify-center py-12 space-y-6">
+              {/* Animación de cerebro con pulso */}
+              <div className="relative">
+                <div className="absolute inset-0 bg-blue-400 rounded-full opacity-20 animate-ping"></div>
+                <div className="absolute inset-0 bg-purple-400 rounded-full opacity-20 animate-pulse"></div>
+                <Brain className="w-16 h-16 text-blue-600 relative z-10 animate-pulse" />
+              </div>
+
+              {/* Texto animado */}
+              <div className="text-center space-y-2">
+                <p className="text-lg font-semibold text-gray-800 animate-pulse">
+                  IA analizando historial clínico...
+                </p>
+                <div className="flex items-center justify-center gap-1">
+                  <span className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                  <span className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                  <span className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                </div>
+              </div>
+
+              {/* Barra de progreso con gradiente */}
+              <div className="w-full max-w-md">
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 animate-shimmer bg-[length:200%_100%]"></div>
+                </div>
+                <p className="text-xs text-gray-500 text-center mt-2">
+                  Procesando datos del paciente con DeepSeek AI
+                </p>
+              </div>
             </div>
           )}
 
@@ -136,43 +142,16 @@ export const ClinicalSummaryModal: React.FC<ClinicalSummaryModalProps> = ({
                 </div>
               </div>
 
-              {/* Asistente IA */}
-              <div className="space-y-3">
+              {/* Asistente IA - Próximamente */}
+              {/* <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-purple-600" />
                   <h3 className="text-lg font-semibold text-gray-900">Asistente IA</h3>
                 </div>
-                <form onSubmit={handleAskQuestion} className="space-y-3">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={question}
-                      onChange={(e) => setQuestion(e.target.value)}
-                      placeholder="Pregúntame sobre el paciente: ¿Qué antibiótico usó la última vez?"
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={isLoadingQuestion}
-                    />
-                    {isLoadingQuestion && (
-                      <Loader2 className="absolute right-3 top-3 w-6 h-6 text-blue-600 animate-spin" />
-                    )}
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={!question.trim() || isLoadingQuestion}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {isLoadingQuestion ? 'Preguntando...' : 'Preguntar'}
-                  </button>
-                </form>
-
-                {/* Answer Display */}
-                {answer && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-3">
-                    <p className="text-sm font-semibold text-blue-900 mb-2">Respuesta:</p>
-                    <p className="text-gray-800 whitespace-pre-wrap">{answer}</p>
-                  </div>
-                )}
-              </div>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <p className="text-sm text-gray-600">Función de chat con IA disponible próximamente.</p>
+                </div>
+              </div> */}
             </>
           )}
         </div>
