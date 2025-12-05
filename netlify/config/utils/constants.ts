@@ -7,6 +7,7 @@ export function getCORSHeaders(origin?: string): Record<string, string> {
   // Si FRONTEND_URL es armoniclick.cl, permitir también www.armoniclick.cl
   if (envs.FRONTEND_URL.includes('armoniclick.cl')) {
     allowedOrigins.push('https://www.armoniclick.cl');
+    allowedOrigins.push('https://armoniclick.cl'); // Landing page sin www
   }
 
   // Permitir landing pages en diferentes dominios (desarrollo y producción)
