@@ -1,5 +1,9 @@
 import { db } from "../../../data/db";
-import { patients, treatments, appointments, budgets, budgetItems, services } from "../../../data/schemas";
+import { patientsTable } from "../../../data/schemas/patient.schema";
+import { treatmentsTable } from "../../../data/schemas/treatment.schema";
+import { appointmentsTable } from "../../../data/schemas/appointment.schema";
+import { budgetsTable, budgetItemsTable } from "../../../data/schemas/budget.schema";
+import { servicesTable } from "../../../data/schemas/service.schema";
 import { eq, and, desc } from "drizzle-orm";
 import { AIService, PatientSummaryRequest } from "../../../services";
 import { HEADERS } from "../../../config/utils";
@@ -10,11 +14,11 @@ export class GeneratePatientSummary {
       // 1. Obtener datos del paciente
       const [patient] = await db
         .select()
-        .from(patients)
+        .from(patientsTable)
         .where(
           and(
-            eq(patients.id, patientId),
-            eq(patients.doctorId, doctorId)
+            eq(patientsTable.id, patientId),
+            eq(patientsTable.id_doctor, doctorId)
           )
         );
 
@@ -26,36 +30,33 @@ export class GeneratePatientSummary {
         };
       }
 
-      // 2. Obtener tratamientos recientes (últimos 6 meses)
-      const sixMonthsAgo = new Date();
-      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
+      // 2. Obtener tratamientos recientes
       const patientTreatments = await db
         .select()
-        .from(treatments)
-        .where(eq(treatments.patientId, patientId))
-        .orderBy(desc(treatments.createdAt))
+        .from(treatmentsTable)
+        .where(eq(treatmentsTable.patientId, patientId))
+        .orderBy(desc(treatmentsTable.createdAt))
         .limit(20);
 
       // 3. Obtener citas recientes
       const patientAppointments = await db
         .select()
-        .from(appointments)
-        .where(eq(appointments.patientId, patientId))
-        .orderBy(desc(appointments.startTime))
+        .from(appointmentsTable)
+        .where(eq(appointmentsTable.patientId, patientId))
+        .orderBy(desc(appointmentsTable.startTime))
         .limit(10);
 
       // 4. Obtener presupuesto activo
       const activeBudgets = await db
         .select()
-        .from(budgets)
+        .from(budgetsTable)
         .where(
           and(
-            eq(budgets.patientId, patientId),
-            eq(budgets.status, "pendiente")
+            eq(budgetsTable.patientId, patientId),
+            eq(budgetsTable.status, "pendiente")
           )
         )
-        .orderBy(desc(budgets.createdAt))
+        .orderBy(desc(budgetsTable.createdAt))
         .limit(1);
 
       let activeBudgetData = undefined;
@@ -65,12 +66,12 @@ export class GeneratePatientSummary {
         // Obtener items del presupuesto
         const items = await db
           .select({
-            itemName: budgetItems.itemName,
-            serviceName: services.name,
+            itemName: budgetItemsTable.itemName,
+            serviceName: servicesTable.name,
           })
-          .from(budgetItems)
-          .leftJoin(services, eq(budgetItems.serviceId, services.id))
-          .where(eq(budgetItems.budgetId, budget.id));
+          .from(budgetItemsTable)
+          .leftJoin(servicesTable, eq(budgetItemsTable.serviceId, servicesTable.id))
+          .where(eq(budgetItemsTable.budgetId, budget.id));
 
         activeBudgetData = {
           total: budget.total,
@@ -80,12 +81,15 @@ export class GeneratePatientSummary {
       }
 
       // 5. Preparar datos para el servicio de IA
+      const fullName = `${patient.nombres} ${patient.apellidos}`;
+      const age = patient.fecha_nacimiento
+        ? Math.floor((Date.now() - new Date(patient.fecha_nacimiento).getTime()) / (1000 * 60 * 60 * 24 * 365))
+        : undefined;
+
       const aiRequest: PatientSummaryRequest = {
-        patientName: patient.fullName,
+        patientName: fullName,
         patientRut: patient.rut,
-        patientAge: patient.birthDate
-          ? Math.floor((Date.now() - new Date(patient.birthDate).getTime()) / (1000 * 60 * 60 * 24 * 365))
-          : undefined,
+        patientAge: age,
         treatments: patientTreatments.map(t => ({
           date: t.createdAt.toISOString(),
           description: t.description,
@@ -97,7 +101,7 @@ export class GeneratePatientSummary {
           notes: a.notes || undefined,
         })),
         activeBudget: activeBudgetData,
-        medicalHistory: patient.medicalHistory || undefined,
+        medicalHistory: patient.notas_medicas || undefined,
       };
 
       // 6. Generar resumen con IA
@@ -108,7 +112,7 @@ export class GeneratePatientSummary {
         statusCode: 200,
         body: JSON.stringify({
           patientId: patient.id,
-          patientName: patient.fullName,
+          patientName: fullName,
           summary,
           generatedAt: new Date().toISOString(),
         }),
