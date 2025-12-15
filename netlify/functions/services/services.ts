@@ -5,6 +5,7 @@ import { servicesTable } from "../../data/schemas/service.schema";
 import { eq, and, desc } from "drizzle-orm";
 import { fromBodyToObject, HEADERS } from "../../config/utils";
 import { validateJWT } from "../../middlewares";
+import { setTenantContext } from "../../config/tenant-context";
 
 const handler: Handler = async (event: HandlerEvent) => {
   const { httpMethod, path } = event;
@@ -24,6 +25,9 @@ const handler: Handler = async (event: HandlerEvent) => {
 
   const userData = JSON.parse(user.body);
   const userId = userData.id;
+
+  // ✅ NUEVO: Setear contexto de tenant para Row-Level Security
+  await setTenantContext(db, userId);
 
   try {
     // GET /services - Obtener todos los servicios del usuario

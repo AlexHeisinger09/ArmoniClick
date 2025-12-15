@@ -5,6 +5,7 @@ import { HEADERS, fromBodyToObject } from "../../config/utils";
 import { db } from "../../data/db";
 import { scheduleBlocksTable } from "../../data/schemas/schedule-block.schema";
 import { eq, and, gte, lte } from "drizzle-orm";
+import { setTenantContext } from "../../config/tenant-context";
 
 interface CreateScheduleBlockRequest {
   blockType: 'single_date' | 'recurring';
@@ -35,6 +36,9 @@ const handler: Handler = async (event: HandlerEvent) => {
 
   const userData = JSON.parse(user.body);
   const doctorId = userData.id;
+
+  // ✅ NUEVO: Setear contexto de tenant para Row-Level Security
+  await setTenantContext(db, doctorId);
 
   try {
     // Función auxiliar para extraer ID de la URL

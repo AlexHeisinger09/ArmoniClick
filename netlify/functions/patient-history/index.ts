@@ -4,6 +4,7 @@ import { db } from '../../data/db';
 import { auditLogsTable, usersTable } from '../../data/schemas';
 import { eq, sql } from 'drizzle-orm';
 import { validateJWT, getAuthorizationHeader } from '../../middlewares/auth.middleware';
+import { setTenantContext } from '../../config/tenant-context';
 
 const handler: Handler = async (event) => {
   // Solo permitir GET
@@ -19,6 +20,11 @@ const handler: Handler = async (event) => {
     const authHeader = getAuthorizationHeader(event.headers);
     const user = await validateJWT(authHeader || '');
     if (user.statusCode !== 200) return user;
+
+    const userData = JSON.parse(user.body);
+
+    // ✅ NUEVO: Setear contexto de tenant para Row-Level Security
+    await setTenantContext(db, userData.id);
 
     // Obtener patientId del path
     const patientIdStr = event.path.split('/').pop();

@@ -12,6 +12,7 @@ import { generateDocumentPDF } from "../../services/pdfService";
 import { AuditService } from "../../services/AuditService";
 import { AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } from "../../data/schemas";
 import { envs } from "../../config/envs";
+import { setTenantContext } from "../../config/tenant-context";
 
 const handler: Handler = async (event: HandlerEvent) => {
   const { httpMethod, path } = event;
@@ -30,6 +31,9 @@ const handler: Handler = async (event: HandlerEvent) => {
 
   const userData = JSON.parse(user.body);
   const doctorId = userData.id;
+
+  // ✅ NUEVO: Setear contexto de tenant para Row-Level Security
+  await setTenantContext(db, doctorId);
 
   // Extraer ID del documento de la URL si existe
   const pathParts = path.split('/');

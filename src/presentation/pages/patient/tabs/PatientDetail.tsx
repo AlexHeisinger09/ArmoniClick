@@ -1,7 +1,7 @@
 // src/presentation/pages/patient/PatientDetail.tsx
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ArrowLeft, User, Calculator, Stethoscope, Clock, FileText } from 'lucide-react';
+import { ArrowLeft, User, Calculator, Stethoscope, Clock, FileText, Brain } from 'lucide-react';
 import { Patient } from "@/core/use-cases/patients";
 
 // Importar los componentes de las pestañas
@@ -10,6 +10,7 @@ import { PatientBudget } from './budget/PatientBudget';
 import { PatientTreatments } from './treatments/PatientTreatments';
 import { PatientAppointments } from './appointments/PatientAppointments';
 import { PatientMedicalHistory } from './medicalHistory/PatientMedicalHistory';
+import { ClinicalSummaryModal } from '@/presentation/components/ai-analysis';
 
 interface PatientDetailProps {
   patient: Patient;
@@ -27,6 +28,7 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
   const [searchParams] = useSearchParams();
   const tabFromUrl = searchParams.get('tab') || 'informacion';
   const [activeTab, setActiveTab] = useState(tabFromUrl);
+  const [showAISummaryModal, setShowAISummaryModal] = useState(false);
 
   // Effect para actualizar el tab si cambia el parámetro de la URL
   useEffect(() => {
@@ -68,7 +70,7 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Encabezado con botón de regreso */}
+      {/* Encabezado con botón de regreso y botón de IA */}
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
@@ -77,7 +79,24 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
           <ArrowLeft className="w-5 h-5 mr-2" />
           Volver a la lista
         </button>
+
+        <button
+          onClick={() => setShowAISummaryModal(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
+        >
+          <Brain className="w-5 h-5" />
+          <span className="hidden sm:inline">Análisis de IA</span>
+          <span className="sm:hidden">IA</span>
+        </button>
       </div>
+
+      {/* Modal de Resumen Clínico con IA */}
+      <ClinicalSummaryModal
+        isOpen={showAISummaryModal}
+        onClose={() => setShowAISummaryModal(false)}
+        patientId={patient.id}
+        patientName={`${patient.nombres} ${patient.apellidos}`}
+      />
 
       {/* Pestañas de navegación RESPONSIVE */}
       <div className="bg-white rounded-xl shadow-sm border border-cyan-200 overflow-hidden">

@@ -14,6 +14,10 @@
 [functions."daily-reminders"]
 schedule = "30 13 * * *"  # 14:30 CL (18:30 UTC, ajustar en verano a 17:30)
 
+# ⏱️ Timeout extendido para función de IA
+[functions."ai-analysis"]
+timeout = 25  # 25 segundos para dar tiempo a la API de DeepSeek
+
 # RUTAS EXISTENTES
 [[redirects]]
   from = "/treatments/popular"
@@ -111,6 +115,13 @@ schedule = "30 13 * * *"  # 14:30 CL (18:30 UTC, ajustar en verano a 17:30)
 [[redirects]]
   from = "/public-booking/*"
   to = "/.netlify/functions/public-booking"
+  status = 200
+  methods = ["POST", "OPTIONS"]
+
+# AI ANALYSIS ROUTES (patient clinical summary and AI assistant)
+[[redirects]]
+  from = "/ai-analysis/*"
+  to = "/.netlify/functions/ai-analysis/ai-analysis"
   status = 200
   methods = ["POST", "OPTIONS"]
 

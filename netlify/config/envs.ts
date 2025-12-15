@@ -20,4 +20,7 @@ export const envs = {
   CLOUDINARY_CLOUD_NAME: get("CLOUDINARY_CLOUD_NAME").required().asString(),
   CLOUDINARY_API_KEY: get("CLOUDINARY_API_KEY").required().asString(),
   CLOUDINARY_API_SECRET: get("CLOUDINARY_API_SECRET").required().asString(),
+
+  DEEPSEEK_API_KEY: get("DEEPSEEK_API_KEY").required().asString(),
+  DEEPSEEK_BASE_URL: get("DEEPSEEK_BASE_URL").default("https://api.deepseek.com").asString(),
 };
