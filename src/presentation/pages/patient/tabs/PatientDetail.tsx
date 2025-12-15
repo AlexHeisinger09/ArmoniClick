@@ -1,8 +1,9 @@
 // src/presentation/pages/patient/PatientDetail.tsx
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { ArrowLeft, User, Calculator, Stethoscope, Clock, FileText, Brain } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, User, Calculator, Stethoscope, Clock, FileText, Brain, Settings, LogOut } from 'lucide-react';
 import { Patient } from "@/core/use-cases/patients";
+import { useLoginMutation } from '@/presentation/hooks';
 
 // Importar los componentes de las pestañas
 import { PatientInformation } from './information/PatientInformation';
@@ -26,15 +27,43 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
   onDelete
 }) => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { logout } = useLoginMutation();
   const tabFromUrl = searchParams.get('tab') || 'informacion';
   const [activeTab, setActiveTab] = useState(tabFromUrl);
   const [showAISummaryModal, setShowAISummaryModal] = useState(false);
+  const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
+  const floatingMenuRef = useRef<HTMLDivElement>(null);
 
   // Effect para actualizar el tab si cambia el parámetro de la URL
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab') || 'informacion';
     setActiveTab(tabFromUrl);
   }, [searchParams]);
+
+  // Cerrar menú flotante al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (floatingMenuRef.current && !floatingMenuRef.current.contains(event.target as Node)) {
+        setIsFloatingMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleGoToConfiguration = () => {
+    navigate('/dashboard/configuracion');
+    setIsFloatingMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    logout();
+    setIsFloatingMenuOpen(false);
+  };
 
   // Configuración de pestañas
   const tabs = [
@@ -90,6 +119,40 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
         </button>
       </div>
 
+      {/* Botón flotante de configuración - Solo visible en mobile cuando está en detalle */}
+      <div className="md:hidden fixed bottom-6 right-6 z-40" ref={floatingMenuRef}>
+        {/* Menú desplegable */}
+        {isFloatingMenuOpen && (
+          <div className="absolute bottom-16 right-0 w-48 bg-white rounded-lg shadow-xl border border-slate-200 py-2 mb-2 animate-in fade-in-0 zoom-in-95 duration-200">
+            <button
+              onClick={handleGoToConfiguration}
+              className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-cyan-700 transition-colors duration-200"
+            >
+              <User className="w-4 h-4" />
+              <span>Configuración</span>
+            </button>
+
+            <div className="my-1 h-px bg-slate-200"></div>
+
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-slate-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-200"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Cerrar sesión</span>
+            </button>
+          </div>
+        )}
+
+        {/* Botón principal */}
+        <button
+          onClick={() => setIsFloatingMenuOpen(!isFloatingMenuOpen)}
+          className="group w-14 h-14 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110"
+        >
+          <Settings className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
+        </button>
+      </div>
+
       {/* Modal de Resumen Clínico con IA */}
       <ClinicalSummaryModal
         isOpen={showAISummaryModal}
@@ -110,14 +173,14 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`
-                    flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap
+                    flex items-center px-4 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap
                     ${activeTab === tab.id
                       ? 'border-cyan-500 text-slate-700 bg-cyan-50'
                       : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-cyan-25'
                     }
                   `}
                 >
-                  <Icon className="w-4 h-4 mr-2" />
+                  <Icon className="w-3.5 h-3.5 mr-1.5" />
                   {tab.label}
                 </button>
               );
@@ -125,7 +188,7 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
           </nav>
 
           {/* Mobile Navigation - Solo íconos */}
-          <nav className="md:hidden flex justify-around px-2 py-4">
+          <nav className="md:hidden flex justify-around px-2 py-2.5">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -133,7 +196,7 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`
-                    flex items-center justify-center w-12 h-12 rounded-full transition-all duration-200
+                    flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200
                     ${activeTab === tab.id
                       ? 'bg-cyan-500 text-white shadow-lg scale-110'
                       : 'text-slate-600 hover:bg-cyan-100 hover:text-cyan-700 hover:scale-105'
@@ -141,7 +204,7 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
                   `}
                   title={tab.label}
                 >
-                  <Icon className="w-6 h-6" />
+                  <Icon className="w-5 h-5" />
                 </button>
               );
             })}

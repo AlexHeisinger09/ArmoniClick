@@ -166,6 +166,10 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   const handlePatientClick = (patient: PatientType) => {
     setSelectedPatient(patient);
     setCurrentView('detail');
+    // ✅ Agregar view=detail a la URL para que el Header se minimice
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('view', 'detail');
+    setSearchParams(newSearchParams);
   };
 
   const handleBackToGrid = () => {
@@ -173,6 +177,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
     setSelectedPatient(null);
     // ✅ Limpiar query params al volver
     searchParams.delete('id');
+    searchParams.delete('view');
     setSearchParams(searchParams);
   };
 
