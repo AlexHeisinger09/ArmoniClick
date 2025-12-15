@@ -6,6 +6,7 @@ import { AppointmentService, CreateAppointmentData, UpdateAppointmentData } from
 import { AuditService } from "../../services/AuditService";
 import { db } from "../../data/db";
 import { AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } from "../../data/schemas";
+import { setTenantContext } from "../../config/tenant-context";
 
 const handler: Handler = async (event: HandlerEvent) => {
   const { httpMethod, path, queryStringParameters } = event;
@@ -25,6 +26,9 @@ const handler: Handler = async (event: HandlerEvent) => {
   if (user.statusCode !== 200) return user;
 
   const userData = JSON.parse(user.body);
+
+  // ✅ NUEVO: Setear contexto de tenant para Row-Level Security
+  await setTenantContext(db, userData.id);
 
   try {
     // Función auxiliar para extraer ID de la URL

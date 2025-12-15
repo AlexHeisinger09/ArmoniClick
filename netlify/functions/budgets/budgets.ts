@@ -21,6 +21,8 @@ import {
 
 import { fromBodyToObject, HEADERS } from "../../config/utils";
 import { validateJWT } from "../../middlewares";
+import { db } from "../../data/db";
+import { setTenantContext } from "../../config/tenant-context";
 
 const handler: Handler = async (event: HandlerEvent) => {
   const { httpMethod, path, queryStringParameters } = event;
@@ -40,6 +42,9 @@ const handler: Handler = async (event: HandlerEvent) => {
 
   const userData = JSON.parse(user.body);
   const userId = userData.id;
+
+  // ✅ NUEVO: Setear contexto de tenant para Row-Level Security
+  await setTenantContext(db, userId);
 
   // Extraer parámetros de la URL
   const pathParts = path.split('/');

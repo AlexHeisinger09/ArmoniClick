@@ -8,6 +8,8 @@ import {
 
 import { fromBodyToObject, HEADERS } from "../../config/utils";
 import { validateJWT } from "../../middlewares";
+import { db } from "../../data/db";
+import { setTenantContext } from "../../config/tenant-context";
 
 const handler: Handler = async (event: HandlerEvent) => {
   const { httpMethod, path } = event;
@@ -27,6 +29,9 @@ const handler: Handler = async (event: HandlerEvent) => {
 
   const userData = JSON.parse(user.body);
   const doctorId = userData.id;
+
+  // ✅ NUEVO: Setear contexto de tenant para Row-Level Security
+  await setTenantContext(db, doctorId);
 
   // Extraer patientId de la URL
   const pathParts = path.split('/');

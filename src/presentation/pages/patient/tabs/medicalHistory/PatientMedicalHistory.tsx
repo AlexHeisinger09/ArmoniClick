@@ -158,6 +158,13 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
     });
   };
 
+  // Función para formatear hora (HH:MM) cuando ya viene como string "HH:MM:SS"
+  const formatHour = (timeString: string | null | undefined): string => {
+    if (!timeString) return '';
+    // Si viene en formato "HH:MM:SS", tomar solo "HH:MM"
+    return timeString.slice(0, 5);
+  };
+
   const getEntityConfig = (entityType: string) => {
     const normalizedType = entityType.toLowerCase();
     const configs: Record<string, any> = {
@@ -892,7 +899,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                       </h3>
                       {queryTreatment.data?.treatment && (
                         <p className="text-xs sm:text-sm text-cyan-100 mt-1">
-                          {formatDate(queryTreatment.data.treatment.fecha_control)} a las {formatTime(queryTreatment.data.treatment.fecha_control)}
+                          {formatDate(queryTreatment.data.treatment.fecha_control)} a las {formatHour(queryTreatment.data.treatment.hora_control)}
                         </p>
                       )}
                     </div>
@@ -922,14 +929,14 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                           <div>
                             <span className="text-gray-600">Fecha del control:</span>
-                            <p className="font-medium">{formatDate(queryTreatment.data.treatment.fecha_control)} a las {formatTime(queryTreatment.data.treatment.hora_control)}</p>
+                            <p className="font-medium">{formatDate(queryTreatment.data.treatment.fecha_control)} a las {formatHour(queryTreatment.data.treatment.hora_control)}</p>
                           </div>
                           {queryTreatment.data.treatment.fecha_proximo_control && (
                             <div>
                               <span className="text-gray-600">Próximo control:</span>
                               <p className="font-medium">
                                 {formatDate(queryTreatment.data.treatment.fecha_proximo_control)}
-                                {queryTreatment.data.treatment.hora_proximo_control && ` a las ${formatTime(queryTreatment.data.treatment.hora_proximo_control)}`}
+                                {queryTreatment.data.treatment.hora_proximo_control && ` a las ${formatHour(queryTreatment.data.treatment.hora_proximo_control)}`}
                               </p>
                             </div>
                           )}

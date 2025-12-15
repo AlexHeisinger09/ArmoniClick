@@ -14,7 +14,11 @@
     "drizzle:generate": "npx drizzle-kit generate",
     "drizzle:push": "npx drizzle-kit push",
     "drizzle:introspect": "npx drizzle-kit introspect",
-    "drizzle:studio": "npx drizzle-kit studio"
+    "drizzle:studio": "npx drizzle-kit studio",
+    "migrate:multi-tenant": "npx tsx scripts/apply-migrations.ts",
+    "check:rls": "npx tsx scripts/check-rls-status.ts",
+    "create:rls-policies": "npx tsx scripts/create-rls-policies.ts",
+    "test:tenant-context": "npx tsx scripts/test-tenant-context.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
@@ -76,6 +80,7 @@
     "globals": "^16.0.0",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.3",
+    "tsx": "^4.21.0",
     "typescript": "^5.2.2",
     "typescript-eslint": "^8.30.1",
     "vite": "^5.2.0"
