@@ -15,7 +15,8 @@ export class GetTreatmentsByBudget implements GetTreatmentsByBudgetUseCase {
 
   public async execute(budgetId: number, doctorId: number): Promise<HandlerResponse> {
     try {
-      const treatments = await this.treatmentService.findByBudgetId(budgetId, doctorId);
+      // ✅ NUEVO: Obtener budget_items con sus treatments agrupados
+      const budgetItemsWithTreatments = await this.treatmentService.getBudgetItemsWithTreatments(budgetId, doctorId);
       const budget = await this.budgetService.findByBudgetId(budgetId, doctorId);
 
       if (!budget) {
@@ -31,7 +32,7 @@ export class GetTreatmentsByBudget implements GetTreatmentsByBudgetUseCase {
       return {
         statusCode: 200,
         body: JSON.stringify({
-          treatments,
+          budgetItems: budgetItemsWithTreatments, // ✅ Retorna budget_items con sus treatments
           budget: {
             id: budget.id,
             budget_type: budget.budget_type,
@@ -39,7 +40,7 @@ export class GetTreatmentsByBudget implements GetTreatmentsByBudgetUseCase {
             total_amount: budget.total_amount,
             created_at: budget.created_at,
           },
-          total: treatments.length,
+          total: budgetItemsWithTreatments.length,
         }),
         headers: HEADERS.json,
       };
@@ -47,7 +48,7 @@ export class GetTreatmentsByBudget implements GetTreatmentsByBudgetUseCase {
       return {
         statusCode: 500,
         body: JSON.stringify({
-          message: "Error al obtener los tratamientos del presupuesto",
+          message: "Error al obtener los items del presupuesto",
           error: error.message,
         }),
         headers: HEADERS.json,

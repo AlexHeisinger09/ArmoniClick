@@ -106,8 +106,24 @@ export interface GetBudgetSummariesResponse {
   total: number;
 }
 
+// ✅ NUEVO: Tipo para budget_item
+export interface BudgetItem {
+  id: number;
+  budget_id: number;
+  pieza?: string;
+  accion: string;
+  valor: string;
+  orden: number;
+  status: string; // planificado, en_proceso, completado
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+  treatments: Treatment[]; // Treatments asociados a este budget_item
+  hasTreatments: boolean; // Si tiene treatments o no
+}
+
 export interface GetTreatmentsByBudgetResponse {
-  treatments: Treatment[];
+  budgetItems: BudgetItem[]; // ✅ CAMBIO: Ahora retorna budget_items en lugar de treatments
   budget: BudgetSummary;
   total: number;
 }

@@ -54,7 +54,7 @@ export const useBudgetsByPatient = (patientId: number, enabled = true) => {
   };
 };
 
-// Hook para obtener tratamientos de un presupuesto específico
+// Hook para obtener budget_items con tratamientos de un presupuesto específico
 export const useTreatmentsByBudget = (budgetId: number, enabled = true) => {
   const queryTreatmentsByBudget = useQuery({
     queryKey: ['treatments', 'budget', budgetId],
@@ -65,7 +65,7 @@ export const useTreatmentsByBudget = (budgetId: number, enabled = true) => {
 
   return {
     queryTreatmentsByBudget,
-    treatments: queryTreatmentsByBudget.data?.treatments || [],
+    budgetItems: queryTreatmentsByBudget.data?.budgetItems || [], // ✅ CAMBIO: Retorna budgetItems
     budget: queryTreatmentsByBudget.data?.budget || null,
     isLoadingTreatmentsByBudget: queryTreatmentsByBudget.isLoading,
     errorTreatmentsByBudget: queryTreatmentsByBudget.error,
@@ -333,12 +333,13 @@ export const useAddTreatmentSession = (patientId?: number) => {
 // ✅ NUEVO: Helper para agrupar tratamientos por budget_item_id
 export interface TreatmentGroup {
   budget_item_id: number | null;
-  mainTreatment: Treatment; // Tratamiento principal (el primero creado)
+  mainTreatment: Treatment; // Tratamiento principal (el primero creado) o fantasma si no hay treatments
   sessions: Treatment[]; // Sesiones/evoluciones adicionales
   totalSessions: number;
   status: string;
   budget_item_pieza?: string;
   budget_item_valor?: string;
+  hasTreatments?: boolean; // ✅ NUEVO: Indica si tiene treatments reales (no fantasma)
 }
 
 /**
@@ -387,16 +388,48 @@ export const groupTreatmentsByBudgetItem = (treatments: Treatment[]): TreatmentG
   return Array.from(groups.values());
 };
 
-// ✅ Hook mejorado para obtener tratamientos agrupados por budget_item
+// ✅ Hook mejorado - budgetItems ya vienen agrupados del backend
 export const useTreatmentsByBudgetGrouped = (budgetId: number, enabled = true) => {
-  const { treatments, isLoadingTreatmentsByBudget, ...rest } = useTreatmentsByBudget(budgetId, enabled);
+  const { budgetItems, isLoadingTreatmentsByBudget, ...rest } = useTreatmentsByBudget(budgetId, enabled);
 
+  // ✅ NUEVO: Convertir budgetItems a TreatmentGroup para compatibilidad con UI
+  // Siempre muestra todos los budget_items, tengan o no treatments
   const groupedTreatments = useMemo(() => {
-    return groupTreatmentsByBudgetItem(treatments);
-  }, [treatments]);
+    return budgetItems.map(item => {
+      const hasTreatments = item.treatments.length > 0;
+
+      return {
+        budget_item_id: item.id,
+        mainTreatment: hasTreatments
+          ? item.treatments[0]
+          : {
+              // ✅ Tratamiento "fantasma" para budget_items sin treatments
+              id_tratamiento: 0,
+              id_paciente: 0,
+              id_doctor: 0,
+              budget_item_id: item.id,
+              fecha_control: '',
+              hora_control: '',
+              nombre_servicio: item.accion + (item.pieza ? ` - Pieza ${item.pieza}` : ''),
+              descripcion: '',
+              status: item.status,
+              created_at: item.created_at,
+              is_active: true,
+              budget_item_pieza: item.pieza,
+              budget_item_valor: item.valor,
+            },
+        sessions: hasTreatments ? item.treatments.slice(1) : [], // Sesiones adicionales
+        totalSessions: hasTreatments ? item.treatments.length - 1 : 0,
+        status: item.status,
+        budget_item_pieza: item.pieza,
+        budget_item_valor: item.valor,
+        hasTreatments, // ✅ NUEVO: Indica si tiene treatments reales
+      };
+    });
+  }, [budgetItems]);
 
   return {
-    treatments,
+    budgetItems,
     groupedTreatments,
     isLoadingTreatmentsByBudget,
     ...rest,

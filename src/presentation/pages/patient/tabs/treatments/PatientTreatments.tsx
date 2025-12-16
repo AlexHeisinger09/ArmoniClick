@@ -53,13 +53,16 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
     errorBudgets
   } = useTreatmentsWithBudgets(patient.id);
 
-  // ✅ Hook para tratamientos AGRUPADOS por presupuesto
+  // ✅ Hook para budget_items AGRUPADOS con tratamientos
   const {
-    treatments: budgetTreatments,
+    budgetItems,
     groupedTreatments,
     budget: selectedBudgetInfo,
     isLoadingTreatmentsByBudget
   } = useTreatmentsByBudgetGrouped(selectedBudgetId || 0, !!selectedBudgetId);
+
+  // ✅ Crear lista plana de todos los treatments para búsquedas
+  const budgetTreatments = budgetItems.flatMap(item => item.treatments);
 
   // Hooks para operaciones
   const { createTreatmentMutation, isLoadingCreate } = useCreateTreatment();
@@ -67,9 +70,6 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   const { deleteTreatmentMutation, isLoadingDelete } = useDeleteTreatment();
   const { completeTreatmentMutation, isLoadingComplete } = useCompleteTreatment(patient.id);
   const { addSessionMutation, isLoadingAddSession } = useAddTreatmentSession(patient.id);
-
-  // ✅ DEPURACIÓN TEMPORAL - REMOVER EN PRODUCCIÓN
-  //useDebugTreatments(budgets, budgetTreatments, activeBudget, patient.id);
 
   // ✅ SELECCIONAR PRESUPUESTO ACTIVO POR DEFECTO
   useEffect(() => {
@@ -418,7 +418,7 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
         isOpen={showDetailModal}
         treatment={selectedTreatment}
         onClose={handleCloseDetailModal}
-        onEdit={handleEditTreatment}
+        onEdit={(treatment) => handleEditTreatment(treatment.id_tratamiento)}
         onComplete={handleCompleteTreatment}
         onDelete={handleDeleteTreatment}
         canComplete={selectedTreatment?.status === 'pending'}

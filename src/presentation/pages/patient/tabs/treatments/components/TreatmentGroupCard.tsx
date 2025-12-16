@@ -38,7 +38,10 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
   isLoadingComplete = false,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const { mainTreatment, sessions, totalSessions, status } = group;
+  const { mainTreatment, sessions, totalSessions, status, hasTreatments } = group;
+
+  // ✅ NUEVO: Detectar si es un budget_item sin treatments
+  const isPlanned = !hasTreatments || mainTreatment.id_tratamiento === 0;
 
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString("es-CL");
@@ -74,7 +77,7 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
 
   const statusInfo = getStatusInfo(status);
   const canAddSession = status !== 'completado';
-  const canComplete = status !== 'completado';
+  const canComplete = status !== 'completado' && !isPlanned; // ✅ No se puede completar si no tiene treatments
 
   return (
     <div className={`rounded-xl border-2 transition-all duration-200 ${
@@ -141,90 +144,117 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
 
           {/* Botones de acción */}
           <div className="flex items-center gap-1">
-            {/* Botón agregar sesión */}
-            {canAddSession && group.budget_item_id && (
+            {/* ✅ MODO PLANIFICADO: Solo botón de agregar sesión */}
+            {isPlanned && canAddSession && group.budget_item_id ? (
               <button
                 onClick={() => onAddSession(group.budget_item_id!)}
-                className="flex items-center gap-1 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-medium rounded px-2 py-1 border border-purple-200 transition-colors whitespace-nowrap"
-                title="Agregar nueva sesión"
+                className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white text-sm font-medium rounded-lg px-4 py-2 border border-purple-600 transition-colors shadow-sm whitespace-nowrap"
+                title="Registrar primera sesión"
               >
-                <Plus className="w-3 h-3" />
-                <span className="hidden sm:inline">Sesión</span>
+                <Plus className="w-4 h-4" />
+                <span>Registrar Primera Sesión</span>
               </button>
-            )}
-
-            {/* Botón editar */}
-            <button
-              onClick={() => onEdit(mainTreatment.id_tratamiento)}
-              className="flex items-center gap-1 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 text-xs font-medium rounded px-2 py-1 border border-yellow-200 transition-colors whitespace-nowrap"
-              title="Editar tratamiento"
-            >
-              <Edit className="w-3 h-3" />
-              <span className="hidden sm:inline">Editar</span>
-            </button>
-
-            {/* Botón completar (solo si NO está completado) */}
-            {canComplete && (
-              <button
-                onClick={() => onComplete(mainTreatment.id_tratamiento)}
-                disabled={isLoadingComplete}
-                className="flex items-center gap-1 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-medium rounded px-2 py-1 border border-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                title="Marcar como completado"
-              >
-                {isLoadingComplete ? (
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-700"></div>
-                ) : (
-                  <CheckCircle className="w-3 h-3" />
+            ) : (
+              /* ✅ MODO CON TREATMENTS: Mostrar todos los botones de acción */
+              <>
+                {/* Botón agregar sesión */}
+                {canAddSession && group.budget_item_id && (
+                  <button
+                    onClick={() => onAddSession(group.budget_item_id!)}
+                    className="flex items-center gap-1 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-medium rounded px-2 py-1 border border-purple-200 transition-colors whitespace-nowrap"
+                    title="Agregar nueva sesión"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span className="hidden sm:inline">Sesión</span>
+                  </button>
                 )}
-                <span className="hidden sm:inline">Completar</span>
-              </button>
+
+                {/* Botón editar */}
+                <button
+                  onClick={() => onEdit(mainTreatment.id_tratamiento)}
+                  className="flex items-center gap-1 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 text-xs font-medium rounded px-2 py-1 border border-yellow-200 transition-colors whitespace-nowrap"
+                  title="Editar tratamiento"
+                >
+                  <Edit className="w-3 h-3" />
+                  <span className="hidden sm:inline">Editar</span>
+                </button>
+
+                {/* Botón completar (solo si NO está completado) */}
+                {canComplete && (
+                  <button
+                    onClick={() => onComplete(mainTreatment.id_tratamiento)}
+                    disabled={isLoadingComplete}
+                    className="flex items-center gap-1 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-medium rounded px-2 py-1 border border-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    title="Marcar como completado"
+                  >
+                    {isLoadingComplete ? (
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-700"></div>
+                    ) : (
+                      <CheckCircle className="w-3 h-3" />
+                    )}
+                    <span className="hidden sm:inline">Completar</span>
+                  </button>
+                )}
+
+                {/* Botón eliminar */}
+                <button
+                  onClick={() => onDelete(mainTreatment.id_tratamiento)}
+                  disabled={isLoadingDelete}
+                  className="flex items-center gap-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium rounded px-2 py-1 border border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  title="Eliminar tratamiento"
+                >
+                  {isLoadingDelete ? (
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-700"></div>
+                  ) : (
+                    <Trash2 className="w-3 h-3" />
+                  )}
+                  <span className="hidden sm:inline">Eliminar</span>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* ✅ Solo mostrar fechas/descripción/fotos si tiene treatments reales */}
+        {!isPlanned && (
+          <>
+            {/* Fechas del tratamiento principal */}
+            <div className="flex flex-wrap gap-3 text-sm text-slate-600 mb-2">
+              <div className="flex items-center gap-1">
+                <Calendar className="w-4 h-4 text-slate-400" />
+                <span>Inicio: {formatDate(mainTreatment.fecha_control)}</span>
+              </div>
+
+              {mainTreatment.fecha_proximo_control && (
+                <div className="flex items-center gap-1">
+                  <Clock className="w-4 h-4 text-slate-400" />
+                  <span>Próximo: {formatDate(mainTreatment.fecha_proximo_control)}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Descripción */}
+            {mainTreatment.descripcion && (
+              <p className="text-sm text-slate-600 line-clamp-2">
+                {mainTreatment.descripcion}
+              </p>
             )}
 
-            {/* Botón eliminar */}
-            <button
-              onClick={() => onDelete(mainTreatment.id_tratamiento)}
-              disabled={isLoadingDelete}
-              className="flex items-center gap-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium rounded px-2 py-1 border border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-              title="Eliminar tratamiento"
-            >
-              {isLoadingDelete ? (
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-700"></div>
-              ) : (
-                <Trash2 className="w-3 h-3" />
-              )}
-              <span className="hidden sm:inline">Eliminar</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Fechas del tratamiento principal */}
-        <div className="flex flex-wrap gap-3 text-sm text-slate-600 mb-2">
-          <div className="flex items-center gap-1">
-            <Calendar className="w-4 h-4 text-slate-400" />
-            <span>Inicio: {formatDate(mainTreatment.fecha_control)}</span>
-          </div>
-
-          {mainTreatment.fecha_proximo_control && (
-            <div className="flex items-center gap-1">
-              <Clock className="w-4 h-4 text-slate-400" />
-              <span>Próximo: {formatDate(mainTreatment.fecha_proximo_control)}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Descripción */}
-        {mainTreatment.descripcion && (
-          <p className="text-sm text-slate-600 line-clamp-2">
-            {mainTreatment.descripcion}
-          </p>
+            {/* Fotos */}
+            {(mainTreatment.foto1 || mainTreatment.foto2) && (
+              <div className="flex items-center text-purple-600 mt-2">
+                <Camera className="w-4 h-4 mr-1" />
+                <span className="text-xs">{mainTreatment.foto1 && mainTreatment.foto2 ? '2 fotos' : '1 foto'}</span>
+              </div>
+            )}
+          </>
         )}
 
-        {/* Fotos */}
-        {(mainTreatment.foto1 || mainTreatment.foto2) && (
-          <div className="flex items-center text-purple-600 mt-2">
-            <Camera className="w-4 h-4 mr-1" />
-            <span className="text-xs">{mainTreatment.foto1 && mainTreatment.foto2 ? '2 fotos' : '1 foto'}</span>
-          </div>
+        {/* ✅ Mensaje para budget_items planificados */}
+        {isPlanned && (
+          <p className="text-sm text-slate-500 italic">
+            Presiona "Registrar Primera Sesión" para comenzar el tratamiento
+          </p>
         )}
       </div>
 

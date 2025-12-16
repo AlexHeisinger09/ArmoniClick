@@ -1,5 +1,5 @@
 // src/core/use-cases/treatments/add-treatment-session.use-case.ts
-import { HttpAdapter } from '@/config/adapters/http.adapter';
+import { HttpAdapter } from '@/config/adapters/http/http.adapter';
 
 export interface AddSessionData {
   budget_item_id: number;
