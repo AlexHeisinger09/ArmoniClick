@@ -25,6 +25,27 @@ timeout = 25  # 25 segundos para dar tiempo a la API de DeepSeek
   status = 200
   methods = ["GET", "OPTIONS"]
 
+# ✅ Ruta específica para agregar sesiones (debe ir ANTES de la ruta genérica)
+[[redirects]]
+  from = "/treatments/patient/:patientId/session"
+  to = "/.netlify/functions/treatments"
+  status = 200
+  methods = ["POST", "OPTIONS"]
+
+# ✅ Rutas para obtener presupuestos de un paciente
+[[redirects]]
+  from = "/treatments/patient/:patientId/budgets"
+  to = "/.netlify/functions/treatments"
+  status = 200
+  methods = ["GET", "OPTIONS"]
+
+# ✅ Rutas para obtener tratamientos de un presupuesto
+[[redirects]]
+  from = "/treatments/budget/:budgetId"
+  to = "/.netlify/functions/treatments"
+  status = 200
+  methods = ["GET", "OPTIONS"]
+
 [[redirects]]
   from = "/api/treatments/patient/:patientId"
   to = "/.netlify/functions/treatments"
