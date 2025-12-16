@@ -90,14 +90,14 @@ export class AddTreatmentSession {
           fecha_control: sessionData.fecha_control,
           hora_control: sessionData.hora_control,
           descripcion: sessionData.descripcion || '',
-          producto: sessionData.producto,
-          lote_producto: sessionData.lote_producto,
-          fecha_venc_producto: sessionData.fecha_venc_producto,
-          dilucion: sessionData.dilucion,
-          foto1: sessionData.foto1,
-          foto2: sessionData.foto2,
-          fecha_proximo_control: sessionData.fecha_proximo_control,
-          hora_proximo_control: sessionData.hora_proximo_control,
+          producto: sessionData.producto || undefined,
+          lote_producto: sessionData.lote_producto || undefined,
+          fecha_venc_producto: sessionData.fecha_venc_producto || undefined, // ✅ Convertir "" a undefined
+          dilucion: sessionData.dilucion || undefined,
+          foto1: sessionData.foto1 || undefined,
+          foto2: sessionData.foto2 || undefined,
+          fecha_proximo_control: sessionData.fecha_proximo_control || undefined, // ✅ Convertir "" a undefined
+          hora_proximo_control: sessionData.hora_proximo_control || undefined, // ✅ Convertir "" a undefined
           status: 'en_proceso', // Siempre en_proceso cuando se registra
           created_at: new Date(),
           is_active: true,
