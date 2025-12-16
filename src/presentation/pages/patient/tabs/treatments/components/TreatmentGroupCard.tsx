@@ -13,9 +13,11 @@ import {
   Plus,
   FileText,
   Activity,
-  Eye
+  Eye,
+  Images
 } from 'lucide-react';
 import { TreatmentGroup } from '@/presentation/hooks/treatments/useTreatments';
+import { PhotoComparisonModal } from '../modals/PhotoComparisonModal';
 
 interface TreatmentGroupCardProps {
   group: TreatmentGroup;
@@ -39,6 +41,7 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
   isLoadingComplete = false,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
   const { mainTreatment, sessions, status, hasTreatments, budget_item_pieza, budget_item_valor } = group;
 
   // ✅ Detectar si es un budget_item sin treatments
@@ -147,8 +150,20 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
             </div>
           </div>
 
-          {/* ✅ BOTONES: Solo Agregar Sesión y Completar */}
+          {/* ✅ BOTONES: Agregar Sesión, Ver Fotos y Completar */}
           <div className="flex items-center gap-1">
+            {/* Botón ver fotos (solo si tiene sesiones con fotos) */}
+            {hasTreatments && allTreatments.some(t => t.foto1 || t.foto2) && (
+              <button
+                onClick={() => setShowPhotoModal(true)}
+                className="flex items-center gap-1 bg-cyan-50 hover:bg-cyan-100 text-cyan-700 text-xs font-medium rounded-lg px-2 py-1 border border-cyan-200 transition-colors whitespace-nowrap"
+                title="Ver todas las fotos de las sesiones"
+              >
+                <Images className="w-3 h-3" />
+                <span className="hidden sm:inline">Ver Fotos</span>
+              </button>
+            )}
+
             {/* Botón agregar sesión */}
             {canAddSession && group.budget_item_id && (
               <button
@@ -288,6 +303,14 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
           </div>
         </div>
       )}
+
+      {/* ✅ Modal de comparación de fotos */}
+      <PhotoComparisonModal
+        isOpen={showPhotoModal}
+        onClose={() => setShowPhotoModal(false)}
+        sessions={allTreatments}
+        serviceName={mainTreatment.nombre_servicio.replace(/ - Sesión \d+$/, '')}
+      />
     </div>
   );
 };

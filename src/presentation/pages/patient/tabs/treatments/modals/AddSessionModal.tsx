@@ -234,33 +234,19 @@ const AddSessionModal: React.FC<AddSessionModalProps> = ({
               </div>
             </div>
 
-            {/* Próxima Fecha y Hora */}
+            {/* Próxima Fecha (sin hora) */}
             <div className="border-t pt-4">
               <h3 className="text-sm font-semibold text-slate-700 mb-3">Próximo Control (Opcional)</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Fecha Próximo Control
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.fecha_proximo_control}
-                    onChange={(e) => handleChange('fecha_proximo_control', e.target.value)}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Hora Próximo Control
-                  </label>
-                  <input
-                    type="time"
-                    value={formData.hora_proximo_control}
-                    onChange={(e) => handleChange('hora_proximo_control', e.target.value)}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Fecha Próximo Control
+                </label>
+                <input
+                  type="date"
+                  value={formData.fecha_proximo_control}
+                  onChange={(e) => handleChange('fecha_proximo_control', e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                />
               </div>
             </div>
 

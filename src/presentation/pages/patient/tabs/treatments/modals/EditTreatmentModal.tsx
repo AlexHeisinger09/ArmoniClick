@@ -450,7 +450,7 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
 
                   {/* Foto 2 */}
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Foto 2 (Después)</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Foto 2</label>
                     {formData.foto2 ? (
                       <div className="relative">
                         <img
