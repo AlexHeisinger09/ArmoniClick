@@ -14,6 +14,8 @@ import {
   Budget,
   BudgetUtils,
 } from "@/core/use-cases/budgets";
+import { deleteBudgetItemUseCase } from "@/core/use-cases/budgets/delete-budget-item.use-case";
+import { completeBudgetItemUseCase } from "@/core/use-cases/budgets/complete-budget-item.use-case";
 
 // ✅ Hook para obtener TODOS los presupuestos de un paciente
 export const useAllBudgets = (patientId: number) => {
@@ -170,7 +172,7 @@ export const useDeleteBudgetById = () => {
   const queryClient = useQueryClient();
 
   const deleteBudgetMutation = useMutation({
-    mutationFn: (budgetId: number) => 
+    mutationFn: (budgetId: number) =>
       deleteBudgetByIdUseCase(apiFetcher, budgetId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
@@ -182,6 +184,52 @@ export const useDeleteBudgetById = () => {
     deleteBudgetMutation,
     deleteBudget: deleteBudgetMutation.mutateAsync,
     isLoadingDelete: deleteBudgetMutation.isPending,
+  };
+};
+
+// ✅ Hook para eliminar un item específico del presupuesto
+export const useDeleteBudgetItem = () => {
+  const queryClient = useQueryClient();
+
+  const deleteBudgetItemMutation = useMutation({
+    mutationFn: (budgetItemId: number) =>
+      deleteBudgetItemUseCase(apiFetcher, budgetItemId),
+    onSuccess: () => {
+      // Invalidar queries de presupuestos para actualizar el total recalculado
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['budget'] });
+      // Invalidar queries de tratamientos para reflejar la eliminación de sesiones
+      queryClient.invalidateQueries({ queryKey: ['treatments'] });
+      queryClient.invalidateQueries({ queryKey: ['budgetItems'] });
+    },
+  });
+
+  return {
+    deleteBudgetItemMutation,
+    deleteBudgetItem: deleteBudgetItemMutation.mutateAsync,
+    isLoadingDeleteItem: deleteBudgetItemMutation.isPending,
+  };
+};
+
+// ✅ Hook para completar un item del presupuesto
+export const useCompleteBudgetItem = () => {
+  const queryClient = useQueryClient();
+
+  const completeBudgetItemMutation = useMutation({
+    mutationFn: (budgetItemId: number) =>
+      completeBudgetItemUseCase(apiFetcher, budgetItemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['treatments'] });
+      queryClient.invalidateQueries({ queryKey: ['budgetItems'] });
+      queryClient.invalidateQueries({ queryKey: ['budget', 'stats'] });
+    },
+  });
+
+  return {
+    completeBudgetItemMutation,
+    completeBudgetItem: completeBudgetItemMutation.mutateAsync,
+    isLoadingCompleteItem: completeBudgetItemMutation.isPending,
   };
 };
 

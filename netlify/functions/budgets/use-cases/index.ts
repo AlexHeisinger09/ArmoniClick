@@ -7,6 +7,8 @@ export * from './complete-budget';
 export * from './revert-budget-to-draft';
 export * from './update-budget-status';
 export * from './delete-budget';
+export * from './delete-budget-item';
+export * from './complete-budget-item';
 export * from './get-budget-stats';
 export * from './get-revenue-by-treatments';
 export * from './get-pending-revenue';

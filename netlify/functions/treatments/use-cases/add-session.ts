@@ -34,6 +34,13 @@ export class AddTreatmentSession {
     patientId: number
   ): Promise<HandlerResponse> {
     try {
+      console.log('🔍 AddTreatmentSession - Datos recibidos:', {
+        sessionData,
+        userId,
+        patientId,
+        budget_item_id: sessionData.budget_item_id
+      });
+
       // 1. Obtener el budget_item con JOIN al presupuesto para verificar permisos
       const budgetItemResult = await db
         .select({
@@ -55,11 +62,34 @@ export class AddTreatmentSession {
         )
         .limit(1);
 
+      console.log('🔍 Budget item query result:', {
+        found: budgetItemResult.length > 0,
+        result: budgetItemResult[0] || null
+      });
+
       if (budgetItemResult.length === 0) {
+        // ✅ MEJORADO: Verificar si el budget_item existe pero pertenece a otro doctor
+        const budgetItemExists = await db
+          .select({ id: budgetItemsTable.id, budget_id: budgetItemsTable.budget_id })
+          .from(budgetItemsTable)
+          .where(eq(budgetItemsTable.id, sessionData.budget_item_id))
+          .limit(1);
+
+        console.error('❌ Budget item no encontrado o sin permisos:', {
+          budget_item_id: sessionData.budget_item_id,
+          userId,
+          exists: budgetItemExists.length > 0,
+          existsButWrongUser: budgetItemExists.length > 0
+        });
+
         return {
           statusCode: 404,
           body: JSON.stringify({
             message: "Item del presupuesto no encontrado o no tienes permiso para acceder a él",
+            debug: {
+              budget_item_id: sessionData.budget_item_id,
+              exists: budgetItemExists.length > 0
+            }
           }),
           headers: HEADERS.json,
         };

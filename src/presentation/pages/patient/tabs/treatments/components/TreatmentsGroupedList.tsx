@@ -12,11 +12,15 @@ interface TreatmentsGroupedListProps {
   onView: (treatmentId: number) => void;
   onEdit: (treatmentId: number) => void;
   onComplete: (treatmentId: number) => void;
+  onCompleteBudgetItem: (budgetItemId: number) => void;
   onDelete: (treatmentId: number) => void;
+  onDeleteBudgetItem: (budgetItemId: number) => void;
   onAddSession: (budgetItemId: number) => void;
   onNewTreatment: () => void;
   isLoadingDelete?: boolean;
+  isLoadingDeleteItem?: boolean;
   isLoadingComplete?: boolean;
+  isLoadingCompleteItem?: boolean;
   showEmptyState?: boolean;
 }
 
@@ -27,11 +31,15 @@ const TreatmentsGroupedList: React.FC<TreatmentsGroupedListProps> = ({
   onView,
   onEdit,
   onComplete,
+  onCompleteBudgetItem,
   onDelete,
+  onDeleteBudgetItem,
   onAddSession,
   onNewTreatment,
   isLoadingDelete = false,
+  isLoadingDeleteItem = false,
   isLoadingComplete = false,
+  isLoadingCompleteItem = false,
   showEmptyState = false
 }) => {
   if (loading) {
@@ -102,10 +110,14 @@ const TreatmentsGroupedList: React.FC<TreatmentsGroupedListProps> = ({
               onView={onView}
               onEdit={onEdit}
               onComplete={onComplete}
+              onCompleteBudgetItem={onCompleteBudgetItem}
               onDelete={onDelete}
+              onDeleteBudgetItem={onDeleteBudgetItem}
               onAddSession={onAddSession}
               isLoadingDelete={isLoadingDelete}
+              isLoadingDeleteItem={isLoadingDeleteItem}
               isLoadingComplete={isLoadingComplete}
+              isLoadingCompleteItem={isLoadingCompleteItem}
             />
           ))}
 

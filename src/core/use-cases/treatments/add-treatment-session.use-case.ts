@@ -5,6 +5,7 @@ export interface AddSessionData {
   budget_item_id: number;
   fecha_control: string;
   hora_control: string;
+  nombre_servicio?: string; // Nombre del servicio/tratamiento
   descripcion?: string;
   producto?: string;
   lote_producto?: string;

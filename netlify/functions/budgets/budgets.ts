@@ -9,6 +9,8 @@ import {
   CompleteBudget,
   RevertBudgetToDraft,
   DeleteBudget,
+  DeleteBudgetItem,
+  CompleteBudgetItem,
   GetBudgetStats,
   GetRevenueByTreatments,
   GetPendingRevenue,
@@ -169,8 +171,8 @@ const handler: Handler = async (event: HandlerEvent) => {
         .catch((error) => error);
     }
 
-    // ✅ PUT /budgets/{budgetId}/complete - Completar presupuesto
-    if (httpMethod === "PUT" && path.includes('/complete')) {
+    // ✅ PUT /budgets/{budgetId}/complete - Completar presupuesto (no items)
+    if (httpMethod === "PUT" && path.includes('/complete') && !path.includes('/items/')) {
       const budgetId = pathParts[budgetsIndex + 1] ? parseInt(pathParts[budgetsIndex + 1]) : null;
       
       if (!budgetId || isNaN(budgetId)) {
@@ -209,10 +211,53 @@ const handler: Handler = async (event: HandlerEvent) => {
         .catch((error) => error);
     }
 
+    // ✅ PUT /budgets/items/{budgetItemId}/complete - Completar item específico
+    if (httpMethod === "PUT" && path.includes('/items/') && path.includes('/complete')) {
+      const itemsIndex = pathParts.findIndex(part => part === 'items');
+      const budgetItemId = pathParts[itemsIndex + 1] ? parseInt(pathParts[itemsIndex + 1]) : null;
+
+      console.log('🔍 Complete budget item:', { path, pathParts, itemsIndex, budgetItemId });
+
+      if (!budgetItemId || isNaN(budgetItemId)) {
+        console.error('❌ ID inválido:', { budgetItemId, pathParts });
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ message: "ID inválido", debug: { pathParts, itemsIndex } }),
+          headers: HEADERS.json,
+        };
+      }
+
+      return new CompleteBudgetItem()
+        .execute(budgetItemId, userId)
+        .then((res) => res)
+        .catch((error) => error);
+    }
+
+    // ✅ DELETE /budgets/items/{budgetItemId} - Eliminar item específico del presupuesto
+    if (httpMethod === "DELETE" && path.includes('/items/')) {
+      const itemsIndex = pathParts.findIndex(part => part === 'items');
+      const budgetItemId = pathParts[itemsIndex + 1] ? parseInt(pathParts[itemsIndex + 1]) : null;
+
+      if (!budgetItemId || isNaN(budgetItemId)) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: "ID de item del presupuesto inválido",
+          }),
+          headers: HEADERS.json,
+        };
+      }
+
+      return new DeleteBudgetItem()
+        .execute(budgetItemId, userId)
+        .then((res) => res)
+        .catch((error) => error);
+    }
+
     // ✅ DELETE /budgets/{budgetId} - Eliminar presupuesto específico
-    if (httpMethod === "DELETE" && !path.includes('/patient/')) {
+    if (httpMethod === "DELETE" && !path.includes('/patient/') && !path.includes('/items/')) {
       const budgetId = pathParts[budgetsIndex + 1] ? parseInt(pathParts[budgetsIndex + 1]) : null;
-      
+
       if (!budgetId || isNaN(budgetId)) {
         return {
           statusCode: 400,

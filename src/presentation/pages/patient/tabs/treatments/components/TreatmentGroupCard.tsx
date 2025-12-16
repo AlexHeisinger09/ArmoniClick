@@ -25,10 +25,14 @@ interface TreatmentGroupCardProps {
   onView: (treatmentId: number) => void;
   onEdit: (treatmentId: number) => void;
   onComplete: (treatmentId: number) => void;
+  onCompleteBudgetItem: (budgetItemId: number) => void;
   onDelete: (treatmentId: number) => void;
+  onDeleteBudgetItem: (budgetItemId: number) => void;
   onAddSession: (budgetItemId: number) => void;
   isLoadingDelete?: boolean;
+  isLoadingDeleteItem?: boolean;
   isLoadingComplete?: boolean;
+  isLoadingCompleteItem?: boolean;
 }
 
 const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
@@ -36,10 +40,14 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
   onView,
   onEdit,
   onComplete,
+  onCompleteBudgetItem,
   onDelete,
+  onDeleteBudgetItem,
   onAddSession,
   isLoadingDelete = false,
+  isLoadingDeleteItem = false,
   isLoadingComplete = false,
+  isLoadingCompleteItem = false,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
@@ -109,22 +117,19 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
               )}
 
               <div className="flex-1 min-w-0">
-                {/* ✅ Título del budget_item */}
+                {/* ✅ Título del budget_item con Pieza y Valor inline */}
                 <h4 className="font-semibold text-slate-800 text-base truncate">
                   {mainTreatment.nombre_servicio.replace(/ - Sesión \d+$/, '')}
                   {budget_item_pieza && (
                     <span className="text-slate-600 font-normal"> - Pieza {budget_item_pieza}</span>
                   )}
+                  {budget_item_valor && (
+                    <span className="text-slate-600 font-normal"> - Valor ${parseFloat(budget_item_valor).toLocaleString('es-CL')}</span>
+                  )}
                 </h4>
 
                 {/* Info debajo del título */}
                 <div className="flex flex-wrap items-center gap-2 mt-1">
-                  {/* Valor */}
-                  {budget_item_valor && (
-                    <span className="text-sm text-slate-600">
-                      <span className="font-medium">Valor:</span> ${parseFloat(budget_item_valor).toLocaleString('es-CL')}
-                    </span>
-                  )}
 
                   {/* Badge de estado */}
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${statusInfo.color}`}>
@@ -179,14 +184,15 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
             {canComplete && (
               <button
                 onClick={() => {
-                  // ✅ TODO: Implementar lógica para completar TODAS las sesiones
-                  console.log('Completar todas las sesiones del budget_item');
+                  if (group.budget_item_id) {
+                    onCompleteBudgetItem(group.budget_item_id);
+                  }
                 }}
-                disabled={isLoadingComplete}
+                disabled={isLoadingCompleteItem}
                 className="flex items-center gap-1 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-medium rounded-lg px-2 py-1 border border-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                 title="Marcar todas las sesiones como completadas"
               >
-                {isLoadingComplete ? (
+                {isLoadingCompleteItem ? (
                   <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-700"></div>
                 ) : (
                   <CheckCircle className="w-3 h-3" />
@@ -194,6 +200,25 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
                 <span className="hidden sm:inline">Completar Todo</span>
               </button>
             )}
+
+            {/* Botón eliminar budget_item (elimina todas las sesiones en cascada) */}
+            <button
+              onClick={() => {
+                if (group.budget_item_id) {
+                  onDeleteBudgetItem(group.budget_item_id);
+                }
+              }}
+              disabled={isLoadingDeleteItem || !group.budget_item_id}
+              className="flex items-center gap-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium rounded-lg px-2 py-1 border border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              title="Eliminar item del presupuesto y todas sus sesiones"
+            >
+              {isLoadingDeleteItem ? (
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-700"></div>
+              ) : (
+                <Trash2 className="w-3 h-3" />
+              )}
+              <span className="hidden sm:inline">Eliminar</span>
+            </button>
           </div>
         </div>
 
@@ -258,7 +283,7 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
                       )}
                     </div>
 
-                    {/* ✅ BOTONES POR SESIÓN: Ver, Editar, Eliminar */}
+                    {/* ✅ BOTONES POR SESIÓN: Ver y Editar */}
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => onView(treatment.id_tratamiento)}
@@ -274,19 +299,6 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
                         title="Editar sesión"
                       >
                         <Edit className="w-3 h-3" />
-                      </button>
-
-                      <button
-                        onClick={() => onDelete(treatment.id_tratamiento)}
-                        disabled={isLoadingDelete}
-                        className="flex items-center gap-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium rounded px-2 py-1 border border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Eliminar sesión"
-                      >
-                        {isLoadingDelete ? (
-                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-700"></div>
-                        ) : (
-                          <Trash2 className="w-3 h-3" />
-                        )}
                       </button>
                     </div>
                   </div>

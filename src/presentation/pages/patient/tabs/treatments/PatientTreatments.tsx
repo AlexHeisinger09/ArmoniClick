@@ -11,6 +11,7 @@ import {
   useCompleteTreatment,
   useAddTreatmentSession
 } from "@/presentation/hooks/treatments/useTreatments";
+import { useDeleteBudgetItem, useCompleteBudgetItem } from "@/presentation/hooks/budgets/useBudgets";
 
 // Componentes
 import { TreatmentsGroupedList } from './components/TreatmentsGroupedList';
@@ -68,6 +69,8 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   const { createTreatmentMutation, isLoadingCreate } = useCreateTreatment();
   const { updateTreatmentMutation, isLoadingUpdate } = useUpdateTreatment();
   const { deleteTreatmentMutation, isLoadingDelete } = useDeleteTreatment();
+  const { deleteBudgetItemMutation, isLoadingDeleteItem } = useDeleteBudgetItem();
+  const { completeBudgetItemMutation, isLoadingCompleteItem } = useCompleteBudgetItem();
   const { completeTreatmentMutation, isLoadingComplete } = useCompleteTreatment(patient.id);
   const { addSessionMutation, isLoadingAddSession } = useAddTreatmentSession(patient.id);
 
@@ -206,7 +209,84 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
     }
   };
 
-  // Manejar eliminación de tratamiento
+  // ✅ NUEVO: Manejar eliminación de budget_item (elimina todas las sesiones en cascada)
+  const handleDeleteBudgetItem = async (budgetItemId: number) => {
+    // Buscar el budget_item en budgetItems
+    const budgetItem = budgetItems.find(item => item.id === budgetItemId);
+
+    const details: string[] = [
+      'Esta acción no se puede deshacer',
+      'Se eliminarán todas las sesiones asociadas a este item'
+    ];
+
+    if (budgetItem?.valor) {
+      const valor = parseFloat(budgetItem.valor);
+      details.unshift(
+        `Se eliminará el item del presupuesto (valor: $${valor.toLocaleString('es-CL')})`,
+        'Se recalculará automáticamente el total del presupuesto'
+      );
+    }
+
+    const confirmed = await confirmation.confirm({
+      title: 'Eliminar item del presupuesto',
+      message: '¿Estás seguro de que deseas eliminar este item del presupuesto y todas sus sesiones?',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+      details
+    });
+
+    if (!confirmed) {
+      confirmation.close();
+      return;
+    }
+
+    try {
+      console.log('🗑️ Eliminando budget_item y sesiones:', { budgetItemId, budgetItem });
+
+      const result = await deleteBudgetItemMutation.mutateAsync(budgetItemId);
+
+      console.log('✅ Budget item eliminado exitosamente:', result);
+
+      setShowDetailModal(false);
+      setSelectedTreatment(null);
+
+      notification.success(
+        `Item eliminado correctamente. Se eliminaron ${result.deletedTreatments} sesión(es) y se recalculó el total del presupuesto.`
+      );
+      confirmation.close();
+
+    } catch (error: any) {
+      console.error('❌ Error al eliminar budget item:', error);
+      const errorMessage = processApiError(error);
+      notification.error(errorMessage, { description: 'Error al eliminar item del presupuesto' });
+      confirmation.close();
+    }
+  };
+
+  // ✅ NUEVO: Completar budget_item (marca sesiones como completadas y suma ingresos)
+  const handleCompleteBudgetItem = async (budgetItemId: number) => {
+    const budgetItem = budgetItems.find(item => item.id === budgetItemId);
+    const confirmed = await confirmation.confirm({
+      title: 'Completar tratamiento',
+      message: '¿Deseas marcar este item como completado?',
+      details: budgetItem?.valor ? [`Valor: $${parseFloat(budgetItem.valor).toLocaleString('es-CL')}`, 'Se sumará a los ingresos del mes'] : [],
+      confirmText: 'Completar',
+      cancelText: 'Cancelar',
+      variant: 'success',
+    });
+    if (!confirmed) { confirmation.close(); return; }
+    try {
+      await completeBudgetItemMutation.mutateAsync(budgetItemId);
+      notification.success('Item completado correctamente');
+      confirmation.close();
+    } catch (error: any) {
+      notification.error(processApiError(error));
+      confirmation.close();
+    }
+  };
+
+  // Manejar eliminación de tratamiento (para compatibilidad con código existente)
   const handleDeleteTreatment = async (treatmentId: number) => {
     const treatment = budgetTreatments.find(t => t.id_tratamiento === treatmentId);
 
@@ -285,24 +365,79 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
 
   // ✅ NUEVO: Función para abrir modal de agregar sesión
   const handleAddSession = (budgetItemId: number) => {
+    console.log('🔍 Abriendo modal para agregar sesión:', {
+      budgetItemId,
+      selectedBudgetId,
+      groupedTreatmentsCount: groupedTreatments.length,
+      budgetItemsCount: budgetItems.length
+    });
+
     const group = groupedTreatments.find(g => g.budget_item_id === budgetItemId);
-    if (group) {
-      setSessionBudgetItemId(budgetItemId);
-      setSessionServiceName(group.mainTreatment.nombre_servicio);
-      setShowAddSessionModal(true);
+
+    if (!group) {
+      console.error('❌ No se encontró el grupo con budget_item_id:', budgetItemId);
+      notification.error('Error: No se encontró el item del presupuesto', {
+        description: 'Por favor intenta de nuevo'
+      });
+      return;
     }
+
+    // ✅ Verificar que el budget_item existe en budgetItems
+    const budgetItem = budgetItems.find(item => item.id === budgetItemId);
+    if (!budgetItem) {
+      console.error('❌ Budget item no encontrado en budgetItems:', {
+        searchingFor: budgetItemId,
+        availableIds: budgetItems.map(item => item.id)
+      });
+      notification.error('Error: Item del presupuesto no disponible', {
+        description: 'Intenta refrescar la página'
+      });
+      return;
+    }
+
+    console.log('✅ Budget item encontrado:', {
+      id: budgetItem.id,
+      accion: budgetItem.accion,
+      pieza: budgetItem.pieza,
+      status: budgetItem.status,
+      hasTreatments: group.hasTreatments,
+      sessionsCount: group.totalSessions
+    });
+
+    setSessionBudgetItemId(budgetItemId);
+    setSessionServiceName(group.mainTreatment.nombre_servicio);
+    setShowAddSessionModal(true);
   };
 
   // ✅ NUEVO: Función para crear una nueva sesión
   const handleCreateSession = async (sessionData: AddSessionData) => {
     try {
-      console.log('📝 Creando nueva sesión:', sessionData);
+      console.log('📝 Creando nueva sesión:', {
+        patientId: patient.id,
+        sessionData,
+        budgetItemIdInSession: sessionData.budget_item_id,
+        selectedBudgetId
+      });
+
+      // ✅ Verificar una última vez que el budget_item_id existe
+      const budgetItem = budgetItems.find(item => item.id === sessionData.budget_item_id);
+      if (!budgetItem) {
+        console.error('❌ CRÍTICO: budget_item_id no existe al momento de crear sesión:', {
+          searchingFor: sessionData.budget_item_id,
+          availableIds: budgetItems.map(item => item.id),
+          budgetItemsRaw: budgetItems
+        });
+        throw new Error(`Item del presupuesto (ID: ${sessionData.budget_item_id}) no encontrado. Los datos pueden estar desactualizados.`);
+      }
+
+      console.log('✅ Verificación exitosa, procediendo a crear sesión...');
 
       await addSessionMutation.mutateAsync({
         patientId: patient.id,
         sessionData,
       });
 
+      console.log('✅ Sesión creada exitosamente');
       notification.success('Sesión registrada exitosamente');
       setShowAddSessionModal(false);
       setSessionBudgetItemId(null);
@@ -383,11 +518,15 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
             onView={handleViewTreatment}
             onEdit={handleEditTreatment}
             onComplete={handleCompleteTreatment}
+            onCompleteBudgetItem={handleCompleteBudgetItem}
             onDelete={handleDeleteTreatment}
+            onDeleteBudgetItem={handleDeleteBudgetItem}
             onAddSession={handleAddSession}
             onNewTreatment={handleNewTreatment}
             isLoadingDelete={isLoadingDelete}
+            isLoadingDeleteItem={isLoadingDeleteItem}
             isLoadingComplete={isLoadingComplete}
+            isLoadingCompleteItem={isLoadingCompleteItem}
             showEmptyState={!selectedBudgetId}
           />
         </div>

@@ -395,10 +395,19 @@ export const useTreatmentsByBudgetGrouped = (budgetId: number, enabled = true) =
   // ✅ NUEVO: Convertir budgetItems a TreatmentGroup para compatibilidad con UI
   // Siempre muestra todos los budget_items, tengan o no treatments
   const groupedTreatments = useMemo(() => {
+    console.log('🔄 Agrupando budgetItems:', {
+      count: budgetItems.length,
+      items: budgetItems.map(item => ({
+        id: item.id,
+        accion: item.accion,
+        treatments: item.treatments.length
+      }))
+    });
+
     return budgetItems.map(item => {
       const hasTreatments = item.treatments.length > 0;
 
-      return {
+      const group = {
         budget_item_id: item.id,
         mainTreatment: hasTreatments
           ? item.treatments[0]
@@ -425,6 +434,15 @@ export const useTreatmentsByBudgetGrouped = (budgetId: number, enabled = true) =
         budget_item_valor: item.valor,
         hasTreatments, // ✅ NUEVO: Indica si tiene treatments reales
       };
+
+      console.log('📦 Grupo creado:', {
+        budget_item_id: group.budget_item_id,
+        accion: item.accion,
+        hasTreatments: group.hasTreatments,
+        mainTreatment_id: group.mainTreatment.id_tratamiento
+      });
+
+      return group;
     });
   }, [budgetItems]);
 
