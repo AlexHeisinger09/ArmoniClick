@@ -1,7 +1,8 @@
 // src/presentation/pages/patient/tabs/treatments/modals/AddSessionModal.tsx
 import React, { useState } from 'react';
-import { X, Calendar, Clock, FileText, Package, Droplet, Calendar as CalendarIcon, Image } from 'lucide-react';
+import { X, Calendar, Clock, FileText, Package, Droplet, Calendar as CalendarIcon, Camera, Upload, Trash2 } from 'lucide-react';
 import { AddSessionData } from '@/core/use-cases/treatments';
+import { useTreatmentUpload } from '@/presentation/hooks/treatments/useTreatmentUpload';
 
 interface AddSessionModalProps {
   isOpen: boolean;
@@ -36,6 +37,12 @@ const AddSessionModal: React.FC<AddSessionModalProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [uploadingImages, setUploadingImages] = useState<{foto1: boolean, foto2: boolean}>({
+    foto1: false,
+    foto2: false
+  });
+
+  const { uploadImageFromFile, validateImageFile } = useTreatmentUpload();
 
   const handleChange = (field: keyof AddSessionData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -43,6 +50,39 @@ const AddSessionModal: React.FC<AddSessionModalProps> = ({
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, imageField: 'foto1' | 'foto2') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
+
+    setUploadingImages(prev => ({ ...prev, [imageField]: true }));
+
+    try {
+      const response = await uploadImageFromFile(file, 0, 'before');
+      setFormData(prev => ({
+        ...prev,
+        [imageField]: response.imageUrl
+      }));
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Error al subir la imagen. Por favor intenta de nuevo.');
+    } finally {
+      setUploadingImages(prev => ({ ...prev, [imageField]: false }));
+    }
+  };
+
+  const removeImage = (imageField: 'foto1' | 'foto2') => {
+    setFormData(prev => ({
+      ...prev,
+      [imageField]: ''
+    }));
   };
 
   const validate = (): boolean => {
@@ -234,6 +274,101 @@ const AddSessionModal: React.FC<AddSessionModalProps> = ({
               </div>
             </div>
 
+            {/* Fotos */}
+            <div className="border-t pt-4">
+              <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                <Camera className="w-4 h-4 text-purple-600" />
+                Fotos de la Sesión (Opcional)
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Foto 1 */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Foto 1</label>
+                  {formData.foto1 ? (
+                    <div className="relative">
+                      <img
+                        src={formData.foto1}
+                        alt="Foto 1"
+                        className="w-full h-48 object-cover rounded-lg border border-slate-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage('foto1')}
+                        className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 transition-colors shadow-lg"
+                        title="Eliminar foto"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-all">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        {uploadingImages.foto1 ? (
+                          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
+                        ) : (
+                          <>
+                            <Upload className="w-10 h-10 text-slate-400 mb-2" />
+                            <p className="text-sm text-slate-600 font-medium">Subir Foto 1</p>
+                            <p className="text-xs text-slate-500 mt-1">PNG, JPG hasta 5MB</p>
+                          </>
+                        )}
+                      </div>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, 'foto1')}
+                        disabled={uploadingImages.foto1}
+                      />
+                    </label>
+                  )}
+                </div>
+
+                {/* Foto 2 */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Foto 2</label>
+                  {formData.foto2 ? (
+                    <div className="relative">
+                      <img
+                        src={formData.foto2}
+                        alt="Foto 2"
+                        className="w-full h-48 object-cover rounded-lg border border-slate-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage('foto2')}
+                        className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 transition-colors shadow-lg"
+                        title="Eliminar foto"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-all">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        {uploadingImages.foto2 ? (
+                          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
+                        ) : (
+                          <>
+                            <Upload className="w-10 h-10 text-slate-400 mb-2" />
+                            <p className="text-sm text-slate-600 font-medium">Subir Foto 2</p>
+                            <p className="text-xs text-slate-500 mt-1">PNG, JPG hasta 5MB</p>
+                          </>
+                        )}
+                      </div>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, 'foto2')}
+                        disabled={uploadingImages.foto2}
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Próxima Fecha (sin hora) */}
             <div className="border-t pt-4">
               <h3 className="text-sm font-semibold text-slate-700 mb-3">Próximo Control (Opcional)</h3>
@@ -247,17 +382,6 @@ const AddSessionModal: React.FC<AddSessionModalProps> = ({
                   onChange={(e) => handleChange('fecha_proximo_control', e.target.value)}
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 />
-              </div>
-            </div>
-
-            {/* Nota sobre fotos */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
-              <Image className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-blue-800">
-                <p className="font-medium mb-1">Agregar Fotos</p>
-                <p className="text-blue-700">
-                  Puedes agregar fotos después de crear la sesión editándola desde la lista.
-                </p>
               </div>
             </div>
           </div>
