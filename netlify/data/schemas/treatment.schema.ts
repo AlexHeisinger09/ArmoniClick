@@ -81,6 +81,14 @@ import { sql } from "drizzle-orm";
 
 // ✅ CONSTANTES PARA ESTADOS DE TRATAMIENTO
 export const TREATMENT_STATUS = {
-  PENDING: 'pending',
-  COMPLETED: 'completed'
+  PLANIFICADO: 'planificado',     // Del presupuesto, aún no iniciado
+  EN_PROCESO: 'en_proceso',       // Al menos 1 sesión registrada
+  COMPLETADO: 'completado',       // Tratamiento finalizado
+  CANCELADO: 'cancelado'          // Tratamiento cancelado (opcional)
+} as const;
+
+// Mantener compatibilidad con código antiguo
+export const LEGACY_TREATMENT_STATUS = {
+  PENDING: 'pending',      // → usar PLANIFICADO
+  COMPLETED: 'completed'   // → usar COMPLETADO
 } as const;

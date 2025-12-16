@@ -349,8 +349,8 @@ export class BudgetService {
             throw new Error('No se puede activar un presupuesto sin tratamientos');
         }
 
-        // ✅ CREAR TRATAMIENTOS AUTOMÁTICAMENTE
-        console.log('📝 Creando tratamientos automáticamente...');
+        // ✅ CREAR TRATAMIENTOS AUTOMÁTICAMENTE (1 por cada budget_item)
+        console.log('📝 Creando tratamientos planificados automáticamente...');
 
         const currentDate = new Date();
         const treatmentsToCreate: NewTreatment[] = budget.items.map(item => ({
@@ -359,13 +359,14 @@ export class BudgetService {
             budget_item_id: item.id, // ✅ VINCULAR CON EL ITEM DEL PRESUPUESTO
             fecha_control: currentDate.toISOString().split('T')[0], // Fecha actual
             hora_control: currentDate.toTimeString().slice(0, 5), // Hora actual
-            nombre_servicio: item.accion,
-            status: 'pending', // Estado inicial pendiente
+            nombre_servicio: `${item.accion}${item.pieza ? ` - Pieza ${item.pieza}` : ''}`,
+            descripcion: 'Tratamiento planificado del presupuesto',
+            status: 'planificado', // ✅ NUEVO ESTADO: planificado (aún no iniciado)
             created_at: new Date(),
             is_active: true,
         }));
 
-        // Insertar tratamientos
+        // Insertar tratamientos planificados
         await db.insert(treatmentsTable).values(treatmentsToCreate);
 
         // Activar presupuesto
@@ -726,10 +727,23 @@ export class BudgetService {
 
             console.log(`📊 Budget items con treatments completados encontrados: ${budgetItems.length}`);
 
+            // ✅ NUEVO: Deduplicar por budget_item_id (sistema de evoluciones)
+            // Con múltiples sesiones por budget_item_id, solo contamos el ingreso UNA VEZ
+            const seenBudgetItems = new Set<number>();
+            const uniqueBudgetItems = budgetItems.filter(item => {
+                if (seenBudgetItems.has(item.id)) {
+                    return false; // Ya procesamos este budget_item
+                }
+                seenBudgetItems.add(item.id);
+                return true;
+            });
+
+            console.log(`📊 Budget items únicos (después de deduplicar): ${uniqueBudgetItems.length}`);
+
             // ✅ Agrupar items por presupuesto
             const budgetMap = new Map<number, BudgetWithItems>();
 
-            for (const item of budgetItems) {
+            for (const item of uniqueBudgetItems) {
                 if (!budgetMap.has(item.budget_id)) {
                     budgetMap.set(item.budget_id, {
                         id: item.budget_id,

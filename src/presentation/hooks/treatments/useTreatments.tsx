@@ -1,5 +1,5 @@
-// src/presentation/hooks/treatments/useTreatments.tsx - ACTUALIZADO CON INVALIDACIÓN COMPLETA
-import { useState } from 'react';
+// src/presentation/hooks/treatments/useTreatments.tsx - ACTUALIZADO CON INVALIDACIÓN COMPLETA Y SISTEMA DE EVOLUCIONES
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetcher } from '@/config/adapters/api.adapter';
 import {
@@ -11,12 +11,15 @@ import {
   getBudgetsByPatientUseCase,
   getTreatmentsByBudgetUseCase,
   completeTreatmentUseCase,
+  addTreatmentSessionUseCase,
   type CreateTreatmentData,
   type UpdateTreatmentData,
   type GetTreatmentsResponse,
   type GetTreatmentByIdResponse,
   type GetBudgetSummariesResponse,
   type GetTreatmentsByBudgetResponse,
+  type AddSessionData,
+  type Treatment,
 } from '@/core/use-cases/treatments';
 
 // Hook para obtener la lista de tratamientos de un paciente
@@ -282,6 +285,124 @@ export const useDeleteTreatment = () => {
   };
 };
 
+// ✅ NUEVO: Hook para agregar sesión/evolución a un tratamiento
+export const useAddTreatmentSession = (patientId?: number) => {
+  const [isLoadingAddSession, setIsLoadingAddSession] = useState(false);
+  const queryClient = useQueryClient();
+
+  const addSessionMutation = useMutation({
+    mutationFn: ({ patientId: pid, sessionData }: { patientId: number; sessionData: AddSessionData }) => {
+      return addTreatmentSessionUseCase(apiFetcher, pid, sessionData);
+    },
+    onMutate: () => {
+      setIsLoadingAddSession(true);
+    },
+    onSuccess: (_, variables) => {
+      setIsLoadingAddSession(false);
+
+      console.log('🔄 Invalidando queries después de agregar sesión...');
+
+      // Invalidar todas las queries relacionadas
+      const pid = variables.patientId || patientId;
+      if (pid) {
+        invalidateAllTreatmentQueries(queryClient, pid);
+      }
+
+      // Refetch inmediato
+      queryClient.refetchQueries({
+        queryKey: ['treatments', 'budget'],
+        type: 'active'
+      });
+
+      // Invalidar historial de auditoría
+      if (pid) {
+        queryClient.invalidateQueries({ queryKey: ['auditHistory', pid] });
+      }
+    },
+    onError: () => {
+      setIsLoadingAddSession(false);
+    },
+  });
+
+  return {
+    addSessionMutation,
+    isLoadingAddSession,
+  };
+};
+
+// ✅ NUEVO: Helper para agrupar tratamientos por budget_item_id
+export interface TreatmentGroup {
+  budget_item_id: number | null;
+  mainTreatment: Treatment; // Tratamiento principal (el primero creado)
+  sessions: Treatment[]; // Sesiones/evoluciones adicionales
+  totalSessions: number;
+  status: string;
+  budget_item_pieza?: string;
+  budget_item_valor?: string;
+}
+
+/**
+ * Agrupa tratamientos por budget_item_id para mostrar tratamiento principal + sesiones
+ * @param treatments - Lista de tratamientos
+ * @returns Array de grupos de tratamientos
+ */
+export const groupTreatmentsByBudgetItem = (treatments: Treatment[]): TreatmentGroup[] => {
+  const groups = new Map<number | string, TreatmentGroup>();
+
+  // Primero, ordenar tratamientos por fecha de creación (más antiguos primero)
+  const sortedTreatments = [...treatments].sort((a, b) => {
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  });
+
+  sortedTreatments.forEach(treatment => {
+    const key = treatment.budget_item_id ?? `standalone-${treatment.id_tratamiento}`;
+
+    if (!groups.has(key)) {
+      // Primer tratamiento del grupo = tratamiento principal
+      groups.set(key, {
+        budget_item_id: treatment.budget_item_id ?? null,
+        mainTreatment: treatment,
+        sessions: [],
+        totalSessions: 0,
+        status: treatment.status || 'pending',
+        budget_item_pieza: treatment.budget_item_pieza,
+        budget_item_valor: treatment.budget_item_valor,
+      });
+    } else {
+      // Tratamientos subsecuentes = sesiones
+      const group = groups.get(key)!;
+      group.sessions.push(treatment);
+      group.totalSessions = group.sessions.length;
+
+      // Actualizar estado del grupo (si alguna sesión está en_proceso, el grupo está en_proceso)
+      if (treatment.status === 'en_proceso' && group.status === 'planificado') {
+        group.status = 'en_proceso';
+      }
+      if (treatment.status === 'completado') {
+        group.status = 'completado';
+      }
+    }
+  });
+
+  return Array.from(groups.values());
+};
+
+// ✅ Hook mejorado para obtener tratamientos agrupados por budget_item
+export const useTreatmentsByBudgetGrouped = (budgetId: number, enabled = true) => {
+  const { treatments, isLoadingTreatmentsByBudget, ...rest } = useTreatmentsByBudget(budgetId, enabled);
+
+  const groupedTreatments = useMemo(() => {
+    return groupTreatmentsByBudgetItem(treatments);
+  }, [treatments]);
+
+  return {
+    treatments,
+    groupedTreatments,
+    isLoadingTreatmentsByBudget,
+    ...rest,
+  };
+};
+
 // ✅ Hook combinado mejorado con invalidación específica por paciente
 export const useTreatmentsWithBudgets = (patientId: number) => {
   const treatments = useTreatments(patientId);
@@ -290,6 +411,7 @@ export const useTreatmentsWithBudgets = (patientId: number) => {
   const updateTreatment = useUpdateTreatment();
   const completeTreatment = useCompleteTreatment();
   const deleteTreatment = useDeleteTreatment();
+  const addSession = useAddTreatmentSession(patientId);
 
   return {
     // Datos
@@ -301,17 +423,20 @@ export const useTreatmentsWithBudgets = (patientId: number) => {
     updateTreatment: updateTreatment.updateTreatmentMutation.mutateAsync,
     completeTreatment: completeTreatment.completeTreatmentMutation.mutateAsync,
     deleteTreatment: deleteTreatment.deleteTreatmentMutation.mutateAsync,
+    addSession: addSession.addSessionMutation.mutateAsync,
 
     // Estados de carga
     isLoadingCreate: createTreatment.isLoadingCreate,
     isLoadingUpdate: updateTreatment.isLoadingUpdate,
     isLoadingComplete: completeTreatment.isLoadingComplete,
     isLoadingDelete: deleteTreatment.isLoadingDelete,
+    isLoadingAddSession: addSession.isLoadingAddSession,
 
     // Mutaciones para manejo de errores
     createTreatmentMutation: createTreatment.createTreatmentMutation,
     updateTreatmentMutation: updateTreatment.updateTreatmentMutation,
     completeTreatmentMutation: completeTreatment.completeTreatmentMutation,
     deleteTreatmentMutation: deleteTreatment.deleteTreatmentMutation,
+    addSessionMutation: addSession.addSessionMutation,
   };
 };
