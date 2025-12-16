@@ -1,23 +1,24 @@
-// src/presentation/pages/patient/tabs/treatments/PatientTreatments.tsx - ACTUALIZADO CON DEPURACIÓN Y MEJOR INVALIDACIÓN
+// src/presentation/pages/patient/tabs/treatments/PatientTreatments.tsx - ACTUALIZADO CON SISTEMA DE EVOLUCIONES
 import React, { useState, useEffect } from 'react';
 import { Patient } from "@/core/use-cases/patients";
-import { Treatment, CreateTreatmentData, UpdateTreatmentData, BudgetSummary } from "@/core/use-cases/treatments";
+import { Treatment, CreateTreatmentData, UpdateTreatmentData, BudgetSummary, AddSessionData } from "@/core/use-cases/treatments";
 import {
   useTreatmentsWithBudgets,
-  useTreatmentsByBudget,
+  useTreatmentsByBudgetGrouped,
   useCreateTreatment,
   useUpdateTreatment,
   useDeleteTreatment,
-  useCompleteTreatment
+  useCompleteTreatment,
+  useAddTreatmentSession
 } from "@/presentation/hooks/treatments/useTreatments";
-//import { useDebugTreatments } from "@/presentation/hooks/treatments/useDebugTreatments";
 
 // Componentes
-import { TreatmentsList } from './components/TreatmentsList';
+import { TreatmentsGroupedList } from './components/TreatmentsGroupedList';
 import { BudgetCarousel } from './components/BudgetCarousel';
 import { NewTreatmentModal } from './modals/NewTreatmentModal';
 import { EditTreatmentModal } from './modals/EditTreatmentModal';
 import { TreatmentDetailModal } from './modals/TreatmentDetailModal';
+import { AddSessionModal } from './modals/AddSessionModal';
 import { ConfirmationModal } from '@/presentation/components/ui/ConfirmationModal';
 import { useNotification } from '@/presentation/hooks/notifications/useNotification';
 import { useConfirmation } from '@/presentation/hooks/useConfirmation';
@@ -31,8 +32,11 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   const [showNewTreatmentModal, setShowNewTreatmentModal] = useState(false);
   const [showEditTreatmentModal, setShowEditTreatmentModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showAddSessionModal, setShowAddSessionModal] = useState(false);
   const [selectedTreatment, setSelectedTreatment] = useState<Treatment | null>(null);
   const [treatmentToEdit, setTreatmentToEdit] = useState<Treatment | null>(null);
+  const [sessionBudgetItemId, setSessionBudgetItemId] = useState<number | null>(null);
+  const [sessionServiceName, setSessionServiceName] = useState<string>('');
 
   // Estados para presupuestos
   const [selectedBudgetId, setSelectedBudgetId] = useState<number | null>(null);
@@ -49,18 +53,20 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
     errorBudgets
   } = useTreatmentsWithBudgets(patient.id);
 
-  // Hook para tratamientos por presupuesto (cuando hay presupuesto seleccionado)
+  // ✅ Hook para tratamientos AGRUPADOS por presupuesto
   const {
     treatments: budgetTreatments,
+    groupedTreatments,
     budget: selectedBudgetInfo,
     isLoadingTreatmentsByBudget
-  } = useTreatmentsByBudget(selectedBudgetId || 0, !!selectedBudgetId);
+  } = useTreatmentsByBudgetGrouped(selectedBudgetId || 0, !!selectedBudgetId);
 
   // Hooks para operaciones
   const { createTreatmentMutation, isLoadingCreate } = useCreateTreatment();
   const { updateTreatmentMutation, isLoadingUpdate } = useUpdateTreatment();
   const { deleteTreatmentMutation, isLoadingDelete } = useDeleteTreatment();
   const { completeTreatmentMutation, isLoadingComplete } = useCompleteTreatment(patient.id);
+  const { addSessionMutation, isLoadingAddSession } = useAddTreatmentSession(patient.id);
 
   // ✅ DEPURACIÓN TEMPORAL - REMOVER EN PRODUCCIÓN
   //useDebugTreatments(budgets, budgetTreatments, activeBudget, patient.id);
@@ -254,21 +260,59 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
     }
   };
 
-  // Función para abrir modal de detalles
-  const handleViewTreatment = (treatment: Treatment) => {
-    setSelectedTreatment(treatment);
-    setShowDetailModal(true);
+  // ✅ ACTUALIZADO: Función para abrir modal de detalles (recibe ID)
+  const handleViewTreatment = (treatmentId: number) => {
+    const treatment = budgetTreatments.find(t => t.id_tratamiento === treatmentId);
+    if (treatment) {
+      setSelectedTreatment(treatment);
+      setShowDetailModal(true);
+    }
   };
 
-  // Función para editar tratamiento
-  const handleEditTreatment = (treatment: Treatment) => {
-    setTreatmentToEdit(treatment);
-    setShowEditTreatmentModal(true);
+  // ✅ ACTUALIZADO: Función para editar tratamiento (recibe ID)
+  const handleEditTreatment = (treatmentId: number) => {
+    const treatment = budgetTreatments.find(t => t.id_tratamiento === treatmentId);
+    if (treatment) {
+      setTreatmentToEdit(treatment);
+      setShowEditTreatmentModal(true);
+    }
   };
 
   // Función para abrir modal de nuevo tratamiento
   const handleNewTreatment = () => {
     setShowNewTreatmentModal(true);
+  };
+
+  // ✅ NUEVO: Función para abrir modal de agregar sesión
+  const handleAddSession = (budgetItemId: number) => {
+    const group = groupedTreatments.find(g => g.budget_item_id === budgetItemId);
+    if (group) {
+      setSessionBudgetItemId(budgetItemId);
+      setSessionServiceName(group.mainTreatment.nombre_servicio);
+      setShowAddSessionModal(true);
+    }
+  };
+
+  // ✅ NUEVO: Función para crear una nueva sesión
+  const handleCreateSession = async (sessionData: AddSessionData) => {
+    try {
+      console.log('📝 Creando nueva sesión:', sessionData);
+
+      await addSessionMutation.mutateAsync({
+        patientId: patient.id,
+        sessionData,
+      });
+
+      notification.success('Sesión registrada exitosamente');
+      setShowAddSessionModal(false);
+      setSessionBudgetItemId(null);
+      setSessionServiceName('');
+
+    } catch (error: any) {
+      console.error('❌ Error al agregar sesión:', error);
+      const errorMessage = processApiError(error);
+      notification.error(errorMessage, { description: 'Error al agregar sesión' });
+    }
   };
 
   // Funciones para cerrar modales
@@ -284,6 +328,12 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   const handleCloseDetailModal = () => {
     setShowDetailModal(false);
     setSelectedTreatment(null);
+  };
+
+  const handleCloseAddSessionModal = () => {
+    setShowAddSessionModal(false);
+    setSessionBudgetItemId(null);
+    setSessionServiceName('');
   };
 
   // Manejar cambio de presupuesto seleccionado
@@ -324,16 +374,17 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
           />
         </div>
 
-        {/* Contenido principal */}
+        {/* Contenido principal - ✅ Ahora con tratamientos agrupados */}
         <div className="flex-1 min-w-0">
-          <TreatmentsList
-            treatments={treatments}
+          <TreatmentsGroupedList
+            groupedTreatments={groupedTreatments}
             loading={loading}
             selectedBudget={selectedBudgetInfo}
             onView={handleViewTreatment}
             onEdit={handleEditTreatment}
             onComplete={handleCompleteTreatment}
             onDelete={handleDeleteTreatment}
+            onAddSession={handleAddSession}
             onNewTreatment={handleNewTreatment}
             isLoadingDelete={isLoadingDelete}
             isLoadingComplete={isLoadingComplete}
@@ -371,6 +422,16 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
         onComplete={handleCompleteTreatment}
         onDelete={handleDeleteTreatment}
         canComplete={selectedTreatment?.status === 'pending'}
+      />
+
+      {/* Modal para agregar sesión/evolución */}
+      <AddSessionModal
+        isOpen={showAddSessionModal}
+        onClose={handleCloseAddSessionModal}
+        onSubmit={handleCreateSession}
+        budgetItemId={sessionBudgetItemId || 0}
+        serviceName={sessionServiceName}
+        isLoading={isLoadingAddSession}
       />
 
       {/* Modal de confirmación */}
