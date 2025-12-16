@@ -1,12 +1,12 @@
 // netlify/functions/treatments/use-cases/add-session.ts
 import { db } from "../../../data/db";
 import { treatmentsTable } from "../../../data/schemas/treatment.schema";
-import { budgetItemsTable, BUDGET_ITEM_STATUS } from "../../../data/schemas/budget.schema";
+import { budgetItemsTable, budgetsTable, BUDGET_ITEM_STATUS } from "../../../data/schemas/budget.schema";
 import { HEADERS } from "../../../config/utils";
 import { HandlerResponse } from "@netlify/functions";
 import { AuditService } from "../../../services/AuditService";
 import { AUDIT_ENTITY_TYPES, AUDIT_ACTIONS } from "../../../data/schemas";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 interface AddSessionData {
   budget_item_id: number;
@@ -34,21 +34,38 @@ export class AddTreatmentSession {
     patientId: number
   ): Promise<HandlerResponse> {
     try {
-      // 1. Obtener el budget_item para información del servicio
-      const [budgetItem] = await db
-        .select()
+      // 1. Obtener el budget_item con JOIN al presupuesto para verificar permisos
+      const budgetItemResult = await db
+        .select({
+          id: budgetItemsTable.id,
+          budget_id: budgetItemsTable.budget_id,
+          pieza: budgetItemsTable.pieza,
+          accion: budgetItemsTable.accion,
+          valor: budgetItemsTable.valor,
+          status: budgetItemsTable.status,
+          budget_user_id: budgetsTable.user_id,
+        })
         .from(budgetItemsTable)
-        .where(eq(budgetItemsTable.id, sessionData.budget_item_id));
+        .innerJoin(budgetsTable, eq(budgetItemsTable.budget_id, budgetsTable.id))
+        .where(
+          and(
+            eq(budgetItemsTable.id, sessionData.budget_item_id),
+            eq(budgetsTable.user_id, userId) // ✅ Verificar que el presupuesto pertenece al doctor
+          )
+        )
+        .limit(1);
 
-      if (!budgetItem) {
+      if (budgetItemResult.length === 0) {
         return {
           statusCode: 404,
           body: JSON.stringify({
-            message: "Item del presupuesto no encontrado",
+            message: "Item del presupuesto no encontrado o no tienes permiso para acceder a él",
           }),
           headers: HEADERS.json,
         };
       }
+
+      const budgetItem = budgetItemResult[0];
 
       // 2. Verificar si ya existe un tratamiento para este budget_item
       const existingTreatments = await db
