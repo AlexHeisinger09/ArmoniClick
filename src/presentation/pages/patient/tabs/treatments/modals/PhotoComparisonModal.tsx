@@ -2,6 +2,7 @@
 import React from 'react';
 import { X, Calendar, Image as ImageIcon } from 'lucide-react';
 import { Treatment } from '@/core/use-cases/treatments';
+import { formatDate } from '@/presentation/utils/dateHelpers';
 
 interface PhotoComparisonModalProps {
   isOpen: boolean;
@@ -17,10 +18,6 @@ const PhotoComparisonModal: React.FC<PhotoComparisonModalProps> = ({
   serviceName,
 }) => {
   if (!isOpen) return null;
-
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString("es-CL");
-  };
 
   // Filtrar solo sesiones que tienen fotos
   const sessionsWithPhotos = sessions.filter(s => s.foto1 || s.foto2);

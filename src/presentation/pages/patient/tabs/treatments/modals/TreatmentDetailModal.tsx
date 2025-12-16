@@ -2,6 +2,7 @@
 import React from 'react';
 import { Package, Camera, Edit, Trash2, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { TreatmentDetailModalProps } from '../shared/types';
+import { formatDate, formatTime } from '@/presentation/utils/dateHelpers';
 
 const TreatmentDetailModal: React.FC<TreatmentDetailModalProps> = ({
   isOpen,
@@ -13,14 +14,6 @@ const TreatmentDetailModal: React.FC<TreatmentDetailModalProps> = ({
   canComplete = false
 }) => {
   if (!isOpen || !treatment) return null;
-
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString("es-CL");
-  };
-
-  const formatTime = (timeString: string): string => {
-    return timeString.slice(0, 5);
-  };
 
   const isProductExpired = (expirationDate?: string): boolean => {
     if (!expirationDate) return false;

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { TreatmentGroup } from '@/presentation/hooks/treatments/useTreatments';
 import { PhotoComparisonModal } from '../modals/PhotoComparisonModal';
+import { formatDate, formatTime } from '@/presentation/utils/dateHelpers';
 
 interface TreatmentGroupCardProps {
   group: TreatmentGroup;
@@ -50,14 +51,6 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
   // ✅ NUEVO: Todos los treatments (main + sessions)
   const allTreatments = hasTreatments ? [mainTreatment, ...sessions] : [];
   const totalTreatments = allTreatments.length;
-
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString("es-CL");
-  };
-
-  const formatTime = (timeString: string): string => {
-    return timeString.slice(0, 5);
-  };
 
   const getStatusInfo = (status: string) => {
     switch (status) {

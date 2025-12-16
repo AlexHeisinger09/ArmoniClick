@@ -67,18 +67,23 @@ export class AddTreatmentSession {
 
       const budgetItem = budgetItemResult[0];
 
-      // 2. Verificar si ya existe un tratamiento para este budget_item
+      // 2. Verificar si ya existe un tratamiento para este budget_item (solo activos)
       const existingTreatments = await db
         .select()
         .from(treatmentsTable)
-        .where(eq(treatmentsTable.budget_item_id, sessionData.budget_item_id));
+        .where(
+          and(
+            eq(treatmentsTable.budget_item_id, sessionData.budget_item_id),
+            eq(treatmentsTable.is_active, true) // ✅ Solo contar treatments activos
+          )
+        );
 
       const isFirstTreatment = existingTreatments.length === 0;
 
       // 3. Crear el tratamiento/sesión
       const serviceName = isFirstTreatment
         ? `${budgetItem.accion}${budgetItem.pieza ? ` - Pieza ${budgetItem.pieza}` : ''}`
-        : `${budgetItem.accion}${budgetItem.pieza ? ` - Pieza ${budgetItem.pieza}` : ''} - Sesión ${existingTreatments.length}`;
+        : `${budgetItem.accion}${budgetItem.pieza ? ` - Pieza ${budgetItem.pieza}` : ''} - Sesión ${existingTreatments.length + 1}`; // ✅ CORREGIDO: +1 porque queremos el número de la NUEVA sesión
 
       const [newTreatment] = await db
         .insert(treatmentsTable)

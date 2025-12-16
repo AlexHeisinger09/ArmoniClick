@@ -87,7 +87,7 @@ export class TreatmentService {
           eq(treatmentsTable.is_active, true) // ✅ CRÍTICO: Solo tratamientos activos
         )
       )
-      .orderBy(desc(treatmentsTable.fecha_control), desc(treatmentsTable.hora_control));
+      .orderBy(asc(treatmentsTable.created_at)); // ✅ CORREGIDO: Orden cronológico (más antiguo primero)
 
     console.log(`✅ Encontrados ${treatments.length} tratamientos activos para presupuesto ${budgetId}`);
 
