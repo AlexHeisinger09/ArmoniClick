@@ -331,7 +331,7 @@ export class BudgetService {
         return await this.findByBudgetId(budgetId, userId) as BudgetWithItems;
     }
 
-    // ✅ ACTIVAR presupuesto (validando unicidad) y CREAR TRATAMIENTOS
+    // ✅ ACTIVAR presupuesto (solo cambia status, NO crea tratamientos)
     async activateBudget(budgetId: number, userId: number): Promise<void> {
         console.log('🟢 Activando presupuesto ID:', budgetId);
 
@@ -349,25 +349,9 @@ export class BudgetService {
             throw new Error('No se puede activar un presupuesto sin tratamientos');
         }
 
-        // ✅ CREAR TRATAMIENTOS AUTOMÁTICAMENTE (1 por cada budget_item)
-        console.log('📝 Creando tratamientos planificados automáticamente...');
-
-        const currentDate = new Date();
-        const treatmentsToCreate: NewTreatment[] = budget.items.map(item => ({
-            id_paciente: budget.patient_id,
-            id_doctor: userId,
-            budget_item_id: item.id, // ✅ VINCULAR CON EL ITEM DEL PRESUPUESTO
-            fecha_control: currentDate.toISOString().split('T')[0], // Fecha actual
-            hora_control: currentDate.toTimeString().slice(0, 5), // Hora actual
-            nombre_servicio: `${item.accion}${item.pieza ? ` - Pieza ${item.pieza}` : ''}`,
-            descripcion: 'Tratamiento planificado del presupuesto',
-            status: 'planificado', // ✅ NUEVO ESTADO: planificado (aún no iniciado)
-            created_at: new Date(),
-            is_active: true,
-        }));
-
-        // Insertar tratamientos planificados
-        await db.insert(treatmentsTable).values(treatmentsToCreate);
+        // ✅ NUEVO FLUJO: Solo activar presupuesto, NO crear treatments
+        // Los treatments se crean al agregar la primera sesión
+        console.log('✅ Activando presupuesto (budget_items permanecen como "planificado")...');
 
         // Activar presupuesto
         await db
@@ -378,7 +362,7 @@ export class BudgetService {
             })
             .where(eq(budgetsTable.id, budgetId));
 
-        console.log('✅ Presupuesto activado y tratamientos creados exitosamente');
+        console.log('✅ Presupuesto activado exitosamente (sin crear treatments)');
     }
 
     // ✅ COMPLETAR presupuesto activo

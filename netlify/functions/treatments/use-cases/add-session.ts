@@ -1,6 +1,7 @@
 // netlify/functions/treatments/use-cases/add-session.ts
 import { db } from "../../../data/db";
 import { treatmentsTable } from "../../../data/schemas/treatment.schema";
+import { budgetItemsTable, BUDGET_ITEM_STATUS } from "../../../data/schemas/budget.schema";
 import { HEADERS } from "../../../config/utils";
 import { HandlerResponse } from "@netlify/functions";
 import { AuditService } from "../../../services/AuditService";
@@ -33,33 +34,42 @@ export class AddTreatmentSession {
     patientId: number
   ): Promise<HandlerResponse> {
     try {
-      // 1. Obtener el tratamiento principal para verificar y obtener datos
-      const mainTreatment = await db
+      // 1. Obtener el budget_item para información del servicio
+      const [budgetItem] = await db
         .select()
-        .from(treatmentsTable)
-        .where(eq(treatmentsTable.budget_item_id, sessionData.budget_item_id))
-        .limit(1);
+        .from(budgetItemsTable)
+        .where(eq(budgetItemsTable.id, sessionData.budget_item_id));
 
-      if (!mainTreatment || mainTreatment.length === 0) {
+      if (!budgetItem) {
         return {
           statusCode: 404,
           body: JSON.stringify({
-            message: "Tratamiento principal no encontrado",
+            message: "Item del presupuesto no encontrado",
           }),
           headers: HEADERS.json,
         };
       }
 
-      const treatment = mainTreatment[0];
+      // 2. Verificar si ya existe un tratamiento para este budget_item
+      const existingTreatments = await db
+        .select()
+        .from(treatmentsTable)
+        .where(eq(treatmentsTable.budget_item_id, sessionData.budget_item_id));
 
-      // 2. Crear nueva sesión/evolución
-      const [newSession] = await db
+      const isFirstTreatment = existingTreatments.length === 0;
+
+      // 3. Crear el tratamiento/sesión
+      const serviceName = isFirstTreatment
+        ? `${budgetItem.accion}${budgetItem.pieza ? ` - Pieza ${budgetItem.pieza}` : ''}`
+        : `${budgetItem.accion}${budgetItem.pieza ? ` - Pieza ${budgetItem.pieza}` : ''} - Sesión ${existingTreatments.length}`;
+
+      const [newTreatment] = await db
         .insert(treatmentsTable)
         .values({
           id_paciente: patientId,
           id_doctor: userId,
           budget_item_id: sessionData.budget_item_id,
-          nombre_servicio: `${treatment.nombre_servicio} - Sesión`,
+          nombre_servicio: serviceName,
           fecha_control: sessionData.fecha_control,
           hora_control: sessionData.hora_control,
           descripcion: sessionData.descripcion || '',
@@ -71,53 +81,59 @@ export class AddTreatmentSession {
           foto2: sessionData.foto2,
           fecha_proximo_control: sessionData.fecha_proximo_control,
           hora_proximo_control: sessionData.hora_proximo_control,
-          status: 'en_proceso', // Sesión registrada = en proceso
+          status: 'en_proceso', // Siempre en_proceso cuando se registra
           created_at: new Date(),
           is_active: true,
         })
         .returning();
 
-      // 3. Actualizar estado del tratamiento principal a 'en_proceso' si estaba 'planificado'
-      if (treatment.status === 'planificado') {
+      // 4. Actualizar estado del budget_item a 'en_proceso'
+      if (budgetItem.status !== BUDGET_ITEM_STATUS.EN_PROCESO) {
         await db
-          .update(treatmentsTable)
+          .update(budgetItemsTable)
           .set({
-            status: 'en_proceso',
+            status: BUDGET_ITEM_STATUS.EN_PROCESO,
             updated_at: new Date(),
           })
-          .where(eq(treatmentsTable.id_tratamiento, treatment.id_tratamiento));
+          .where(eq(budgetItemsTable.id, sessionData.budget_item_id));
       }
 
-      // 4. Registrar en auditoría
+      // 5. Registrar en auditoría
       await this.auditService.logChange({
         patientId: patientId,
         entityType: AUDIT_ENTITY_TYPES.TRATAMIENTO,
-        entityId: newSession.id_tratamiento,
+        entityId: newTreatment.id_tratamiento,
         action: AUDIT_ACTIONS.CREATED,
         oldValues: {},
         newValues: {
           budget_item_id: sessionData.budget_item_id,
           fecha: sessionData.fecha_control,
           descripcion: sessionData.descripcion,
+          is_first: isFirstTreatment,
         },
         changedBy: userId,
-        notes: `Nueva sesión registrada para tratamiento`,
+        notes: isFirstTreatment
+          ? `Primer tratamiento registrado para item del presupuesto`
+          : `Nueva sesión registrada (sesión ${existingTreatments.length})`,
       });
 
       return {
         statusCode: 201,
         body: JSON.stringify({
-          message: "Sesión registrada exitosamente",
-          session: newSession,
+          message: isFirstTreatment
+            ? "Primer tratamiento registrado exitosamente"
+            : "Sesión registrada exitosamente",
+          treatment: newTreatment,
+          isFirstTreatment,
         }),
         headers: HEADERS.json,
       };
     } catch (error: any) {
-      console.error("Error al agregar sesión:", error);
+      console.error("Error al agregar tratamiento/sesión:", error);
       return {
         statusCode: 500,
         body: JSON.stringify({
-          message: "Error al agregar sesión",
+          message: "Error al agregar tratamiento/sesión",
           error: error.message,
         }),
         headers: HEADERS.json,

@@ -50,20 +50,27 @@ export const budgetItemsTable = pgTable("budget_items", {
   valor: decimal("valor", { precision: 10, scale: 2 }).notNull(),
   orden: integer("orden").default(0),
   created_at: timestamp("created_at").notNull().defaultNow(),
-  
+
+  // ✅ NUEVO: Estado del item (refleja estado de treatments asociados)
+  status: varchar("status", { length: 50 }).default("planificado"), // planificado, en_proceso, completado
+
   // ✅ AGREGAR CAMPO PARA SOFT DELETE
   is_active: boolean("is_active").default(true),
   updated_at: timestamp("updated_at"),
 }, (table) => ({
   budgetIdx: index('idx_budget_items_budget')
     .on(table.budget_id),
-    
+
   ordenIdx: index('idx_budget_items_orden')
     .on(table.budget_id, table.orden),
-    
+
   // ✅ NUEVO ÍNDICE PARA FILTRAR ITEMS ACTIVOS
   activeIdx: index('idx_budget_items_active')
     .on(table.is_active),
+
+  // ✅ NUEVO ÍNDICE PARA ESTADO
+  statusIdx: index('idx_budget_items_status')
+    .on(table.status),
 }));
 
 // Tipos para TypeScript
@@ -76,8 +83,14 @@ export type SelectBudgetItem = typeof budgetItemsTable.$inferSelect;
 export const BUDGET_STATUS = {
   PENDIENTE: 'pendiente', // ✅ NUEVO ESTADO INICIAL
   BORRADOR: 'borrador',
-  ACTIVO: 'activo', 
+  ACTIVO: 'activo',
   COMPLETED: 'completed'
+} as const;
+
+export const BUDGET_ITEM_STATUS = {
+  PLANIFICADO: 'planificado',  // Item del presupuesto, sin treatments aún
+  EN_PROCESO: 'en_proceso',    // Al menos 1 treatment registrado
+  COMPLETADO: 'completado'     // Todos los treatments completados
 } as const;
 
 export const BUDGET_TYPE = {
