@@ -33,9 +33,18 @@ const AddSessionModal: React.FC<AddSessionModalProps> = ({
   serviceName,
   isLoading = false,
 }) => {
+  // ✅ Obtener fecha actual en zona horaria local (no UTC)
+  const getTodayLocalDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [formData, setFormData] = useState<Partial<AddSessionData>>({
     budget_item_id: budgetItemId,
-    fecha_control: new Date().toISOString().split('T')[0],
+    fecha_control: getTodayLocalDate(),
     hora_control: new Date().toTimeString().slice(0, 5),
     nombre_servicio: serviceName,
     descripcion: '',
@@ -118,17 +127,6 @@ const AddSessionModal: React.FC<AddSessionModalProps> = ({
     if (!formData.fecha_control) errors.fecha_control = 'Fecha de control es requerida';
     if (!formData.hora_control) errors.hora_control = 'Hora de control es requerida';
     if (!formData.nombre_servicio) errors.nombre_servicio = 'Nombre del servicio es requerido';
-
-    // Validar que la fecha de control no sea futura
-    if (formData.fecha_control) {
-      const controlDate = new Date(formData.fecha_control);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (controlDate > today) {
-        errors.fecha_control = 'La fecha de control no puede ser futura';
-      }
-    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;

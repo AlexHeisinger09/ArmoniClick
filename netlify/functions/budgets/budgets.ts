@@ -9,6 +9,7 @@ import {
   CompleteBudget,
   RevertBudgetToDraft,
   DeleteBudget,
+  AddBudgetItem,
   DeleteBudgetItem,
   CompleteBudgetItem,
   GetBudgetStats,
@@ -207,6 +208,34 @@ const handler: Handler = async (event: HandlerEvent) => {
 
       return new RevertBudgetToDraft()
         .execute(budgetId, userId)
+        .then((res) => res)
+        .catch((error) => error);
+    }
+
+    // ✅ POST /budgets/{budgetId}/items - Agregar item a presupuesto existente
+    if (httpMethod === "POST" && path.includes('/items') && !path.includes('/complete')) {
+      const budgetId = pathParts[budgetsIndex + 1] ? parseInt(pathParts[budgetsIndex + 1]) : null;
+
+      if (!budgetId || isNaN(budgetId)) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ message: "ID de presupuesto inválido" }),
+          headers: HEADERS.json,
+        };
+      }
+
+      const { pieza, accion, valor } = body;
+
+      if (!accion || !valor || valor <= 0) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ message: "Datos inválidos: accion y valor son requeridos" }),
+          headers: HEADERS.json,
+        };
+      }
+
+      return new AddBudgetItem()
+        .execute(budgetId, userId, { pieza, accion, valor: parseFloat(valor) })
         .then((res) => res)
         .catch((error) => error);
     }

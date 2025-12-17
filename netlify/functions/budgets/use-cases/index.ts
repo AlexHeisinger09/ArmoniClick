@@ -7,6 +7,7 @@ export * from './complete-budget';
 export * from './revert-budget-to-draft';
 export * from './update-budget-status';
 export * from './delete-budget';
+export * from './add-budget-item';
 export * from './delete-budget-item';
 export * from './complete-budget-item';
 export * from './get-budget-stats';

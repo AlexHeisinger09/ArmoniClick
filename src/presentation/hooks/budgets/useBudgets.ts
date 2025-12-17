@@ -14,6 +14,7 @@ import {
   Budget,
   BudgetUtils,
 } from "@/core/use-cases/budgets";
+import { addBudgetItemUseCase } from "@/core/use-cases/budgets/add-budget-item.use-case";
 import { deleteBudgetItemUseCase } from "@/core/use-cases/budgets/delete-budget-item.use-case";
 import { completeBudgetItemUseCase } from "@/core/use-cases/budgets/complete-budget-item.use-case";
 
@@ -184,6 +185,32 @@ export const useDeleteBudgetById = () => {
     deleteBudgetMutation,
     deleteBudget: deleteBudgetMutation.mutateAsync,
     isLoadingDelete: deleteBudgetMutation.isPending,
+  };
+};
+
+// ✅ Hook para agregar un item a un presupuesto
+export const useAddBudgetItem = () => {
+  const queryClient = useQueryClient();
+
+  const addBudgetItemMutation = useMutation({
+    mutationFn: ({ budgetId, data }: {
+      budgetId: number;
+      data: { pieza?: string; accion: string; valor: number }
+    }) => addBudgetItemUseCase(apiFetcher, budgetId, data),
+    onSuccess: () => {
+      // Invalidar queries de presupuestos para actualizar el total
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['budget'] });
+      queryClient.invalidateQueries({ queryKey: ['budgetItems'] });
+      // ✅ Invalidar también las queries de treatments para que se vea reflejado inmediatamente
+      queryClient.invalidateQueries({ queryKey: ['treatments'] });
+    },
+  });
+
+  return {
+    addBudgetItemMutation,
+    addBudgetItem: addBudgetItemMutation.mutateAsync,
+    isLoadingAddItem: addBudgetItemMutation.isPending,
   };
 };
 

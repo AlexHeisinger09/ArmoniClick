@@ -39,11 +39,14 @@ export class CompleteBudgetItem {
 
       const budgetItem = budgetItemResult[0];
 
-      // 2. Marcar todos los tratamientos como completados
+      // 2. Marcar todos los tratamientos (sesiones) como completados
       await db
         .update(treatmentsTable)
-        .set({ status: 'completado', updated_at: new Date() })
-        .where(eq(treatmentsTable.budget_item_id, budgetItemId));
+        .set({ status: 'completed', updated_at: new Date() })
+        .where(and(
+          eq(treatmentsTable.budget_item_id, budgetItemId),
+          eq(treatmentsTable.is_active, true)
+        ));
 
       // 3. Marcar budget_item como completado
       await db

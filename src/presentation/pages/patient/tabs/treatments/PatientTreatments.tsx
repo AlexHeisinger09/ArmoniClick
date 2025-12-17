@@ -11,12 +11,13 @@ import {
   useCompleteTreatment,
   useAddTreatmentSession
 } from "@/presentation/hooks/treatments/useTreatments";
-import { useDeleteBudgetItem, useCompleteBudgetItem } from "@/presentation/hooks/budgets/useBudgets";
+import { useDeleteBudgetItem, useCompleteBudgetItem, useAddBudgetItem } from "@/presentation/hooks/budgets/useBudgets";
 
 // Componentes
 import { TreatmentsGroupedList } from './components/TreatmentsGroupedList';
 import { BudgetCarousel } from './components/BudgetCarousel';
 import { NewTreatmentModal } from './modals/NewTreatmentModal';
+import { AddBudgetItemModal } from './modals/AddBudgetItemModal';
 import { EditTreatmentModal } from './modals/EditTreatmentModal';
 import { TreatmentDetailModal } from './modals/TreatmentDetailModal';
 import { AddSessionModal } from './modals/AddSessionModal';
@@ -31,6 +32,7 @@ interface PatientTreatmentsProps {
 const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   // Estados para modales
   const [showNewTreatmentModal, setShowNewTreatmentModal] = useState(false);
+  const [showAddBudgetItemModal, setShowAddBudgetItemModal] = useState(false);
   const [showEditTreatmentModal, setShowEditTreatmentModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAddSessionModal, setShowAddSessionModal] = useState(false);
@@ -69,6 +71,7 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   const { createTreatmentMutation, isLoadingCreate } = useCreateTreatment();
   const { updateTreatmentMutation, isLoadingUpdate } = useUpdateTreatment();
   const { deleteTreatmentMutation, isLoadingDelete } = useDeleteTreatment();
+  const { addBudgetItemMutation, isLoadingAddItem } = useAddBudgetItem();
   const { deleteBudgetItemMutation, isLoadingDeleteItem } = useDeleteBudgetItem();
   const { completeBudgetItemMutation, isLoadingCompleteItem } = useCompleteBudgetItem();
   const { completeTreatmentMutation, isLoadingComplete } = useCompleteTreatment(patient.id);
@@ -286,6 +289,33 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
     }
   };
 
+  // ✅ NUEVO: Agregar budget_item al presupuesto activo
+  const handleAddBudgetItem = async (data: { pieza?: string; accion: string; valor: number }) => {
+    if (!selectedBudgetId) {
+      notification.error('No hay presupuesto seleccionado');
+      return;
+    }
+
+    try {
+      console.log('🆕 Agregando budget item:', { budgetId: selectedBudgetId, data });
+
+      await addBudgetItemMutation.mutateAsync({
+        budgetId: selectedBudgetId,
+        data
+      });
+
+      console.log('✅ Budget item agregado exitosamente');
+
+      setShowAddBudgetItemModal(false);
+      notification.success('Tratamiento agregado al presupuesto correctamente');
+
+    } catch (error: any) {
+      console.error('❌ Error al agregar budget item:', error);
+      const errorMessage = processApiError(error);
+      notification.error(errorMessage, { description: 'Error al agregar tratamiento' });
+    }
+  };
+
   // Manejar eliminación de tratamiento (para compatibilidad con código existente)
   const handleDeleteTreatment = async (treatmentId: number) => {
     const treatment = budgetTreatments.find(t => t.id_tratamiento === treatmentId);
@@ -358,9 +388,9 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
     }
   };
 
-  // Función para abrir modal de nuevo tratamiento
+  // ✅ ACTUALIZADO: Función para abrir modal de nuevo tratamiento (ahora AddBudgetItemModal)
   const handleNewTreatment = () => {
-    setShowNewTreatmentModal(true);
+    setShowAddBudgetItemModal(true);
   };
 
   // ✅ NUEVO: Función para abrir modal de agregar sesión
@@ -541,6 +571,15 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
         onClose={handleCloseNewModal}
         onSubmit={handleCreateTreatment}
         isLoading={isLoadingCreate}
+      />
+
+      {/* ✅ NUEVO: Modal para agregar budget item (tratamiento al presupuesto) */}
+      <AddBudgetItemModal
+        isOpen={showAddBudgetItemModal}
+        budgetId={selectedBudgetId || 0}
+        onClose={() => setShowAddBudgetItemModal(false)}
+        onSubmit={handleAddBudgetItem}
+        isLoading={isLoadingAddItem}
       />
 
       {/* Modal para editar tratamiento */}

@@ -1,5 +1,5 @@
 // src/presentation/pages/patient/tabs/treatments/components/TreatmentGroupCard.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Calendar,
   Clock,
@@ -59,6 +59,17 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
   // ✅ NUEVO: Todos los treatments (main + sessions)
   const allTreatments = hasTreatments ? [mainTreatment, ...sessions] : [];
   const totalTreatments = allTreatments.length;
+
+  // ✅ Referencia para detectar cuando se agrega una nueva sesión
+  const prevTreatmentsCount = useRef(totalTreatments);
+
+  // ✅ Expandir automáticamente cuando se agrega una nueva sesión
+  useEffect(() => {
+    if (totalTreatments > prevTreatmentsCount.current && totalTreatments > 0) {
+      setIsExpanded(true);
+    }
+    prevTreatmentsCount.current = totalTreatments;
+  }, [totalTreatments]);
 
   const getStatusInfo = (status: string) => {
     switch (status) {
