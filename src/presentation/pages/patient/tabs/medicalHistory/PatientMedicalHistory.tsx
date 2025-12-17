@@ -18,6 +18,7 @@ import { Patient } from "@/core/use-cases/patients";
 import { useAuditHistory, AuditLog } from "@/presentation/hooks/audit-history/useAuditHistory";
 import { useDocuments } from "@/presentation/hooks/documents/useDocuments";
 import { useTreatment } from "@/presentation/hooks/treatments/useTreatments";
+import { getCloudinaryThumbnail } from '@/config/helpers/cloudinary.helper';
 import { AuditHistoryFilters, FilterState } from './components/AuditHistoryFilters';
 import { ExportHistoryButton } from './components/ExportHistoryButton';
 
@@ -648,7 +649,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                                     })}
                                   >
                                     <img
-                                      src={photo.url}
+                                      src={getCloudinaryThumbnail(photo.url)}
                                       alt={photo.alt}
                                       className="h-16 w-16 object-cover rounded border border-gray-300 hover:border-cyan-500 transition-all"
                                       onError={(e) => {
@@ -870,7 +871,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                                   })}
                                 >
                                   <img
-                                    src={photo.url}
+                                    src={getCloudinaryThumbnail(photo.url)}
                                     alt={photo.alt}
                                     className="h-12 w-12 object-cover rounded border border-gray-300 hover:border-cyan-500 transition-all"
                                     onError={(e) => {
