@@ -79,13 +79,13 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
     return type.toLowerCase();
   };
 
-  // Aplicar filtros - Excluir tratamientos CREATED, solo mostrar los editados
+  // Aplicar filtros
   const filteredLogs = useMemo(() => {
     return auditLogs.filter((log) => {
       const normalizedType = normalizeEntityType(log.entity_type);
 
-      // Filtro: Excluir tratamientos en estado CREATED
-      if (normalizedType === 'tratamiento' && log.action === 'created') {
+      // ✅ TRATAMIENTOS: Solo mostrar cuando son CREADOS, no cuando son EDITADOS
+      if (normalizedType === 'tratamiento' && log.action === 'updated') {
         return false;
       }
 
@@ -207,10 +207,22 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
     return configs[normalizedType] || configs.paciente;
   };
 
-  const getActionLabel = (action: string, entityType?: string): string => {
-    // Si es un tratamiento actualizado, mostrar "Evolución"
-    if (action === 'updated' && entityType && normalizeEntityType(entityType) === 'tratamiento') {
+  const getActionLabel = (action: string, entityType?: string, log?: AuditLog): string => {
+    // ✅ Si es un tratamiento creado, mostrar "Evolución"
+    // (Los tratamientos 'updated' ya están filtrados y no se muestran)
+    if (entityType && normalizeEntityType(entityType) === 'tratamiento' && action === 'created') {
       return 'Evolución';
+    }
+
+    // ✅ Si es un presupuesto con status_changed, usar el estado traducido directamente
+    if (entityType && normalizeEntityType(entityType) === 'presupuesto' && action === 'status_changed' && log?.new_values?.status) {
+      const statusTranslations: Record<string, string> = {
+        'activo': 'Activo',
+        'completado': 'Completado',
+        'borrador': 'Borrador',
+        'cancelado': 'Cancelado'
+      };
+      return statusTranslations[log.new_values.status] || log.new_values.status;
     }
 
     const labels: Record<string, string> = {
@@ -223,7 +235,12 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
     return labels[action] || action;
   };
 
-  const getActionBadgeColor = (action: string): string => {
+  const getActionBadgeColor = (action: string, entityType?: string): string => {
+    // ✅ Si es un tratamiento creado (Evolución), usar color azul
+    if (action === 'created' && entityType && normalizeEntityType(entityType) === 'tratamiento') {
+      return 'bg-blue-100 text-blue-700 border-blue-200';
+    }
+
     const colors: Record<string, string> = {
       created: 'bg-green-100 text-green-700 border-green-200',
       updated: 'bg-blue-100 text-blue-700 border-blue-200',
@@ -236,13 +253,29 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
 
   const getPhotosFromLog = (log: AuditLog): Array<{ url: string; alt?: string }> => {
     const photos: Array<{ url: string; alt?: string }> = [];
+    const seenUrls = new Set<string>(); // Para evitar duplicados
 
+    // ✅ Buscar fotos en new_values (prioridad)
     if (log.new_values) {
-      if (log.new_values.foto1) {
+      if (log.new_values.foto1 && !seenUrls.has(log.new_values.foto1)) {
         photos.push({ url: log.new_values.foto1, alt: 'Foto 1' });
+        seenUrls.add(log.new_values.foto1);
       }
-      if (log.new_values.foto2) {
+      if (log.new_values.foto2 && !seenUrls.has(log.new_values.foto2)) {
         photos.push({ url: log.new_values.foto2, alt: 'Foto 2' });
+        seenUrls.add(log.new_values.foto2);
+      }
+    }
+
+    // ✅ Buscar fotos en old_values (si no están en new_values)
+    if (log.old_values) {
+      if (log.old_values.foto1 && !seenUrls.has(log.old_values.foto1)) {
+        photos.push({ url: log.old_values.foto1, alt: 'Foto 1 (anterior)' });
+        seenUrls.add(log.old_values.foto1);
+      }
+      if (log.old_values.foto2 && !seenUrls.has(log.old_values.foto2)) {
+        photos.push({ url: log.old_values.foto2, alt: 'Foto 2 (anterior)' });
+        seenUrls.add(log.old_values.foto2);
       }
     }
 
@@ -462,10 +495,11 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                                 </h4>
                                 <span
                                   className={`px-2 py-1 text-xs font-medium rounded-full border whitespace-nowrap ${getActionBadgeColor(
-                                    log.action
+                                    log.action,
+                                    log.entity_type
                                   )}`}
                                 >
-                                  {getActionLabel(log.action, log.entity_type)}
+                                  {getActionLabel(log.action, log.entity_type, log)}
                                 </span>
                               </div>
 
@@ -682,8 +716,8 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
                             <p className="text-xs text-gray-500 mb-2">{formatTime(log.created_at)}</p>
 
                             {/* Badge de acción */}
-                            <span className={`text-xs font-medium rounded-full border inline-block mb-2 px-2 py-1 ${getActionBadgeColor(log.action)}`}>
-                              {getActionLabel(log.action, log.entity_type)}
+                            <span className={`text-xs font-medium rounded-full border inline-block mb-2 px-2 py-1 ${getActionBadgeColor(log.action, log.entity_type)}`}>
+                              {getActionLabel(log.action, log.entity_type, log)}
                             </span>
 
                             {/* Label de tipo */}

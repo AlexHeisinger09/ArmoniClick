@@ -1,7 +1,7 @@
 // netlify/services/AuditService.ts
 import { db } from '../data/db';
 import { auditLogsTable } from '../data/schemas';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 export class AuditService {
   constructor(private database: typeof db = db) {}
@@ -26,7 +26,7 @@ export class AuditService {
         action: options.action,
       });
 
-      await this.database.insert(auditLogsTable).values({
+      const result = await this.database.insert(auditLogsTable).values({
         patient_id: options.patientId,
         entity_type: options.entityType,
         entity_id: options.entityId,
@@ -36,13 +36,67 @@ export class AuditService {
         changed_by: options.changedBy,
         notes: options.notes,
         created_at: new Date(),
-      });
+      }).returning();
 
       console.log('✅ Cambio registrado en auditoría');
+      return result[0];
     } catch (error) {
       console.error('❌ Error al registrar cambio en auditoría:', error);
       // No lanzar error para que la acción principal continúe
       // El log es importante pero no debe bloquear la operación
+    }
+  }
+
+  /**
+   * Actualiza un registro de auditoría existente (para mantener historial limpio)
+   */
+  async updateAuditLog(options: {
+    entityType: string;
+    entityId: number;
+    action: string;
+    newValues: Record<string, any>;
+    notes?: string;
+  }) {
+    try {
+      console.log('🔄 Actualizando audit log existente:', {
+        entityType: options.entityType,
+        entityId: options.entityId,
+        action: options.action,
+      });
+
+      // Buscar el audit log original (con action 'created')
+      const existingLog = await this.database
+        .select()
+        .from(auditLogsTable)
+        .where(
+          and(
+            eq(auditLogsTable.entity_type, options.entityType),
+            eq(auditLogsTable.entity_id, options.entityId),
+            eq(auditLogsTable.action, options.action)
+          )
+        )
+        .limit(1);
+
+      if (existingLog.length > 0) {
+        // Actualizar el audit log existente con los nuevos valores
+        await this.database
+          .update(auditLogsTable)
+          .set({
+            new_values: JSON.stringify(options.newValues),
+            notes: options.notes,
+            created_at: new Date(), // Actualizar fecha para que aparezca al principio
+          })
+          .where(eq(auditLogsTable.id, existingLog[0].id));
+
+        console.log('✅ Audit log actualizado:', existingLog[0].id);
+        return true;
+      } else {
+        console.log('⚠️ No se encontró audit log para actualizar');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error al actualizar audit log:', error);
+      return false;
     }
   }
 

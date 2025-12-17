@@ -106,9 +106,9 @@ export const useActivateBudget = () => {
   const queryClient = useQueryClient();
 
   const activateBudgetMutation = useMutation({
-    mutationFn: (budgetId: number) =>
-      activateBudgetUseCase(apiFetcher, budgetId),
-    onSuccess: (data, budgetId) => {
+    mutationFn: ({ budgetId, patientId }: { budgetId: number; patientId?: number }) =>
+      activateBudgetUseCase(apiFetcher, budgetId, patientId),
+    onSuccess: (data, variables) => {
       // ✅ INVALIDAR QUERIES DE PRESUPUESTOS
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
       queryClient.invalidateQueries({ queryKey: ['budget'] });
@@ -118,6 +118,13 @@ export const useActivateBudget = () => {
       // Por eso necesitamos refrescar TODAS las queries de treatments
       queryClient.invalidateQueries({ queryKey: ['treatments'] });
       queryClient.invalidateQueries({ queryKey: ['treatment'] });
+
+      // ✅ Invalidar historial médico para que aparezca la activación
+      if (variables.patientId) {
+        queryClient.invalidateQueries({
+          queryKey: ['medicalHistory', variables.patientId]
+        });
+      }
     },
   });
 
@@ -290,10 +297,10 @@ export const useMultipleBudgetOperations = (patientId: number) => {
     // Datos de presupuestos
     ...allBudgets,
     ...activeBudget,
-    
-    // Operaciones
+
+    // Operaciones (con patientId ya incluido en el contexto)
     saveBudget: saveBudget.saveBudget,
-    activateBudget: activateBudget.activateBudget,
+    activateBudget: (budgetId: number) => activateBudget.activateBudget({ budgetId, patientId }),
     completeBudget: completeBudget.completeBudget,
     revertBudget: revertBudget.revertBudget,
     deleteBudget: deleteBudget.deleteBudget,
@@ -345,7 +352,7 @@ export const useBudgetOperations = (patientId: number) => {
     updateBudgetStatus: async ({ budgetId, statusData }: { budgetId: number; statusData: { status: string } }) => {
       // Mapear a las nuevas operaciones según el estado
       if (statusData.status === 'activo') {
-        return activateBudget.activateBudget(budgetId);
+        return activateBudget.activateBudget({ budgetId, patientId });
       }
       throw new Error('Estado no soportado');
     },

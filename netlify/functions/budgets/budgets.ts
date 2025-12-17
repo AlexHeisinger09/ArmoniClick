@@ -155,7 +155,7 @@ const handler: Handler = async (event: HandlerEvent) => {
     // ✅ PUT /budgets/{budgetId}/activate - Activar presupuesto
     if (httpMethod === "PUT" && path.includes('/activate')) {
       const budgetId = pathParts[budgetsIndex + 1] ? parseInt(pathParts[budgetsIndex + 1]) : null;
-      
+
       if (!budgetId || isNaN(budgetId)) {
         return {
           statusCode: 400,
@@ -166,8 +166,11 @@ const handler: Handler = async (event: HandlerEvent) => {
         };
       }
 
+      // ✅ Obtener patientId del body para auditoría
+      const patientId = body.patientId || body.patient_id;
+
       return new ActivateBudget()
-        .execute(budgetId, userId)
+        .execute(budgetId, userId, patientId)
         .then((res) => res)
         .catch((error) => error);
     }

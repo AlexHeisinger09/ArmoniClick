@@ -722,7 +722,7 @@ export class BudgetService {
             console.log('💰 Obteniendo ingresos por budget_items completados para doctor:', userId);
 
             // ✅ Query CORRECTA: obtener budget_items donde status = 'completado'
-            // Ya NO filtramos por treatments, sino directamente por budget_item.status
+            // Cada budget_item se retorna UNA SOLA VEZ, sin importar cuántas sesiones tenga
             const budgetItems = await db
                 .select({
                     id: budgetItemsTable.id,
@@ -751,7 +751,8 @@ export class BudgetService {
 
             console.log(`📊 Budget items completados encontrados: ${budgetItems.length}`);
 
-            // Ya no necesitamos deduplicar porque cada budget_item es único
+            // ✅ FIX: Cada budget_item ya es único, no hay duplicados
+            // Cada item se cuenta solo UNA VEZ independientemente del número de sesiones
             const uniqueBudgetItems = budgetItems;
 
             console.log(`📊 Budget items únicos: ${uniqueBudgetItems.length}`);

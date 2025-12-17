@@ -147,9 +147,28 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
     const budgetTreatments = treatments.filter(t => t.is_active !== false && t.budget_item_id);
     const completedTreatments = budgetTreatments.filter(t => t.status === 'completed');
     const totalBudget = parseFloat(currentBudget.total_amount);
+
+    // ✅ FIX CRÍTICO: Agrupar por budget_item_id para evitar duplicar valores
+    // Si un budget_item tiene 4 sesiones, solo debe contar el valor UNA VEZ
+    const completedBudgetItemIds = new Set<number>();
     const completed = completedTreatments
-        .filter(t => t.budget_item_valor && parseFloat(t.budget_item_valor) > 0)
+        .filter(t => {
+            // Solo considerar si tiene budget_item_id y valor válido
+            if (!t.budget_item_id || !t.budget_item_valor || parseFloat(t.budget_item_valor) <= 0) {
+                return false;
+            }
+
+            // ✅ Si ya contamos este budget_item, saltarlo
+            if (completedBudgetItemIds.has(t.budget_item_id)) {
+                return false;
+            }
+
+            // ✅ Marcar como contado y procesar
+            completedBudgetItemIds.add(t.budget_item_id);
+            return true;
+        })
         .reduce((sum, t) => sum + parseFloat(t.budget_item_valor || '0'), 0);
+
     const pending = Math.max(0, totalBudget - completed);
     const progressPercentage = totalBudget > 0 ? Math.min(100, Math.round((completed / totalBudget) * 100)) : 0;
 

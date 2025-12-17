@@ -159,14 +159,20 @@ export class AddTreatmentSession {
         oldValues: {},
         newValues: {
           budget_item_id: sessionData.budget_item_id,
+          nombre_servicio: serviceName,
           fecha: sessionData.fecha_control,
+          hora: sessionData.hora_control,
           descripcion: sessionData.descripcion,
           is_first: isFirstTreatment,
+          pieza: budgetItem.pieza,
+          accion: budgetItem.accion,
+          foto1: sessionData.foto1 || null, // ✅ Incluir fotos para que se muestren en el historial
+          foto2: sessionData.foto2 || null,
         },
         changedBy: userId,
         notes: isFirstTreatment
-          ? `Primer tratamiento registrado para item del presupuesto`
-          : `Nueva sesión registrada (sesión ${existingTreatments.length})`,
+          ? `Primer tratamiento registrado: ${serviceName}`
+          : `Nueva sesión registrada: ${serviceName}`,
       });
 
       return {

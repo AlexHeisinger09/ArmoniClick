@@ -171,6 +171,10 @@ export const useUpdateTreatment = () => {
       queryClient.invalidateQueries({ queryKey: ['treatments'] });
       queryClient.invalidateQueries({ queryKey: ['treatment', variables.treatmentId] });
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+
+      // ✅ INVALIDAR HISTORIAL MÉDICO (para que aparezca la actualización)
+      queryClient.invalidateQueries({ queryKey: ['medicalHistory'] });
+      queryClient.invalidateQueries({ queryKey: ['auditHistory'] });
     },
     onError: () => {
       setIsLoadingUpdate(false);
@@ -204,13 +208,15 @@ export const useCompleteTreatment = (patientId?: number) => {
       queryClient.invalidateQueries({ queryKey: ['treatments'] });
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
 
-      // ✅ INVALIDAR HISTORIAL DE AUDITORÍA (NUEVO - para que aparezca el log inmediatamente)
+      // ✅ INVALIDAR HISTORIAL MÉDICO Y DE AUDITORÍA (para que aparezca el log inmediatamente)
       if (variables.patientId) {
         queryClient.invalidateQueries({ queryKey: ['auditHistory', variables.patientId] });
-        console.log('✅ Historial de auditoría invalidado para patient:', variables.patientId);
+        queryClient.invalidateQueries({ queryKey: ['medicalHistory', variables.patientId] });
+        console.log('✅ Historial médico y de auditoría invalidado para patient:', variables.patientId);
       } else if (patientId) {
         queryClient.invalidateQueries({ queryKey: ['auditHistory', patientId] });
-        console.log('✅ Historial de auditoría invalidado para patient:', patientId);
+        queryClient.invalidateQueries({ queryKey: ['medicalHistory', patientId] });
+        console.log('✅ Historial médico y de auditoría invalidado para patient:', patientId);
       }
 
       // ✅ FORZAR REFETCH INMEDIATO para datos críticos
@@ -314,9 +320,11 @@ export const useAddTreatmentSession = (patientId?: number) => {
         type: 'active'
       });
 
-      // Invalidar historial de auditoría
+      // ✅ Invalidar historial médico Y de auditoría
       if (pid) {
         queryClient.invalidateQueries({ queryKey: ['auditHistory', pid] });
+        queryClient.invalidateQueries({ queryKey: ['medicalHistory', pid] });
+        console.log('✅ Historial médico invalidado para patient:', pid);
       }
     },
     onError: () => {

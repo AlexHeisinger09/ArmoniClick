@@ -3,6 +3,22 @@ import { Patient } from "../patients/get-patients.use-case";
 import { Treatment, BudgetSummary } from "../treatments/types";
 import { AppointmentResponse } from "@/infrastructure/interfaces/appointment.response";
 
+// ✅ Nuevo: Interface para audit logs
+export interface AuditLogRecord {
+  id: number;
+  patient_id: number;
+  entity_type: string;
+  entity_id: number;
+  action: string;
+  old_values: any;
+  new_values: any;
+  changed_by: number;
+  created_at: string;
+  notes: string | null;
+  doctor_name: string;
+  doctor_lastName: string;
+}
+
 export interface MedicalHistoryRecord {
   id: string;
   fecha: string; // Fecha de creación del registro (para ordenamiento cronológico)
@@ -15,8 +31,9 @@ export interface MedicalHistoryRecord {
   categoria: 'registro' | 'consulta' | 'examen' | 'tratamiento' | 'cirugia' | 'diagnostico' | 'presupuesto' | 'cita';
   estado?: 'completado' | 'pendiente' | 'cancelado' | 'aprobado' | 'rechazado';
   monto?: number;
-  sourceType?: 'patient_base' | 'treatment' | 'appointment' | 'budget';
+  sourceType?: 'patient_base' | 'treatment' | 'appointment' | 'budget' | 'audit_log';
   sourceId?: number;
+  action?: string; // ✅ Nuevo: Para distinguir acciones en audit logs
 }
 
 export interface MedicalHistoryResponse {
@@ -52,11 +69,11 @@ export const getMedicalHistoryUseCase = async (
     );
     const patient = patientResponse.patient;
 
-    // 2. Fetch treatments for this patient (already filtered by endpoint)
-    const treatmentsResponse = await fetcher.get<{ treatments: Treatment[] }>(
-      `/treatments/patient/${patientId}`
+    // 2. ✅ NUEVO: Fetch audit logs para obtener el historial de eventos
+    const auditLogsResponse = await fetcher.get<{ auditLogs: AuditLogRecord[] }>(
+      `/audit-logs/patient/${patientId}`
     );
-    const treatments = treatmentsResponse.treatments || [];
+    const auditLogs = auditLogsResponse.auditLogs || [];
 
     // 3. Fetch ALL appointments and filter by patientId (same as PatientAppointments)
     const allAppointmentsResponse = await fetcher.get<AppointmentResponse[]>('/appointments');
@@ -66,12 +83,6 @@ export const getMedicalHistoryUseCase = async (
     const patientAppointments = allAppointments.filter(
       (appointment: AppointmentResponse) => appointment.patientId === patientId
     );
-
-    // 4. Fetch budgets for this patient
-    const budgetsResponse = await fetcher.get<{ budgets?: BudgetSummary[] }>(
-      `/treatments/patient/${patientId}/budgets`
-    );
-    const budgets = budgetsResponse.budgets || [];
 
     // Create medical records from different sources
     const records: MedicalHistoryRecord[] = [];
@@ -96,27 +107,73 @@ export const getMedicalHistoryUseCase = async (
       });
     }
 
-    // 2. Add treatment records (controles y procedimientos)
-    treatments.forEach((treatment) => {
-      if (treatment.fecha_control) {
-        // Construir nombre del doctor: "Dr/Dra. Nombre Apellido"
-        const doctorFullName = treatment.doctor_name && treatment.doctor_lastName
-          ? `Dr/Dra. ${treatment.doctor_name} ${treatment.doctor_lastName}`
-          : 'Profesional Médico';
+    // 2. ✅ NUEVO: Add records from audit logs
+    auditLogs.forEach((auditLog) => {
+      const doctorFullName = auditLog.doctor_name && auditLog.doctor_lastName
+        ? `Dr/Dra. ${auditLog.doctor_name} ${auditLog.doctor_lastName}`
+        : 'Profesional Médico';
+
+      const createdAt = new Date(auditLog.created_at);
+      const hora = createdAt.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+
+      // ✅ TRATAMIENTOS: Mostrar solo cuando se CREAN (action = 'created')
+      if (auditLog.entity_type === 'tratamiento' && auditLog.action === 'created') {
+        const newValues = auditLog.new_values || {};
+
+        // ✅ Construir nombre del tratamiento desde los datos guardados
+        const nombreServicio = newValues.nombre_servicio ||
+                              (newValues.accion ? `${newValues.accion}${newValues.pieza ? ` - Pieza ${newValues.pieza}` : ''}` : null);
+
+        const tipo = nombreServicio || 'Sesión de Tratamiento';
+        const descripcion = newValues.descripcion || auditLog.notes || 'Nueva sesión registrada';
+        const fechaControl = newValues.fecha || newValues.fecha_control;
 
         records.push({
-          id: `treatment-${treatment.id_tratamiento}`,
-          fecha: treatment.created_at, // Fecha de creación del registro para ordenamiento
-          fechaEvento: treatment.fecha_control, // Fecha cuando ocurre el control
-          hora: treatment.created_at ? new Date(treatment.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : undefined,
-          horaEvento: treatment.hora_control, // Hora del control
-          tipo: treatment.nombre_servicio || 'Tratamiento',
-          descripcion: treatment.descripcion || `Control de ${treatment.nombre_servicio}`,
+          id: `audit-treatment-${auditLog.id}`,
+          fecha: auditLog.created_at,
+          fechaEvento: fechaControl,
+          hora: hora,
+          horaEvento: newValues.hora || newValues.hora_control,
+          tipo: tipo,
+          descripcion: descripcion,
           medico: doctorFullName,
           categoria: 'tratamiento',
-          estado: treatment.status === 'completed' ? 'completado' : 'pendiente',
-          sourceType: 'treatment',
-          sourceId: treatment.id_tratamiento,
+          estado: 'completado',
+          sourceType: 'audit_log',
+          sourceId: auditLog.entity_id,
+          action: auditLog.action,
+        });
+      }
+
+      // ✅ PRESUPUESTOS: Mostrar cuando cambia de estado
+      if (auditLog.entity_type === 'presupuesto' && auditLog.action === 'status_changed') {
+        const newValues = auditLog.new_values || {};
+        const oldValues = auditLog.old_values || {};
+
+        // Traducir el estado al español
+        const statusTranslations: Record<string, string> = {
+          'activo': 'Activo',
+          'completado': 'Completado',
+          'borrador': 'Borrador',
+          'cancelado': 'Cancelado'
+        };
+
+        const newStatus = newValues.status || '';
+        const translatedStatus = statusTranslations[newStatus] || newStatus;
+
+        // Mostrar cualquier cambio de estado (no solo de borrador a activo)
+        records.push({
+          id: `audit-budget-${auditLog.id}`,
+          fecha: auditLog.created_at,
+          hora: hora,
+          tipo: `Presupuesto ${translatedStatus}`,
+          descripcion: auditLog.notes || `Presupuesto cambiado a ${translatedStatus.toLowerCase()}`,
+          medico: doctorFullName,
+          categoria: 'presupuesto',
+          estado: newStatus === 'activo' ? 'aprobado' : (newStatus === 'completado' ? 'completado' : 'pendiente'),
+          sourceType: 'audit_log',
+          sourceId: auditLog.entity_id,
+          action: auditLog.action,
         });
       }
     });
@@ -148,31 +205,6 @@ export const getMedicalHistoryUseCase = async (
         sourceType: 'appointment',
         sourceId: appointment.id,
       });
-    });
-
-    // 4. Add budget records (presupuestos creados)
-    budgets.forEach((budget) => {
-      if (budget.created_at) {
-        // Construir nombre del doctor: "Dr/Dra. Nombre Apellido"
-        const doctorFullName = budget.doctor_name && budget.doctor_lastName
-          ? `Dr/Dra. ${budget.doctor_name} ${budget.doctor_lastName}`
-          : 'Profesional Médico';
-
-        records.push({
-          id: `budget-${budget.id}`,
-          fecha: budget.created_at,
-          tipo: budget.budget_type || 'Presupuesto',
-          descripcion: `Presupuesto de ${budget.budget_type || 'servicio'}`,
-          medico: doctorFullName,
-          categoria: 'presupuesto',
-          estado: budget.status === 'aprobado' ? 'aprobado' :
-                  budget.status === 'activo' ? 'aprobado' :
-                  'pendiente',
-          monto: budget.total_amount ? parseFloat(budget.total_amount) : undefined,
-          sourceType: 'budget',
-          sourceId: budget.id,
-        });
-      }
     });
 
     // Sort records by creation date and time (newest first)
