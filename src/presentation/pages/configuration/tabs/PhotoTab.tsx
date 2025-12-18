@@ -463,9 +463,9 @@ const PhotoTab: React.FC<PhotoTabProps> = ({ showMessage }) => {
           Foto de Perfil
         </h3>
 
-        <div className="flex items-start space-x-6">
+        <div className="space-y-4">
           {/* Imagen con ícono de cámara clickeable */}
-          <div className="relative cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
+          <div className="relative cursor-pointer group mx-auto sm:mx-0 w-24 h-24" onClick={() => fileInputRef.current?.click()}>
             <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200 group-hover:border-cyan-300 transition-all duration-200">
               {imagePreview ? (
                 <img
@@ -493,46 +493,44 @@ const PhotoTab: React.FC<PhotoTabProps> = ({ showMessage }) => {
           </div>
 
           {/* Contenido de texto */}
-          <div className="flex-1 space-y-3">
-            <div>
-              <h4 className="text-base font-medium text-gray-900 mb-1">
-                Cambiar foto de perfil
-              </h4>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                Haz clic en la imagen para subir una nueva foto. Nuestra aplicación detecta y centra automáticamente tu rostro para obtener la mejor foto de perfil.
-              </p>
-              <p className="text-xs text-gray-400 mt-2">
-                Tamaño máximo: 5MB • Formatos: JPG, PNG, WebP
-              </p>
-            </div>
-
-            {/* Progreso de upload para foto de perfil */}
-            {isLoadingProfileUpload && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Subiendo imagen...</span>
-                  <span>{profileUploadProgress}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-cyan-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${profileUploadProgress}%` }}
-                  ></div>
-                </div>
-              </div>
-            )}
-
-            {/* Botón para eliminar imagen si existe */}
-            {userData?.img && !isLoadingProfileUpload && (
-              <button
-                onClick={handleDeleteImage}
-                className="flex items-center px-3 py-2 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Eliminar foto
-              </button>
-            )}
+          <div>
+            <h4 className="text-base font-medium text-gray-900 mb-1">
+              Cambiar foto de perfil
+            </h4>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Haz clic en la imagen para subir una nueva foto. Nuestra aplicación detecta y centra automáticamente tu rostro para obtener la mejor foto de perfil.
+            </p>
+            <p className="text-xs text-gray-400 mt-2">
+              Tamaño máximo: 5MB • Formatos: JPG, PNG, WebP
+            </p>
           </div>
+
+          {/* Progreso de upload para foto de perfil */}
+          {isLoadingProfileUpload && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Subiendo imagen...</span>
+                <span>{profileUploadProgress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-cyan-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${profileUploadProgress}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
+
+          {/* Botón para eliminar imagen si existe */}
+          {userData?.img && !isLoadingProfileUpload && (
+            <button
+              onClick={handleDeleteImage}
+              className="flex items-center justify-center px-4 py-2.5 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors w-full sm:w-auto"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Eliminar foto
+            </button>
+          )}
         </div>
 
         {/* Input file oculto para foto de perfil */}
