@@ -98,7 +98,10 @@ export class ICSService {
    */
   static generateICSBuffer(eventData: ICSEventData): Buffer {
     const icsContent = this.generateICS(eventData);
-    return Buffer.from(icsContent, 'utf-8');
+    const buffer = Buffer.from(icsContent, 'utf-8');
+    console.log('📦 [ICSService] Buffer created, size:', buffer.length, 'bytes');
+    console.log('📄 [ICSService] ICS Content preview (first 500 chars):', icsContent.substring(0, 500));
+    return buffer;
   }
 
   /**
