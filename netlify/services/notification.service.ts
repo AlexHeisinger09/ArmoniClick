@@ -162,6 +162,13 @@ export class NotificationService {
   // Enviar confirmación de cita al doctor
   async sendAppointmentConfirmationToDoctor(data: NotificationData & { doctorEmail: string }): Promise<boolean> {
     try {
+      console.log('📧 [NotificationService] Starting to send doctor confirmation...', {
+        doctorEmail: data.doctorEmail,
+        service: data.service,
+        appointmentDate: data.appointmentDate,
+        location: data.location
+      });
+
       const emailData: AppointmentEmailData = {
         patientName: data.patientName,
         patientEmail: data.patientEmail,
@@ -176,16 +183,64 @@ export class NotificationService {
       };
 
       const htmlContent = EmailTemplatesService.getDoctorConfirmationEmailTemplate(emailData);
+      console.log('✅ [NotificationService] Doctor HTML template generated');
 
-      const emailSent = await this.emailService.sendEmail({
-        from: envs.MAILER_EMAIL,
-        to: data.doctorEmail,
-        subject: '📅 Nueva Cita Agendada - Sistema de Citas',
-        htmlBody: htmlContent
-      });
+      // Generar archivo .ics para el doctor también
+      try {
+        const endDate = new Date(data.appointmentDate.getTime() + data.duration * 60000);
+        console.log('📅 [NotificationService] Generating .ics file for doctor...', {
+          startDate: data.appointmentDate.toISOString(),
+          endDate: endDate.toISOString(),
+          location: data.location
+        });
 
-      console.log(`📧 Doctor confirmation email sent to ${data.doctorEmail}:`, emailSent);
-      return emailSent;
+        const icsBuffer = ICSService.generateICSBuffer({
+          summary: `${data.service} - ${data.patientName}`,
+          description: data.notes || `Cita con paciente ${data.patientName}`,
+          location: data.location || '',
+          startDate: data.appointmentDate,
+          endDate: endDate,
+          organizerName: data.doctorName,
+          organizerEmail: data.doctorEmail,
+          attendeeName: data.patientName,
+          attendeeEmail: data.patientEmail
+        });
+
+        console.log('✅ [NotificationService] .ics buffer generated for doctor, size:', icsBuffer.length, 'bytes');
+
+        const icsFilename = ICSService.generateFilename(data.service, data.appointmentDate);
+        console.log('✅ [NotificationService] .ics filename:', icsFilename);
+
+        console.log('📤 [NotificationService] Sending email to doctor with .ics attachment...');
+        const emailSent = await this.emailService.sendEmail({
+          from: envs.MAILER_EMAIL,
+          to: data.doctorEmail,
+          subject: '📅 Nueva Cita Agendada - Sistema de Citas',
+          htmlBody: htmlContent,
+          attachments: [
+            {
+              filename: icsFilename,
+              content: icsBuffer,
+              contentType: 'text/calendar; method=REQUEST; name="' + icsFilename + '"'
+            }
+          ]
+        });
+
+        console.log(`✅ [NotificationService] Doctor confirmation email with .ics sent to ${data.doctorEmail}:`, emailSent);
+        return emailSent;
+      } catch (icsError) {
+        console.error('❌ [NotificationService] Error generating .ics file for doctor:', icsError);
+        // Si falla el .ics, intentar enviar el email sin archivo adjunto
+        console.log('⚠️ [NotificationService] Attempting to send email to doctor without .ics attachment...');
+        const emailSent = await this.emailService.sendEmail({
+          from: envs.MAILER_EMAIL,
+          to: data.doctorEmail,
+          subject: '📅 Nueva Cita Agendada - Sistema de Citas',
+          htmlBody: htmlContent
+        });
+        console.log(`📧 [NotificationService] Doctor confirmation email sent (without .ics) to ${data.doctorEmail}:`, emailSent);
+        return emailSent;
+      }
     } catch (error) {
       console.error('❌ Error sending doctor confirmation email:', error);
       return false;
