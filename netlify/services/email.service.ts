@@ -91,7 +91,13 @@ export class EmailService {
       console.log('📤 [EmailService] Sending email...', {
         to,
         subject,
-        attachmentsCount: nodemailerAttachments.length
+        attachmentsCount: nodemailerAttachments.length,
+        attachments: nodemailerAttachments.map(att => ({
+          filename: att.filename,
+          contentType: att.contentType,
+          hasContent: !!att.content,
+          contentSize: att.content ? (att.content as Buffer).length : 0
+        }))
       });
 
       const sentInformation = await this.transporter.sendMail(mailOptions);

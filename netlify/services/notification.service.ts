@@ -92,7 +92,7 @@ export class NotificationService {
             {
               filename: icsFilename,
               content: icsBuffer,
-              contentType: 'text/calendar; charset=utf-8; method=REQUEST'
+              contentType: 'text/calendar; method=REQUEST; name="' + icsFilename + '"'
             }
           ]
         });
