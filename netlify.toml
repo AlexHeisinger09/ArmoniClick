@@ -126,6 +126,19 @@ timeout = 25  # 25 segundos para dar tiempo a la API de DeepSeek
   status = 200
   methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 
+# LOCATIONS ROUTES
+[[redirects]]
+  from = "/locations/*"
+  to = "/.netlify/functions/locations/locations"
+  status = 200
+  methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+
+[[redirects]]
+  from = "/locations"
+  to = "/.netlify/functions/locations/locations"
+  status = 200
+  methods = ["GET", "POST", "OPTIONS"]
+
 # PUBLIC BOOKING ROUTES (public appointment booking for patients) - MUST be before SPA fallback
 [[redirects]]
   from = "/public-booking-info/*"

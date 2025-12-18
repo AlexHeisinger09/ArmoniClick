@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Clock,
   Briefcase,
+  MapPin,
 } from "lucide-react";
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
 
@@ -19,6 +20,7 @@ import { PhotoTab } from "./tabs/PhotoTab";
 import { SecurityTab } from "./tabs/SecurityTab";
 import { ScheduleBlocksTab } from "./tabs/ScheduleBlocksTab"; // ✅ REEMPLAZA PREFERENCES
 import { ServicesTab } from "./tabs/ServicesTab";
+import { LocationsTab } from "./tabs/LocationsTab";
 
 // Componente de animación de engranajes
 const GearsAnimation: React.FC = () => (
@@ -64,22 +66,6 @@ const GearsAnimation: React.FC = () => (
   </div>
 );
 
-// Componente para iconos circulares
-const CircularIcon: React.FC<{ icon: React.ElementType; isActive?: boolean }> = ({
-  icon: Icon,
-  isActive = false
-}) => (
-  <div className={`
-    w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200
-    ${isActive
-      ? 'bg-cyan-500 shadow-md'
-      : 'bg-cyan-100 hover:bg-cyan-200'
-    }
-  `}>
-    <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-cyan-600'}`} />
-  </div>
-);
-
 // Componente principal de Configuración
 const Configuration: React.FC = () => {
   const [activeTab, setActiveTab] = useState('perfil');
@@ -106,13 +92,13 @@ const Configuration: React.FC = () => {
     }, 5000);
   };
 
-  // ✅ PESTAÑAS ACTUALIZADAS - REEMPLAZA PREFERENCIAS CON BLOQUEOS
+  // ✅ PESTAÑAS ACTUALIZADAS - SIN SEGURIDAD (se movió al header)
   const tabs = [
     { id: 'perfil', label: 'Información Personal', icon: User },
-    { id: 'foto', label: 'Foto de Perfil', icon: Camera },
-    { id: 'seguridad', label: 'Seguridad', icon: Lock },
+    { id: 'foto', label: 'Fotos', icon: Camera },
     { id: 'bloques', label: 'Bloqueos de Agenda', icon: Clock },
     { id: 'servicios', label: 'Servicios', icon: Briefcase },
+    { id: 'ubicaciones', label: 'Ubicaciones', icon: MapPin },
   ];
 
   const renderTabContent = () => {
@@ -121,12 +107,12 @@ const Configuration: React.FC = () => {
         return <ProfileTab showMessage={showMessage} />;
       case 'foto':
         return <PhotoTab showMessage={showMessage} />;
-      case 'seguridad':
-        return <SecurityTab showMessage={showMessage} />;
       case 'bloques':
         return <ScheduleBlocksTab showMessage={showMessage} />;
       case 'servicios':
         return <ServicesTab showMessage={showMessage} />;
+      case 'ubicaciones':
+        return <LocationsTab showMessage={showMessage} />;
       default:
         return null;
     }
@@ -196,54 +182,53 @@ const Configuration: React.FC = () => {
           )}
         </div>
 
-        {/* Pestañas de configuración con iconos circulares */}
+        {/* Pestañas de configuración - Estilo compacto como en Pacientes */}
         <div className="bg-white rounded-xl shadow-sm border border-cyan-200 overflow-hidden">
           <div className="border-b border-cyan-200">
-            <nav className="flex space-x-0 overflow-x-auto">
-              {/* Desktop Navigation */}
-              <div className="hidden md:flex w-full">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${isActive
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex space-x-0 overflow-x-auto">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      flex items-center px-4 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap
+                      ${activeTab === tab.id
                         ? 'border-cyan-500 text-slate-700 bg-cyan-50'
                         : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-cyan-25'
-                        }`}
-                    >
-                      <CircularIcon icon={Icon} isActive={isActive} />
-                      <span className="ml-3">{tab.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+                      }
+                    `}
+                  >
+                    <Icon className="w-3.5 h-3.5 mr-1.5" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
 
-              {/* Mobile Navigation - Solo íconos */}
-              <div className="md:hidden flex justify-around px-2 py-4 w-full">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`
-                        flex items-center justify-center w-12 h-12 rounded-full transition-all duration-200
-                        ${isActive
-                          ? 'bg-cyan-500 text-white shadow-lg scale-110'
-                          : 'text-slate-600 hover:bg-cyan-100 hover:text-cyan-700 hover:scale-105'
-                        }
-                      `}
-                      title={tab.label}
-                    >
-                      <Icon className="w-6 h-6" />
-                    </button>
-                  );
-                })}
-              </div>
+            {/* Mobile Navigation - Solo íconos */}
+            <nav className="md:hidden flex justify-around px-2 py-2.5">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200
+                      ${activeTab === tab.id
+                        ? 'bg-cyan-500 text-white shadow-lg scale-110'
+                        : 'text-slate-600 hover:bg-cyan-100 hover:text-cyan-700 hover:scale-105'
+                      }
+                    `}
+                    title={tab.label}
+                  >
+                    <Icon className="w-5 h-5" />
+                  </button>
+                );
+              })}
             </nav>
           </div>
 
