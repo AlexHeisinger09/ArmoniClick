@@ -12,6 +12,7 @@ export interface AppointmentEmailData {
   notes?: string;
   confirmationToken?: string;
   type: 'confirmation' | 'reminder';
+  location?: string;
 }
 
 export class EmailTemplatesService {
@@ -161,7 +162,7 @@ export class EmailTemplatesService {
     <body>
         <div class="container">
             <div class="header">
-                <img src="https://res.cloudinary.com/drfvhhrck/image/upload/v1764792657/letras_o42jqi.png" alt="ArmoniClick Logo" class="logo">
+                <img src="https://res.cloudinary.com/dafeskzbp/image/upload/v1765825652/letras_bydy7j.svg" alt="ArmoniClick Logo" class="logo">
                 <h1>¡Cita Confirmada! ✓</h1>
                 <p>Tu cita ha sido agendada exitosamente</p>
             </div>
@@ -209,6 +210,15 @@ export class EmailTemplatesService {
                             <span class="detail-value">${data.doctorName}</span>
                         </div>
                     </div>
+                    ${data.location ? `
+                    <div class="appointment-detail">
+                        <div class="detail-icon">📍</div>
+                        <div class="detail-content">
+                            <span class="detail-label">Ubicación</span>
+                            <span class="detail-value">${data.location}</span>
+                        </div>
+                    </div>
+                    ` : ''}
                     ${data.notes ? `
                     <div class="appointment-detail">
                         <div class="detail-icon">📝</div>
@@ -436,7 +446,7 @@ export class EmailTemplatesService {
     <body>
         <div class="container">
             <div class="header">
-                <img src="https://res.cloudinary.com/drfvhhrck/image/upload/v1764792657/letras_o42jqi.png" alt="ArmoniClick Logo" class="logo">
+                <img src="https://res.cloudinary.com/dafeskzbp/image/upload/v1765825652/letras_bydy7j.svg" alt="ArmoniClick Logo" class="logo">
                 <h1>🔔 Recordatorio de Cita</h1>
                 <p>Tu cita es mañana</p>
             </div>
@@ -484,6 +494,15 @@ export class EmailTemplatesService {
                             <span class="detail-value">${data.doctorName}</span>
                         </div>
                     </div>
+                    ${data.location ? `
+                    <div class="appointment-detail">
+                        <div class="detail-icon">📍</div>
+                        <div class="detail-content">
+                            <span class="detail-label">Ubicación</span>
+                            <span class="detail-value">${data.location}</span>
+                        </div>
+                    </div>
+                    ` : ''}
                     ${data.notes ? `
                     <div class="appointment-detail">
                         <div class="detail-icon">📝</div>

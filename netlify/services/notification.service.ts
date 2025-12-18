@@ -50,6 +50,7 @@ export class NotificationService {
         service: data.service,
         duration: data.duration,
         notes: data.notes,
+        location: data.location,
         type: 'confirmation'
       };
 
@@ -135,6 +136,7 @@ export class NotificationService {
         service: data.service,
         duration: data.duration,
         notes: data.notes,
+        location: data.location,
         confirmationToken: data.confirmationToken,
         type: 'reminder'
       };
@@ -168,6 +170,7 @@ export class NotificationService {
         service: data.service,
         duration: data.duration,
         notes: data.notes,
+        location: data.location,
         type: 'confirmation_doctor'
       };
 
