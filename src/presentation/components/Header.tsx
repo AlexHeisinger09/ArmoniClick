@@ -198,7 +198,7 @@ const Header: React.FC<HeaderProps> = ({ isMinimized = false }) => {
 
               {/* Menú desplegable */}
               {isMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-200">
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-200">
                   {/* Opción de configuración */}
                   <button
                     onClick={handleGoToConfiguration}
