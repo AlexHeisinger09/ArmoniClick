@@ -192,9 +192,9 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
       />
       <div className="fixed inset-0 z-50 overflow-y-auto">
         <div className="flex min-h-full items-center justify-center p-4">
-          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md sm:max-w-2xl">
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md sm:max-w-2xl overflow-hidden">
             {/* Header - Estándar */}
-            <div className="bg-gradient-to-r from-cyan-500 to-blue-500 px-4 sm:px-6 py-3 sm:py-4 rounded-t-xl">
+            <div className="bg-gradient-to-r from-cyan-500 to-blue-500 px-4 sm:px-6 py-3 sm:py-4">
               <div className="flex items-center justify-between">
                 <div className="min-w-0 flex-1">
                   <h3 className="text-base sm:text-lg font-semibold text-white">
@@ -450,7 +450,7 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
 
                   {/* Foto 2 */}
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Foto 2 (Después)</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Foto 2</label>
                     {formData.foto2 ? (
                       <div className="relative">
                         <img

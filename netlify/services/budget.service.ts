@@ -331,7 +331,7 @@ export class BudgetService {
         return await this.findByBudgetId(budgetId, userId) as BudgetWithItems;
     }
 
-    // ✅ ACTIVAR presupuesto (validando unicidad) y CREAR TRATAMIENTOS
+    // ✅ ACTIVAR presupuesto (solo cambia status, NO crea tratamientos)
     async activateBudget(budgetId: number, userId: number): Promise<void> {
         console.log('🟢 Activando presupuesto ID:', budgetId);
 
@@ -349,24 +349,9 @@ export class BudgetService {
             throw new Error('No se puede activar un presupuesto sin tratamientos');
         }
 
-        // ✅ CREAR TRATAMIENTOS AUTOMÁTICAMENTE
-        console.log('📝 Creando tratamientos automáticamente...');
-
-        const currentDate = new Date();
-        const treatmentsToCreate: NewTreatment[] = budget.items.map(item => ({
-            id_paciente: budget.patient_id,
-            id_doctor: userId,
-            budget_item_id: item.id, // ✅ VINCULAR CON EL ITEM DEL PRESUPUESTO
-            fecha_control: currentDate.toISOString().split('T')[0], // Fecha actual
-            hora_control: currentDate.toTimeString().slice(0, 5), // Hora actual
-            nombre_servicio: item.accion,
-            status: 'pending', // Estado inicial pendiente
-            created_at: new Date(),
-            is_active: true,
-        }));
-
-        // Insertar tratamientos
-        await db.insert(treatmentsTable).values(treatmentsToCreate);
+        // ✅ NUEVO FLUJO: Solo activar presupuesto, NO crear treatments
+        // Los treatments se crean al agregar la primera sesión
+        console.log('✅ Activando presupuesto (budget_items permanecen como "planificado")...');
 
         // Activar presupuesto
         await db
@@ -377,7 +362,7 @@ export class BudgetService {
             })
             .where(eq(budgetsTable.id, budgetId));
 
-        console.log('✅ Presupuesto activado y tratamientos creados exitosamente');
+        console.log('✅ Presupuesto activado exitosamente (sin crear treatments)');
     }
 
     // ✅ COMPLETAR presupuesto activo
@@ -688,13 +673,56 @@ export class BudgetService {
         return budget ? ['pendiente', 'borrador'].includes(budget.status) : false;
     }
 
-    // ✅ OBTENER INGRESOS DE TREATMENTS COMPLETADOS (NO budget_items genéricos)
+    // ✅ MARCAR BUDGET ITEM COMO 'EN_PROCESO' al crear primera sesión
+    async markBudgetItemInProgress(budgetItemId: number, userId: number): Promise<void> {
+        console.log(`🔄 Marcando budget_item ${budgetItemId} como 'en_proceso'`);
+
+        // Verificar que el budget_item existe y pertenece al doctor
+        const budgetItem = await db
+            .select({
+                id: budgetItemsTable.id,
+                budget_id: budgetItemsTable.budget_id,
+                status: budgetItemsTable.status,
+                budget_user_id: budgetsTable.user_id,
+            })
+            .from(budgetItemsTable)
+            .innerJoin(budgetsTable, eq(budgetItemsTable.budget_id, budgetsTable.id))
+            .where(
+                and(
+                    eq(budgetItemsTable.id, budgetItemId),
+                    eq(budgetsTable.user_id, userId),
+                    eq(budgetItemsTable.is_active, true)
+                )
+            );
+
+        if (!budgetItem[0]) {
+            throw new Error('Budget item no encontrado');
+        }
+
+        // Solo actualizar si está en estado 'planificado'
+        // No sobrescribir si ya está 'completado'
+        if (budgetItem[0].status === 'planificado') {
+            await db
+                .update(budgetItemsTable)
+                .set({
+                    status: 'en_proceso',
+                    updated_at: new Date(),
+                })
+                .where(eq(budgetItemsTable.id, budgetItemId));
+
+            console.log(`✅ Budget item ${budgetItemId} actualizado a 'en_proceso'`);
+        } else {
+            console.log(`ℹ️ Budget item ${budgetItemId} ya está en estado '${budgetItem[0].status}', no se actualiza`);
+        }
+    }
+
+    // ✅ OBTENER INGRESOS DE BUDGET_ITEMS COMPLETADOS
     async getRevenueByCompletedTreatments(userId: number): Promise<BudgetWithItems[]> {
         try {
-            console.log('💰 Obteniendo ingresos por treatments completados para doctor:', userId);
+            console.log('💰 Obteniendo ingresos por budget_items completados para doctor:', userId);
 
-            // ✅ Query CORRECTA: obtener budget_items que tienen treatments COMPLETADOS
-            // La fecha usada es la del treatment completado (updated_at), no la del budget_item
+            // ✅ Query CORRECTA: obtener budget_items donde status = 'completado'
+            // Cada budget_item se retorna UNA SOLA VEZ, sin importar cuántas sesiones tenga
             const budgetItems = await db
                 .select({
                     id: budgetItemsTable.id,
@@ -703,33 +731,36 @@ export class BudgetService {
                     accion: budgetItemsTable.accion,
                     valor: budgetItemsTable.valor,
                     orden: budgetItemsTable.orden,
-                    // ✅ CAMBIO CLAVE: Usar fecha del treatment completado, no del budget_item
-                    created_at: treatmentsTable.updated_at, // Fecha cuando se completó el tratamiento
+                    // ✅ Usar updated_at del budget_item (cuando se marcó como completado)
+                    created_at: budgetItemsTable.updated_at,
                     budget_user_id: budgetsTable.user_id,
                     budget_status: budgetsTable.status,
                 })
                 .from(budgetItemsTable)
                 .innerJoin(budgetsTable, eq(budgetItemsTable.budget_id, budgetsTable.id))
-                // ✅ CAMBIO CLAVE: JOIN con treatments para filtrar solo completados
-                .innerJoin(treatmentsTable, eq(budgetItemsTable.id, treatmentsTable.budget_item_id))
                 .where(
                     and(
                         eq(budgetsTable.user_id, userId),
                         eq(budgetItemsTable.is_active, true),
-                        // ✅ CAMBIO CLAVE: Filtrar solo treatments completados
-                        eq(treatmentsTable.status, 'completed'),
-                        eq(treatmentsTable.is_active, true)
+                        // ✅ CAMBIO CLAVE: Filtrar por budget_item.status = 'completado'
+                        eq(budgetItemsTable.status, 'completado')
                     )
                 )
-                // ✅ Ordenar por fecha del treatment completado (más recientes primero)
-                .orderBy(desc(treatmentsTable.updated_at));
+                // ✅ Ordenar por fecha de completado (más recientes primero)
+                .orderBy(desc(budgetItemsTable.updated_at));
 
-            console.log(`📊 Budget items con treatments completados encontrados: ${budgetItems.length}`);
+            console.log(`📊 Budget items completados encontrados: ${budgetItems.length}`);
+
+            // ✅ FIX: Cada budget_item ya es único, no hay duplicados
+            // Cada item se cuenta solo UNA VEZ independientemente del número de sesiones
+            const uniqueBudgetItems = budgetItems;
+
+            console.log(`📊 Budget items únicos: ${uniqueBudgetItems.length}`);
 
             // ✅ Agrupar items por presupuesto
             const budgetMap = new Map<number, BudgetWithItems>();
 
-            for (const item of budgetItems) {
+            for (const item of uniqueBudgetItems) {
                 if (!budgetMap.has(item.budget_id)) {
                     budgetMap.set(item.budget_id, {
                         id: item.budget_id,
@@ -775,12 +806,12 @@ export class BudgetService {
         }
     }
 
-    // ✅ OBTENER DINERO PENDIENTE: Todos los treatments NO completados (dinero potencial futuro)
+    // ✅ OBTENER DINERO PENDIENTE: Todos los budget_items NO completados (dinero potencial futuro)
     async getPendingRevenue(userId: number): Promise<number> {
         try {
-            console.log('💵 Obteniendo dinero pendiente (treatments no completados) para doctor:', userId);
+            console.log('💵 Obteniendo dinero pendiente (budget_items no completados) para doctor:', userId);
 
-            // ✅ Query: obtener SUM de todos los budget_items donde NO existe treatment COMPLETADO
+            // ✅ Query SIMPLIFICADA: obtener SUM de todos los budget_items donde status != 'completado'
             const result = await db
                 .select({
                     total: sql<string>`COALESCE(SUM(CAST(${budgetItemsTable.valor} AS DECIMAL)), 0)`,
@@ -791,14 +822,9 @@ export class BudgetService {
                     and(
                         eq(budgetsTable.user_id, userId),
                         eq(budgetItemsTable.is_active, true),
-                        // ✅ CLAVE: NO EXISTS donde status = 'completed'
-                        // Esto incluye todos los items que NO tienen un treatment completado
-                        sql`NOT EXISTS (
-                            SELECT 1 FROM ${treatmentsTable}
-                            WHERE ${treatmentsTable.budget_item_id} = ${budgetItemsTable.id}
-                            AND ${treatmentsTable.status} = 'completed'
-                            AND ${treatmentsTable.is_active} = true
-                        )`
+                        // ✅ CAMBIO CLAVE: Filtrar donde status != 'completado'
+                        // Incluye 'planificado' y 'en_proceso'
+                        sql`${budgetItemsTable.status} != 'completado'`
                     )
                 );
 

@@ -53,53 +53,49 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
 
     return (
         <div
-            className={`p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer group hover:shadow-md ${
-                budget.status === 'completed' 
-                    ? 'border-blue-200 bg-gradient-to-r from-blue-50/50 to-green-50/50 hover:from-blue-50 hover:to-green-50' 
+            className={`p-2.5 sm:p-3 rounded-lg border-2 transition-all duration-200 cursor-pointer group hover:shadow-md ${
+                budget.status === 'completed'
+                    ? 'border-blue-200 bg-gradient-to-r from-blue-50/50 to-green-50/50 hover:from-blue-50 hover:to-green-50'
                     : budget.status === 'activo'
                     ? 'border-green-200 bg-gradient-to-r from-green-50/50 to-cyan-50/50 hover:from-green-50 hover:to-cyan-50'
                     : 'border-cyan-200 bg-white hover:border-cyan-300 hover:bg-cyan-50/30'
             }`}
             onClick={() => onView(budget)}
         >
-            {/* Header compacto para móvil */}
-            <div className="flex items-start justify-between mb-3">
+            {/* Header compacto */}
+            <div className="flex items-start justify-between mb-2">
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-2">
-                        {/* Icono más pequeño en móvil */}
-                        <div className="p-1.5 sm:p-2 rounded-full bg-slate-100 flex-shrink-0">
+                    <div className="flex items-center space-x-2 mb-1.5">
+                        {/* Icono compacto */}
+                        <div className="p-1 rounded-full bg-slate-100 flex-shrink-0">
                             {budget.budget_type === BUDGET_TYPE.ODONTOLOGICO ? (
-                                <Stethoscope className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600" />
+                                <Stethoscope className="w-3.5 h-3.5 text-slate-600" />
                             ) : (
-                                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600" />
+                                <Sparkles className="w-3.5 h-3.5 text-slate-600" />
                             )}
                         </div>
-                        
-                        {/* Título responsivo */}
+
+                        {/* Título compacto */}
                         <div className="min-w-0 flex-1">
-                            <h4 className="font-semibold text-slate-800 text-sm sm:text-base truncate">
+                            <h4 className="font-semibold text-slate-800 text-sm truncate">
                                 Presupuesto #{budget.id}
+                                {budget.status === 'activo' && (
+                                    <span className="ml-2 text-xs text-green-600 font-medium">• Plan Activo</span>
+                                )}
+                                {budget.status === 'completed' && (
+                                    <span className="ml-2 text-xs text-blue-600 font-medium">• Completado</span>
+                                )}
                             </h4>
-                            <p className="text-xs sm:text-sm text-slate-500 truncate">
-                                {budget.budget_type === BUDGET_TYPE.ODONTOLOGICO ? 'Odontológico' : 'Estética'}
+                            <p className="text-xs text-slate-500 truncate">
+                                {budget.budget_type === BUDGET_TYPE.ODONTOLOGICO ? 'Odontológico' : 'Estética'} • {BudgetFormUtils.formatDate(budget.created_at)}
                             </p>
-                        </div>
-                    </div>
-                    
-                    {/* Status badge responsivo */}
-                    <div className="flex items-center justify-between">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(budget.status)}`}>
-                            {BUDGET_STATUS_LABELS[budget.status as keyof typeof BUDGET_STATUS_LABELS]}
-                        </span>
-                        <div className="text-xs text-slate-500 hidden sm:block">
-                            {BudgetFormUtils.formatDate(budget.created_at)}
                         </div>
                     </div>
                 </div>
 
                 {/* Valor prominente */}
                 <div className="text-right ml-2 flex-shrink-0">
-                    <div className="text-base sm:text-lg font-bold text-slate-700">
+                    <div className="text-base font-bold text-slate-700">
                         ${BudgetFormUtils.formatCurrency(parseFloat(budget.total_amount))}
                     </div>
                     <div className="text-xs text-slate-500">
@@ -108,18 +104,11 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
                 </div>
             </div>
 
-            {/* Fecha en móvil */}
-            <div className="text-xs text-slate-500 mb-3 sm:hidden">
-                <Calendar className="w-3 h-3 inline mr-1" />
-                {BudgetFormUtils.formatDate(budget.created_at)}
-            </div>
-
-            {/* Preview de tratamientos - compacto en móvil */}
-            <div className="mb-3 sm:mb-4">
-                <h5 className="text-xs sm:text-sm font-medium text-slate-600 mb-2">Tratamientos:</h5>
-                <div className="space-y-1">
+            {/* Preview de tratamientos - muy compacto */}
+            <div className="mb-2">
+                <div className="space-y-0.5">
                     {budget.items.slice(0, 2).map((item, index) => (
-                        <div key={index} className="flex justify-between text-xs sm:text-sm">
+                        <div key={index} className="flex justify-between text-xs">
                             <span className="text-slate-600 truncate flex-1 mr-2">
                                 {item.pieza ? `${item.pieza}: ` : ''}{item.accion}
                             </span>
@@ -137,49 +126,49 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
             </div>
 
             {/* Acciones responsivas */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-3 border-t border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 pt-2 border-t border-slate-100">
                 {/* Acciones básicas - siempre visibles en fila compacta */}
-                <div className="flex gap-1">
+                <div className="flex gap-0.5">
                     <button
                         onClick={(e) => handleActionClick(e, () => onView(budget))}
-                        className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
+                        className="p-1 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors"
                         title="Ver detalles"
                     >
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-3.5 h-3.5" />
                     </button>
 
                     {BudgetUtils.canModify(budget) && (
                         <button
                             onClick={(e) => handleActionClick(e, () => onEdit(budget))}
-                            className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
+                            className="p-1 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors"
                             title="Editar"
                         >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-3.5 h-3.5" />
                         </button>
                     )}
 
                     <button
                         onClick={(e) => handleActionClick(e, () => onExportPDF(budget))}
-                        className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
+                        className="p-1 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors"
                         title="Exportar PDF"
                     >
-                        <Download className="w-4 h-4" />
+                        <Download className="w-3.5 h-3.5" />
                     </button>
                 </div>
 
                 {/* Acciones de estado - responsive con colores suaves */}
-                <div className="flex flex-wrap gap-2 justify-start sm:justify-end">
+                <div className="flex flex-wrap gap-1.5 justify-start sm:justify-end">
                     {BudgetUtils.canActivate(budget) && (
                         <button
                             onClick={(e) => handleActionClick(e, () => onActivate(budget))}
                             disabled={isLoadingActivate}
-                            className="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs sm:text-sm font-medium rounded-lg px-3 py-1.5 border border-emerald-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            className="flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-medium rounded px-2 py-1 border border-emerald-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                             title="Activar este presupuesto"
                         >
                             {isLoadingActivate ? (
-                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-emerald-700"></div>
+                                <div className="animate-spin rounded-full h-2.5 w-2.5 border-b-2 border-emerald-700"></div>
                             ) : (
-                                <Play className="w-3 h-3" />
+                                <Play className="w-2.5 h-2.5" />
                             )}
                             <span>Activar</span>
                         </button>
@@ -189,13 +178,13 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
                         <button
                             onClick={(e) => handleActionClick(e, () => onComplete(budget))}
                             disabled={isLoadingComplete}
-                            className="flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs sm:text-sm font-medium rounded-lg px-3 py-1.5 border border-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            className="flex items-center gap-1 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-medium rounded px-2 py-1 border border-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                             title="Marcar presupuesto como completado"
                         >
                             {isLoadingComplete ? (
-                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-700"></div>
+                                <div className="animate-spin rounded-full h-2.5 w-2.5 border-b-2 border-blue-700"></div>
                             ) : (
-                                <CheckCircle className="w-3 h-3" />
+                                <CheckCircle className="w-2.5 h-2.5" />
                             )}
                             <span>Completar</span>
                         </button>
@@ -205,13 +194,13 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
                         <button
                             onClick={(e) => handleActionClick(e, () => onRevert(budget))}
                             disabled={isLoadingRevert}
-                            className="flex items-center gap-1.5 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 text-xs sm:text-sm font-medium rounded-lg px-3 py-1.5 border border-yellow-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            className="flex items-center gap-1 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 text-xs font-medium rounded px-2 py-1 border border-yellow-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                             title="Revertir presupuesto a borrador"
                         >
                             {isLoadingRevert ? (
-                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-700"></div>
+                                <div className="animate-spin rounded-full h-2.5 w-2.5 border-b-2 border-yellow-700"></div>
                             ) : (
-                                <RotateCcw className="w-3 h-3" />
+                                <RotateCcw className="w-2.5 h-2.5" />
                             )}
                             <span>Revertir</span>
                         </button>
@@ -221,13 +210,13 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
                         <button
                             onClick={(e) => handleActionClick(e, () => onDelete(budget))}
                             disabled={isLoadingDelete}
-                            className="flex items-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs sm:text-sm font-medium rounded-lg px-3 py-1.5 border border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            className="flex items-center gap-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium rounded px-2 py-1 border border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                             title="Eliminar este presupuesto"
                         >
                             {isLoadingDelete ? (
-                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-700"></div>
+                                <div className="animate-spin rounded-full h-2.5 w-2.5 border-b-2 border-red-700"></div>
                             ) : (
-                                <Trash2 className="w-3 h-3" />
+                                <Trash2 className="w-2.5 h-2.5" />
                             )}
                             <span>Eliminar</span>
                         </button>

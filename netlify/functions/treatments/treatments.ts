@@ -12,6 +12,7 @@ import {
   CompleteTreatment, // ✅ NUEVO
   GetPopularTreatments, // ✅ NUEVO
 } from "./use-cases";
+import { AddTreatmentSession } from "./use-cases/add-session";
 
 import {
   CreateTreatmentDto,
@@ -176,8 +177,26 @@ const handler: Handler = async (event: HandlerEvent) => {
         .catch((error) => error);
     }
 
+    // ✅ POST /treatments/patient/{patientId}/session - Agregar nueva sesión/evolución
+    if (httpMethod === "POST" && patientId && pathParts.includes('session')) {
+      if (isNaN(patientId)) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: "ID de paciente inválido",
+          }),
+          headers: HEADERS.json,
+        };
+      }
+
+      return new AddTreatmentSession()
+        .execute(body, doctorId, patientId)
+        .then((res) => res)
+        .catch((error) => error);
+    }
+
     // POST /treatments/patient/{patientId} - Crear nuevo tratamiento para un paciente
-    if (httpMethod === "POST" && patientId) {
+    if (httpMethod === "POST" && patientId && !pathParts.includes('session')) {
       if (isNaN(patientId)) {
         return {
           statusCode: 400,

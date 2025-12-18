@@ -35,17 +35,30 @@ export class TreatmentUploadService {
       // Generar un public_id único para el tratamiento
       const publicId = `${folder}/treatment_${treatmentId}_${imageType}_${Date.now()}`;
 
+      // ✅ Subir imagen con transformaciones inteligentes de Cloudinary
+      // - auto_crop: Recorta automáticamente detectando la región importante
+      // - g_auto: Gravity auto detecta el punto focal (caras, objetos importantes)
       const uploadResponse = await cloudinary.uploader.upload(
         `data:image/jpeg;base64,${base64Data}`,
         {
           public_id: publicId,
           folder: folder,
-          transformation: [
+          // Transformación eager para generar thumbnail inmediatamente
+          eager: [
             {
               width: 800,
               height: 600,
-              crop: 'fit',
+              crop: 'fill', // Rellena completamente el área
+              gravity: 'auto', // Detección automática del punto focal
               quality: 'auto:good',
+              format: 'jpg'
+            },
+            {
+              width: 400,
+              height: 300,
+              crop: 'fill',
+              gravity: 'auto', // Thumbnail con detección inteligente
+              quality: 'auto:eco',
               format: 'jpg'
             }
           ],

@@ -54,7 +54,7 @@ export class CreateTreatment implements CreateTreatmentUseCase {
         }
       }
 
-      // Crear el tratamiento
+      // Crear el tratamiento (sesión)
       const newTreatment = await this.treatmentService.create({
         id_paciente: dto.id_paciente,
         id_doctor: doctorId,
@@ -72,6 +72,12 @@ export class CreateTreatment implements CreateTreatmentUseCase {
         foto2: dto.foto2,
         descripcion: dto.descripcion,
       });
+
+      // ✅ NUEVO: Si el treatment tiene budget_item_id, marcar como 'en_proceso'
+      if (budgetItemId) {
+        await this.budgetService.markBudgetItemInProgress(budgetItemId, doctorId);
+        console.log(`✅ Budget item ${budgetItemId} marcado como 'en_proceso'`);
+      }
 
       // 📝 Registrar en auditoría (creación con status=pending, no se muestra aún en historial)
       await this.auditService.logChange({

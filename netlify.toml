@@ -25,6 +25,27 @@ timeout = 25  # 25 segundos para dar tiempo a la API de DeepSeek
   status = 200
   methods = ["GET", "OPTIONS"]
 
+# ✅ Ruta específica para agregar sesiones (debe ir ANTES de la ruta genérica)
+[[redirects]]
+  from = "/treatments/patient/:patientId/session"
+  to = "/.netlify/functions/treatments"
+  status = 200
+  methods = ["POST", "OPTIONS"]
+
+# ✅ Rutas para obtener presupuestos de un paciente
+[[redirects]]
+  from = "/treatments/patient/:patientId/budgets"
+  to = "/.netlify/functions/treatments"
+  status = 200
+  methods = ["GET", "OPTIONS"]
+
+# ✅ Rutas para obtener tratamientos de un presupuesto
+[[redirects]]
+  from = "/treatments/budget/:budgetId"
+  to = "/.netlify/functions/treatments"
+  status = 200
+  methods = ["GET", "OPTIONS"]
+
 [[redirects]]
   from = "/api/treatments/patient/:patientId"
   to = "/.netlify/functions/treatments"
@@ -105,6 +126,19 @@ timeout = 25  # 25 segundos para dar tiempo a la API de DeepSeek
   status = 200
   methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 
+# LOCATIONS ROUTES
+[[redirects]]
+  from = "/locations/*"
+  to = "/.netlify/functions/locations/locations"
+  status = 200
+  methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+
+[[redirects]]
+  from = "/locations"
+  to = "/.netlify/functions/locations/locations"
+  status = 200
+  methods = ["GET", "POST", "OPTIONS"]
+
 # PUBLIC BOOKING ROUTES (public appointment booking for patients) - MUST be before SPA fallback
 [[redirects]]
   from = "/public-booking-info/*"
@@ -124,6 +158,13 @@ timeout = 25  # 25 segundos para dar tiempo a la API de DeepSeek
   to = "/.netlify/functions/ai-analysis/ai-analysis"
   status = 200
   methods = ["POST", "OPTIONS"]
+
+# AUDIT LOGS ROUTES (medical history audit trail)
+[[redirects]]
+  from = "/audit-logs/*"
+  to = "/.netlify/functions/audit-logs/audit-logs"
+  status = 200
+  methods = ["GET", "OPTIONS"]
 
 # BUDGETS ROUTES (existing, just moved after documents)
 [[redirects]]

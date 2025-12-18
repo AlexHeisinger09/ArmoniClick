@@ -140,6 +140,7 @@ const handler: Handler = async (event: HandlerEvent) => {
     if (httpMethod === "POST") {
       const {
         patientId,
+        locationId,
         guestName,
         guestEmail,
         guestPhone,
@@ -245,6 +246,7 @@ const handler: Handler = async (event: HandlerEvent) => {
       const appointmentData: CreateAppointmentData = {
         doctorId: userData.id,
         patientId: patientId ? parseInt(patientId) : null,
+        locationId: locationId ? parseInt(locationId) : null,
         guestName: guestName || null,
         guestEmail: guestEmail || null,
         guestPhone: guestPhone || null,

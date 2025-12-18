@@ -13,7 +13,8 @@ import {
   X,
   Mail,
   Loader,
-  Eye
+  Eye,
+  Trash2
 } from 'lucide-react';
 import { useDocuments } from '@/presentation/hooks/documents/useDocuments';
 import { useLoginMutation, useProfile } from '@/presentation/hooks';
@@ -215,6 +216,64 @@ const Notification: React.FC<NotificationProps> = ({ type, message, onClose }) =
   );
 };
 
+// Componente de confirmación de eliminación
+const DeleteConfirmDialog: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  document: Document | null;
+  isDeleting: boolean;
+}> = ({ isOpen, onClose, onConfirm, document, isDeleting }) => {
+  if (!isOpen || !document) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+            <AlertCircle className="w-6 h-6 text-red-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-slate-900">Confirmar eliminación</h3>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <p className="text-sm text-slate-600 mb-2">
+            ¿Estás seguro de que deseas eliminar este documento?
+          </p>
+          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+            <p className="text-sm font-medium text-slate-900">{document.title}</p>
+            <p className="text-xs text-slate-600 mt-1">Paciente: {document.patient_name}</p>
+            <p className="text-xs text-slate-600">Estado: {document.status}</p>
+          </div>
+          <p className="text-sm text-red-600 mt-3 font-medium">
+            Esta acción no se puede deshacer.
+          </p>
+        </div>
+
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={onClose}
+            disabled={isDeleting}
+            className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 transition-colors disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="px-4 py-2 text-sm font-medium bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {isDeleting && <Loader className="w-4 h-4 animate-spin" />}
+            {isDeleting ? 'Eliminando...' : 'Eliminar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Componente principal
 const DocumentsPage: React.FC = () => {
   const [currentView, setCurrentView] = useState<'list' | 'generate' | 'sign' | 'view'>('list');
@@ -240,6 +299,9 @@ const DocumentsPage: React.FC = () => {
   const [patientAge, setPatientAge] = useState<string>('');
   const [signedDate, setSignedDate] = useState<string>(new Date().toLocaleDateString('es-CL'));
   const [shouldSendEmail, setShouldSendEmail] = useState(false);
+  const [deletingDocId, setDeletingDocId] = useState<number | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
   const signatureRef = useRef<SignatureCanvasRef | null>(null);
 
   // Use hooks
@@ -251,10 +313,12 @@ const DocumentsPage: React.FC = () => {
     createDocumentMutation,
     signDocumentMutation,
     sendDocumentEmailMutation,
+    deleteDocumentMutation,
     isLoadingPatients,
     isLoadingCreate,
     isLoadingSign,
     isLoadingSendEmail,
+    isLoadingDelete,
   } = useDocuments(selectedPatientId); // Solo usar selectedPatientId para crear documentos, no para filtrar la lista
 
   const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
@@ -469,6 +533,23 @@ const DocumentsPage: React.FC = () => {
     }
   };
 
+  const handleDeleteDocument = async () => {
+    if (!documentToDelete) return;
+
+    setDeletingDocId(documentToDelete.id);
+    try {
+      await deleteDocumentMutation.mutateAsync(documentToDelete.id);
+      showNotification('success', 'Documento eliminado correctamente');
+      queryDocuments.refetch?.();
+      setShowDeleteConfirm(false);
+      setDocumentToDelete(null);
+    } catch (error) {
+      showNotification('error', 'Error al eliminar el documento');
+    } finally {
+      setDeletingDocId(null);
+    }
+  };
+
   // Vista: Lista de documentos
   if (currentView === 'list') {
     return (
@@ -480,6 +561,17 @@ const DocumentsPage: React.FC = () => {
             onClose={() => setNotification(null)}
           />
         )}
+
+        <DeleteConfirmDialog
+          isOpen={showDeleteConfirm}
+          onClose={() => {
+            setShowDeleteConfirm(false);
+            setDocumentToDelete(null);
+          }}
+          onConfirm={handleDeleteDocument}
+          document={documentToDelete}
+          isDeleting={deletingDocId !== null}
+        />
 
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Header */}
@@ -626,11 +718,21 @@ const DocumentsPage: React.FC = () => {
                                       setSelectedDocument(doc);
                                       setCurrentView('sign');
                                     }}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-cyan-500 hover:bg-cyan-600 text-white rounded text-xs font-medium transition-colors"
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50 rounded text-xs font-medium transition-colors"
                                     title="Firmar documento"
                                   >
-                                    <PenTool className="w-3 h-3" />
+                                    <PenTool className="w-4 h-4" />
                                     Firmar
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setDocumentToDelete(doc);
+                                      setShowDeleteConfirm(true);
+                                    }}
+                                    className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                                    title="Eliminar documento"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
                                   </button>
                                 </>
                               ) : (
@@ -640,11 +742,10 @@ const DocumentsPage: React.FC = () => {
                                       setSelectedDocument(doc);
                                       setCurrentView('view');
                                     }}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors"
+                                    className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
                                     title="Ver documento"
                                   >
-                                    <Eye className="w-3 h-3" />
-                                    Ver
+                                    <Eye className="w-4 h-4" />
                                   </button>
                                   <button
                                     onClick={() => {
@@ -654,11 +755,10 @@ const DocumentsPage: React.FC = () => {
                                         showNotification('error', 'Error al descargar PDF');
                                       }
                                     }}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-medium transition-colors"
+                                    className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded transition-colors"
                                     title="Descargar PDF"
                                   >
-                                    <Download className="w-3 h-3" />
-                                    PDF
+                                    <Download className="w-4 h-4" />
                                   </button>
                                   <button
                                     onClick={() => {
@@ -686,15 +786,24 @@ const DocumentsPage: React.FC = () => {
                                       );
                                     }}
                                     disabled={sendingEmailDocId === doc.id}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="p-1.5 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Enviar por correo"
                                   >
                                     {sendingEmailDocId === doc.id ? (
-                                      <Loader className="w-3 h-3 animate-spin" />
+                                      <Loader className="w-4 h-4 animate-spin" />
                                     ) : (
-                                      <Mail className="w-3 h-3" />
+                                      <Mail className="w-4 h-4" />
                                     )}
-                                    Email
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setDocumentToDelete(doc);
+                                      setShowDeleteConfirm(true);
+                                    }}
+                                    className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                                    title="Eliminar documento"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
                                   </button>
                                 </>
                               )}
@@ -743,17 +852,29 @@ const DocumentsPage: React.FC = () => {
                       </div>
                       <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200">
                         {doc.status === 'pendiente' ? (
-                          <button
-                            onClick={() => {
-                              setSelectedDocument(doc);
-                              setCurrentView('sign');
-                            }}
-                            className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded text-xs font-medium transition-colors"
-                            title="Firmar documento"
-                          >
-                            <PenTool className="w-3 h-3" />
-                            Firmar
-                          </button>
+                          <>
+                            <button
+                              onClick={() => {
+                                setSelectedDocument(doc);
+                                setCurrentView('sign');
+                              }}
+                              className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50 rounded text-xs font-medium transition-colors"
+                              title="Firmar documento"
+                            >
+                              <PenTool className="w-4 h-4" />
+                              Firmar
+                            </button>
+                            <button
+                              onClick={() => {
+                                setDocumentToDelete(doc);
+                                setShowDeleteConfirm(true);
+                              }}
+                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                              title="Eliminar documento"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
                         ) : (
                           <>
                             <button
@@ -761,11 +882,10 @@ const DocumentsPage: React.FC = () => {
                                 setSelectedDocument(doc);
                                 setCurrentView('view');
                               }}
-                              className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors"
+                              className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
                               title="Ver documento"
                             >
-                              <Eye className="w-3 h-3" />
-                              Ver
+                              <Eye className="w-5 h-5" />
                             </button>
                             <button
                               onClick={() => {
@@ -775,11 +895,10 @@ const DocumentsPage: React.FC = () => {
                                   showNotification('error', 'Error al descargar PDF');
                                 }
                               }}
-                              className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-medium transition-colors"
+                              className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded transition-colors"
                               title="Descargar PDF"
                             >
-                              <Download className="w-3 h-3" />
-                              PDF
+                              <Download className="w-5 h-5" />
                             </button>
                             <button
                               onClick={() => {
@@ -807,15 +926,24 @@ const DocumentsPage: React.FC = () => {
                                 );
                               }}
                               disabled={sendingEmailDocId === doc.id}
-                              className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="p-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Enviar por correo"
                             >
                               {sendingEmailDocId === doc.id ? (
-                                <Loader className="w-3 h-3 animate-spin" />
+                                <Loader className="w-5 h-5 animate-spin" />
                               ) : (
-                                <Mail className="w-3 h-3" />
+                                <Mail className="w-5 h-5" />
                               )}
-                              Email
+                            </button>
+                            <button
+                              onClick={() => {
+                                setDocumentToDelete(doc);
+                                setShowDeleteConfirm(true);
+                              }}
+                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                              title="Eliminar documento"
+                            >
+                              <Trash2 className="w-5 h-5" />
                             </button>
                           </>
                         )}

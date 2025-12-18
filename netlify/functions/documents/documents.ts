@@ -389,6 +389,24 @@ const handler: Handler = async (event: HandlerEvent) => {
           };
         }
 
+        // 📝 Registrar en auditoría ANTES de eliminar
+        const auditService = new AuditService(db);
+        await auditService.logChange({
+          patientId: document.id_patient,
+          entityType: AUDIT_ENTITY_TYPES.DOCUMENTO,
+          entityId: documentId,
+          action: AUDIT_ACTIONS.DELETED,
+          oldValues: {
+            title: document.title,
+            document_type: document.document_type,
+            status: document.status,
+            patient_name: document.patient_name,
+            patient_rut: document.patient_rut,
+          },
+          changedBy: doctorId,
+          notes: `Documento "${document.title}" eliminado (tipo: ${document.document_type}, estado: ${document.status})`,
+        });
+
         // Eliminar documento
         await db
           .delete(documentsTable)

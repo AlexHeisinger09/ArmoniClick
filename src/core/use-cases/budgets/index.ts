@@ -9,4 +9,7 @@ export * from './revert-budget.use-case';
 export * from './update-budget-status.use-case';
 export * from './delete-budget.use-case';
 export * from './delete-budget-by-id.use-case';
+export * from './add-budget-item.use-case';
+export * from './delete-budget-item.use-case';
+export * from './complete-budget-item.use-case';
 export * from './get-budget-stats.use-case';

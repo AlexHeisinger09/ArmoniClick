@@ -374,52 +374,29 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
                       )}
                     </div>
 
-                    {/* ✅ NOMBRE DEL SERVICIO Y VALOR si hay presupuesto seleccionado */}
+                    {/* ✅ VALOR DEL TRATAMIENTO si hay presupuesto seleccionado */}
                     {selectedBudget && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-blue-700 mb-2">Nombre del Servicio *</label>
-                          {isLoadingServices ? (
-                            <div className="w-full px-3 py-2 border border-blue-200 rounded-xl bg-white">
-                              <span className="text-slate-400 text-sm">Cargando...</span>
-                            </div>
-                          ) : (
-                            <select
-                              name="nombre_servicio"
-                              value={formData.nombre_servicio}
-                              onChange={handleInputChange}
-                              className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-700 ${
-                                formErrors.nombre_servicio ? 'border-red-300' : 'border-blue-200'
-                              }`}
-                            >
-                              <option value="">Seleccionar servicio...</option>
-                              {services.map((service) => (
-                                <option key={service.id} value={service.nombre}>{service.nombre}</option>
-                              ))}
-                            </select>
-                          )}
-                          {formErrors.nombre_servicio && <p className="text-red-600 text-xs mt-1">{formErrors.nombre_servicio}</p>}
+                      <div>
+                        <label className="block text-sm font-medium text-blue-700 mb-2">Valor del Tratamiento *</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
+                          <input
+                            type="number"
+                            name="valor"
+                            value={formData.valor || ''}
+                            onChange={handleInputChange}
+                            placeholder="Se asigna automáticamente del servicio"
+                            min="0"
+                            step="1000"
+                            className={`w-full pl-8 pr-3 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-700 ${
+                              formErrors.valor ? 'border-red-300' : 'border-blue-200'
+                            }`}
+                          />
                         </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-blue-700 mb-2">Valor del Tratamiento *</label>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
-                            <input
-                              type="number"
-                              name="valor"
-                              value={formData.valor || ''}
-                              onChange={handleInputChange}
-                              placeholder="Auto"
-                              min="0"
-                              step="1000"
-                              className={`w-full pl-8 pr-3 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-700 ${
-                                formErrors.valor ? 'border-red-300' : 'border-blue-200'
-                              }`}
-                            />
-                          </div>
-                          {formErrors.valor && <p className="text-red-600 text-xs mt-1">{formErrors.valor}</p>}
-                        </div>
+                        {formErrors.valor && <p className="text-red-600 text-xs mt-1">{formErrors.valor}</p>}
+                        <p className="text-xs text-blue-600 mt-1">
+                          💡 El valor se asigna automáticamente al seleccionar un servicio
+                        </p>
                       </div>
                     )}
 
@@ -436,6 +413,31 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* ✅ NOMBRE DEL SERVICIO - SIEMPRE VISIBLE */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Nombre del Servicio *</label>
+                {isLoadingServices ? (
+                  <div className="w-full px-3 py-2 border border-cyan-200 rounded-xl bg-white">
+                    <span className="text-slate-400 text-sm">Cargando servicios...</span>
+                  </div>
+                ) : (
+                  <select
+                    name="nombre_servicio"
+                    value={formData.nombre_servicio}
+                    onChange={handleInputChange}
+                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700 ${
+                      formErrors.nombre_servicio ? 'border-red-300' : 'border-cyan-200'
+                    }`}
+                  >
+                    <option value="">Seleccionar servicio...</option>
+                    {services.map((service) => (
+                      <option key={service.id} value={service.nombre}>{service.nombre}</option>
+                    ))}
+                  </select>
+                )}
+                {formErrors.nombre_servicio && <p className="text-red-600 text-xs mt-1">{formErrors.nombre_servicio}</p>}
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -624,7 +626,7 @@ const NewTreatmentModal: React.FC<NewTreatmentModalProps> = ({
 
                   {/* Foto 2 */}
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Foto 2 (Después)</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Foto 2</label>
                     {formData.foto2 ? (
                       <div className="relative">
                         <img

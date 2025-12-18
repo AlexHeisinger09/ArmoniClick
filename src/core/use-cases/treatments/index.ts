@@ -10,3 +10,4 @@ export * from './delete-treatment.use-case';
 export * from './get-budgets-by-patient.use-case';
 export * from './get-treatments-by-budget.use-case';
 export * from './complete-treatment.use-case';
+export * from './add-treatment-session.use-case';

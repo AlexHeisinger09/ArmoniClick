@@ -87,7 +87,7 @@ export class TreatmentService {
           eq(treatmentsTable.is_active, true) // ✅ CRÍTICO: Solo tratamientos activos
         )
       )
-      .orderBy(desc(treatmentsTable.fecha_control), desc(treatmentsTable.hora_control));
+      .orderBy(asc(treatmentsTable.created_at)); // ✅ CORREGIDO: Orden cronológico (más antiguo primero)
 
     console.log(`✅ Encontrados ${treatments.length} tratamientos activos para presupuesto ${budgetId}`);
 
@@ -546,6 +546,48 @@ export class TreatmentService {
 
     const result = updatedTreatment[0];
     console.log('✅ Tratamiento marcado como completado:', result);
+
+    return result;
+  }
+
+  // ✅ NUEVO: Obtener budget_items con sus treatments agrupados
+  async getBudgetItemsWithTreatments(budgetId: number, doctorId: number) {
+    console.log(`🔍 Obteniendo budget_items y treatments para presupuesto ${budgetId}`);
+
+    // 1. Obtener todos los budget_items del presupuesto
+    const budgetItems = await db
+      .select()
+      .from(budgetItemsTable)
+      .where(
+        and(
+          eq(budgetItemsTable.budget_id, budgetId),
+          eq(budgetItemsTable.is_active, true)
+        )
+      )
+      .orderBy(budgetItemsTable.orden);
+
+    // 2. Obtener todos los treatments del presupuesto
+    const treatments = await this.findByBudgetId(budgetId, doctorId);
+
+    // 3. Agrupar treatments por budget_item_id
+    const treatmentsByItem = new Map<number, typeof treatments>();
+    treatments.forEach(treatment => {
+      if (treatment.budget_item_id) {
+        if (!treatmentsByItem.has(treatment.budget_item_id)) {
+          treatmentsByItem.set(treatment.budget_item_id, []);
+        }
+        treatmentsByItem.get(treatment.budget_item_id)!.push(treatment);
+      }
+    });
+
+    // 4. Combinar budget_items con sus treatments
+    const result = budgetItems.map(item => ({
+      ...item,
+      treatments: treatmentsByItem.get(item.id) || [],
+      hasTreatments: (treatmentsByItem.get(item.id) || []).length > 0,
+    }));
+
+    console.log(`✅ Encontrados ${result.length} budget_items con treatments agrupados`);
 
     return result;
   }

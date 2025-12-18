@@ -1,5 +1,5 @@
-// src/presentation/hooks/treatments/useTreatments.tsx - ACTUALIZADO CON INVALIDACIÓN COMPLETA
-import { useState } from 'react';
+// src/presentation/hooks/treatments/useTreatments.tsx - ACTUALIZADO CON INVALIDACIÓN COMPLETA Y SISTEMA DE EVOLUCIONES
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetcher } from '@/config/adapters/api.adapter';
 import {
@@ -11,12 +11,15 @@ import {
   getBudgetsByPatientUseCase,
   getTreatmentsByBudgetUseCase,
   completeTreatmentUseCase,
+  addTreatmentSessionUseCase,
   type CreateTreatmentData,
   type UpdateTreatmentData,
   type GetTreatmentsResponse,
   type GetTreatmentByIdResponse,
   type GetBudgetSummariesResponse,
   type GetTreatmentsByBudgetResponse,
+  type AddSessionData,
+  type Treatment,
 } from '@/core/use-cases/treatments';
 
 // Hook para obtener la lista de tratamientos de un paciente
@@ -51,7 +54,7 @@ export const useBudgetsByPatient = (patientId: number, enabled = true) => {
   };
 };
 
-// Hook para obtener tratamientos de un presupuesto específico
+// Hook para obtener budget_items con tratamientos de un presupuesto específico
 export const useTreatmentsByBudget = (budgetId: number, enabled = true) => {
   const queryTreatmentsByBudget = useQuery({
     queryKey: ['treatments', 'budget', budgetId],
@@ -62,7 +65,7 @@ export const useTreatmentsByBudget = (budgetId: number, enabled = true) => {
 
   return {
     queryTreatmentsByBudget,
-    treatments: queryTreatmentsByBudget.data?.treatments || [],
+    budgetItems: queryTreatmentsByBudget.data?.budgetItems || [], // ✅ CAMBIO: Retorna budgetItems
     budget: queryTreatmentsByBudget.data?.budget || null,
     isLoadingTreatmentsByBudget: queryTreatmentsByBudget.isLoading,
     errorTreatmentsByBudget: queryTreatmentsByBudget.error,
@@ -168,6 +171,10 @@ export const useUpdateTreatment = () => {
       queryClient.invalidateQueries({ queryKey: ['treatments'] });
       queryClient.invalidateQueries({ queryKey: ['treatment', variables.treatmentId] });
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+
+      // ✅ INVALIDAR HISTORIAL MÉDICO (para que aparezca la actualización)
+      queryClient.invalidateQueries({ queryKey: ['medicalHistory'] });
+      queryClient.invalidateQueries({ queryKey: ['auditHistory'] });
     },
     onError: () => {
       setIsLoadingUpdate(false);
@@ -201,13 +208,15 @@ export const useCompleteTreatment = (patientId?: number) => {
       queryClient.invalidateQueries({ queryKey: ['treatments'] });
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
 
-      // ✅ INVALIDAR HISTORIAL DE AUDITORÍA (NUEVO - para que aparezca el log inmediatamente)
+      // ✅ INVALIDAR HISTORIAL MÉDICO Y DE AUDITORÍA (para que aparezca el log inmediatamente)
       if (variables.patientId) {
         queryClient.invalidateQueries({ queryKey: ['auditHistory', variables.patientId] });
-        console.log('✅ Historial de auditoría invalidado para patient:', variables.patientId);
+        queryClient.invalidateQueries({ queryKey: ['medicalHistory', variables.patientId] });
+        console.log('✅ Historial médico y de auditoría invalidado para patient:', variables.patientId);
       } else if (patientId) {
         queryClient.invalidateQueries({ queryKey: ['auditHistory', patientId] });
-        console.log('✅ Historial de auditoría invalidado para patient:', patientId);
+        queryClient.invalidateQueries({ queryKey: ['medicalHistory', patientId] });
+        console.log('✅ Historial médico y de auditoría invalidado para patient:', patientId);
       }
 
       // ✅ FORZAR REFETCH INMEDIATO para datos críticos
@@ -282,6 +291,177 @@ export const useDeleteTreatment = () => {
   };
 };
 
+// ✅ NUEVO: Hook para agregar sesión/evolución a un tratamiento
+export const useAddTreatmentSession = (patientId?: number) => {
+  const [isLoadingAddSession, setIsLoadingAddSession] = useState(false);
+  const queryClient = useQueryClient();
+
+  const addSessionMutation = useMutation({
+    mutationFn: ({ patientId: pid, sessionData }: { patientId: number; sessionData: AddSessionData }) => {
+      return addTreatmentSessionUseCase(apiFetcher, pid, sessionData);
+    },
+    onMutate: () => {
+      setIsLoadingAddSession(true);
+    },
+    onSuccess: (_, variables) => {
+      setIsLoadingAddSession(false);
+
+      console.log('🔄 Invalidando queries después de agregar sesión...');
+
+      // Invalidar todas las queries relacionadas
+      const pid = variables.patientId || patientId;
+      if (pid) {
+        invalidateAllTreatmentQueries(queryClient, pid);
+      }
+
+      // Refetch inmediato
+      queryClient.refetchQueries({
+        queryKey: ['treatments', 'budget'],
+        type: 'active'
+      });
+
+      // ✅ Invalidar historial médico Y de auditoría
+      if (pid) {
+        queryClient.invalidateQueries({ queryKey: ['auditHistory', pid] });
+        queryClient.invalidateQueries({ queryKey: ['medicalHistory', pid] });
+        console.log('✅ Historial médico invalidado para patient:', pid);
+      }
+    },
+    onError: () => {
+      setIsLoadingAddSession(false);
+    },
+  });
+
+  return {
+    addSessionMutation,
+    isLoadingAddSession,
+  };
+};
+
+// ✅ NUEVO: Helper para agrupar tratamientos por budget_item_id
+export interface TreatmentGroup {
+  budget_item_id: number | null;
+  mainTreatment: Treatment; // Tratamiento principal (el primero creado) o fantasma si no hay treatments
+  sessions: Treatment[]; // Sesiones/evoluciones adicionales
+  totalSessions: number;
+  status: string;
+  budget_item_pieza?: string;
+  budget_item_valor?: string;
+  hasTreatments?: boolean; // ✅ NUEVO: Indica si tiene treatments reales (no fantasma)
+}
+
+/**
+ * Agrupa tratamientos por budget_item_id para mostrar tratamiento principal + sesiones
+ * @param treatments - Lista de tratamientos
+ * @returns Array de grupos de tratamientos
+ */
+export const groupTreatmentsByBudgetItem = (treatments: Treatment[]): TreatmentGroup[] => {
+  const groups = new Map<number | string, TreatmentGroup>();
+
+  // Primero, ordenar tratamientos por fecha de creación (más antiguos primero)
+  const sortedTreatments = [...treatments].sort((a, b) => {
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  });
+
+  sortedTreatments.forEach(treatment => {
+    const key = treatment.budget_item_id ?? `standalone-${treatment.id_tratamiento}`;
+
+    if (!groups.has(key)) {
+      // Primer tratamiento del grupo = tratamiento principal
+      groups.set(key, {
+        budget_item_id: treatment.budget_item_id ?? null,
+        mainTreatment: treatment,
+        sessions: [],
+        totalSessions: 0,
+        status: treatment.status || 'pending',
+        budget_item_pieza: treatment.budget_item_pieza,
+        budget_item_valor: treatment.budget_item_valor,
+      });
+    } else {
+      // Tratamientos subsecuentes = sesiones
+      const group = groups.get(key)!;
+      group.sessions.push(treatment);
+      group.totalSessions = group.sessions.length;
+
+      // Actualizar estado del grupo (si alguna sesión está en_proceso, el grupo está en_proceso)
+      if (treatment.status === 'en_proceso' && group.status === 'planificado') {
+        group.status = 'en_proceso';
+      }
+      if (treatment.status === 'completado') {
+        group.status = 'completado';
+      }
+    }
+  });
+
+  return Array.from(groups.values());
+};
+
+// ✅ Hook mejorado - budgetItems ya vienen agrupados del backend
+export const useTreatmentsByBudgetGrouped = (budgetId: number, enabled = true) => {
+  const { budgetItems, isLoadingTreatmentsByBudget, ...rest } = useTreatmentsByBudget(budgetId, enabled);
+
+  // ✅ NUEVO: Convertir budgetItems a TreatmentGroup para compatibilidad con UI
+  // Siempre muestra todos los budget_items, tengan o no treatments
+  const groupedTreatments = useMemo(() => {
+    console.log('🔄 Agrupando budgetItems:', {
+      count: budgetItems.length,
+      items: budgetItems.map(item => ({
+        id: item.id,
+        accion: item.accion,
+        treatments: item.treatments.length
+      }))
+    });
+
+    return budgetItems.map(item => {
+      const hasTreatments = item.treatments.length > 0;
+
+      const group = {
+        budget_item_id: item.id,
+        mainTreatment: hasTreatments
+          ? item.treatments[0]
+          : {
+              // ✅ Tratamiento "fantasma" para budget_items sin treatments
+              id_tratamiento: 0,
+              id_paciente: 0,
+              id_doctor: 0,
+              budget_item_id: item.id,
+              fecha_control: '',
+              hora_control: '',
+              nombre_servicio: item.accion + (item.pieza ? ` - Pieza ${item.pieza}` : ''),
+              descripcion: '',
+              status: item.status,
+              created_at: item.created_at,
+              is_active: true,
+              budget_item_pieza: item.pieza,
+              budget_item_valor: item.valor,
+            },
+        sessions: hasTreatments ? item.treatments.slice(1) : [], // Sesiones adicionales
+        totalSessions: hasTreatments ? item.treatments.length - 1 : 0,
+        status: item.status,
+        budget_item_pieza: item.pieza,
+        budget_item_valor: item.valor,
+        hasTreatments, // ✅ NUEVO: Indica si tiene treatments reales
+      };
+
+      console.log('📦 Grupo creado:', {
+        budget_item_id: group.budget_item_id,
+        accion: item.accion,
+        hasTreatments: group.hasTreatments,
+        mainTreatment_id: group.mainTreatment.id_tratamiento
+      });
+
+      return group;
+    });
+  }, [budgetItems]);
+
+  return {
+    budgetItems,
+    groupedTreatments,
+    isLoadingTreatmentsByBudget,
+    ...rest,
+  };
+};
+
 // ✅ Hook combinado mejorado con invalidación específica por paciente
 export const useTreatmentsWithBudgets = (patientId: number) => {
   const treatments = useTreatments(patientId);
@@ -290,6 +470,7 @@ export const useTreatmentsWithBudgets = (patientId: number) => {
   const updateTreatment = useUpdateTreatment();
   const completeTreatment = useCompleteTreatment();
   const deleteTreatment = useDeleteTreatment();
+  const addSession = useAddTreatmentSession(patientId);
 
   return {
     // Datos
@@ -301,17 +482,20 @@ export const useTreatmentsWithBudgets = (patientId: number) => {
     updateTreatment: updateTreatment.updateTreatmentMutation.mutateAsync,
     completeTreatment: completeTreatment.completeTreatmentMutation.mutateAsync,
     deleteTreatment: deleteTreatment.deleteTreatmentMutation.mutateAsync,
+    addSession: addSession.addSessionMutation.mutateAsync,
 
     // Estados de carga
     isLoadingCreate: createTreatment.isLoadingCreate,
     isLoadingUpdate: updateTreatment.isLoadingUpdate,
     isLoadingComplete: completeTreatment.isLoadingComplete,
     isLoadingDelete: deleteTreatment.isLoadingDelete,
+    isLoadingAddSession: addSession.isLoadingAddSession,
 
     // Mutaciones para manejo de errores
     createTreatmentMutation: createTreatment.createTreatmentMutation,
     updateTreatmentMutation: updateTreatment.updateTreatmentMutation,
     completeTreatmentMutation: completeTreatment.completeTreatmentMutation,
     deleteTreatmentMutation: deleteTreatment.deleteTreatmentMutation,
+    addSessionMutation: addSession.addSessionMutation,
   };
 };

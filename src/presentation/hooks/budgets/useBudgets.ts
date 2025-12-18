@@ -14,6 +14,9 @@ import {
   Budget,
   BudgetUtils,
 } from "@/core/use-cases/budgets";
+import { addBudgetItemUseCase } from "@/core/use-cases/budgets/add-budget-item.use-case";
+import { deleteBudgetItemUseCase } from "@/core/use-cases/budgets/delete-budget-item.use-case";
+import { completeBudgetItemUseCase } from "@/core/use-cases/budgets/complete-budget-item.use-case";
 
 // ✅ Hook para obtener TODOS los presupuestos de un paciente
 export const useAllBudgets = (patientId: number) => {
@@ -103,9 +106,9 @@ export const useActivateBudget = () => {
   const queryClient = useQueryClient();
 
   const activateBudgetMutation = useMutation({
-    mutationFn: (budgetId: number) =>
-      activateBudgetUseCase(apiFetcher, budgetId),
-    onSuccess: (data, budgetId) => {
+    mutationFn: ({ budgetId, patientId }: { budgetId: number; patientId?: number }) =>
+      activateBudgetUseCase(apiFetcher, budgetId, patientId),
+    onSuccess: (data, variables) => {
       // ✅ INVALIDAR QUERIES DE PRESUPUESTOS
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
       queryClient.invalidateQueries({ queryKey: ['budget'] });
@@ -115,6 +118,13 @@ export const useActivateBudget = () => {
       // Por eso necesitamos refrescar TODAS las queries de treatments
       queryClient.invalidateQueries({ queryKey: ['treatments'] });
       queryClient.invalidateQueries({ queryKey: ['treatment'] });
+
+      // ✅ Invalidar historial médico para que aparezca la activación
+      if (variables.patientId) {
+        queryClient.invalidateQueries({
+          queryKey: ['medicalHistory', variables.patientId]
+        });
+      }
     },
   });
 
@@ -170,7 +180,7 @@ export const useDeleteBudgetById = () => {
   const queryClient = useQueryClient();
 
   const deleteBudgetMutation = useMutation({
-    mutationFn: (budgetId: number) => 
+    mutationFn: (budgetId: number) =>
       deleteBudgetByIdUseCase(apiFetcher, budgetId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
@@ -182,6 +192,78 @@ export const useDeleteBudgetById = () => {
     deleteBudgetMutation,
     deleteBudget: deleteBudgetMutation.mutateAsync,
     isLoadingDelete: deleteBudgetMutation.isPending,
+  };
+};
+
+// ✅ Hook para agregar un item a un presupuesto
+export const useAddBudgetItem = () => {
+  const queryClient = useQueryClient();
+
+  const addBudgetItemMutation = useMutation({
+    mutationFn: ({ budgetId, data }: {
+      budgetId: number;
+      data: { pieza?: string; accion: string; valor: number }
+    }) => addBudgetItemUseCase(apiFetcher, budgetId, data),
+    onSuccess: () => {
+      // Invalidar queries de presupuestos para actualizar el total
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['budget'] });
+      queryClient.invalidateQueries({ queryKey: ['budgetItems'] });
+      // ✅ Invalidar también las queries de treatments para que se vea reflejado inmediatamente
+      queryClient.invalidateQueries({ queryKey: ['treatments'] });
+    },
+  });
+
+  return {
+    addBudgetItemMutation,
+    addBudgetItem: addBudgetItemMutation.mutateAsync,
+    isLoadingAddItem: addBudgetItemMutation.isPending,
+  };
+};
+
+// ✅ Hook para eliminar un item específico del presupuesto
+export const useDeleteBudgetItem = () => {
+  const queryClient = useQueryClient();
+
+  const deleteBudgetItemMutation = useMutation({
+    mutationFn: (budgetItemId: number) =>
+      deleteBudgetItemUseCase(apiFetcher, budgetItemId),
+    onSuccess: () => {
+      // Invalidar queries de presupuestos para actualizar el total recalculado
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['budget'] });
+      // Invalidar queries de tratamientos para reflejar la eliminación de sesiones
+      queryClient.invalidateQueries({ queryKey: ['treatments'] });
+      queryClient.invalidateQueries({ queryKey: ['budgetItems'] });
+    },
+  });
+
+  return {
+    deleteBudgetItemMutation,
+    deleteBudgetItem: deleteBudgetItemMutation.mutateAsync,
+    isLoadingDeleteItem: deleteBudgetItemMutation.isPending,
+  };
+};
+
+// ✅ Hook para completar un item del presupuesto
+export const useCompleteBudgetItem = () => {
+  const queryClient = useQueryClient();
+
+  const completeBudgetItemMutation = useMutation({
+    mutationFn: (budgetItemId: number) =>
+      completeBudgetItemUseCase(apiFetcher, budgetItemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['treatments'] });
+      queryClient.invalidateQueries({ queryKey: ['budgetItems'] });
+      queryClient.invalidateQueries({ queryKey: ['budget', 'stats'] });
+    },
+  });
+
+  return {
+    completeBudgetItemMutation,
+    completeBudgetItem: completeBudgetItemMutation.mutateAsync,
+    isLoadingCompleteItem: completeBudgetItemMutation.isPending,
   };
 };
 
@@ -215,10 +297,10 @@ export const useMultipleBudgetOperations = (patientId: number) => {
     // Datos de presupuestos
     ...allBudgets,
     ...activeBudget,
-    
-    // Operaciones
+
+    // Operaciones (con patientId ya incluido en el contexto)
     saveBudget: saveBudget.saveBudget,
-    activateBudget: activateBudget.activateBudget,
+    activateBudget: (budgetId: number) => activateBudget.activateBudget({ budgetId, patientId }),
     completeBudget: completeBudget.completeBudget,
     revertBudget: revertBudget.revertBudget,
     deleteBudget: deleteBudget.deleteBudget,
@@ -270,7 +352,7 @@ export const useBudgetOperations = (patientId: number) => {
     updateBudgetStatus: async ({ budgetId, statusData }: { budgetId: number; statusData: { status: string } }) => {
       // Mapear a las nuevas operaciones según el estado
       if (statusData.status === 'activo') {
-        return activateBudget.activateBudget(budgetId);
+        return activateBudget.activateBudget({ budgetId, patientId });
       }
       throw new Error('Estado no soportado');
     },

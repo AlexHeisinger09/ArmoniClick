@@ -11,11 +11,13 @@ import {
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./user.schema";
 import { patientsTable } from "./patient.schema";
+import { locationsTable } from "./location.schema";
 
 export const appointmentsTable = pgTable("appointments", {
   id: serial("id").primaryKey(),
   doctorId: integer("doctor_id").references(() => usersTable.id).notNull(),
   patientId: integer("patient_id").references(() => patientsTable.id),
+  locationId: integer("location_id").references(() => locationsTable.id),
   
   // Campos para invitados (pacientes no registrados)
   guestName: varchar("guest_name", { length: 255 }),

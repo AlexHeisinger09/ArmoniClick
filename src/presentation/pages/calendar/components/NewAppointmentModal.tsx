@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, User, UserPlus, Search, Clock, FileText, Mail, Phone, ChevronDown, Loader, AlertCircle } from 'lucide-react';
+import { X, User, UserPlus, Search, Clock, FileText, Mail, Phone, ChevronDown, Loader, AlertCircle, MapPin } from 'lucide-react';
 import { NewAppointmentForm, AppointmentsData } from '../types/calendar';
 import { getTimeSlotsForDuration } from '../constants/calendar';
 import { isTimeSlotAvailable, hasOverlap } from '../utils/calendar';
 import { usePatients } from '@/presentation/hooks/patients/usePatients';
+import { useLocations } from '@/presentation/hooks/locations/useLocations';
 import { ScheduleBlock } from '@/core/entities/ScheduleBlock';
 
 interface Patient {
@@ -55,6 +56,9 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   // Hook para obtener pacientes
   const { queryPatients } = usePatients();
   const patients = queryPatients.data?.patients || [];
+
+  // Hook para obtener sucursales
+  const { locations, isLoading: isLoadingLocations } = useLocations();
   
   // Filtrar pacientes basado en búsqueda
   const filteredPatients = useMemo(() => {
@@ -395,6 +399,40 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
               />
             </div>
 
+            {/* Selector de sucursal */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Sucursal / Ubicación
+              </label>
+              {isLoadingLocations ? (
+                <div className="flex items-center justify-center p-3 border-2 border-slate-200 rounded-lg">
+                  <Loader className="w-4 h-4 animate-spin text-slate-400 mr-2" />
+                  <span className="text-sm text-slate-500">Cargando sucursales...</span>
+                </div>
+              ) : locations && locations.length > 0 ? (
+                <select
+                  value={newAppointment.locationId || ''}
+                  onChange={(e) => handleFormChange({ locationId: e.target.value ? parseInt(e.target.value) : undefined })}
+                  disabled={isCreating}
+                  className="w-full p-2 sm:p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
+                >
+                  <option value="">Seleccionar sucursal (opcional)</option>
+                  {locations.filter(loc => loc.is_active).map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name} - {location.city}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700">
+                    No hay sucursales configuradas. Puedes agregar sucursales en Configuración.
+                  </p>
+                </div>
+              )}
+            </div>
+
             {/* Selector de duración */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -428,59 +466,65 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
                 Horario * ({newAppointment.duration || 30} min)
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {getTimeSlotsForDuration(newAppointment.duration || 30).map(time => {
-                  const available = newAppointment.date ?
-                    isTimeSlotAvailable(appointments, newAppointment.date, time, newAppointment.duration || 30, scheduleBlocks) : false;
-                  const isOverlap = newAppointment.date ?
-                    hasOverlap(appointments, newAppointment.date, time, newAppointment.duration || 30) : false;
+                {getTimeSlotsForDuration(newAppointment.duration || 30)
+                  .filter(time => {
+                    // Solo mostrar slots disponibles
+                    if (!newAppointment.date) return false;
+                    const available = isTimeSlotAvailable(appointments, newAppointment.date, time, newAppointment.duration || 30, scheduleBlocks);
+                    return available;
+                  })
+                  .map(time => {
+                    const available = newAppointment.date ?
+                      isTimeSlotAvailable(appointments, newAppointment.date, time, newAppointment.duration || 30, scheduleBlocks) : false;
+                    const isOverlap = newAppointment.date ?
+                      hasOverlap(appointments, newAppointment.date, time, newAppointment.duration || 30) : false;
 
-                  // Debug log
-                  if (newAppointment.date) {
-                    console.log(`🔍 Time slot ${time}:`, {
-                      date: newAppointment.date.toISOString().split('T')[0],
-                      duration: newAppointment.duration || 30,
-                      available,
-                      isOverlap,
-                      scheduleBlocksCount: scheduleBlocks?.length || 0,
-                      scheduleBlocks: scheduleBlocks || [],
-                      hasConflictWithAppointment: !available && !isOverlap
-                    });
-                  }
-
-                  return (
-                    <button
-                      key={time}
-                      type="button"
-                      onClick={() => {
-                        if (available && !isCreating) {
-                          handleFormChange({ time });
-                        }
-                      }}
-                      disabled={!available || isCreating}
-                      className={`
-                        p-1.5 sm:p-2 text-xs sm:text-sm rounded-lg transition-all border-2 font-medium relative disabled:cursor-not-allowed
-                        ${newAppointment.time === time && available
-                          ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg scale-105'
-                          : available && !isCreating
-                            ? isOverlap
+                    return (
+                      <button
+                        key={time}
+                        type="button"
+                        onClick={() => {
+                          if (available && !isCreating) {
+                            handleFormChange({ time });
+                          }
+                        }}
+                        disabled={isCreating}
+                        className={`
+                          p-1.5 sm:p-2 text-xs sm:text-sm rounded-lg transition-all border-2 font-medium relative
+                          ${newAppointment.time === time
+                            ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg scale-105'
+                            : isOverlap
                               ? 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200'
                               : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                            : 'bg-slate-100 text-slate-400 border-slate-200 opacity-50'
-                        }
-                      `}
-                      title={!available ? `No disponible: conflicta con cita existente` : available && isOverlap ? 'Sobrecupo' : 'Disponible'}
-                    >
-                      <div className="flex items-center justify-center">
-                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                        {time}
-                      </div>
-                      {isOverlap && available && (
-                        <div className="text-xs font-semibold mt-0.5">Sobrecupo</div>
-                      )}
-                    </button>
-                  );
-                })}
+                          }
+                          ${isCreating ? 'opacity-50 cursor-not-allowed' : ''}
+                        `}
+                        title={isOverlap ? 'Sobrecupo' : 'Disponible'}
+                      >
+                        <div className="flex items-center justify-center">
+                          <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                          {time}
+                        </div>
+                        {isOverlap && (
+                          <div className="text-xs font-semibold mt-0.5">Sobrecupo</div>
+                        )}
+                      </button>
+                    );
+                  })}
               </div>
+              {newAppointment.date && getTimeSlotsForDuration(newAppointment.duration || 30)
+                .filter(time => {
+                  if (!newAppointment.date) return false;
+                  const available = isTimeSlotAvailable(appointments, newAppointment.date, time, newAppointment.duration || 30, scheduleBlocks);
+                  return available;
+                }).length === 0 && (
+                <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700">
+                    No hay horarios disponibles para esta fecha y duración. Intenta con otra duración o fecha.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Campo de notas/descripción */}

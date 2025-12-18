@@ -9,7 +9,9 @@ export { BudgetSidebar } from './components/BudgetSidebar'; // ✅ NUEVO
 
 // Modals
 export { NewTreatmentModal } from './modals/NewTreatmentModal';
-export { EditTreatmentModal } from './modals/EditTreatmentModal'; 
+export { AddBudgetItemModal } from './modals/AddBudgetItemModal';
+export { AddSessionModal } from './modals/AddSessionModal';
+export { EditTreatmentModal } from './modals/EditTreatmentModal';
 export { TreatmentDetailModal } from './modals/TreatmentDetailModal';
 
 // Shared

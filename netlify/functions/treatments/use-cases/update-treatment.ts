@@ -89,43 +89,35 @@ export class UpdateTreatment implements UpdateTreatmentUseCase {
 
       const updatedTreatment = await this.treatmentService.update(treatmentId, updateData, doctorId);
 
-      // 📝 Registrar en auditoría (actualización)
-      // Si pasó de pending → completed, es la "iniciación" del tratamiento (se muestra en historial)
-      const isFirstUpdate = existingTreatment.status === 'pending' && updatedTreatment.status === 'completed';
+      // ✅ Actualizar el audit log original en lugar de crear uno nuevo
+      // Esto mantiene el historial limpio mostrando solo la versión más reciente
+      if (Object.keys(changedFields).length > 0 || Object.keys(updateData).length > 0) {
+        // Construir los nuevos valores completos con toda la información actualizada
+        const completeNewValues: any = {
+          budget_item_id: updatedTreatment.budget_item_id,
+          nombre_servicio: updatedTreatment.nombre_servicio,
+          fecha: updatedTreatment.fecha_control,
+          hora: updatedTreatment.hora_control,
+          descripcion: updatedTreatment.descripcion,
+          foto1: updatedTreatment.foto1 || null,
+          foto2: updatedTreatment.foto2 || null,
+          producto: updatedTreatment.producto || null,
+          lote_producto: updatedTreatment.lote_producto || null,
+          fecha_venc_producto: updatedTreatment.fecha_venc_producto || null,
+          dilucion: updatedTreatment.dilucion || null,
+        };
 
-      if (isFirstUpdate) {
-        // Cambio de estado: es la iniciación
-        await this.auditService.logChange({
-          patientId: existingTreatment.id_paciente,
+        const wasUpdated = await this.auditService.updateAuditLog({
           entityType: AUDIT_ENTITY_TYPES.TRATAMIENTO,
           entityId: treatmentId,
-          action: AUDIT_ACTIONS.STATUS_CHANGED,
-          oldValues: { status: "pending" },
-          newValues: {
-            status: "completed",
-            nombre_servicio: updatedTreatment.nombre_servicio,
-            fecha_control: updatedTreatment.fecha_control,
-          },
-          changedBy: doctorId,
-          notes: `Tratamiento ${updatedTreatment.nombre_servicio} iniciado`,
-        });
-      } else if (Object.keys(changedFields).length > 0) {
-        // Actualización posterior (solo si hay cambios)
-        const oldValuesForAudit: any = {};
-        Object.keys(changedFields).forEach(key => {
-          oldValuesForAudit[key] = (existingTreatment as any)[key];
+          action: AUDIT_ACTIONS.CREATED, // Buscar el registro 'created' original
+          newValues: completeNewValues,
+          notes: `Evolución actualizada: ${updatedTreatment.nombre_servicio}${changedFields.foto1 || changedFields.foto2 ? ' (con fotos)' : ''}`,
         });
 
-        await this.auditService.logChange({
-          patientId: existingTreatment.id_paciente,
-          entityType: AUDIT_ENTITY_TYPES.TRATAMIENTO,
-          entityId: treatmentId,
-          action: AUDIT_ACTIONS.UPDATED,
-          oldValues: oldValuesForAudit,
-          newValues: changedFields,
-          changedBy: doctorId,
-          notes: `Tratamiento ${updatedTreatment.nombre_servicio} actualizado${changedFields.foto1 || changedFields.foto2 ? ' (con fotos)' : ''}`,
-        });
+        if (!wasUpdated) {
+          console.log('⚠️ No se pudo actualizar audit log, posiblemente no existe registro de creación');
+        }
       }
 
       return {

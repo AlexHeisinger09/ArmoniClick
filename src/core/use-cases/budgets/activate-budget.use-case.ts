@@ -3,12 +3,13 @@ import { ActivateBudgetResponse } from "./types";
 
 export const activateBudgetUseCase = async (
   fetcher: HttpAdapter,
-  budgetId: number
+  budgetId: number,
+  patientId?: number
 ): Promise<ActivateBudgetResponse> => {
   try {
     const response = await fetcher.put<ActivateBudgetResponse>(
       `/budgets/${budgetId}/activate`,
-      {}
+      { patientId } // ✅ Enviar patientId para auditoría
     );
     return response;
   } catch (error) {
