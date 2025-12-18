@@ -162,7 +162,7 @@ export class EmailTemplatesService {
     <body>
         <div class="container">
             <div class="header">
-                <img src="https://res.cloudinary.com/dafeskzbp/image/upload/v1765825652/letras_bydy7j.svg" alt="ArmoniClick Logo" class="logo">
+                <img src="https://res.cloudinary.com/dafeskzbp/image/upload/v1765825652/letras_bydy7j.png" alt="ArmoniClick Logo" class="logo">
                 <h1>¡Cita Confirmada! ✓</h1>
                 <p>Tu cita ha sido agendada exitosamente</p>
             </div>
@@ -446,7 +446,7 @@ export class EmailTemplatesService {
     <body>
         <div class="container">
             <div class="header">
-                <img src="https://res.cloudinary.com/dafeskzbp/image/upload/v1765825652/letras_bydy7j.svg" alt="ArmoniClick Logo" class="logo">
+                <img src="https://res.cloudinary.com/dafeskzbp/image/upload/v1765825652/letras_bydy7j.png" alt="ArmoniClick Logo" class="logo">
                 <h1>🔔 Recordatorio de Cita</h1>
                 <p>Tu cita es mañana</p>
             </div>
