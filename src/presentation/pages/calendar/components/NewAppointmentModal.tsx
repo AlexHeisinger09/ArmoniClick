@@ -438,7 +438,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 Duración de la Cita *
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
                 {[30, 60, 90, 120].map(duration => (
                   <button
                     key={duration}
@@ -446,14 +446,14 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
                     onClick={() => !isCreating && handleFormChange({ duration })}
                     disabled={isCreating}
                     className={`
-                      p-2 sm:p-2.5 text-xs sm:text-sm rounded-lg transition-all border-2 font-medium disabled:cursor-not-allowed flex items-center justify-center
+                      p-1.5 sm:p-2 text-xs rounded-lg transition-all border-2 font-medium disabled:cursor-not-allowed flex items-center justify-center
                       ${newAppointment.duration === duration
                         ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg scale-105'
                         : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300 disabled:opacity-50'
                       }
                     `}
                   >
-                    <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                    <Clock className="w-3 h-3 mr-1" />
                     {duration} min
                   </button>
                 ))}
@@ -463,9 +463,9 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
             {/* Selector de horario */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Horario * ({newAppointment.duration || 30} min)
+                Horarios Disponibles * ({newAppointment.duration || 30} min)
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-2">
                 {getTimeSlotsForDuration(newAppointment.duration || 30)
                   .filter(time => {
                     // Solo mostrar slots disponibles
@@ -490,7 +490,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
                         }}
                         disabled={isCreating}
                         className={`
-                          p-1.5 sm:p-2 text-xs sm:text-sm rounded-lg transition-all border-2 font-medium relative
+                          p-1.5 text-xs rounded-lg transition-all border-2 font-medium relative
                           ${newAppointment.time === time
                             ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg scale-105'
                             : isOverlap
@@ -502,11 +502,11 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
                         title={isOverlap ? 'Sobrecupo' : 'Disponible'}
                       >
                         <div className="flex items-center justify-center">
-                          <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                          <Clock className="w-3 h-3 mr-0.5" />
                           {time}
                         </div>
                         {isOverlap && (
-                          <div className="text-xs font-semibold mt-0.5">Sobrecupo</div>
+                          <div className="text-[10px] font-semibold mt-0.5">Sobrecupo</div>
                         )}
                       </button>
                     );

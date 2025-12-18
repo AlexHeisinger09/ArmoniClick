@@ -419,7 +419,7 @@ export const PublicAppointmentBooking: React.FC = () => {
               {appointmentForm.date && (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Horario *
+                    Horarios Disponibles *
                   </label>
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
                     {getTimeSlotsForDuration(appointmentForm.duration)

@@ -1,11 +1,12 @@
 // src/presentation/pages/patient/components/PatientAppointmentModal.tsx
 import React, { useState, useEffect } from 'react';
-import { X, Clock, Calendar, FileText, Loader, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Clock, Calendar, FileText, Loader, ChevronLeft, ChevronRight, MapPin, AlertCircle } from 'lucide-react';
 import { Patient } from '@/core/use-cases/patients';
 import { getTimeSlotsForDuration } from '@/presentation/pages/calendar/constants/calendar';
 import { isTimeSlotAvailable, hasOverlap } from '@/presentation/pages/calendar/utils/calendar';
 import { AppointmentsData } from '@/presentation/pages/calendar/types/calendar';
 import { ScheduleBlock } from '@/core/entities/ScheduleBlock';
+import { useLocations } from '@/presentation/hooks/locations/useLocations';
 
 interface PatientAppointmentForm {
   date: Date;
@@ -13,6 +14,7 @@ interface PatientAppointmentForm {
   service: string;
   description: string;
   duration: number;
+  locationId?: number;
 }
 
 interface PatientAppointmentModalProps {
@@ -40,11 +42,15 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
     time: '',
     service: '',
     description: '',
-    duration: 60
+    duration: 60,
+    locationId: undefined
   });
 
   // Estados para navegación de fecha
   const [selectedMonth, setSelectedMonth] = useState(new Date());
+
+  // Hook para obtener sucursales
+  const { locations, isLoading: isLoadingLocations } = useLocations();
 
   // Resetear formulario cuando se abre el modal
   useEffect(() => {
@@ -54,7 +60,8 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
         time: '',
         service: '',
         description: '',
-        duration: 60
+        duration: 60,
+        locationId: undefined
       });
       setSelectedMonth(new Date());
     }
@@ -237,7 +244,7 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Duración de la Cita *
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
               {[30, 60, 90, 120].map(duration => (
                 <button
                   key={duration}
@@ -245,14 +252,14 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
                   onClick={() => !isCreating && handleFormChange({ duration, time: '' })}
                   disabled={isCreating}
                   className={`
-                    p-2 sm:p-2.5 text-xs sm:text-sm rounded-lg transition-all border-2 font-medium disabled:cursor-not-allowed flex items-center justify-center
+                    p-1.5 sm:p-2 text-xs rounded-lg transition-all border-2 font-medium disabled:cursor-not-allowed flex items-center justify-center
                     ${appointmentForm.duration === duration
                       ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg scale-105'
                       : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300 disabled:opacity-50'
                     }
                   `}
                 >
-                  <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                  <Clock className="w-3 h-3 mr-1" />
                   {duration} min
                 </button>
               ))}
@@ -263,10 +270,17 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
           {appointmentForm.date && (
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Horario * ({appointmentForm.duration} min)
+                Horarios Disponibles * ({appointmentForm.duration} min)
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {getTimeSlotsForDuration(appointmentForm.duration).map(time => {
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-2">
+                {getTimeSlotsForDuration(appointmentForm.duration)
+                  .filter(time => {
+                    // Solo mostrar slots disponibles
+                    if (!appointmentForm.date) return false;
+                    const available = isTimeSlotAvailable(appointments, appointmentForm.date, time, appointmentForm.duration, scheduleBlocks);
+                    return available;
+                  })
+                  .map(time => {
                   const available = isTimeSlotAvailable(appointments, appointmentForm.date, time, appointmentForm.duration, scheduleBlocks);
                   const isOverlap = hasOverlap(appointments, appointmentForm.date, time, appointmentForm.duration);
 
@@ -279,33 +293,79 @@ export const PatientAppointmentModal: React.FC<PatientAppointmentModalProps> = (
                           handleFormChange({ time });
                         }
                       }}
-                      disabled={!available || isCreating}
+                      disabled={isCreating}
                       className={`
-                        p-2 text-xs sm:text-sm rounded-lg transition-all border-2 font-medium relative disabled:cursor-not-allowed
-                        ${appointmentForm.time === time && available
+                        p-1.5 text-xs rounded-lg transition-all border-2 font-medium relative disabled:cursor-not-allowed
+                        ${appointmentForm.time === time
                           ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg scale-105'
-                          : available && !isCreating
-                            ? isOverlap
-                              ? 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200'
-                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                            : 'bg-slate-100 text-slate-400 border-slate-200 opacity-50'
+                          : isOverlap
+                            ? 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
                         }
+                        ${isCreating ? 'opacity-50' : ''}
                       `}
-                      title={!available ? `No disponible: conflicta con cita existente` : available && isOverlap ? 'Sobrecupo' : 'Disponible'}
+                      title={isOverlap ? 'Sobrecupo' : 'Disponible'}
                     >
                       <div className="flex items-center justify-center">
-                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                        <Clock className="w-3 h-3 mr-0.5" />
                         {time}
                       </div>
-                      {isOverlap && available && (
-                        <div className="text-xs font-semibold mt-0.5">Sobrecupo</div>
+                      {isOverlap && (
+                        <div className="text-[10px] font-semibold mt-0.5">Sobrecupo</div>
                       )}
                     </button>
                   );
                 })}
               </div>
+              {appointmentForm.date && getTimeSlotsForDuration(appointmentForm.duration)
+                .filter(time => {
+                  if (!appointmentForm.date) return false;
+                  const available = isTimeSlotAvailable(appointments, appointmentForm.date, time, appointmentForm.duration, scheduleBlocks);
+                  return available;
+                }).length === 0 && (
+                <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700">
+                    No hay horarios disponibles para esta fecha y duración. Intenta con otra duración o fecha.
+                  </p>
+                </div>
+              )}
             </div>
           )}
+
+          {/* Selector de sucursal */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Sucursal / Ubicación
+            </label>
+            {isLoadingLocations ? (
+              <div className="flex items-center justify-center p-3 border-2 border-slate-200 rounded-lg">
+                <Loader className="w-4 h-4 animate-spin text-slate-400 mr-2" />
+                <span className="text-sm text-slate-500">Cargando sucursales...</span>
+              </div>
+            ) : locations && locations.length > 0 ? (
+              <select
+                value={appointmentForm.locationId || ''}
+                onChange={(e) => handleFormChange({ locationId: e.target.value ? parseInt(e.target.value) : undefined })}
+                disabled={isCreating}
+                className="w-full p-2 sm:p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
+              >
+                <option value="">Seleccionar sucursal (opcional)</option>
+                {locations.filter(loc => loc.is_active).map((location) => (
+                  <option key={location.id} value={location.id}>
+                    {location.name} - {location.city}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                <MapPin className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-700">
+                  No hay sucursales configuradas. Puedes agregar sucursales en Configuración.
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* Tratamiento - Input más compacto */}
           <div>

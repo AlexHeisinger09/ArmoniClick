@@ -27,7 +27,6 @@ export const LocationsTab: React.FC<LocationsTabProps> = ({ showMessage }) => {
     name: "",
     address: "",
     city: "",
-    google_calendar_id: "",
     is_active: true,
   });
 
@@ -38,7 +37,6 @@ export const LocationsTab: React.FC<LocationsTabProps> = ({ showMessage }) => {
         name: location.name,
         address: location.address,
         city: location.city,
-        google_calendar_id: location.google_calendar_id || "",
         is_active: location.is_active,
       });
     } else {
@@ -47,7 +45,6 @@ export const LocationsTab: React.FC<LocationsTabProps> = ({ showMessage }) => {
         name: "",
         address: "",
         city: "",
-        google_calendar_id: "",
         is_active: true,
       });
     }
@@ -61,7 +58,6 @@ export const LocationsTab: React.FC<LocationsTabProps> = ({ showMessage }) => {
       name: "",
       address: "",
       city: "",
-      google_calendar_id: "",
       is_active: true,
     });
   };
@@ -80,7 +76,6 @@ export const LocationsTab: React.FC<LocationsTabProps> = ({ showMessage }) => {
           name: formData.name.trim(),
           address: formData.address.trim(),
           city: formData.city.trim(),
-          google_calendar_id: formData.google_calendar_id?.trim() || null,
           is_active: formData.is_active,
         };
         await updateLocationMutation.mutateAsync({
@@ -93,7 +88,6 @@ export const LocationsTab: React.FC<LocationsTabProps> = ({ showMessage }) => {
           name: formData.name.trim(),
           address: formData.address.trim(),
           city: formData.city.trim(),
-          google_calendar_id: formData.google_calendar_id?.trim() || null,
           is_active: formData.is_active,
         });
         showMessage("Ubicación creada correctamente", "success");
@@ -167,46 +161,28 @@ export const LocationsTab: React.FC<LocationsTabProps> = ({ showMessage }) => {
           </button>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-2">
           {locations.map((location) => (
             <div
               key={location.id}
-              className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow"
+              className="bg-white border border-slate-200 rounded-lg p-3 hover:border-cyan-300 hover:shadow-sm transition-all"
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-cyan-500 flex-shrink-0" />
-                  <h4 className="font-semibold text-slate-700">{location.name}</h4>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <MapPin className="w-4 h-4 text-cyan-500 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-slate-700 text-sm truncate">
+                      {location.name}
+                    </h4>
+                    <p className="text-xs text-slate-500 truncate">
+                      {location.address}, {location.city}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleOpenModal(location)}
-                    className="p-1.5 text-slate-400 hover:text-cyan-500 hover:bg-cyan-50 rounded-lg transition-colors"
-                    title="Editar"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteClick(location)}
-                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Eliminar"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
 
-              <div className="space-y-2 text-sm">
-                <p className="text-slate-600">{location.address}</p>
-                <p className="text-slate-500">{location.city}</p>
-                {location.google_calendar_id && (
-                  <p className="text-xs text-slate-400 font-mono truncate">
-                    Calendar: {location.google_calendar_id}
-                  </p>
-                )}
-                <div className="pt-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <span
-                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                    className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
                       location.is_active
                         ? "bg-green-50 text-green-700"
                         : "bg-slate-100 text-slate-600"
@@ -214,6 +190,20 @@ export const LocationsTab: React.FC<LocationsTabProps> = ({ showMessage }) => {
                   >
                     {location.is_active ? "Activa" : "Inactiva"}
                   </span>
+                  <button
+                    onClick={() => handleOpenModal(location)}
+                    className="p-1.5 text-slate-400 hover:text-cyan-500 hover:bg-cyan-50 rounded transition-colors"
+                    title="Editar"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteClick(location)}
+                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                    title="Eliminar"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -285,24 +275,6 @@ export const LocationsTab: React.FC<LocationsTabProps> = ({ showMessage }) => {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   placeholder="Ej: Santiago"
                   required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  ID de Google Calendar (opcional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.google_calendar_id || ""}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      google_calendar_id: e.target.value,
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  placeholder="Para integración futura"
                 />
               </div>
 

@@ -134,10 +134,18 @@ const BudgetPage: React.FC = () => {
             confirmation.close();
         }
 
+        // Limpiar el formulario
+        setSelectedBudget(null);
+        setItems([]);
+        setBudgetType(BUDGET_TYPE.ODONTOLOGICO);
+        setHasUnsavedChanges(false);
+        setBudgetSavedSuccessfully(false);
+
+        // Navegar a presupuestos manteniendo el paciente seleccionado
         if (selectedPatient) {
-            navigate(`/patient/${selectedPatient.id}?tab=budget`);
+            navigate(`/dashboard/presupuestos?patientId=${selectedPatient.id}`);
         } else {
-            navigate('/patients');
+            navigate('/dashboard/presupuestos');
         }
     };
 

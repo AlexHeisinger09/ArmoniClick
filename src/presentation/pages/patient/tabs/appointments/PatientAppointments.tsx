@@ -19,6 +19,7 @@ interface PatientAppointmentForm {
   service: string;
   description: string;
   duration: number;
+  locationId?: number;
 }
 
 interface PatientAppointmentsProps {
@@ -119,6 +120,7 @@ const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patient }) =>
       const backendData = AppointmentMapper.fromCalendarFormToBackendRequest({
         patient: `${patient.nombres} ${patient.apellidos}`,
         patientId: patient.id,
+        locationId: appointmentData.locationId,
         service: appointmentData.service,
         description: appointmentData.description,
         time: appointmentData.time,
@@ -132,7 +134,7 @@ const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patient }) =>
 
       await createAppointmentMutation.mutateAsync(backendData);
       setShowNewAppointmentModal(false);
-      
+
       // Refrescar las citas después de crear una nueva
       refetch();
     } catch (error) {
@@ -312,64 +314,64 @@ const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patient }) =>
       </div>
 
       {/* Lista de citas */}
-      <div className="space-y-4">
+      <div className="space-y-2.5">
         {sortedAppointments.map((appointment) => {
           const statusConfig = getStatusConfig(appointment.status);
           const appointmentDate = new Date(appointment.appointmentDate);
           const isUpcoming = appointmentDate > new Date();
-          
+
           return (
-            <div 
-              key={appointment.id} 
-              className={`border-2 rounded-xl p-4 transition-colors hover:shadow-md ${
-                isUpcoming 
-                  ? 'border-cyan-200 bg-gradient-to-r from-cyan-50 to-blue-50' 
+            <div
+              key={appointment.id}
+              className={`border-2 rounded-lg p-3 transition-colors hover:shadow-md ${
+                isUpcoming
+                  ? 'border-cyan-200 bg-gradient-to-r from-cyan-50 to-blue-50'
                   : 'border-slate-200 hover:bg-slate-50'
               }`}
             >
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex-1">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 mb-2">
-                    <h4 className="font-semibold text-slate-800 text-lg">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 mb-1.5">
+                    <h4 className="font-semibold text-slate-800 text-base">
                       {appointment.title}
                     </h4>
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border mt-2 sm:mt-0 self-start ${statusConfig.color}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border mt-1.5 sm:mt-0 self-start ${statusConfig.color}`}>
                       <span className="mr-1">{statusConfig.icon}</span>
                       {statusConfig.label}
                     </span>
                   </div>
-                  
-                  <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-4 text-slate-600 mb-3">
+
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-1.5 sm:gap-3 text-slate-600 mb-2">
                     <div className="flex items-center">
-                      <Calendar className="w-4 h-4 mr-2 text-cyan-500" />
-                      <span className="font-medium text-sm sm:text-base">{formatDate(appointment.appointmentDate)}</span>
+                      <Calendar className="w-3.5 h-3.5 mr-1.5 text-cyan-500" />
+                      <span className="font-medium text-xs sm:text-sm">{formatDate(appointment.appointmentDate)}</span>
                     </div>
                     <div className="flex items-center">
-                      <Clock className="w-4 h-4 mr-2 text-cyan-500" />
-                      <span className="font-medium text-sm sm:text-base">{formatTime(appointment.appointmentDate)}</span>
-                      <span className="ml-1 text-slate-500 text-sm">({appointment.duration} min)</span>
+                      <Clock className="w-3.5 h-3.5 mr-1.5 text-cyan-500" />
+                      <span className="font-medium text-xs sm:text-sm">{formatTime(appointment.appointmentDate)}</span>
+                      <span className="ml-1 text-slate-500 text-xs">({appointment.duration} min)</span>
                     </div>
                   </div>
-                  
+
                   {appointment.notes && (
-                    <div className="mt-3 p-3 bg-slate-50 rounded-lg">
-                      <p className="text-sm text-slate-600">
+                    <div className="mt-2 p-2 bg-slate-50 rounded-md">
+                      <p className="text-xs text-slate-600">
                         <span className="font-medium text-slate-700">Notas:</span> {appointment.notes}
                       </p>
                     </div>
                   )}
-                  
+
                   {appointment.description && (
-                    <div className="mt-2 p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-blue-700">
+                    <div className="mt-1.5 p-2 bg-blue-50 rounded-md">
+                      <p className="text-xs text-blue-700">
                         <span className="font-medium">Descripción:</span> {appointment.description}
                       </p>
                     </div>
                   )}
                 </div>
-                
-                <button className="mt-4 sm:mt-0 sm:ml-4 p-2 hover:bg-slate-100 rounded-lg transition-colors self-start">
-                  <ChevronRight className="w-5 h-5 text-slate-400" />
+
+                <button className="mt-3 sm:mt-0 sm:ml-3 p-1.5 hover:bg-slate-100 rounded-lg transition-colors self-start">
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
                 </button>
               </div>
             </div>
