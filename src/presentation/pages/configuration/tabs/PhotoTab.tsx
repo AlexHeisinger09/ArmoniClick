@@ -553,14 +553,14 @@ const PhotoTab: React.FC<PhotoTabProps> = ({ showMessage }) => {
           Firma Digital
         </h3>
 
-        <div className="flex items-start space-x-6">
+        <div className="space-y-4">
           {/* Área de firma */}
-          <div className="w-48 h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+          <div className="w-full max-w-sm h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 mx-auto sm:mx-0">
             {userData?.signature ? (
               <img
                 src={userData.signature}
                 alt="Firma digital"
-                className="max-w-full max-h-full object-contain"
+                className="max-w-full max-h-full object-contain p-2"
               />
             ) : (
               <div className="text-center">
@@ -570,67 +570,65 @@ const PhotoTab: React.FC<PhotoTabProps> = ({ showMessage }) => {
             )}
           </div>
 
-          {/* Contenido de texto y controles */}
-          <div className="flex-1 space-y-4">
-            <div>
-              <h4 className="text-base font-medium text-gray-900 mb-1">
-                Administrar firma digital
-              </h4>
-              <p className="text-sm text-gray-500">
-                Puedes crear una firma dibujándola directamente o subir una imagen existente.
-              </p>
-              <p className="text-xs text-gray-400 mt-2">
-                Tamaño máximo: 2MB • Formatos: JPG, PNG, WebP
-              </p>
-            </div>
-
-            {/* Progreso de upload para firma */}
-            {isLoadingSignatureUpload && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Subiendo firma...</span>
-                  <span>{signatureUploadProgress}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-cyan-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${signatureUploadProgress}%` }}
-                  ></div>
-                </div>
-              </div>
-            )}
-
-            {/* Botones de acción para firma */}
-            {!isLoadingSignatureUpload && (
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setShowSignatureCanvas(true)}
-                  className="flex items-center px-3 py-2 text-sm bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors"
-                >
-                  <PenTool className="w-4 h-4 mr-2" />
-                  Crear Firma
-                </button>
-
-                <button
-                  onClick={() => signatureFileInputRef.current?.click()}
-                  className="flex items-center px-3 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Subir Imagen
-                </button>
-
-                {userData?.signature && (
-                  <button
-                    onClick={handleDeleteSignature}
-                    className="flex items-center px-3 py-2 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Eliminar
-                  </button>
-                )}
-              </div>
-            )}
+          {/* Contenido de texto */}
+          <div>
+            <h4 className="text-base font-medium text-gray-900 mb-1">
+              Administrar firma digital
+            </h4>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Puedes crear una firma dibujándola directamente o subir una imagen existente.
+            </p>
+            <p className="text-xs text-gray-400 mt-2">
+              Tamaño máximo: 2MB • Formatos: JPG, PNG, WebP
+            </p>
           </div>
+
+          {/* Progreso de upload para firma */}
+          {isLoadingSignatureUpload && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Subiendo firma...</span>
+                <span>{signatureUploadProgress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-cyan-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${signatureUploadProgress}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
+
+          {/* Botones de acción para firma */}
+          {!isLoadingSignatureUpload && (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={() => setShowSignatureCanvas(true)}
+                className="flex items-center justify-center px-4 py-2.5 text-sm bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors"
+              >
+                <PenTool className="w-4 h-4 mr-2" />
+                Crear Firma
+              </button>
+
+              <button
+                onClick={() => signatureFileInputRef.current?.click()}
+                className="flex items-center justify-center px-4 py-2.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Subir Imagen
+              </button>
+
+              {userData?.signature && (
+                <button
+                  onClick={handleDeleteSignature}
+                  className="flex items-center justify-center px-4 py-2.5 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Eliminar
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Input file oculto para firma */}
