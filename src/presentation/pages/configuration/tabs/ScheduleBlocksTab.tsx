@@ -284,19 +284,19 @@ const ScheduleBlocksTab: React.FC<ScheduleBlocksTabProps> = ({ showMessage }) =>
             </p>
 
             {/* Link Display */}
-            <div className="flex gap-2 mb-4">
-              <div className="flex-1 bg-white border border-slate-300 rounded-lg px-4 py-2.5 flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 mb-4">
+              <div className="flex-1 bg-white border border-slate-300 rounded-lg px-4 py-2.5 flex items-center gap-2 min-w-0">
                 <input
                   type="text"
                   value={publicLink || 'Selecciona duraciones y genera el link'}
                   readOnly
-                  className="flex-1 bg-transparent outline-none text-sm text-slate-700 font-mono"
+                  className="flex-1 bg-transparent outline-none text-sm text-slate-700 font-mono truncate"
                 />
               </div>
               <button
                 onClick={handleCopyLink}
                 disabled={isGeneratingLink}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors whitespace-nowrap ${
                   copiedLink
                     ? 'bg-green-500 text-white'
                     : isGeneratingLink
