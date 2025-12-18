@@ -11,7 +11,7 @@ export interface AppointmentEmailData {
   duration: number;
   notes?: string;
   confirmationToken?: string;
-  type: 'confirmation' | 'reminder';
+  type: 'confirmation' | 'reminder' | 'confirmation_doctor';
   location?: string;
 }
 
@@ -529,6 +529,242 @@ export class EmailTemplatesService {
                     <p>Copia y pega estos enlaces en tu navegador:</p>
                     <p><strong>Confirmar:</strong><br><a href="${confirmUrl}">${confirmUrl}</a></p>
                     <p style="margin-top: 10px;"><strong>Cancelar:</strong><br><a href="${cancelUrl}">${cancelUrl}</a></p>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>Este es un correo automático, por favor no responder directamente.</p>
+                <p>© ${new Date().getFullYear()} ArmoniClick - Sistema de Citas Médicas</p>
+                <p style="margin-top: 10px; color: #94a3b8; font-size: 11px;">www.armoniclick.cl</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    `;
+  }
+
+  // Template para confirmación de cita al doctor
+  static getDoctorConfirmationEmailTemplate(data: AppointmentEmailData): string {
+    const appointmentDateTime = new Date(`${data.appointmentDate}T${data.appointmentTime}`);
+    const formattedDate = appointmentDateTime.toLocaleDateString('es-CL', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    const formattedTime = appointmentDateTime.toLocaleTimeString('es-CL', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    return `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Nueva Cita Agendada</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                background-color: #f5f7fa;
+            }
+            .container {
+                max-width: 600px;
+                margin: 20px auto;
+                background: white;
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+            .header {
+                background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+                color: white;
+                text-align: center;
+                padding: 35px 20px 30px;
+            }
+            .logo {
+                max-width: 240px;
+                height: auto;
+                margin-bottom: 20px;
+                display: inline-block;
+            }
+            .header h1 {
+                font-size: 32px;
+                font-weight: 700;
+                margin-bottom: 12px;
+                margin-top: 0;
+                color: #ffffff;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            }
+            .header p {
+                font-size: 16px;
+                opacity: 1;
+                color: #ffffff;
+                font-weight: 500;
+            }
+            .content {
+                padding: 40px 30px;
+            }
+            .greeting {
+                font-size: 16px;
+                margin-bottom: 20px;
+                color: #0f172a;
+                line-height: 1.6;
+                font-weight: 500;
+            }
+            .greeting strong {
+                color: #059669;
+            }
+            .appointment-card {
+                background: #d1fae5;
+                border-radius: 8px;
+                padding: 28px;
+                margin: 30px 0;
+                border-left: 5px solid #059669;
+            }
+            .appointment-detail {
+                display: flex;
+                margin-bottom: 18px;
+                align-items: flex-start;
+            }
+            .appointment-detail:last-child {
+                margin-bottom: 0;
+            }
+            .detail-icon {
+                font-size: 20px;
+                margin-right: 14px;
+                min-width: 24px;
+            }
+            .detail-content {
+                flex: 1;
+            }
+            .detail-label {
+                font-weight: 700;
+                color: #064e3b;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.8px;
+                display: block;
+                margin-bottom: 4px;
+            }
+            .detail-value {
+                color: #0f172a;
+                font-weight: 600;
+                font-size: 16px;
+            }
+            .info-box {
+                background: #ecfdf5;
+                border-left: 4px solid #059669;
+                padding: 18px;
+                margin: 25px 0;
+                border-radius: 4px;
+            }
+            .info-box p {
+                margin: 10px 0;
+                color: #064e3b;
+                font-size: 14px;
+                font-weight: 500;
+            }
+            .footer {
+                background: #f8fafc;
+                padding: 25px 30px;
+                text-align: center;
+                border-top: 1px solid #e2e8f0;
+            }
+            .footer p {
+                color: #64748b;
+                font-size: 12px;
+                margin: 5px 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <img src="https://res.cloudinary.com/dafeskzbp/image/upload/v1765825652/letras_bydy7j.png" alt="ArmoniClick Logo" class="logo">
+                <h1>📅 Nueva Cita Agendada</h1>
+                <p>Un paciente ha agendado una cita contigo</p>
+            </div>
+
+            <div class="content">
+                <div class="greeting">
+                    Dr./Dra. <strong>${data.doctorName}</strong>,
+                    <br><br>
+                    Se ha registrado una nueva cita en tu agenda. A continuación los detalles:
+                </div>
+
+                <div class="appointment-card">
+                    <div class="appointment-detail">
+                        <div class="detail-icon">👤</div>
+                        <div class="detail-content">
+                            <span class="detail-label">Paciente</span>
+                            <span class="detail-value">${data.patientName}</span>
+                        </div>
+                    </div>
+                    <div class="appointment-detail">
+                        <div class="detail-icon">✉️</div>
+                        <div class="detail-content">
+                            <span class="detail-label">Email del Paciente</span>
+                            <span class="detail-value">${data.patientEmail}</span>
+                        </div>
+                    </div>
+                    <div class="appointment-detail">
+                        <div class="detail-icon">📅</div>
+                        <div class="detail-content">
+                            <span class="detail-label">Fecha</span>
+                            <span class="detail-value">${formattedDate}</span>
+                        </div>
+                    </div>
+                    <div class="appointment-detail">
+                        <div class="detail-icon">⏰</div>
+                        <div class="detail-content">
+                            <span class="detail-label">Hora</span>
+                            <span class="detail-value">${formattedTime}</span>
+                        </div>
+                    </div>
+                    <div class="appointment-detail">
+                        <div class="detail-icon">💼</div>
+                        <div class="detail-content">
+                            <span class="detail-label">Tratamiento</span>
+                            <span class="detail-value">${data.service}</span>
+                        </div>
+                    </div>
+                    <div class="appointment-detail">
+                        <div class="detail-icon">⏱️</div>
+                        <div class="detail-content">
+                            <span class="detail-label">Duración</span>
+                            <span class="detail-value">${data.duration} minutos</span>
+                        </div>
+                    </div>
+                    ${data.location ? `
+                    <div class="appointment-detail">
+                        <div class="detail-icon">📍</div>
+                        <div class="detail-content">
+                            <span class="detail-label">Ubicación</span>
+                            <span class="detail-value">${data.location}</span>
+                        </div>
+                    </div>
+                    ` : ''}
+                    ${data.notes ? `
+                    <div class="appointment-detail">
+                        <div class="detail-icon">📝</div>
+                        <div class="detail-content">
+                            <span class="detail-label">Notas</span>
+                            <span class="detail-value">${data.notes}</span>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+
+                <div class="info-box">
+                    <p><strong>💡 Recordatorio:</strong></p>
+                    <p>• El paciente recibirá un recordatorio automático 24 horas antes de la cita</p>
+                    <p>• Puedes ver y gestionar tus citas desde el panel de administración</p>
+                    <p>• Si necesitas reprogramar, contacta al paciente con anticipación</p>
                 </div>
             </div>
 

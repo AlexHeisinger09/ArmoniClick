@@ -10,6 +10,7 @@ export interface NotificationData {
   patientName: string;
   patientEmail: string;
   doctorName: string;
+  doctorEmail?: string;
   appointmentDate: Date;
   service: string;
   duration: number;
@@ -73,7 +74,7 @@ export class NotificationService {
           startDate: data.appointmentDate,
           endDate: endDate,
           organizerName: data.doctorName,
-          organizerEmail: envs.MAILER_EMAIL,
+          organizerEmail: data.doctorEmail || envs.MAILER_EMAIL,
           attendeeName: data.patientName,
           attendeeEmail: data.patientEmail
         });
@@ -174,7 +175,7 @@ export class NotificationService {
         type: 'confirmation_doctor'
       };
 
-      const htmlContent = EmailTemplatesService.getConfirmationEmailTemplate(emailData);
+      const htmlContent = EmailTemplatesService.getDoctorConfirmationEmailTemplate(emailData);
 
       const emailSent = await this.emailService.sendEmail({
         from: envs.MAILER_EMAIL,

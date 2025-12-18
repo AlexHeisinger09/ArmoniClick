@@ -190,6 +190,7 @@ export class AppointmentService {
             patientName: appointmentDetails.patientName,
             patientEmail: appointmentDetails.patientEmail,
             doctorName: appointmentDetails.doctorName,
+            doctorEmail: appointmentDetails.doctorEmail,
             appointmentDate: appointment.appointmentDate,
             service: appointment.title,
             duration: appointment.duration || 60,
@@ -209,7 +210,8 @@ export class AppointmentService {
             service: appointment.title,
             duration: appointment.duration || 60,
             notes: appointment.notes || undefined,
-            confirmationToken: confirmationToken
+            confirmationToken: confirmationToken,
+            location: appointmentDetails.location
           });
         }
       } catch (emailError) {
