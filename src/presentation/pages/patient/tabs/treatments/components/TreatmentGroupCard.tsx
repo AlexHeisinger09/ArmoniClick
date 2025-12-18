@@ -143,14 +143,14 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
                 <div className="flex flex-wrap items-center gap-2 mt-1">
 
                   {/* Badge de estado */}
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${statusInfo.color}`}>
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border whitespace-nowrap ${statusInfo.color}`}>
                     {statusInfo.icon}
-                    <span className="ml-1">{statusInfo.label}</span>
+                    {statusInfo.label}
                   </span>
 
                   {/* Indicador de sesiones */}
                   {totalTreatments > 0 && (
-                    <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full border border-slate-200">
+                    <span className="inline-flex items-center text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full border border-slate-200 whitespace-nowrap">
                       {totalTreatments} {totalTreatments === 1 ? 'sesión' : 'sesiones'}
                     </span>
                   )}
@@ -259,13 +259,13 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       {/* Número de sesión y fecha */}
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-1 rounded">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span className="inline-flex items-center text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-1 rounded whitespace-nowrap">
                           Sesión {index + 1}
                         </span>
-                        <div className="flex items-center gap-1 text-xs text-slate-600">
-                          <Calendar className="w-3 h-3" />
-                          {formatDate(treatment.fecha_control)} - {formatTime(treatment.hora_control)}
+                        <div className="flex items-center gap-1 text-xs text-slate-600 whitespace-nowrap">
+                          <Calendar className="w-3 h-3 flex-shrink-0" />
+                          <span>{formatDate(treatment.fecha_control)} - {formatTime(treatment.hora_control)}</span>
                         </div>
                       </div>
 
