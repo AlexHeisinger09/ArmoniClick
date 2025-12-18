@@ -78,6 +78,12 @@ export class AppointmentMapper {
       notes: form.description || undefined
     };
 
+    // Agregar sucursal si está seleccionada
+    if (form.locationId) {
+      request.locationId = form.locationId;
+      console.log('🔍 Creating appointment for location:', form.locationId);
+    }
+
     // Si es paciente registrado
     if (form.patientId) {
       request.patientId = form.patientId;

@@ -4,6 +4,7 @@ import { db } from "../data/db";
 import { appointmentsTable } from "../data/schemas/appointment.schema";
 import { usersTable } from "../data/schemas/user.schema";
 import { patientsTable } from "../data/schemas/patient.schema";
+import { locationsTable } from "../data/schemas/location.schema";
 import { TokenService } from "./token.service";
 import { NotificationService } from "./notification.service";
 
@@ -11,6 +12,7 @@ import { NotificationService } from "./notification.service";
 export interface CreateAppointmentData {
   doctorId: number;
   patientId?: number | null;
+  locationId?: number | null;
   guestName?: string | null;
   guestEmail?: string | null;
   guestPhone?: string | null;
@@ -140,6 +142,7 @@ export class AppointmentService {
         .values({
           doctorId: data.doctorId,
           patientId: data.patientId || null,
+          locationId: data.locationId || null,
           guestName: data.guestName || null,
           guestEmail: data.guestEmail || null,
           guestPhone: data.guestPhone || null,
@@ -181,7 +184,7 @@ export class AppointmentService {
             emailMinutes: appointment.appointmentDate.getMinutes()
           });
 
-          // 5. Enviar email de confirmación al paciente
+          // 5. Enviar email de confirmación al paciente con archivo .ics
           await this.notificationService.sendAppointmentConfirmation({
             appointmentId: appointment.id,
             patientName: appointmentDetails.patientName,
@@ -191,7 +194,8 @@ export class AppointmentService {
             service: appointment.title,
             duration: appointment.duration || 60,
             notes: appointment.notes || undefined,
-            confirmationToken: confirmationToken
+            confirmationToken: confirmationToken,
+            location: appointmentDetails.location
           });
 
           // 6. Enviar email de confirmación al doctor
@@ -243,11 +247,17 @@ export class AppointmentService {
           // Datos del doctor
           doctorName: usersTable.name,
           doctorLastName: usersTable.lastName,
-          doctorEmail: usersTable.email
+          doctorEmail: usersTable.email,
+
+          // Datos de la sucursal/ubicación
+          locationName: locationsTable.name,
+          locationAddress: locationsTable.address,
+          locationCity: locationsTable.city
         })
         .from(appointmentsTable)
         .leftJoin(patientsTable, eq(appointmentsTable.patientId, patientsTable.id))
         .innerJoin(usersTable, eq(appointmentsTable.doctorId, usersTable.id))
+        .leftJoin(locationsTable, eq(appointmentsTable.locationId, locationsTable.id))
         .where(eq(appointmentsTable.id, appointmentId))
         .limit(1);
 
@@ -269,11 +279,17 @@ export class AppointmentService {
         return null;
       }
 
+      // Construir dirección completa de la ubicación
+      const location = appointment.locationName
+        ? `${appointment.locationName}, ${appointment.locationAddress}, ${appointment.locationCity}`
+        : undefined;
+
       return {
         patientName,
         patientEmail,
         doctorName: `${appointment.doctorName} ${appointment.doctorLastName || ''}`.trim(),
-        doctorEmail: appointment.doctorEmail
+        doctorEmail: appointment.doctorEmail,
+        location
       };
     } catch (error) {
       console.error('❌ Error getting appointment details for email:', error);

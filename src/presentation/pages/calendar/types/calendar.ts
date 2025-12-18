@@ -68,8 +68,9 @@ export interface NewAppointmentForm {
   time: string;
   duration: number;
   date: Date | null;
-  
+
   patientId?: number;
+  locationId?: number;
   guestName?: string;
   guestEmail?: string;
   guestPhone?: string;

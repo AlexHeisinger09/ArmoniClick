@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, User, UserPlus, Search, Clock, FileText, Mail, Phone, ChevronDown, Loader, AlertCircle } from 'lucide-react';
+import { X, User, UserPlus, Search, Clock, FileText, Mail, Phone, ChevronDown, Loader, AlertCircle, MapPin } from 'lucide-react';
 import { NewAppointmentForm, AppointmentsData } from '../types/calendar';
 import { getTimeSlotsForDuration } from '../constants/calendar';
 import { isTimeSlotAvailable, hasOverlap } from '../utils/calendar';
 import { usePatients } from '@/presentation/hooks/patients/usePatients';
+import { useLocations } from '@/presentation/hooks/locations/useLocations';
 import { ScheduleBlock } from '@/core/entities/ScheduleBlock';
 
 interface Patient {
@@ -55,6 +56,9 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   // Hook para obtener pacientes
   const { queryPatients } = usePatients();
   const patients = queryPatients.data?.patients || [];
+
+  // Hook para obtener sucursales
+  const { locations, isLoading: isLoadingLocations } = useLocations();
   
   // Filtrar pacientes basado en búsqueda
   const filteredPatients = useMemo(() => {
@@ -393,6 +397,40 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
                 className="w-full p-2 sm:p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
                 placeholder="Ej: Limpieza facial, Consulta general, Tratamiento..."
               />
+            </div>
+
+            {/* Selector de sucursal */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Sucursal / Ubicación
+              </label>
+              {isLoadingLocations ? (
+                <div className="flex items-center justify-center p-3 border-2 border-slate-200 rounded-lg">
+                  <Loader className="w-4 h-4 animate-spin text-slate-400 mr-2" />
+                  <span className="text-sm text-slate-500">Cargando sucursales...</span>
+                </div>
+              ) : locations && locations.length > 0 ? (
+                <select
+                  value={newAppointment.locationId || ''}
+                  onChange={(e) => handleFormChange({ locationId: e.target.value ? parseInt(e.target.value) : undefined })}
+                  disabled={isCreating}
+                  className="w-full p-2 sm:p-2.5 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all text-sm disabled:opacity-50"
+                >
+                  <option value="">Seleccionar sucursal (opcional)</option>
+                  {locations.filter(loc => loc.is_active).map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name} - {location.city}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700">
+                    No hay sucursales configuradas. Puedes agregar sucursales en Configuración.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Selector de duración */}

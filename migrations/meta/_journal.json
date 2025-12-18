@@ -57,6 +57,13 @@
       "when": 1766025859032,
       "tag": "0007_messy_the_spike",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1766057700447,
+      "tag": "0008_strong_nightshade",
+      "breakpoints": true
     }
   ]
 }

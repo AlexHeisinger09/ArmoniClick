@@ -2,6 +2,7 @@
 import { EmailService } from './email.service';
 import { EmailTemplatesService, AppointmentEmailData } from './email-templates.service';
 import { TokenService } from './token.service';
+import { ICSService } from './ics.service';
 import { envs } from '../config/envs';
 
 export interface NotificationData {
@@ -14,6 +15,7 @@ export interface NotificationData {
   duration: number;
   notes?: string;
   confirmationToken?: string;
+  location?: string;
 }
 
 export class NotificationService {
@@ -32,6 +34,13 @@ export class NotificationService {
   // Enviar confirmación de cita creada
   async sendAppointmentConfirmation(data: NotificationData): Promise<boolean> {
     try {
+      console.log('📧 [NotificationService] Starting to send appointment confirmation...', {
+        patientEmail: data.patientEmail,
+        service: data.service,
+        appointmentDate: data.appointmentDate,
+        location: data.location
+      });
+
       const emailData: AppointmentEmailData = {
         patientName: data.patientName,
         patientEmail: data.patientEmail,
@@ -45,18 +54,66 @@ export class NotificationService {
       };
 
       const htmlContent = EmailTemplatesService.getConfirmationEmailTemplate(emailData);
+      console.log('✅ [NotificationService] HTML template generated');
 
-      const emailSent = await this.emailService.sendEmail({
-        from: envs.MAILER_EMAIL,
-        to: data.patientEmail,
-        subject: '✅ Cita Confirmada - Sistema de Citas',
-        htmlBody: htmlContent
-      });
+      // Generar archivo .ics para agregar al calendario
+      try {
+        const endDate = new Date(data.appointmentDate.getTime() + data.duration * 60000);
+        console.log('📅 [NotificationService] Generating .ics file...', {
+          startDate: data.appointmentDate.toISOString(),
+          endDate: endDate.toISOString(),
+          location: data.location
+        });
 
-      console.log(`📧 Confirmation email sent to ${data.patientEmail}:`, emailSent);
-      return emailSent;
+        const icsBuffer = ICSService.generateICSBuffer({
+          summary: `${data.service} - ${data.doctorName}`,
+          description: data.notes || `Cita médica con ${data.doctorName}`,
+          location: data.location || '',
+          startDate: data.appointmentDate,
+          endDate: endDate,
+          organizerName: data.doctorName,
+          organizerEmail: envs.MAILER_EMAIL,
+          attendeeName: data.patientName,
+          attendeeEmail: data.patientEmail
+        });
+
+        console.log('✅ [NotificationService] .ics buffer generated, size:', icsBuffer.length, 'bytes');
+
+        const icsFilename = ICSService.generateFilename(data.service, data.appointmentDate);
+        console.log('✅ [NotificationService] .ics filename:', icsFilename);
+
+        console.log('📤 [NotificationService] Sending email with .ics attachment...');
+        const emailSent = await this.emailService.sendEmail({
+          from: envs.MAILER_EMAIL,
+          to: data.patientEmail,
+          subject: '✅ Cita Confirmada - Sistema de Citas',
+          htmlBody: htmlContent,
+          attachments: [
+            {
+              filename: icsFilename,
+              content: icsBuffer,
+              contentType: 'text/calendar; charset=utf-8; method=REQUEST'
+            }
+          ]
+        });
+
+        console.log(`✅ [NotificationService] Confirmation email with .ics sent to ${data.patientEmail}:`, emailSent);
+        return emailSent;
+      } catch (icsError) {
+        console.error('❌ [NotificationService] Error generating .ics file:', icsError);
+        // Si falla el .ics, intentar enviar el email sin archivo adjunto
+        console.log('⚠️ [NotificationService] Attempting to send email without .ics attachment...');
+        const emailSent = await this.emailService.sendEmail({
+          from: envs.MAILER_EMAIL,
+          to: data.patientEmail,
+          subject: '✅ Cita Confirmada - Sistema de Citas',
+          htmlBody: htmlContent
+        });
+        console.log(`📧 [NotificationService] Confirmation email sent (without .ics) to ${data.patientEmail}:`, emailSent);
+        return emailSent;
+      }
     } catch (error) {
-      console.error('❌ Error sending confirmation email:', error);
+      console.error('❌ [NotificationService] Error sending confirmation email:', error);
       return false;
     }
   }

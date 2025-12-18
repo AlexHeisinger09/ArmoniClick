@@ -1,0 +1,2 @@
+ALTER TABLE "appointments" ADD COLUMN "location_id" integer;--> statement-breakpoint
+ALTER TABLE "appointments" ADD CONSTRAINT "appointments_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;

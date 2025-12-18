@@ -35,6 +35,7 @@ export interface AppointmentResponse {
 
 export interface CreateAppointmentRequest {
   patientId?: number;
+  locationId?: number;
   guestName?: string;
   guestEmail?: string;
   guestPhone?: string;
