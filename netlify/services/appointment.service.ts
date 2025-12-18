@@ -281,9 +281,9 @@ export class AppointmentService {
         return null;
       }
 
-      // Construir dirección completa de la ubicación
-      const location = appointment.locationName
-        ? `${appointment.locationName}, ${appointment.locationAddress}, ${appointment.locationCity}`
+      // Construir dirección completa de la ubicación (sin el nombre para que funcione con navegación)
+      const location = appointment.locationAddress
+        ? `${appointment.locationAddress}, ${appointment.locationCity}`
         : undefined;
 
       return {
