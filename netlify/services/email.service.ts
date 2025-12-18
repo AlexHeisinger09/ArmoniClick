@@ -56,21 +56,50 @@ export class EmailService {
   }: SendMailOptions) {
     if (!this.postToProvider) return true;
 
+    // Convertir attachments al formato de nodemailer
+    const nodemailerAttachments = attachments.map(att => {
+      const attachment: any = {
+        filename: att.filename,
+      };
+
+      // Si tiene content (Buffer o string), usarlo
+      if (att.content) {
+        attachment.content = att.content;
+      }
+      // Si tiene path, usarlo
+      else if (att.path) {
+        attachment.path = att.path;
+      }
+
+      // Agregar contentType si existe
+      if (att.contentType) {
+        attachment.contentType = att.contentType;
+      }
+
+      return attachment;
+    });
+
     const mailOptions = {
       from,
       to,
       subject,
       html: htmlBody,
-      attachments,
+      attachments: nodemailerAttachments,
     };
 
     try {
+      console.log('📤 [EmailService] Sending email...', {
+        to,
+        subject,
+        attachmentsCount: nodemailerAttachments.length
+      });
+
       const sentInformation = await this.transporter.sendMail(mailOptions);
-      // console.log(sentInformation);
+      console.log('✅ [EmailService] Email sent successfully:', sentInformation.messageId);
 
       return true;
     } catch (error) {
-      // console.log(error);
+      console.error('❌ [EmailService] Error sending email:', error);
       return false;
     }
   }
