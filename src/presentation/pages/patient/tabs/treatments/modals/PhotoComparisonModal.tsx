@@ -134,7 +134,7 @@ const PhotoComparisonModal: React.FC<PhotoComparisonModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           if (viewMode !== 'gallery') {
@@ -145,34 +145,37 @@ const PhotoComparisonModal: React.FC<PhotoComparisonModalProps> = ({
         }
       }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-7xl max-h-[98vh] sm:max-h-[95vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-cyan-500 to-cyan-600 px-6 py-4 flex items-center justify-between flex-shrink-0">
-          <div>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <ImageIcon className="w-6 h-6" />
-              {viewMode === 'gallery' && 'Galería de Fotos'}
-              {viewMode === 'viewer' && 'Visualizador de Fotos'}
-              {viewMode === 'compare' && 'Comparación de Fotos'}
+        <div className="bg-gradient-to-r from-cyan-500 to-cyan-600 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base sm:text-xl font-bold text-white flex items-center gap-1.5 sm:gap-2">
+              <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
+              <span className="truncate">
+                {viewMode === 'gallery' && 'Galería'}
+                {viewMode === 'viewer' && 'Visualizador'}
+                {viewMode === 'compare' && 'Comparación'}
+              </span>
             </h2>
-            <p className="text-cyan-100 text-sm mt-1">
-              {serviceName} {viewMode !== 'gallery' && <span className="text-xs opacity-75">(ESC para volver)</span>}
+            <p className="text-cyan-100 text-xs sm:text-sm mt-0.5 sm:mt-1 truncate">
+              {serviceName}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 ml-2">
             {viewMode !== 'gallery' && (
               <button
                 onClick={() => setViewMode('gallery')}
-                className="text-white hover:bg-white/20 rounded-lg px-3 py-1.5 transition-colors text-sm font-medium"
+                className="text-white hover:bg-white/20 rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 transition-colors text-xs sm:text-sm font-medium"
               >
-                ← Galería
+                <span className="hidden sm:inline">← Galería</span>
+                <ChevronLeft className="w-4 h-4 sm:hidden" />
               </button>
             )}
             <button
               onClick={handleClose}
-              className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+              className="text-white hover:bg-white/20 rounded-full p-1.5 sm:p-2 transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
@@ -189,8 +192,8 @@ const PhotoComparisonModal: React.FC<PhotoComparisonModalProps> = ({
             <>
               {/* Vista de Galería */}
               {viewMode === 'gallery' && (
-                <div className="p-6">
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <div className="p-3 sm:p-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                     {allPhotos.map((photo, index) => (
                       <div
                         key={index}
@@ -232,13 +235,13 @@ const PhotoComparisonModal: React.FC<PhotoComparisonModalProps> = ({
                         </div>
 
                         {/* Info y botón de selección */}
-                        <div className="p-2 bg-slate-50 flex items-center justify-between gap-2">
+                        <div className="p-1.5 sm:p-2 bg-slate-50 flex items-center justify-between gap-1.5 sm:gap-2">
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-slate-700 truncate">
+                            <p className="text-[10px] sm:text-xs font-semibold text-slate-700 truncate">
                               Sesión {photo.sessionIndex}
                             </p>
-                            <p className="text-xs text-slate-600 truncate">{photo.sessionDate}</p>
-                            <p className="text-xs text-slate-500">{photo.photoLabel}</p>
+                            <p className="text-[10px] sm:text-xs text-slate-600 truncate">{photo.sessionDate}</p>
+                            <p className="text-[9px] sm:text-xs text-slate-500 truncate">{photo.photoLabel}</p>
                           </div>
 
                           {/* Botón de seleccionar */}
@@ -247,14 +250,14 @@ const PhotoComparisonModal: React.FC<PhotoComparisonModalProps> = ({
                               e.stopPropagation();
                               handleSelectPhoto(photo.url);
                             }}
-                            className={`flex-shrink-0 p-1.5 rounded-lg transition-all ${
+                            className={`flex-shrink-0 p-1.5 sm:p-2 rounded-lg transition-all touch-manipulation ${
                               selectedPhotos.includes(photo.url)
                                 ? 'bg-cyan-500 text-white hover:bg-cyan-600'
                                 : 'bg-slate-200 text-slate-600 hover:bg-cyan-100 hover:text-cyan-700'
                             }`}
                             title={selectedPhotos.includes(photo.url) ? 'Deseleccionar' : 'Seleccionar para comparar'}
                           >
-                            <Check className="w-4 h-4" />
+                            <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           </button>
                         </div>
                       </div>
@@ -262,15 +265,15 @@ const PhotoComparisonModal: React.FC<PhotoComparisonModalProps> = ({
                   </div>
 
                   {/* Instrucciones */}
-                  <div className="mt-6 p-4 bg-cyan-50 border border-cyan-200 rounded-lg">
-                    <p className="text-sm text-cyan-900 font-medium mb-2">
+                  <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-cyan-50 border border-cyan-200 rounded-lg">
+                    <p className="text-xs sm:text-sm text-cyan-900 font-medium mb-2">
                       💡 Instrucciones:
                     </p>
-                    <ul className="text-sm text-cyan-800 space-y-1">
-                      <li>• <strong>Click en la imagen</strong> para verla en pantalla completa</li>
-                      <li>• <strong>Click en el botón ✓</strong> para seleccionar hasta 2 fotos para comparar</li>
-                      <li>• Selecciona 2 fotos y usa el botón <strong>"Comparar"</strong> para verlas lado a lado</li>
-                      <li>• Presiona <strong>ESC</strong> o click fuera del modal para volver/cerrar</li>
+                    <ul className="text-xs sm:text-sm text-cyan-800 space-y-1">
+                      <li>• <strong>Toca la imagen</strong> para verla en pantalla completa</li>
+                      <li>• <strong>Toca el botón ✓</strong> para seleccionar hasta 2 fotos</li>
+                      <li>• Con 2 fotos seleccionadas usa <strong>"Comparar"</strong></li>
+                      <li className="hidden sm:list-item">• Presiona <strong>ESC</strong> o click fuera para volver/cerrar</li>
                     </ul>
                   </div>
                 </div>
@@ -280,7 +283,7 @@ const PhotoComparisonModal: React.FC<PhotoComparisonModalProps> = ({
               {viewMode === 'viewer' && currentPhoto && (
                 <div className="flex flex-col h-full">
                   <div
-                    className="flex-1 flex items-center justify-center bg-slate-900 p-8 relative"
+                    className="flex-1 flex items-center justify-center bg-slate-900 p-2 sm:p-8 relative"
                     onClick={(e) => {
                       if (e.target === e.currentTarget) {
                         setViewMode('gallery');
@@ -290,75 +293,67 @@ const PhotoComparisonModal: React.FC<PhotoComparisonModalProps> = ({
                     {/* Navegación */}
                     <button
                       onClick={() => handleNavigate('prev')}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white rounded-full p-3 transition-colors z-10"
+                      className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 active:bg-white/30 text-white rounded-full p-2 sm:p-3 transition-colors z-10 touch-manipulation"
                       title="Anterior (←)"
                     >
-                      <ChevronLeft className="w-6 h-6" />
+                      <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
 
                     <button
                       onClick={() => handleNavigate('next')}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white rounded-full p-3 transition-colors z-10"
+                      className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 active:bg-white/30 text-white rounded-full p-2 sm:p-3 transition-colors z-10 touch-manipulation"
                       title="Siguiente (→)"
                     >
-                      <ChevronRight className="w-6 h-6" />
+                      <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
 
                     {/* Imagen principal */}
                     <img
                       src={currentPhoto.url}
                       alt={`Sesión ${currentPhoto.sessionIndex}`}
-                      className="max-h-full max-w-full object-contain rounded-lg shadow-2xl cursor-pointer"
-                      onClick={() => setViewMode('gallery')}
+                      className="max-h-full max-w-full object-contain rounded-lg shadow-2xl"
                     />
 
                     {/* Contador */}
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm font-medium">
+                    <div className="absolute top-2 sm:top-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium">
                       {currentPhotoIndex + 1} / {allPhotos.length}
                     </div>
 
-                    {/* Botón volver a galería */}
+                    {/* Botón volver a galería - Solo desktop */}
                     <button
                       onClick={() => setViewMode('gallery')}
-                      className="absolute top-4 left-4 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                      className="hidden sm:flex absolute top-4 left-4 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-medium transition-colors items-center gap-2"
                     >
                       <ChevronLeft className="w-4 h-4" />
-                      <span className="hidden sm:inline">Galería</span>
+                      <span>Galería</span>
                     </button>
 
-                    {/* Botón seleccionar */}
+                    {/* Botón seleccionar - Responsivo */}
                     <button
                       onClick={() => handleSelectPhoto(currentPhoto.url)}
-                      className={`absolute top-4 right-4 px-4 py-2 rounded-lg font-medium transition-colors ${
+                      className={`absolute bottom-2 sm:top-4 right-2 sm:right-4 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors touch-manipulation ${
                         selectedPhotos.includes(currentPhoto.url)
-                          ? 'bg-cyan-500 hover:bg-cyan-600 text-white'
-                          : 'bg-white/10 hover:bg-white/20 text-white'
+                          ? 'bg-cyan-500 hover:bg-cyan-600 active:bg-cyan-700 text-white'
+                          : 'bg-white/10 hover:bg-white/20 active:bg-white/30 text-white'
                       }`}
                     >
-                      {selectedPhotos.includes(currentPhoto.url) ? (
-                        <>
-                          <Check className="w-4 h-4 inline mr-1" />
-                          Seleccionada
-                        </>
-                      ) : (
-                        <>
-                          <Check className="w-4 h-4 inline mr-1" />
-                          Seleccionar
-                        </>
-                      )}
+                      <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1" />
+                      <span className="hidden sm:inline">
+                        {selectedPhotos.includes(currentPhoto.url) ? 'Seleccionada' : 'Seleccionar'}
+                      </span>
                     </button>
                   </div>
 
                   {/* Info de la foto */}
-                  <div className="bg-slate-800 text-white p-4">
+                  <div className="bg-slate-800 text-white p-3 sm:p-4">
                     <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold">
+                      <div className="min-w-0">
+                        <p className="text-sm sm:text-base font-semibold truncate">
                           Sesión {currentPhoto.sessionIndex} - {currentPhoto.photoLabel}
                         </p>
-                        <p className="text-sm text-slate-300">{currentPhoto.sessionDate}</p>
+                        <p className="text-xs sm:text-sm text-slate-300">{currentPhoto.sessionDate}</p>
                         {currentPhoto.description && (
-                          <p className="text-sm text-slate-400 mt-2">{currentPhoto.description}</p>
+                          <p className="text-xs sm:text-sm text-slate-400 mt-1 sm:mt-2 line-clamp-2">{currentPhoto.description}</p>
                         )}
                       </div>
                     </div>
@@ -369,30 +364,30 @@ const PhotoComparisonModal: React.FC<PhotoComparisonModalProps> = ({
               {/* Vista de Comparación */}
               {viewMode === 'compare' && selectedPhotos.length === 2 && (
                 <div className="h-full flex flex-col">
-                  <div className="flex-1 flex flex-col md:flex-row gap-4 p-6 bg-slate-50">
+                  <div className="flex-1 flex flex-row gap-2 sm:gap-4 p-2 sm:p-6 bg-slate-50 overflow-x-auto">
                     {selectedPhotos.map((photoUrl, index) => {
                       const photo = allPhotos.find(p => p.url === photoUrl);
                       if (!photo) return null;
 
                       return (
-                        <div key={index} className="flex-1 flex flex-col bg-white rounded-lg overflow-hidden shadow-lg">
-                          <div className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-4 py-2">
-                            <p className="font-semibold">Foto {index + 1}</p>
-                            <p className="text-sm text-cyan-100">
+                        <div key={index} className="flex-1 min-w-[45%] sm:min-w-0 flex flex-col bg-white rounded-lg overflow-hidden shadow-lg">
+                          <div className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-2 sm:px-4 py-1.5 sm:py-2">
+                            <p className="text-xs sm:text-sm font-semibold">Foto {index + 1}</p>
+                            <p className="text-[10px] sm:text-sm text-cyan-100 truncate">
                               Sesión {photo.sessionIndex} - {photo.sessionDate}
                             </p>
                           </div>
-                          <div className="flex-1 flex items-center justify-center p-4 bg-slate-900">
+                          <div className="flex-1 flex items-center justify-center p-2 sm:p-4 bg-slate-900 min-h-[200px] sm:min-h-0">
                             <img
                               src={photo.url}
                               alt={`Comparación ${index + 1}`}
                               className="max-h-full max-w-full object-contain rounded"
                             />
                           </div>
-                          <div className="p-3 bg-slate-100 text-sm">
-                            <p className="font-medium text-slate-700">{photo.photoLabel}</p>
+                          <div className="p-2 sm:p-3 bg-slate-100 text-xs sm:text-sm">
+                            <p className="font-medium text-slate-700 truncate">{photo.photoLabel}</p>
                             {photo.description && (
-                              <p className="text-slate-600 text-xs mt-1 line-clamp-2">{photo.description}</p>
+                              <p className="text-slate-600 text-[10px] sm:text-xs mt-1 line-clamp-2">{photo.description}</p>
                             )}
                           </div>
                         </div>
@@ -401,17 +396,17 @@ const PhotoComparisonModal: React.FC<PhotoComparisonModalProps> = ({
                   </div>
 
                   {/* Botones de comparación */}
-                  <div className="bg-white border-t p-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-slate-600">
-                        Comparando 2 fotografías seleccionadas
+                  <div className="bg-white border-t p-3 sm:p-4 flex-shrink-0">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+                      <p className="text-xs sm:text-sm text-slate-600 text-center sm:text-left">
+                        Comparando 2 fotografías
                       </p>
                       <button
                         onClick={() => {
                           setSelectedPhotos([]);
                           setViewMode('gallery');
                         }}
-                        className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors font-medium"
+                        className="px-3 sm:px-4 py-2 bg-cyan-600 hover:bg-cyan-700 active:bg-cyan-800 text-white rounded-lg transition-colors text-xs sm:text-sm font-medium touch-manipulation"
                       >
                         Nueva Comparación
                       </button>
@@ -424,44 +419,46 @@ const PhotoComparisonModal: React.FC<PhotoComparisonModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="border-t bg-slate-50 px-6 py-4 flex-shrink-0 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <p className="text-sm text-slate-600">
-              <span className="font-medium">{allPhotos.length}</span> {allPhotos.length === 1 ? 'foto' : 'fotos'} en {sessionsWithPhotos.length} {sessionsWithPhotos.length === 1 ? 'sesión' : 'sesiones'}
-            </p>
-            {selectedPhotos.length > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-cyan-600 font-medium">
-                  {selectedPhotos.length} foto{selectedPhotos.length !== 1 ? 's' : ''} seleccionada{selectedPhotos.length !== 1 ? 's' : ''}
-                </span>
-                {selectedPhotos.length === 2 && viewMode !== 'compare' && (
+        <div className="border-t bg-slate-50 px-3 sm:px-6 py-3 sm:py-4 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <p className="text-xs sm:text-sm text-slate-600 text-center sm:text-left">
+                <span className="font-medium">{allPhotos.length}</span> {allPhotos.length === 1 ? 'foto' : 'fotos'} en {sessionsWithPhotos.length} {sessionsWithPhotos.length === 1 ? 'sesión' : 'sesiones'}
+              </p>
+              {selectedPhotos.length > 0 && (
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <span className="text-xs sm:text-sm text-cyan-600 font-medium">
+                    {selectedPhotos.length} seleccionada{selectedPhotos.length !== 1 ? 's' : ''}
+                  </span>
+                  {selectedPhotos.length === 2 && viewMode !== 'compare' && (
+                    <button
+                      onClick={handleCompareMode}
+                      className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 active:bg-cyan-800 text-white rounded-lg transition-colors text-xs sm:text-sm font-medium touch-manipulation"
+                    >
+                      Comparar
+                    </button>
+                  )}
                   <button
-                    onClick={handleCompareMode}
-                    className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors text-sm font-medium"
+                    onClick={() => {
+                      setSelectedPhotos([]);
+                      if (viewMode === 'compare') {
+                        setViewMode('gallery');
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 rounded-lg transition-colors text-xs sm:text-sm touch-manipulation"
                   >
-                    Comparar
+                    Limpiar
                   </button>
-                )}
-                <button
-                  onClick={() => {
-                    setSelectedPhotos([]);
-                    if (viewMode === 'compare') {
-                      setViewMode('gallery');
-                    }
-                  }}
-                  className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg transition-colors text-sm"
-                >
-                  Limpiar selección
-                </button>
-              </div>
-            )}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={handleClose}
+              className="px-4 py-2 bg-slate-600 hover:bg-slate-700 active:bg-slate-800 text-white rounded-lg transition-colors text-sm sm:text-base font-medium touch-manipulation"
+            >
+              Cerrar
+            </button>
           </div>
-          <button
-            onClick={handleClose}
-            className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors font-medium"
-          >
-            Cerrar
-          </button>
         </div>
       </div>
     </div>
