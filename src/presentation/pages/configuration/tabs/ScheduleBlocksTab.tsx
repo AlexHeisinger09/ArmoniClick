@@ -1,8 +1,9 @@
 // src/presentation/pages/configuration/tabs/ScheduleBlocksTab.tsx
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Clock, AlertCircle, Loader, X, Copy, Check, Share2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Clock, AlertCircle, Loader, X, Copy, Check, Share2, MapPin } from 'lucide-react';
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
 import { useScheduleBlocks } from '@/presentation/hooks/schedule-blocks/useScheduleBlocks';
+import { useLocations } from '@/presentation/hooks/locations/useLocations';
 import { ConfirmationModal } from '@/presentation/components/ui/ConfirmationModal';
 import { useConfirmation } from '@/presentation/hooks/useConfirmation';
 import { CreateScheduleBlockData, UpdateScheduleBlockData } from '@/core/use-cases/schedule-blocks';
@@ -37,6 +38,7 @@ const ScheduleBlocksTab: React.FC<ScheduleBlocksTabProps> = ({ showMessage }) =>
   const { queryProfile } = useProfile(token || '');
   const doctorId = queryProfile.data?.id || 0;
   const { blocks, isLoading, createBlock, updateBlock, deleteBlock, isCreating, isUpdating, isDeleting } = useScheduleBlocks(doctorId);
+  const { locations, isLoading: isLoadingLocations } = useLocations();
 
   const confirmation = useConfirmation();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,10 +46,11 @@ const ScheduleBlocksTab: React.FC<ScheduleBlocksTabProps> = ({ showMessage }) =>
   const [filterType, setFilterType] = useState<'all' | 'single_date' | 'recurring'>('all');
   const [copiedLink, setCopiedLink] = useState(false);
   const [availableDurations, setAvailableDurations] = useState<number[]>([30, 60]);
+  const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null);
   const [publicLink, setPublicLink] = useState<string>('');
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
 
-  // Auto-generate link when durations change
+  // Auto-generate link when durations or location change
   React.useEffect(() => {
     const generateLinkAutomatically = async () => {
       if (!doctorId || availableDurations.length === 0) {
@@ -63,7 +66,8 @@ const ScheduleBlocksTab: React.FC<ScheduleBlocksTabProps> = ({ showMessage }) =>
           },
           body: JSON.stringify({
             doctorId,
-            durations: availableDurations
+            durations: availableDurations,
+            locationId: selectedLocationId
           })
         });
 
@@ -82,7 +86,7 @@ const ScheduleBlocksTab: React.FC<ScheduleBlocksTabProps> = ({ showMessage }) =>
     };
 
     generateLinkAutomatically();
-  }, [doctorId, availableDurations]);
+  }, [doctorId, availableDurations, selectedLocationId]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -322,6 +326,46 @@ const ScheduleBlocksTab: React.FC<ScheduleBlocksTabProps> = ({ showMessage }) =>
                 )}
               </button>
             </div>
+
+            {/* Location Selector */}
+            {!isLoadingLocations && locations && locations.length > 0 && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-700 mb-3 flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  Sucursal (opcional):
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setSelectedLocationId(null)}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      selectedLocationId === null
+                        ? 'bg-cyan-500 text-white shadow-md'
+                        : 'bg-white border border-slate-300 text-slate-700 hover:border-cyan-400'
+                    }`}
+                  >
+                    Sin sucursal
+                  </button>
+                  {locations.map((location) => (
+                    <button
+                      key={location.id}
+                      onClick={() => setSelectedLocationId(location.id)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        selectedLocationId === location.id
+                          ? 'bg-cyan-500 text-white shadow-md'
+                          : 'bg-white border border-slate-300 text-slate-700 hover:border-cyan-400'
+                      }`}
+                    >
+                      {location.name}
+                    </button>
+                  ))}
+                </div>
+                {selectedLocationId && (
+                  <p className="text-xs text-slate-500 mt-2">
+                    Los pacientes verán esta ubicación al reservar
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Available Durations Configuration */}
             <div>

@@ -7,6 +7,13 @@ import { isTimeSlotAvailable } from '@/presentation/pages/calendar/utils/calenda
 import { AppointmentsData } from '@/presentation/pages/calendar/types/calendar';
 import { ScheduleBlock } from '@/core/entities/ScheduleBlock';
 
+interface LocationInfo {
+  id: number;
+  name: string;
+  address: string;
+  city: string;
+}
+
 interface PublicAppointmentForm {
   patientName: string;
   patientEmail: string;
@@ -30,6 +37,8 @@ export const PublicAppointmentBooking: React.FC = () => {
   const [availableDurations, setAvailableDurations] = useState<number[]>([30, 60]);
   const [appointments, setAppointments] = useState<AppointmentsData>({});
   const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([]);
+  const [locationInfo, setLocationInfo] = useState<LocationInfo | null>(null);
+  const [locationId, setLocationId] = useState<number | null>(null);
 
   // Form state
   const [appointmentForm, setAppointmentForm] = useState<PublicAppointmentForm>({
@@ -67,6 +76,8 @@ export const PublicAppointmentBooking: React.FC = () => {
         setAvailableDurations(data.availableDurations || [30, 60]);
         setAppointments(data.appointments || {});
         setScheduleBlocks(data.scheduleBlocks || []);
+        setLocationInfo(data.location || null);
+        setLocationId(data.locationId || null);
 
         // Set default duration from available durations
         if (data.availableDurations && data.availableDurations.length > 0) {
@@ -122,7 +133,8 @@ export const PublicAppointmentBooking: React.FC = () => {
             patientPhone: appointmentForm.patientPhone,
             appointmentDate: appointmentForm.date.toISOString().split('T')[0],
             startTime: appointmentForm.time,
-            duration: appointmentForm.duration
+            duration: appointmentForm.duration,
+            locationId: locationId
           })
         }
       );
@@ -298,6 +310,19 @@ export const PublicAppointmentBooking: React.FC = () => {
 
             {/* Appointment Selection */}
             <div className="space-y-4 pt-2">
+
+              {/* Location Info - Display only (from token) */}
+              {locationInfo && (
+                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-lg border border-blue-200">
+                  <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
+                    📍 Ubicación de la cita
+                  </label>
+                  <div className="bg-white p-3 rounded-lg border border-slate-200">
+                    <p className="text-sm font-semibold text-slate-800">{locationInfo.name}</p>
+                    <p className="text-xs text-slate-600 mt-1">{locationInfo.address}, {locationInfo.city}</p>
+                  </div>
+                </div>
+              )}
 
               {/* Date Selector */}
               <div>

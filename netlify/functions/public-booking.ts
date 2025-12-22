@@ -3,9 +3,10 @@ import { Handler, HandlerEvent } from "@netlify/functions";
 import { HEADERS, fromBodyToObject } from "../config/utils";
 import { JwtAdapter } from "../config/adapters/jwt.adapter";
 import { db } from "../data/db";
-import { usersTable, appointmentsTable, scheduleBlocksTable } from "../data/schemas";
+import { usersTable, appointmentsTable, scheduleBlocksTable, locationsTable } from "../data/schemas";
 import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
+import { NotificationService } from "../services/notification.service";
 
 const handler: Handler = async (event: HandlerEvent) => {
   const { httpMethod, path, body: rawBody } = event;
@@ -48,6 +49,7 @@ const handler: Handler = async (event: HandlerEvent) => {
       interface BookingToken {
         doctorId: number;
         durations: number[];
+        locationId?: number;
       }
 
       const decoded = await JwtAdapter.validateToken<BookingToken>(token);
@@ -62,6 +64,7 @@ const handler: Handler = async (event: HandlerEvent) => {
 
       const parsedDoctorId = decoded.doctorId;
       const availableDurations = decoded.durations || [30, 60];
+      const tokenLocationId = decoded.locationId || null;
 
       // Verificar que el doctor existe
       const doctor = await db
@@ -130,6 +133,25 @@ const handler: Handler = async (event: HandlerEvent) => {
         .from(scheduleBlocksTable)
         .where(eq(scheduleBlocksTable.doctorId, parsedDoctorId));
 
+      // Obtener información de la sucursal si está especificada en el token
+      let locationInfo = null;
+      if (tokenLocationId) {
+        const locationData = await db
+          .select({
+            id: locationsTable.id,
+            name: locationsTable.name,
+            address: locationsTable.address,
+            city: locationsTable.city
+          })
+          .from(locationsTable)
+          .where(eq(locationsTable.id, tokenLocationId))
+          .limit(1);
+
+        if (locationData.length > 0) {
+          locationInfo = locationData[0];
+        }
+      }
+
       return {
         statusCode: 200,
         body: JSON.stringify({
@@ -137,7 +159,9 @@ const handler: Handler = async (event: HandlerEvent) => {
           doctorName,
           availableDurations,
           appointments: appointmentsData,
-          scheduleBlocks: doctorScheduleBlocks
+          scheduleBlocks: doctorScheduleBlocks,
+          location: locationInfo,
+          locationId: tokenLocationId
         }),
         headers: HEADERS.json,
       };
@@ -164,7 +188,8 @@ const handler: Handler = async (event: HandlerEvent) => {
         patientPhone,
         appointmentDate,
         startTime,
-        duration
+        duration,
+        locationId
       } = data;
 
       // Validaciones
@@ -180,7 +205,8 @@ const handler: Handler = async (event: HandlerEvent) => {
               patientPhone: !!patientPhone,
               appointmentDate: !!appointmentDate,
               startTime: !!startTime,
-              duration: !!duration
+              duration: !!duration,
+              locationId: locationId ? 'provided' : 'not provided'
             }
           }),
           headers: HEADERS.json,
@@ -216,27 +242,26 @@ const handler: Handler = async (event: HandlerEvent) => {
         .from(appointmentsTable)
         .where(eq(appointmentsTable.doctorId, doctorId));
 
-      const [startHours, startMinutes] = startTime.split(':').map(Number);
-      const startTotalMinutes = startHours * 60 + startMinutes;
-      const endTotalMinutes = startTotalMinutes + duration;
+      // Calcular el rango de tiempo de la nueva cita
+      const newAppointmentStart = new Date(`${appointmentDate}T${startTime}:00`);
+      const newAppointmentEnd = new Date(newAppointmentStart.getTime() + duration * 60000);
 
-      const dateStr = appointmentDate;
+      // Verificar conflictos con citas existentes
       for (const apt of existingAppointments) {
-        if (apt.appointmentDate === dateStr) {
-          const [aptHours, aptMinutes] = apt.startTime.split(':').map(Number);
-          const [aptEndHours, aptEndMinutesVal] = apt.endTime?.split(':').map(Number) || [aptHours, aptMinutes + 30];
+        // Calcular el rango de la cita existente
+        const existingStart = new Date(apt.appointmentDate);
+        const existingEnd = new Date(existingStart.getTime() + (apt.duration || 60) * 60000);
 
-          const aptStartMinutes = aptHours * 60 + aptMinutes;
-          const aptEndMinutes = aptEndHours * 60 + aptEndMinutesVal;
+        // Verificar si hay solapamiento (ambas citas están en el mismo día)
+        const sameDay = newAppointmentStart.toDateString() === existingStart.toDateString();
+        const overlaps = newAppointmentStart < existingEnd && newAppointmentEnd > existingStart;
 
-          // Revisar si hay solapamiento
-          if (startTotalMinutes < aptEndMinutes && endTotalMinutes > aptStartMinutes) {
-            return {
-              statusCode: 409,
-              body: JSON.stringify({ message: "Este horario ya está ocupado" }),
-              headers: HEADERS.json,
-            };
-          }
+        if (sameDay && overlaps) {
+          return {
+            statusCode: 409,
+            body: JSON.stringify({ message: "Este horario ya está ocupado" }),
+            headers: HEADERS.json,
+          };
         }
       }
 
@@ -250,10 +275,10 @@ const handler: Handler = async (event: HandlerEvent) => {
         let blockApplies = false;
 
         if (block.blockType === 'single_date') {
-          blockApplies = block.blockDate === dateStr;
+          blockApplies = block.blockDate === appointmentDate;
         } else if (block.blockType === 'recurring') {
           const blockDate = new Date(block.blockDate);
-          const appointmentDt = new Date(dateStr);
+          const appointmentDt = new Date(appointmentDate);
 
           if (appointmentDt < blockDate) {
             blockApplies = false;
@@ -266,7 +291,7 @@ const handler: Handler = async (event: HandlerEvent) => {
               const blockDayOfWeek = blockDate.getDay();
               const appointmentDayOfWeek = appointmentDt.getDay();
               blockApplies = blockDayOfWeek === appointmentDayOfWeek;
-            } else {
+            } else if (block.recurringPattern) {
               const dayOfWeekMap: Record<string, number> = {
                 'sunday': 0,
                 'monday': 1,
@@ -282,14 +307,19 @@ const handler: Handler = async (event: HandlerEvent) => {
           }
         }
 
-        if (blockApplies) {
-          const [blockHours, blockMinutes] = block.startTime.split(':').map(Number);
-          const [blockEndHours, blockEndMinutesVal] = block.endTime.split(':').map(Number);
+        if (blockApplies && block.startTime && block.endTime) {
+          // Crear fechas completas para los bloques usando el appointmentDate
+          const [blockStartHours, blockStartMinutes] = block.startTime.split(':').map(Number);
+          const [blockEndHours, blockEndMinutes] = block.endTime.split(':').map(Number);
 
-          const blockStartMinutes = blockHours * 60 + blockMinutes;
-          const blockEndMinutes = blockEndHours * 60 + blockEndMinutesVal;
+          const blockStart = new Date(appointmentDate);
+          blockStart.setHours(blockStartHours, blockStartMinutes, 0, 0);
 
-          if (startTotalMinutes < blockEndMinutes && endTotalMinutes > blockStartMinutes) {
+          const blockEnd = new Date(appointmentDate);
+          blockEnd.setHours(blockEndHours, blockEndMinutes, 0, 0);
+
+          // Verificar si hay solapamiento con el bloque
+          if (newAppointmentStart < blockEnd && newAppointmentEnd > blockStart) {
             return {
               statusCode: 409,
               body: JSON.stringify({ message: "Este horario está bloqueado" }),
@@ -299,7 +329,9 @@ const handler: Handler = async (event: HandlerEvent) => {
         }
       }
 
-      // Calcular hora de fin
+      // Calcular hora de fin para descripción
+      const [startHours, startMinutes] = startTime.split(':').map(Number);
+      const endTotalMinutes = startHours * 60 + startMinutes + duration;
       const endHours = Math.floor(endTotalMinutes / 60);
       const endMinutes = endTotalMinutes % 60;
       const endTime = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
@@ -307,13 +339,14 @@ const handler: Handler = async (event: HandlerEvent) => {
       // Generar token de confirmación
       const confirmationToken = uuidv4();
 
-      // Crear fecha con hora correcta: combinar dateStr (YYYY-MM-DD) con startTime (HH:mm)
-      const appointmentDateTime = new Date(`${dateStr}T${startTime}:00`);
+      // Crear fecha con hora correcta: combinar appointmentDate (YYYY-MM-DD) con startTime (HH:mm)
+      const appointmentDateTime = new Date(`${appointmentDate}T${startTime}:00`);
 
       // Crear la cita como invitado
       const newAppointment = await db.insert(appointmentsTable).values({
         doctorId,
         patientId: null,
+        locationId: locationId ? parseInt(locationId) : null,
         guestName: patientName,
         guestEmail: patientEmail,
         guestPhone: patientPhone,
@@ -327,10 +360,65 @@ const handler: Handler = async (event: HandlerEvent) => {
         notes: 'Cita agendada a través del link público'
       }).returning();
 
+      // Obtener información del doctor y la ubicación para el email
+      try {
+        const doctorInfo = await db
+          .select({
+            name: usersTable.name,
+            lastName: usersTable.lastName,
+            email: usersTable.email
+          })
+          .from(usersTable)
+          .where(eq(usersTable.id, doctorId))
+          .limit(1);
+
+        const doctor = doctorInfo[0];
+        const doctorName = doctor ? `${doctor.name} ${doctor.lastName}`.trim() : 'Doctor';
+        const doctorEmail = doctor?.email;
+
+        // Obtener información de la ubicación si se proporcionó
+        let locationInfo: string | undefined = undefined;
+        if (locationId) {
+          const locationData = await db
+            .select({
+              address: locationsTable.address,
+              city: locationsTable.city
+            })
+            .from(locationsTable)
+            .where(eq(locationsTable.id, parseInt(locationId)))
+            .limit(1);
+
+          if (locationData.length > 0) {
+            locationInfo = `${locationData[0].address}, ${locationData[0].city}`;
+          }
+        }
+
+        // Enviar email de confirmación con archivo ICS
+        const notificationService = new NotificationService();
+        await notificationService.sendAppointmentConfirmation({
+          appointmentId: newAppointment[0].id,
+          patientName: patientName,
+          patientEmail: patientEmail,
+          doctorName: doctorName,
+          doctorEmail: doctorEmail,
+          appointmentDate: appointmentDateTime,
+          service: newAppointment[0].title,
+          duration: duration,
+          notes: newAppointment[0].notes || undefined,
+          confirmationToken: confirmationToken,
+          location: locationInfo
+        });
+
+        console.log('✅ Confirmation email sent successfully to:', patientEmail);
+      } catch (emailError) {
+        console.error('⚠️ Error sending confirmation email (appointment created successfully):', emailError);
+        // No retornar error, la cita ya fue creada
+      }
+
       return {
         statusCode: 201,
         body: JSON.stringify({
-          message: "Cita agendada exitosamente",
+          message: "Cita agendada exitosamente. Recibirás un email de confirmación.",
           appointmentId: newAppointment[0]?.id,
           confirmationToken
         }),
@@ -354,7 +442,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         }
       }
 
-      const { doctorId, durations } = data;
+      const { doctorId, durations, locationId } = data;
 
       if (!doctorId || !Array.isArray(durations) || durations.length === 0) {
         return {
@@ -381,14 +469,19 @@ const handler: Handler = async (event: HandlerEvent) => {
         };
       }
 
+      // Construir payload del token
+      const tokenPayload: any = {
+        doctorId: parseInt(doctorId),
+        durations: validDurations.sort((a: number, b: number) => a - b),
+      };
+
+      // Agregar locationId solo si está presente
+      if (locationId) {
+        tokenPayload.locationId = parseInt(locationId);
+      }
+
       // Generar token firmado (válido por 1 año)
-      const token = await JwtAdapter.generateToken(
-        {
-          doctorId: parseInt(doctorId),
-          durations: validDurations.sort((a: number, b: number) => a - b),
-        },
-        "365d"
-      );
+      const token = await JwtAdapter.generateToken(tokenPayload, "365d");
 
       if (!token) {
         return {
