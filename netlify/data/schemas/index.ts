@@ -8,3 +8,4 @@ export * from './service.schema';
 export * from './audit.schema';
 export * from './schedule-block.schema';
 export * from './location.schema';
+export * from './prescription.schema';

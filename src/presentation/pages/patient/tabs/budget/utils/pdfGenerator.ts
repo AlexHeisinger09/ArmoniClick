@@ -18,7 +18,7 @@ interface PDFGeneratorOptions {
 
 export class PDFGenerator {
     private static getLogoPath(budgetType: string): string {
-        return budgetType === 'odontologico' ? '/logoPresupuesto.PNG' : '/logo.PNG';
+        return budgetType === 'odontologico' ? '/logoPresupuesto.PNG' : '/logo.png';
     }
 
     private static getBudgetTitle(budgetType: string): string {

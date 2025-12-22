@@ -203,6 +203,13 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
         borderColor: 'border-purple-200',
         icon: <FileText className="w-3 h-3 text-white" />,
         label: 'Documento'
+      },
+      receta: {
+        color: 'from-purple-400 to-purple-600',
+        bgColor: 'bg-purple-50',
+        borderColor: 'border-purple-200',
+        icon: <FileText className="w-3 h-3 text-white" />,
+        label: 'Documento'
       }
     };
     return configs[normalizedType] || configs.paciente;
@@ -286,7 +293,7 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
   const getDocumentsFromLog = (log: AuditLog): DocumentPreview[] => {
     const documents: DocumentPreview[] = [];
 
-    // Solo mostrar documentos para logs de documentos firmados
+    // Mostrar documentos para logs de documentos firmados
     if (normalizeEntityType(log.entity_type) === 'documento' && log.new_values && (log.action === 'status_changed' || log.action === 'signed') && log.new_values.status === 'firmado') {
       const title = log.new_values.title || `Documento #${log.entity_id}`;
 
@@ -313,6 +320,35 @@ const PatientMedicalHistory: React.FC<PatientMedicalHistoryProps> = ({ patient }
           title: `Firma - ${title}`,
           type: 'image'
         });
+      }
+    }
+
+    // Mostrar PDF de recetas médicas creadas
+    if (normalizeEntityType(log.entity_type) === 'receta' && log.new_values && log.action === 'created') {
+      const title = `Receta Médica #${log.entity_id}`;
+
+      console.log('🔍 Checking prescription log:', {
+        entity_type: log.entity_type,
+        normalized: normalizeEntityType(log.entity_type),
+        action: log.action,
+        has_new_values: !!log.new_values,
+        has_pdf: !!(log.new_values?.pdf_base64),
+        pdf_length: log.new_values?.pdf_base64?.length || 0
+      });
+
+      // Mostrar PDF si existe en los new_values
+      if (log.new_values.pdf_base64) {
+        const pdfUrl = `data:application/pdf;base64,${log.new_values.pdf_base64}`;
+
+        documents.push({
+          url: pdfUrl,
+          title: title,
+          type: 'pdf'
+        });
+
+        console.log('✅ Added prescription PDF to documents');
+      } else {
+        console.log('⚠️ No PDF found in prescription log');
       }
     }
 

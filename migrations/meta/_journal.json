@@ -64,6 +64,13 @@
       "when": 1766057700447,
       "tag": "0008_strong_nightshade",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1766149024378,
+      "tag": "0009_cute_scorpion",
+      "breakpoints": true
     }
   ]
 }

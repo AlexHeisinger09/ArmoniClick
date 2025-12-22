@@ -77,7 +77,8 @@ export const AUDIT_ENTITY_TYPES = {
   PRESUPUESTO: 'presupuesto',
   TRATAMIENTO: 'tratamiento',
   CITA: 'cita',
-  DOCUMENTO: 'documento'
+  DOCUMENTO: 'documento',
+  RECETA: 'receta'
 } as const;
 
 // Constantes para acciones

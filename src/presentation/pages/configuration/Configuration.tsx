@@ -94,11 +94,11 @@ const Configuration: React.FC = () => {
 
   // ✅ PESTAÑAS ACTUALIZADAS - SIN SEGURIDAD (se movió al header)
   const tabs = [
-    { id: 'perfil', label: 'Información Personal', icon: User },
-    { id: 'foto', label: 'Fotos', icon: Camera },
-    { id: 'bloques', label: 'Bloqueos de Agenda', icon: Clock },
-    { id: 'servicios', label: 'Servicios', icon: Briefcase },
-    { id: 'ubicaciones', label: 'Ubicaciones', icon: MapPin },
+    { id: 'perfil', label: 'Información Personal', shortLabel: 'Perfil', icon: User },
+    { id: 'foto', label: 'Fotos', shortLabel: 'Fotos', icon: Camera },
+    { id: 'bloques', label: 'Bloqueos de Agenda', shortLabel: 'Agenda', icon: Clock },
+    { id: 'servicios', label: 'Servicios', shortLabel: 'Servicios', icon: Briefcase },
+    { id: 'ubicaciones', label: 'Ubicaciones', shortLabel: 'Ubicac.', icon: MapPin },
   ];
 
   const renderTabContent = () => {
@@ -208,8 +208,8 @@ const Configuration: React.FC = () => {
               })}
             </nav>
 
-            {/* Mobile Navigation - Solo íconos */}
-            <nav className="md:hidden flex justify-around px-2 py-2.5">
+            {/* Mobile Navigation - Íconos con texto pequeño */}
+            <nav className="md:hidden flex justify-around px-1 py-2">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
@@ -217,15 +217,18 @@ const Configuration: React.FC = () => {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`
-                      flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200
+                      flex flex-col items-center justify-center gap-0.5 px-1.5 py-1.5 rounded-lg transition-all duration-200 min-w-0
                       ${activeTab === tab.id
-                        ? 'bg-cyan-500 text-white shadow-lg scale-110'
-                        : 'text-slate-600 hover:bg-cyan-100 hover:text-cyan-700 hover:scale-105'
+                        ? 'bg-cyan-500 text-white shadow-md'
+                        : 'text-slate-600 hover:bg-cyan-100 hover:text-cyan-700'
                       }
                     `}
                     title={tab.label}
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-[0.6rem] font-medium leading-tight whitespace-nowrap">
+                      {tab.shortLabel}
+                    </span>
                   </button>
                 );
               })}

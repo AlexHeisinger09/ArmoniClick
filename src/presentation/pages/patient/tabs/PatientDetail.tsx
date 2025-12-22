@@ -1,7 +1,7 @@
 // src/presentation/pages/patient/PatientDetail.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Calculator, Stethoscope, Clock, FileText, Brain, Settings, LogOut } from 'lucide-react';
+import { ArrowLeft, User, Calculator, Stethoscope, Clock, FileText, Brain, Settings, LogOut, Pill } from 'lucide-react';
 import { Patient } from "@/core/use-cases/patients";
 import { useLoginMutation } from '@/presentation/hooks';
 
@@ -11,6 +11,7 @@ import { PatientBudget } from './budget/PatientBudget';
 import { PatientTreatments } from './treatments/PatientTreatments';
 import { PatientAppointments } from './appointments/PatientAppointments';
 import { PatientMedicalHistory } from './medicalHistory/PatientMedicalHistory';
+import { PatientPrescriptions } from './prescriptions/PatientPrescriptions';
 import { ClinicalSummaryModal } from '@/presentation/components/ai-analysis';
 
 interface PatientDetailProps {
@@ -71,6 +72,7 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
     { id: 'presupuesto', label: 'Presupuesto', shortLabel: 'Presup', icon: Calculator },
     { id: 'tratamientos', label: 'Tratamientos', shortLabel: 'Trat', icon: Stethoscope },
     { id: 'citas', label: 'Citas Agendadas', shortLabel: 'Citas', icon: Clock },
+    { id: 'recetas', label: 'Recetas Médicas', shortLabel: 'Recetas', icon: Pill },
     { id: 'historial', label: 'Historial Médico', shortLabel: 'Hist', icon: FileText },
   ];
 
@@ -90,6 +92,8 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
         return <PatientTreatments patient={patient} />;
       case 'citas':
         return <PatientAppointments patient={patient} />;
+      case 'recetas':
+        return <PatientPrescriptions patient={patient} />;
       case 'historial':
         return <PatientMedicalHistory patient={patient} />;
       default:
@@ -187,8 +191,8 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
             })}
           </nav>
 
-          {/* Mobile Navigation - Solo íconos */}
-          <nav className="md:hidden flex justify-around px-2 py-2.5">
+          {/* Mobile Navigation - Íconos con texto pequeño */}
+          <nav className="md:hidden flex justify-around px-1 py-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -196,15 +200,18 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`
-                    flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200
+                    flex flex-col items-center justify-center gap-0.5 px-1.5 py-1.5 rounded-lg transition-all duration-200 min-w-0
                     ${activeTab === tab.id
-                      ? 'bg-cyan-500 text-white shadow-lg scale-110'
-                      : 'text-slate-600 hover:bg-cyan-100 hover:text-cyan-700 hover:scale-105'
+                      ? 'bg-cyan-500 text-white shadow-md'
+                      : 'text-slate-600 hover:bg-cyan-100 hover:text-cyan-700'
                     }
                   `}
                   title={tab.label}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-[0.6rem] font-medium leading-tight whitespace-nowrap">
+                    {tab.shortLabel}
+                  </span>
                 </button>
               );
             })}

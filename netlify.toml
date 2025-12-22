@@ -166,6 +166,13 @@ timeout = 25  # 25 segundos para dar tiempo a la API de DeepSeek
   status = 200
   methods = ["GET", "OPTIONS"]
 
+# PRESCRIPTIONS ROUTES (medical prescriptions)
+[[redirects]]
+  from = "/prescriptions/*"
+  to = "/.netlify/functions/prescriptions/prescriptions"
+  status = 200
+  methods = ["GET", "POST", "DELETE", "OPTIONS"]
+
 # BUDGETS ROUTES (existing, just moved after documents)
 [[redirects]]
   from = "/budgets/revenue-treatments"

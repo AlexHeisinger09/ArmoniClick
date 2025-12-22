@@ -142,4 +142,45 @@ export class UploadService {
       return null;
     }
   }
+
+  /**
+   * Sube un PDF a Cloudinary
+   * @param pdfBuffer - Buffer del PDF
+   * @param fileName - Nombre del archivo
+   * @param folder - Carpeta en Cloudinary donde guardar el PDF
+   * @returns Promise con la información del PDF subido
+   */
+  static async uploadPDF(
+    pdfBuffer: Buffer,
+    fileName: string,
+    folder = 'prescriptions'
+  ): Promise<UploadResult> {
+    try {
+      const publicId = `${folder}/${fileName}_${Date.now()}`;
+
+      // Convertir buffer a base64
+      const base64Data = pdfBuffer.toString('base64');
+
+      const uploadResponse = await cloudinary.uploader.upload(
+        `data:application/pdf;base64,${base64Data}`,
+        {
+          public_id: publicId,
+          folder: folder,
+          resource_type: 'raw', // Para archivos no-imagen
+          overwrite: true,
+          invalidate: true,
+        }
+      );
+
+      return {
+        url: uploadResponse.secure_url,
+        publicId: uploadResponse.public_id,
+        width: 0,
+        height: 0,
+      };
+    } catch (error) {
+      console.error('Error uploading PDF to Cloudinary:', error);
+      throw new Error('Error al subir el PDF');
+    }
+  }
 }
