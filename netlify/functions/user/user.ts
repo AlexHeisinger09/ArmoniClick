@@ -30,16 +30,18 @@ const handler: Handler = async (event: HandlerEvent) => {
 
   if (httpMethod === "PUT" && path.includes("/profile")) {
     try {
-      const { 
-        rut, 
-        name, 
-        lastName, 
-        username, 
-        email, 
-        phone, 
-        address, 
-        zipCode, 
-        city 
+      const {
+        rut,
+        name,
+        lastName,
+        username,
+        email,
+        phone,
+        address,
+        zipCode,
+        city,
+        profession,
+        specialty
       } = body;
 
       // Validaciones básicas
@@ -113,6 +115,8 @@ const handler: Handler = async (event: HandlerEvent) => {
           address: address || null,
           zipCode: zipCode || null,
           city: city || null,
+          profession: profession || null,
+          specialty: specialty || null,
           updatedAt: new Date(),
         },
         usersTable.id,

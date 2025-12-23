@@ -7,7 +7,10 @@ interface DoctorData {
     name: string;
     lastName: string;
     rut?: string;
-    signature?: string | null; // ✅ AGREGAR CAMPO SIGNATURE
+    signature?: string | null; // ✅ CAMPO SIGNATURE
+    logo?: string | null; // ✅ CAMPO LOGO
+    profession?: string | null; // ✅ PROFESIÓN DEL DOCTOR
+    specialty?: string | null; // ✅ ESPECIALIDAD DEL DOCTOR
 }
 
 interface PDFGeneratorOptions {
@@ -17,8 +20,13 @@ interface PDFGeneratorOptions {
 }
 
 export class PDFGenerator {
-    private static getLogoPath(budgetType: string): string {
-        return budgetType === 'odontologico' ? '/logoPresupuesto.PNG' : '/logo.png';
+    private static getLogoPath(doctorData?: DoctorData): string {
+        // Si el doctor tiene logo cargado, usarlo
+        if (doctorData?.logo) {
+            return doctorData.logo;
+        }
+        // Si no, usar el logo por defecto (estético)
+        return '/logo.png';
     }
 
     private static getBudgetTitle(budgetType: string): string {
@@ -44,6 +52,24 @@ export class PDFGenerator {
 
     private static getSpecialty(budgetType: string): string {
         return budgetType === 'odontologico' ? 'Odontología General' : 'Estética Dental';
+    }
+
+    private static getProfession(doctorData?: DoctorData): string {
+        // Si el doctor tiene profesión cargada, usarla
+        if (doctorData?.profession) {
+            return doctorData.profession;
+        }
+        // Si no, usar el valor por defecto
+        return 'CIRUJANO DENTISTA';
+    }
+
+    private static getDoctorSpecialty(doctorData?: DoctorData, budgetType?: string): string {
+        // Si el doctor tiene especialidad cargada, usarla
+        if (doctorData?.specialty) {
+            return `Experto en ${doctorData.specialty}`;
+        }
+        // Si no, usar el valor por defecto basado en el tipo de presupuesto
+        return budgetType === 'odontologico' ? 'Experto en Odontología General' : 'Experto en Estética Dental';
     }
 
     // ✅ NUEVA FUNCIÓN: Generar HTML para la sección de firma
@@ -88,8 +114,9 @@ export class PDFGenerator {
         const doctorName = this.getDoctorName(doctorData);
         const doctorRut = this.getDoctorRut(doctorData);
         const budgetTitle = this.getBudgetTitle(budget.budget_type);
-        const logoPath = this.getLogoPath(budget.budget_type);
-        const specialty = this.getSpecialty(budget.budget_type);
+        const logoPath = this.getLogoPath(doctorData); // ✅ USAR LOGO DEL DOCTOR O POR DEFECTO
+        const profession = this.getProfession(doctorData); // ✅ USAR PROFESIÓN DEL DOCTOR O POR DEFECTO
+        const specialty = this.getDoctorSpecialty(doctorData, budget.budget_type); // ✅ USAR ESPECIALIDAD DEL DOCTOR O POR DEFECTO
         const signatureSection = this.generateSignatureSection(doctorData); // ✅ USAR FUNCIÓN DINÁMICA
 
         return `
@@ -349,9 +376,9 @@ export class PDFGenerator {
             </div>
             <div class="doctor-info">
                 <h2>${doctorName}</h2>
-                <p>CIRUJANO DENTISTA</p>
+                <p>${profession}</p>
                 <p>RUT: ${doctorRut}</p>
-                <p>Especialista en ${specialty}</p>
+                <p>${specialty}</p>
             </div>
         </div>
     </div>

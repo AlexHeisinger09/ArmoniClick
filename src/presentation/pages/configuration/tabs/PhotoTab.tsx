@@ -1,9 +1,10 @@
 // src/presentation/pages/configuration/tabs/PhotoTab.tsx
 import { useState, useRef, useEffect } from "react";
-import { Camera, PenTool, Upload, Trash2, X } from "lucide-react";
+import { Camera, FileSignature, Upload, Trash2, X, Image } from "lucide-react";
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
 import { useUploadProfileImage } from "@/presentation/hooks/user/useUploadProfileImage";
 import { useUploadSignature } from "@/presentation/hooks/user/useUploadSignature";
+import { useUploadLogo } from "@/presentation/hooks/user/useUploadLogo";
 
 interface PhotoTabProps {
   showMessage: (message: string, type: 'success' | 'error') => void;
@@ -174,7 +175,7 @@ const SignatureCanvas: React.FC<{
           {/* Instrucciones */}
           <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
-              <PenTool className="w-5 h-5 text-cyan-600 mt-0.5 flex-shrink-0" />
+              <FileSignature className="w-5 h-5 text-cyan-600 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-sm font-medium text-cyan-800">Instrucciones:</p>
                 <ul className="text-sm text-cyan-700 mt-1 space-y-1">
@@ -251,6 +252,7 @@ const PhotoTab: React.FC<PhotoTabProps> = ({ showMessage }) => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const signatureFileInputRef = useRef<HTMLInputElement>(null);
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
 
   // Hooks para datos del usuario
   const { token } = useLoginMutation();
@@ -273,7 +275,29 @@ const PhotoTab: React.FC<PhotoTabProps> = ({ showMessage }) => {
     uploadProgress: signatureUploadProgress
   } = useUploadSignature();
 
+  // Hook para upload de logo
+  const {
+    uploadLogoMutation,
+    deleteLogoMutation,
+    isLoadingUpload: isLoadingLogoUpload,
+    uploadProgress: logoUploadProgress
+  } = useUploadLogo();
+
   const userData = queryProfile.data;
+
+  // Debug: Ver los datos del usuario
+  useEffect(() => {
+    if (userData) {
+      console.log('👤 Datos del usuario en PhotoTab:', {
+        id: userData.id,
+        name: userData.name,
+        img: userData.img ? 'Tiene foto' : 'Sin foto',
+        signature: userData.signature ? 'Tiene firma' : 'Sin firma',
+        logo: userData.logo ? 'Tiene logo' : 'Sin logo',
+        logoUrl: userData.logo
+      });
+    }
+  }, [userData]);
 
   // Funciones para manejo de imágenes de perfil
   const validateImageFile = (file: File): string | null => {
@@ -433,6 +457,61 @@ const PhotoTab: React.FC<PhotoTabProps> = ({ showMessage }) => {
     });
   };
 
+  // Funciones para manejo de logo
+  const validateLogoFile = (file: File): string | null => {
+    // Validar tipo
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      return 'Solo se permiten archivos JPG, PNG y WebP para el logo';
+    }
+
+    // Validar tamaño (5MB máximo)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return 'El logo debe ser menor a 5MB';
+    }
+
+    return null;
+  };
+
+  const handleLogoFileSelect = (file: File) => {
+    const validationError = validateLogoFile(file);
+    if (validationError) {
+      showMessage(validationError, 'error');
+      return;
+    }
+
+    // Subir logo
+    uploadLogoMutation.mutate(file, {
+      onSuccess: () => {
+        showMessage('Logo actualizado correctamente', 'success');
+      },
+      onError: (error: any) => {
+        showMessage(error.message || 'Error al subir el logo', 'error');
+      }
+    });
+  };
+
+  const handleLogoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      handleLogoFileSelect(file);
+    }
+    // Resetear el input
+    event.target.value = '';
+  };
+
+  const handleDeleteLogo = () => {
+    deleteLogoMutation.mutate(undefined, {
+      onSuccess: () => {
+        showMessage('Logo eliminado correctamente', 'success');
+      },
+      onError: (error: any) => {
+        showMessage(error.message || 'Error al eliminar el logo', 'error');
+      }
+    });
+  };
+
   // Funciones para drag & drop (solo para foto de perfil)
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -547,34 +626,44 @@ const PhotoTab: React.FC<PhotoTabProps> = ({ showMessage }) => {
       {/* Sección de Firma Digital */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-          <PenTool className="w-5 h-5 mr-2 text-cyan-500" />
+          <FileSignature className="w-5 h-5 mr-2 text-cyan-500" />
           Firma Digital
         </h3>
 
         <div className="space-y-4">
-          {/* Área de firma */}
-          <div className="w-full max-w-sm h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 mx-auto sm:mx-0">
-            {userData?.signature ? (
-              <img
-                src={userData.signature}
-                alt="Firma digital"
-                className="max-w-full max-h-full object-contain p-2"
-              />
-            ) : (
-              <div className="text-center">
-                <PenTool className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-                <p className="text-xs text-gray-500">Sin firma</p>
-              </div>
-            )}
+          {/* Área de firma clickeable */}
+          <div
+            className="relative cursor-pointer group w-full max-w-sm mx-auto sm:mx-0"
+            onClick={() => signatureFileInputRef.current?.click()}
+          >
+            <div className="w-full h-24 border-2 border-dashed border-gray-300 group-hover:border-cyan-400 rounded-lg flex items-center justify-center bg-gray-50 group-hover:bg-cyan-50 transition-all duration-200 p-2">
+              {userData?.signature ? (
+                <img
+                  src={userData.signature}
+                  alt="Firma digital"
+                  className="max-w-full max-h-full object-contain"
+                />
+              ) : (
+                <div className="text-center">
+                  <FileSignature className="w-8 h-8 text-gray-400 group-hover:text-cyan-500 mx-auto mb-2 transition-colors" />
+                  <p className="text-xs text-gray-500 group-hover:text-cyan-600 transition-colors font-medium">Haz clic para subir firma</p>
+                </div>
+              )}
+            </div>
+
+            {/* Ícono de upload en la esquina */}
+            <div className="absolute bottom-2 right-2 bg-cyan-500 group-hover:bg-cyan-600 rounded-full p-1.5 border-2 border-white transition-all duration-200 shadow-lg">
+              <Upload className="w-3 h-3 text-white" />
+            </div>
           </div>
 
           {/* Contenido de texto */}
           <div>
             <h4 className="text-base font-medium text-gray-900 mb-1">
-              Administrar firma digital
+              Administrar tu firma digital
             </h4>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Puedes crear una firma dibujándola directamente o subir una imagen existente.
+              Haz clic en el área superior para subir una imagen, o usa el botón "Crear Firma" para dibujarla.
             </p>
             <p className="text-xs text-gray-400 mt-2">
               Tamaño máximo: 2MB • Formatos: JPG, PNG, WebP
@@ -604,7 +693,7 @@ const PhotoTab: React.FC<PhotoTabProps> = ({ showMessage }) => {
                 onClick={() => setShowSignatureCanvas(true)}
                 className="flex items-center justify-center px-4 py-2.5 text-sm bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors"
               >
-                <PenTool className="w-4 h-4 mr-2" />
+                <FileSignature className="w-4 h-4 mr-2" />
                 Crear Firma
               </button>
 
@@ -637,6 +726,113 @@ const PhotoTab: React.FC<PhotoTabProps> = ({ showMessage }) => {
           onChange={handleSignatureFileUpload}
           className="hidden"
           disabled={isLoadingSignatureUpload}
+        />
+      </div>
+
+      {/* Sección de Logo del Doctor */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+          <Image className="w-5 h-5 mr-2 text-cyan-500" />
+          Logo del Doctor
+        </h3>
+
+        <div className="space-y-4">
+          {/* Área de logo clickeable */}
+          <div
+            className="relative cursor-pointer group w-full max-w-sm mx-auto sm:mx-0"
+            onClick={() => logoFileInputRef.current?.click()}
+          >
+            <div className="w-full h-32 border-2 border-dashed border-gray-300 group-hover:border-cyan-400 rounded-lg flex items-center justify-center bg-gray-50 group-hover:bg-cyan-50 transition-all duration-200 p-3">
+              {(() => {
+                console.log('🖼️ Renderizando logo section:', {
+                  hasLogo: !!userData?.logo,
+                  logoValue: userData?.logo,
+                  logoType: typeof userData?.logo
+                });
+                return userData?.logo ? (
+                  <img
+                    src={userData.logo}
+                    alt="Logo del doctor"
+                    className="max-w-full max-h-full object-contain"
+                    onLoad={() => console.log('✅ Logo cargado exitosamente')}
+                    onError={(e) => console.error('❌ Error al cargar logo:', e)}
+                  />
+                ) : (
+                  <div className="text-center">
+                    <Image className="w-10 h-10 text-gray-400 group-hover:text-cyan-500 mx-auto mb-2 transition-colors" />
+                    <p className="text-xs text-gray-500 group-hover:text-cyan-600 transition-colors font-medium">Haz clic para subir logo</p>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Ícono de upload en la esquina */}
+            <div className="absolute bottom-2 right-2 bg-cyan-500 group-hover:bg-cyan-600 rounded-full p-1.5 border-2 border-white transition-all duration-200 shadow-lg">
+              <Upload className="w-3 h-3 text-white" />
+            </div>
+          </div>
+
+          {/* Contenido de texto */}
+          <div>
+            <h4 className="text-base font-medium text-gray-900 mb-1">
+              Administrar tu logo
+            </h4>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Haz clic en el área superior para subir tu logo. Se utilizará en documentos, presupuestos y comunicaciones con pacientes.
+            </p>
+            <p className="text-xs text-gray-400 mt-2">
+              Tamaño máximo: 5MB • Formatos: JPG, PNG, WebP
+            </p>
+          </div>
+
+          {/* Progreso de upload para logo */}
+          {isLoadingLogoUpload && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Subiendo logo...</span>
+                <span>{logoUploadProgress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-cyan-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${logoUploadProgress}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
+
+          {/* Botones de acción para logo */}
+          {!isLoadingLogoUpload && (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={() => logoFileInputRef.current?.click()}
+                className="flex items-center justify-center px-4 py-2.5 text-sm bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Subir Logo
+              </button>
+
+              {userData?.logo && (
+                <button
+                  onClick={handleDeleteLogo}
+                  className="flex items-center justify-center px-4 py-2.5 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Eliminar
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Input file oculto para logo */}
+        <input
+          ref={logoFileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={handleLogoFileUpload}
+          className="hidden"
+          disabled={isLoadingLogoUpload}
         />
       </div>
 

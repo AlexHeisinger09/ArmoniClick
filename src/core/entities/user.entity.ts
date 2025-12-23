@@ -7,6 +7,9 @@ export interface User {
   email: string;
   img: string | null;
   signature: string | null; // ✅ NUEVO CAMPO PARA LA FIRMA
+  logo: string | null; // ✅ NUEVO CAMPO PARA EL LOGO
+  profession: string | null; // ✅ PROFESIÓN DEL DOCTOR
+  specialty: string | null; // ✅ ESPECIALIDAD DEL DOCTOR
   phone: string;
   address: string;
   zipCode: string;

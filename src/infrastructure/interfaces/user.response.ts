@@ -14,6 +14,9 @@ export interface UserResponse {
   role: string[];
   img: string | null;
   signature?: string | null; // ✅ HACER OPCIONAL CON undefined O null
+  logo?: string | null; // ✅ LOGO DEL DOCTOR
+  profession?: string | null; // ✅ PROFESIÓN DEL DOCTOR
+  specialty?: string | null; // ✅ ESPECIALIDAD DEL DOCTOR
   country: string;
 }
 

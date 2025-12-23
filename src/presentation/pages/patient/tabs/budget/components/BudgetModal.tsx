@@ -253,7 +253,10 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
                 name: queryProfile.data.name,
                 lastName: queryProfile.data.lastName,
                 rut: queryProfile.data.rut,
-                signature: queryProfile.data.signature
+                signature: queryProfile.data.signature,
+                logo: queryProfile.data.logo,
+                profession: queryProfile.data.profession,
+                specialty: queryProfile.data.specialty
             } : undefined;
 
             // Crear objeto temporal del presupuesto para PDF

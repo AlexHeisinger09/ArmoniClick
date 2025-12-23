@@ -44,7 +44,10 @@ export const PatientPrescriptions: React.FC<PatientPrescriptionsProps> = ({ pati
           name: queryProfile.data.name || '',
           lastName: queryProfile.data.lastName || '',
           rut: queryProfile.data.rut || '',
-          signature: queryProfile.data.signature || null
+          signature: queryProfile.data.signature || null,
+          logo: queryProfile.data.logo || null,
+          profession: queryProfile.data.profession || null,
+          specialty: queryProfile.data.specialty || null
         } : undefined;
 
         await PrescriptionPDFGenerator.generatePrescriptionPDF(
@@ -92,7 +95,10 @@ export const PatientPrescriptions: React.FC<PatientPrescriptionsProps> = ({ pati
         name: queryProfile.data.name || '',
         lastName: queryProfile.data.lastName || '',
         rut: queryProfile.data.rut || '',
-        signature: queryProfile.data.signature || null
+        signature: queryProfile.data.signature || null,
+        logo: queryProfile.data.logo || null,
+        profession: queryProfile.data.profession || null,
+        specialty: queryProfile.data.specialty || null
       } : undefined;
 
       await PrescriptionPDFGenerator.generatePrescriptionPDF(

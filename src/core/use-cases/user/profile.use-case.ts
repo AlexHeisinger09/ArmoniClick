@@ -9,7 +9,8 @@ export const profileUseCase = async (
   fetcher: HttpAdapter,
 ): Promise<User> => {
   const profile = await fetcher.get<ProfileResponse>("/user/profile", {});
-  // console.log(profile);
+  console.log('🔍 Profile from backend:', profile);
+  console.log('🔍 Logo field:', profile.logo);
 
   return UserMapper.fromAuthResponseToUserProfile(profile);
 };

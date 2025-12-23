@@ -9,6 +9,8 @@ import {
   MapPin,
   Check,
   Shield,
+  Briefcase,
+  GraduationCap,
 } from "lucide-react";
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
 import { useUpdateProfileMutation } from "@/presentation/hooks/user/useUpdateProfile";
@@ -24,6 +26,8 @@ interface ProfileFormData {
   address?: string;
   zipCode?: string;
   city?: string;
+  profession?: string;
+  specialty?: string;
 }
 
 interface ProfileTabProps {
@@ -49,6 +53,8 @@ const ProfileTab: React.FC<ProfileTabProps> = ({ showMessage }) => {
     address: '',
     zipCode: '',
     city: '',
+    profession: '',
+    specialty: '',
   });
 
   // Actualizar formulario cuando se cargan los datos del usuario
@@ -59,11 +65,13 @@ const ProfileTab: React.FC<ProfileTabProps> = ({ showMessage }) => {
         lastName: queryProfile.data.lastName || '',
         username: queryProfile.data.username || '',
         email: queryProfile.data.email || '',
-        rut: queryProfile.data.rut || '', 
+        rut: queryProfile.data.rut || '',
         phone: queryProfile.data.phone || '',
         address: queryProfile.data.address || '',
         zipCode: queryProfile.data.zipCode || '',
         city: queryProfile.data.city || '',
+        profession: queryProfile.data.profession || '',
+        specialty: queryProfile.data.specialty || '',
       });
     }
   }, [queryProfile.data]);
@@ -83,11 +91,13 @@ const ProfileTab: React.FC<ProfileTabProps> = ({ showMessage }) => {
         lastName: profileFormData.lastName,
         username: profileFormData.username,
         email: profileFormData.email,
-        rut: profileFormData.rut || '', 
+        rut: profileFormData.rut || '',
         phone: profileFormData.phone || '',
         address: profileFormData.address || '',
         zipCode: profileFormData.zipCode || '',
         city: profileFormData.city || '',
+        profession: profileFormData.profession || '',
+        specialty: profileFormData.specialty || '',
       };
 
       await updateProfileMutation.mutateAsync(dataToSend);
@@ -178,6 +188,37 @@ const ProfileTab: React.FC<ProfileTabProps> = ({ showMessage }) => {
                   placeholder="12345678-9"
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Profesión
+                </label>
+                <input
+                  type="text"
+                  name="profession"
+                  value={profileFormData.profession}
+                  onChange={handleProfileInputChange}
+                  className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                  disabled={isLoadingUpdate}
+                  placeholder="Ej: Cirujano Dentista"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Especialidad
+                </label>
+                <input
+                  type="text"
+                  name="specialty"
+                  value={profileFormData.specialty}
+                  onChange={handleProfileInputChange}
+                  className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
+                  disabled={isLoadingUpdate}
+                  placeholder="Ej: Odontología General"
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Teléfono
@@ -298,6 +339,28 @@ const ProfileTab: React.FC<ProfileTabProps> = ({ showMessage }) => {
                   <p className="text-sm text-slate-500">RUT</p>
                   <p className="font-medium text-slate-700">
                     {userData?.rut || 'No especificado'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="bg-cyan-100 p-2 rounded-full">
+                  <Briefcase className="w-5 h-5 text-cyan-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Profesión</p>
+                  <p className="font-medium text-slate-700">
+                    {profileFormData.profession || 'No especificada'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="bg-cyan-100 p-2 rounded-full">
+                  <GraduationCap className="w-5 h-5 text-cyan-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Especialidad</p>
+                  <p className="font-medium text-slate-700">
+                    {profileFormData.specialty || 'No especificada'}
                   </p>
                 </div>
               </div>

@@ -71,6 +71,20 @@
       "when": 1766149024378,
       "tag": "0009_cute_scorpion",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1766511814042,
+      "tag": "0010_gray_screwball",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1766514648769,
+      "tag": "0011_curvy_mulholland_black",
+      "breakpoints": true
     }
   ]
 }

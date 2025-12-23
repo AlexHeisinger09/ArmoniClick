@@ -381,54 +381,76 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                 </div>
               </div>
 
-              {/* Alertas médicas - Estilo uniforme cyan */}
-              {(selectedPatient.alergias) && (
-                <div className="flex flex-wrap gap-3 md:justify-end">
-                  {/* Alergias */}
-                  {selectedPatient.alergias && (
-                    <div className="bg-cyan-500 rounded-lg px-4 py-3 min-w-[140px]">
+              {/* Alertas médicas */}
+              {(selectedPatient.alergias || selectedPatient.enfermedades_cronicas || selectedPatient.medicamentos_actuales) && (
+                <>
+                  {/* Vista Mobile - Alertas unificadas */}
+                  <div className="md:hidden">
+                    <div className="bg-cyan-500 rounded-lg px-4 py-3">
                       <div className="flex items-start gap-2">
                         <AlertCircle className="w-5 h-5 text-yellow-300 flex-shrink-0 mt-0.5" />
                         <div className="flex-1">
-                          <p className="text-xs font-bold text-white mb-1">Alérgias</p>
-                          <p className="text-xs text-cyan-50 leading-relaxed border-b border-dashed border-cyan-300 pb-1">
-                            {selectedPatient.alergias}
+                          <p className="text-xs font-bold text-white mb-2">Alertas Médicas</p>
+                          <p className="text-xs text-cyan-50 leading-relaxed">
+                            {[
+                              selectedPatient.alergias,
+                              selectedPatient.enfermedades_cronicas,
+                              selectedPatient.medicamentos_actuales
+                            ].filter(Boolean).join(', ')}
                           </p>
                         </div>
                       </div>
                     </div>
-                  )}
+                  </div>
 
-                  {/* Enfermedades Crónicas */}
-                  {selectedPatient.enfermedades_cronicas && (
-                    <div className="bg-cyan-500 rounded-lg px-4 py-3 min-w-[140px]">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="w-5 h-5 text-yellow-300 flex-shrink-0 mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-xs font-bold text-white mb-1">Enfermedades</p>
-                          <p className="text-xs text-cyan-50 leading-relaxed border-b border-dashed border-cyan-300 pb-1">
-                            {selectedPatient.enfermedades_cronicas}
-                          </p>
+                  {/* Vista Desktop - Alertas separadas */}
+                  <div className="hidden md:flex flex-wrap gap-3 md:justify-end">
+                    {/* Alergias */}
+                    {selectedPatient.alergias && (
+                      <div className="bg-cyan-500 rounded-lg px-4 py-3 min-w-[140px]">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="w-5 h-5 text-yellow-300 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <p className="text-xs font-bold text-white mb-1">Alergias</p>
+                            <p className="text-xs text-cyan-50 leading-relaxed border-b border-dashed border-cyan-300 pb-1">
+                              {selectedPatient.alergias}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Medicamentos Actuales */}
-                  {selectedPatient.medicamentos_actuales && (
-                    <div className="bg-cyan-500 rounded-lg px-4 py-3 min-w-[140px]">
-                      <div className="flex items-start gap-2">
-                        <Info className="w-5 h-5 text-yellow-300 flex-shrink-0 mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-xs font-bold text-white mb-1">Medicamentos</p>
-                          <p className="text-xs text-cyan-50 leading-relaxed border-b border-dashed border-cyan-300 pb-1">
-                            {selectedPatient.medicamentos_actuales}
-                          </p>
+                    {/* Enfermedades Crónicas */}
+                    {selectedPatient.enfermedades_cronicas && (
+                      <div className="bg-cyan-500 rounded-lg px-4 py-3 min-w-[140px]">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="w-5 h-5 text-yellow-300 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <p className="text-xs font-bold text-white mb-1">Enfermedades</p>
+                            <p className="text-xs text-cyan-50 leading-relaxed border-b border-dashed border-cyan-300 pb-1">
+                              {selectedPatient.enfermedades_cronicas}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+
+                    {/* Medicamentos Actuales */}
+                    {selectedPatient.medicamentos_actuales && (
+                      <div className="bg-cyan-500 rounded-lg px-4 py-3 min-w-[140px]">
+                        <div className="flex items-start gap-2">
+                          <Info className="w-5 h-5 text-yellow-300 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <p className="text-xs font-bold text-white mb-1">Medicamentos</p>
+                            <p className="text-xs text-cyan-50 leading-relaxed border-b border-dashed border-cyan-300 pb-1">
+                              {selectedPatient.medicamentos_actuales}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           </div>

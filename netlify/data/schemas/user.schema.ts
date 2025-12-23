@@ -22,6 +22,9 @@ export const usersTable = pgTable("users", {
   city: varchar("city"),
   img: varchar("img"),
   signature: varchar("signature"), // ✅ NUEVO CAMPO PARA LA FIRMA
+  logo: varchar("logo"), // ✅ NUEVO CAMPO PARA EL LOGO DEL DOCTOR
+  profession: varchar("profession"), // ✅ PROFESIÓN DEL DOCTOR
+  specialty: varchar("specialty"), // ✅ ESPECIALIDAD DEL DOCTOR
   expirationDate: timestamp("expirationDate"), // ✅ Fecha de vigencia (para cuentas de prueba)
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt"),

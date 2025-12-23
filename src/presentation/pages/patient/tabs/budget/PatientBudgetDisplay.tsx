@@ -43,7 +43,10 @@ const PatientBudgetDisplay: React.FC<PatientBudgetDisplayProps> = ({ patient }) 
                 name: queryProfile.data.name,
                 lastName: queryProfile.data.lastName,
                 rut: queryProfile.data.rut,
-                signature: queryProfile.data.signature
+                signature: queryProfile.data.signature,
+                logo: queryProfile.data.logo,
+                profession: queryProfile.data.profession,
+                specialty: queryProfile.data.specialty
             } : undefined;
 
             await PDFGenerator.generateBudgetPDF(budget, patient, doctorData);

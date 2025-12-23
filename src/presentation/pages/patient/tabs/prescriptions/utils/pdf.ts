@@ -6,9 +6,39 @@ interface DoctorData {
     lastName: string;
     rut?: string;
     signature?: string | null;
+    logo?: string | null; // ✅ LOGO DEL DOCTOR
+    profession?: string | null; // ✅ PROFESIÓN DEL DOCTOR
+    specialty?: string | null; // ✅ ESPECIALIDAD DEL DOCTOR
 }
 
 export class PrescriptionPDFGenerator {
+    private static getLogoPath(doctorData?: DoctorData): string {
+        // Si el doctor tiene logo cargado, usarlo
+        if (doctorData?.logo) {
+            return doctorData.logo;
+        }
+        // Si no, usar el logo por defecto
+        return '/logoPresupuesto.PNG';
+    }
+
+    private static getProfession(doctorData?: DoctorData): string {
+        // Si el doctor tiene profesión cargada, usarla
+        if (doctorData?.profession) {
+            return doctorData.profession;
+        }
+        // Si no, usar el valor por defecto
+        return 'CIRUJANO DENTISTA';
+    }
+
+    private static getSpecialty(doctorData?: DoctorData): string {
+        // Si el doctor tiene especialidad cargada, usarla
+        if (doctorData?.specialty) {
+            return `Experto en ${doctorData.specialty}`;
+        }
+        // Si no, usar el valor por defecto
+        return 'Experto en Odontología General';
+    }
+
     private static generateHTMLContent(
         prescription: Prescription,
         patient: Patient,
@@ -16,7 +46,25 @@ export class PrescriptionPDFGenerator {
     ): string {
         const doctorName = doctorData ? `${doctorData.name} ${doctorData.lastName}` : "Doctor(a)";
         const doctorRut = doctorData?.rut || "Sin Rut";
-        const currentDate = new Date().toLocaleDateString('es-CL', {
+        const logoPath = this.getLogoPath(doctorData); // ✅ USAR LOGO DEL DOCTOR O POR DEFECTO
+        const profession = this.getProfession(doctorData); // ✅ USAR PROFESIÓN DEL DOCTOR O POR DEFECTO
+        const specialty = this.getSpecialty(doctorData); // ✅ USAR ESPECIALIDAD DEL DOCTOR O POR DEFECTO
+        const emissionDate = new Date().toLocaleDateString('es-CL', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        // Calcular edad del paciente
+        const birthDate = new Date(patient.fecha_nacimiento);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+
+        const birthDateFormatted = birthDate.toLocaleDateString('es-CL', {
             year: 'numeric',
             month: 'long',
             day: 'numeric'
@@ -87,24 +135,22 @@ export class PrescriptionPDFGenerator {
             margin: 20px 0;
         }
 
-        .patient-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .patient-grid div {
+        .patient-data {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .patient-grid strong {
+        .patient-data p {
             color: #374151;
-            font-weight: 600;
+            font-size: 15px;
+            margin: 0;
+            line-height: 1.6;
         }
 
-        .patient-grid span {
-            color: #64748b;
+        .patient-data strong {
+            color: #0891b2;
+            font-weight: 600;
         }
 
         .medications {
@@ -189,23 +235,24 @@ export class PrescriptionPDFGenerator {
 </head>
 <body>
     <div class="header">
-        <img src="/logoPresupuesto.PNG" alt="Logo" class="logo" />
+        <img src="${logoPath}" alt="Logo" class="logo" />
         <div class="doctor-info">
             <h2>${doctorName}</h2>
-            <p>CIRUJANO DENTISTA</p>
+            <p>${profession}</p>
             <p>RUT: ${doctorRut}</p>
-            <p>Especialista en Odontología General</p>
+            <p>${specialty}</p>
         </div>
     </div>
 
     <h1 class="title">Receta Médica</h1>
+    <p style="text-align: center; font-size: 14px; color: #64748b; margin-top: -10px; margin-bottom: 20px;">Fecha de emisión: ${emissionDate}</p>
 
     <div class="patient-info">
-        <div class="patient-grid">
-            <div><strong>Paciente:</strong> <span>${patient.nombres} ${patient.apellidos}</span></div>
-            <div><strong>Contacto:</strong> <span>${patient.telefono}</span></div>
-            <div><strong>RUT:</strong> <span>${patient.rut}</span></div>
-            <div><strong>Fecha:</strong> <span>${currentDate}</span></div>
+        <div class="patient-data">
+            <p><strong>Paciente:</strong> ${patient.nombres} ${patient.apellidos}</p>
+            <p><strong>Fec. de Nacimiento:</strong> ${birthDateFormatted} (${age} años)</p>
+            <p><strong>RUT:</strong> ${patient.rut}</p>
+            <p><strong>Contacto:</strong> ${patient.telefono}</p>
         </div>
     </div>
 

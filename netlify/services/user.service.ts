@@ -27,6 +27,9 @@ export class UserService {
       city: usersTable.city,
       img: usersTable.img,
       signature: usersTable.signature,         // ✅ INCLUIR SIGNATURE POR DEFECTO
+      logo: usersTable.logo,                   // ✅ INCLUIR LOGO POR DEFECTO
+      profession: usersTable.profession,       // ✅ INCLUIR PROFESSION POR DEFECTO
+      specialty: usersTable.specialty,         // ✅ INCLUIR SPECIALTY POR DEFECTO
       createdAt: usersTable.createdAt,
       updatedAt: usersTable.updatedAt,
       isActive: usersTable.isActive,
