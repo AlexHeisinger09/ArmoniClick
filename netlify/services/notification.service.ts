@@ -266,6 +266,242 @@ export class NotificationService {
     return isValid;
   }
 
+  // Notificar al doctor cuando un paciente confirma la cita
+  async notifyDoctorAboutConfirmation(data: {
+    appointmentId: number;
+    patientName: string;
+    doctorName: string;
+    doctorEmail: string;
+    appointmentDate: Date;
+    service: string;
+    location?: string;
+  }): Promise<boolean> {
+    try {
+      console.log('📧 [NotificationService] Notifying doctor about patient confirmation...', {
+        doctorEmail: data.doctorEmail,
+        patientName: data.patientName,
+        appointmentDate: data.appointmentDate
+      });
+
+      const formattedDate = data.appointmentDate.toLocaleDateString('es-CL', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      const formattedTime = data.appointmentDate.toLocaleTimeString('es-CL', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Paciente Confirmó Cita</title>
+        </head>
+        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background-color: #f5f7fa; margin: 0; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+                <!-- Header -->
+                <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; text-align: center; padding: 35px 20px 30px;">
+                    <h1 style="font-size: 28px; font-weight: 700; margin: 0 0 12px 0; color: #ffffff;">✅ Cita Confirmada por Paciente</h1>
+                    <p style="font-size: 16px; margin: 0; color: #ffffff; font-weight: 500;">Notificación del Sistema de Citas</p>
+                </div>
+
+                <!-- Content -->
+                <div style="padding: 40px 30px;">
+                    <p style="font-size: 16px; margin-bottom: 20px; color: #0f172a; font-weight: 500;">
+                        Hola <strong style="color: #059669;">Dr. ${data.doctorName}</strong>,
+                    </p>
+
+                    <p style="font-size: 15px; margin-bottom: 25px; color: #334155;">
+                        El paciente <strong>${data.patientName}</strong> ha <strong style="color: #10b981;">confirmado</strong> su cita.
+                    </p>
+
+                    <!-- Appointment Card -->
+                    <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
+                        <div style="margin-bottom: 12px;">
+                            <strong style="color: #065f46; font-size: 14px;">📅 Fecha:</strong>
+                            <p style="margin: 5px 0 0 0; color: #047857; font-size: 15px; font-weight: 600;">${formattedDate}</p>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <strong style="color: #065f46; font-size: 14px;">🕐 Hora:</strong>
+                            <p style="margin: 5px 0 0 0; color: #047857; font-size: 15px; font-weight: 600;">${formattedTime}</p>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <strong style="color: #065f46; font-size: 14px;">👤 Paciente:</strong>
+                            <p style="margin: 5px 0 0 0; color: #047857; font-size: 15px;">${data.patientName}</p>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <strong style="color: #065f46; font-size: 14px;">💼 Servicio:</strong>
+                            <p style="margin: 5px 0 0 0; color: #047857; font-size: 15px;">${data.service}</p>
+                        </div>
+                        ${data.location ? `
+                        <div>
+                            <strong style="color: #065f46; font-size: 14px;">📍 Ubicación:</strong>
+                            <p style="margin: 5px 0 0 0; color: #047857; font-size: 15px;">${data.location}</p>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    <p style="font-size: 14px; color: #64748b; margin-top: 25px;">
+                        Esta es una notificación automática del sistema.
+                    </p>
+                </div>
+
+                <!-- Footer -->
+                <div style="background: #f8fafc; padding: 20px 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                    <p style="font-size: 13px; color: #94a3b8; margin: 0;">© ${new Date().getFullYear()} ArmoniClick. Sistema de Gestión de Citas Médicas.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+      `;
+
+      const emailSent = await this.emailService.sendEmail({
+        from: envs.MAILER_EMAIL,
+        to: data.doctorEmail,
+        subject: `✅ ${data.patientName} confirmó su cita del ${formattedDate}`,
+        htmlBody: htmlContent
+      });
+
+      console.log(`✅ [NotificationService] Doctor notification sent to ${data.doctorEmail}:`, emailSent);
+      return emailSent;
+    } catch (error) {
+      console.error('❌ [NotificationService] Error sending doctor notification:', error);
+      return false;
+    }
+  }
+
+  // Notificar al doctor cuando un paciente cancela la cita
+  async notifyDoctorAboutCancellation(data: {
+    appointmentId: number;
+    patientName: string;
+    doctorName: string;
+    doctorEmail: string;
+    appointmentDate: Date;
+    service: string;
+    location?: string;
+    cancellationReason?: string;
+  }): Promise<boolean> {
+    try {
+      console.log('📧 [NotificationService] Notifying doctor about patient cancellation...', {
+        doctorEmail: data.doctorEmail,
+        patientName: data.patientName,
+        appointmentDate: data.appointmentDate
+      });
+
+      const formattedDate = data.appointmentDate.toLocaleDateString('es-CL', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      const formattedTime = data.appointmentDate.toLocaleTimeString('es-CL', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Paciente Canceló Cita</title>
+        </head>
+        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background-color: #f5f7fa; margin: 0; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+                <!-- Header -->
+                <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; text-align: center; padding: 35px 20px 30px;">
+                    <h1 style="font-size: 28px; font-weight: 700; margin: 0 0 12px 0; color: #ffffff;">❌ Cita Cancelada por Paciente</h1>
+                    <p style="font-size: 16px; margin: 0; color: #ffffff; font-weight: 500;">Notificación del Sistema de Citas</p>
+                </div>
+
+                <!-- Content -->
+                <div style="padding: 40px 30px;">
+                    <p style="font-size: 16px; margin-bottom: 20px; color: #0f172a; font-weight: 500;">
+                        Hola <strong style="color: #dc2626;">Dr. ${data.doctorName}</strong>,
+                    </p>
+
+                    <p style="font-size: 15px; margin-bottom: 25px; color: #334155;">
+                        El paciente <strong>${data.patientName}</strong> ha <strong style="color: #ef4444;">cancelado</strong> su cita.
+                    </p>
+
+                    <!-- Appointment Card -->
+                    <div style="background: #fee2e2; border-left: 4px solid #ef4444; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
+                        <div style="margin-bottom: 12px;">
+                            <strong style="color: #991b1b; font-size: 14px;">📅 Fecha:</strong>
+                            <p style="margin: 5px 0 0 0; color: #dc2626; font-size: 15px; font-weight: 600;">${formattedDate}</p>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <strong style="color: #991b1b; font-size: 14px;">🕐 Hora:</strong>
+                            <p style="margin: 5px 0 0 0; color: #dc2626; font-size: 15px; font-weight: 600;">${formattedTime}</p>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <strong style="color: #991b1b; font-size: 14px;">👤 Paciente:</strong>
+                            <p style="margin: 5px 0 0 0; color: #dc2626; font-size: 15px;">${data.patientName}</p>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <strong style="color: #991b1b; font-size: 14px;">💼 Servicio:</strong>
+                            <p style="margin: 5px 0 0 0; color: #dc2626; font-size: 15px;">${data.service}</p>
+                        </div>
+                        ${data.location ? `
+                        <div style="margin-bottom: 12px;">
+                            <strong style="color: #991b1b; font-size: 14px;">📍 Ubicación:</strong>
+                            <p style="margin: 5px 0 0 0; color: #dc2626; font-size: 15px;">${data.location}</p>
+                        </div>
+                        ` : ''}
+                        ${data.cancellationReason ? `
+                        <div>
+                            <strong style="color: #991b1b; font-size: 14px;">📝 Motivo:</strong>
+                            <p style="margin: 5px 0 0 0; color: #dc2626; font-size: 15px;">${data.cancellationReason}</p>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Suggestions -->
+                    <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
+                        <h3 style="color: #92400e; font-size: 16px; margin: 0 0 12px 0;">💡 Acciones Recomendadas:</h3>
+                        <ul style="margin: 0; padding-left: 20px; color: #78350f;">
+                            <li style="margin-bottom: 8px;">Contactar al paciente para reagendar</li>
+                            <li style="margin-bottom: 8px;">Verificar disponibilidad de horarios alternativos</li>
+                            <li style="margin-bottom: 8px;">Ofrecer el horario liberado a lista de espera</li>
+                            <li>Actualizar tu calendario personal</li>
+                        </ul>
+                    </div>
+
+                    <p style="font-size: 14px; color: #64748b; margin-top: 25px;">
+                        Esta es una notificación automática del sistema. El horario ahora está disponible para nuevas citas.
+                    </p>
+                </div>
+
+                <!-- Footer -->
+                <div style="background: #f8fafc; padding: 20px 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                    <p style="font-size: 13px; color: #94a3b8; margin: 0;">© ${new Date().getFullYear()} ArmoniClick. Sistema de Gestión de Citas Médicas.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+      `;
+
+      const emailSent = await this.emailService.sendEmail({
+        from: envs.MAILER_EMAIL,
+        to: data.doctorEmail,
+        subject: `❌ ${data.patientName} canceló su cita del ${formattedDate}`,
+        htmlBody: htmlContent
+      });
+
+      console.log(`✅ [NotificationService] Doctor cancellation notification sent to ${data.doctorEmail}:`, emailSent);
+      return emailSent;
+    } catch (error) {
+      console.error('❌ [NotificationService] Error sending doctor cancellation notification:', error);
+      return false;
+    }
+  }
+
   // Método helper para obtener datos formateados de fecha
   private getFormattedDate(date: Date): { date: string; time: string } {
     return {

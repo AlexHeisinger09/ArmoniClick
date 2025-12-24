@@ -3,7 +3,11 @@ import { Handler, HandlerEvent } from "@netlify/functions";
 import { HEADERS } from "../config/utils";
 import { db } from "../data/db";
 import { appointmentsTable } from "../data/schemas/appointment.schema";
+import { usersTable } from "../data/schemas/user.schema";
+import { patientsTable } from "../data/schemas/patient.schema";
+import { locationsTable } from "../data/schemas/location.schema";
 import { eq } from "drizzle-orm";
+import { NotificationService } from "../services/notification.service";
 
 const handler: Handler = async (event: HandlerEvent) => {
   console.log('🔍 Confirm function called:', {
@@ -157,6 +161,63 @@ const handler: Handler = async (event: HandlerEvent) => {
       .returning();
 
     console.log('✅ Appointment confirmed successfully:', updatedAppointment.id);
+
+    // Obtener datos del doctor, paciente y ubicación para notificar
+    try {
+      const [doctor] = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.id, appointment.user_id))
+        .limit(1);
+
+      if (doctor && doctor.email) {
+        const notificationService = new NotificationService();
+
+        // Obtener nombre del paciente (puede ser guest o paciente registrado)
+        let patientName = appointment.guestName || 'Paciente';
+        if (appointment.patient_id) {
+          const [patient] = await db
+            .select()
+            .from(patientsTable)
+            .where(eq(patientsTable.id, appointment.patient_id))
+            .limit(1);
+
+          if (patient) {
+            patientName = `${patient.name} ${patient.lastName}`;
+          }
+        }
+
+        // Obtener ubicación si existe
+        let locationName: string | undefined;
+        if (appointment.location_id) {
+          const [location] = await db
+            .select()
+            .from(locationsTable)
+            .where(eq(locationsTable.id, appointment.location_id))
+            .limit(1);
+
+          if (location) {
+            locationName = `${location.name} - ${location.address}, ${location.city}`;
+          }
+        }
+
+        // Enviar notificación al doctor
+        await notificationService.notifyDoctorAboutConfirmation({
+          appointmentId: updatedAppointment.id,
+          patientName,
+          doctorName: `${doctor.name} ${doctor.lastName}`,
+          doctorEmail: doctor.email,
+          appointmentDate: new Date(updatedAppointment.appointmentDate),
+          service: updatedAppointment.title,
+          location: locationName
+        });
+
+        console.log('✅ Doctor notification sent successfully');
+      }
+    } catch (notificationError) {
+      console.error('⚠️ Error sending doctor notification (non-critical):', notificationError);
+      // No fallar la confirmación si falla la notificación
+    }
 
     return {
       statusCode: 200,

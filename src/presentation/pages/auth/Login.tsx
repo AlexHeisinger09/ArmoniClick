@@ -188,13 +188,7 @@ export const Login = () => {
 
           <div className="text-center pt-4 border-t-2 border-slate-300">
             <TypographyP className="text-slate-500 text-sm font-medium">
-              ¿No tienes cuenta?{" "}
-              <Link
-                to="/auth/registrar"
-                className="text-cyan-600 font-bold hover:text-cyan-700 transition-colors hover:underline"
-              >
-                Crear cuenta
-              </Link>
+              © {new Date().getFullYear()} ArmoniClick. Todos los derechos reservados.
             </TypographyP>
           </div>
         </form>

@@ -1,15 +1,10 @@
 // netlify/functions/locations/locations.ts
 import type { Context } from "@netlify/functions";
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
 import { eq, and } from "drizzle-orm";
-import { envs } from "../../config/envs";
 import { validateJWT } from "../../middlewares";
 import { fromBodyToObject, HEADERS } from "../../config/utils";
 import { locationsTable } from "../../data/schemas/location.schema";
-
-const sql = neon(envs.DATABASE_URL);
-const db = drizzle(sql);
+import { db } from "../../data/db";
 
 export default async (req: Request, context: Context) => {
   const url = new URL(req.url);
