@@ -50,33 +50,73 @@ export class ICSService {
     const now = new Date();
     const dtstamp = formatDate(now);
 
-    // Construir el archivo .ics
-    const icsContent = [
+    // Construir el archivo .ics con zona horaria
+    const lines = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
       'PRODID:-//ArmoniClick//Appointment System//ES',
       'CALSCALE:GREGORIAN',
       'METHOD:REQUEST',
+      // Agregar zona horaria de Chile para mejor compatibilidad con Google Calendar
+      'BEGIN:VTIMEZONE',
+      'TZID:America/Santiago',
+      'BEGIN:STANDARD',
+      'DTSTART:19700404T000000',
+      'TZOFFSETFROM:-0300',
+      'TZOFFSETTO:-0400',
+      'RRULE:FREQ=YEARLY;BYMONTH=4;BYDAY=1SU',
+      'END:STANDARD',
+      'BEGIN:DAYLIGHT',
+      'DTSTART:19700906T000000',
+      'TZOFFSETFROM:-0400',
+      'TZOFFSETTO:-0300',
+      'RRULE:FREQ=YEARLY;BYMONTH=9;BYDAY=1SU',
+      'END:DAYLIGHT',
+      'END:VTIMEZONE',
       'BEGIN:VEVENT',
       `UID:${uid}`,
       `DTSTAMP:${dtstamp}`,
       `DTSTART:${formatDate(startDate)}`,
       `DTEND:${formatDate(endDate)}`,
-      `SUMMARY:${this.escapeText(summary)}`,
-      description ? `DESCRIPTION:${this.escapeText(description)}` : '',
-      location ? `LOCATION:${this.escapeText(location)}` : '',
-      organizerEmail ? `ORGANIZER;CN=${this.escapeText(organizerName)}:mailto:${organizerEmail}` : '',
-      attendeeEmail ? `ATTENDEE;CN=${this.escapeText(attendeeName)};RSVP=TRUE:mailto:${attendeeEmail}` : '',
-      'STATUS:CONFIRMED',
-      'SEQUENCE:0',
-      'BEGIN:VALARM',
-      'TRIGGER:-PT24H', // Recordatorio 24 horas antes
-      'ACTION:DISPLAY',
-      `DESCRIPTION:Recordatorio: ${this.escapeText(summary)}`,
-      'END:VALARM',
-      'END:VEVENT',
-      'END:VCALENDAR'
-    ].filter(line => line !== '').join('\r\n');
+      `SUMMARY:${this.escapeText(summary)}`
+    ];
+
+    // Agregar campos opcionales solo si tienen contenido
+    if (description && description.trim()) {
+      lines.push(`DESCRIPTION:${this.escapeText(description)}`);
+    }
+
+    if (location && location.trim()) {
+      lines.push(`LOCATION:${this.escapeText(location)}`);
+    }
+
+    if (organizerEmail && organizerEmail.trim()) {
+      const orgName = organizerName && organizerName.trim() ? this.escapeText(organizerName) : 'Organizador';
+      lines.push(`ORGANIZER;CN="${orgName}":mailto:${organizerEmail}`);
+    }
+
+    if (attendeeEmail && attendeeEmail.trim()) {
+      const attName = attendeeName && attendeeName.trim() ? this.escapeText(attendeeName) : 'Asistente';
+      lines.push(`ATTENDEE;CN="${attName}";RSVP=TRUE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION:mailto:${attendeeEmail}`);
+    }
+
+    // Agregar metadatos del evento
+    lines.push('STATUS:CONFIRMED');
+    lines.push('SEQUENCE:0');
+    lines.push('TRANSP:OPAQUE'); // Marcar como ocupado en el calendario
+
+    // Agregar recordatorio
+    lines.push('BEGIN:VALARM');
+    lines.push('TRIGGER:-PT24H');
+    lines.push('ACTION:DISPLAY');
+    lines.push(`DESCRIPTION:Recordatorio: ${this.escapeText(summary)}`);
+    lines.push('END:VALARM');
+
+    // Cerrar evento y calendario
+    lines.push('END:VEVENT');
+    lines.push('END:VCALENDAR');
+
+    const icsContent = lines.join('\r\n');
 
     console.log('✅ [ICSService] .ics content generated successfully, length:', icsContent.length);
     return icsContent;
