@@ -45,7 +45,7 @@ const ConfirmAppointment: React.FC = () => {
       console.log('🔍 Token:', confirmationToken);
       
       // ✅ SIMPLIFICADO - Solo una URL con query parameter
-      const url = `/.netlify/functions/confirm?token=${confirmationToken}`;
+      const url = `/.netlify/functions/confirm-appointment?token=${confirmationToken}`;
       
       console.log('🌐 Calling:', url);
       

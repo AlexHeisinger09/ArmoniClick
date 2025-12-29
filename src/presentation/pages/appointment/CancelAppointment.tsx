@@ -54,7 +54,7 @@ const CancelAppointment: React.FC = () => {
       console.log('🔍 Token:', token);
       
       // ✅ SIMPLIFICADO - Solo una URL como en confirm
-      const url = `/.netlify/functions/cancel?token=${token}`;
+      const url = `/.netlify/functions/cancel-appointment?token=${token}`;
       
       console.log('🌐 Calling:', url);
       

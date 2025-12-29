@@ -1,9 +1,13 @@
-// netlify/functions/appointments/confirm-appointment.ts - TIPOS CORREGIDOS
+// netlify/functions/confirm-appointment.ts - TIPOS CORREGIDOS
 import { Handler, HandlerEvent } from "@netlify/functions";
-import { HEADERS } from "../../config/utils";
-import { db } from "../../data/db";
-import { appointmentsTable } from "../../data/schemas/appointment.schema";
+import { HEADERS } from "../config/utils";
+import { db } from "../data/db";
+import { appointmentsTable } from "../data/schemas/appointment.schema";
+import { usersTable } from "../data/schemas/user.schema";
+import { patientsTable } from "../data/schemas/patient.schema";
+import { locationsTable } from "../data/schemas/location.schema";
 import { eq } from "drizzle-orm";
+import { NotificationService } from "../services/notification.service";
 
 const handler: Handler = async (event: HandlerEvent) => {
   console.log('🔍 Confirm appointment function called:', {
@@ -36,34 +40,12 @@ const handler: Handler = async (event: HandlerEvent) => {
   }
 
   try {
-    // ✅ CORREGIDO - Solo parsing manual del path (sin pathParameters)
-    console.log('🔍 Extracting token from path:', path);
-    
-    let confirmationToken: string | null = null;
-    
-    const pathParts = path.split('/');
-    console.log('🔍 Path parts:', pathParts);
-    
-    // Buscar el índice después de 'confirm-appointment' o 'appointments-confirm-appointment'
-    const confirmIndex = pathParts.findIndex(part => 
-      part === 'appointments-confirm-appointment' || 
-      part === 'confirm-appointment'
-    );
-    
-    if (confirmIndex !== -1 && pathParts[confirmIndex + 1]) {
-      confirmationToken = pathParts[confirmIndex + 1];
-      console.log('✅ Token found by parsing:', confirmationToken);
-    } else {
-      // Método alternativo: tomar el último segmento que no esté vacío
-      const lastSegment = pathParts[pathParts.length - 1];
-      if (lastSegment && lastSegment.length > 10) { // tokens son largos
-        confirmationToken = lastSegment;
-        console.log('✅ Token found as last segment:', confirmationToken);
-      }
-    }
+    // Extraer token del query parameter
+    const confirmationToken = event.queryStringParameters?.token;
+    console.log('🔍 Extracting token from query:', confirmationToken);
 
     if (!confirmationToken) {
-      console.log('❌ No token found in path:', path);
+      console.log('❌ No token found in query parameters');
       return {
         statusCode: 400,
         body: JSON.stringify({
@@ -75,17 +57,25 @@ const handler: Handler = async (event: HandlerEvent) => {
 
     console.log('🔍 Confirming appointment with token:', confirmationToken);
 
-    // Buscar la cita por token
-    const appointments = await db
-      .select()
+    // Buscar la cita por token con JOIN para obtener datos del doctor, paciente y ubicación
+    const appointmentsWithDetails = await db
+      .select({
+        appointment: appointmentsTable,
+        doctor: usersTable,
+        patient: patientsTable,
+        location: locationsTable
+      })
       .from(appointmentsTable)
+      .leftJoin(usersTable, eq(appointmentsTable.doctorId, usersTable.id))
+      .leftJoin(patientsTable, eq(appointmentsTable.patientId, patientsTable.id))
+      .leftJoin(locationsTable, eq(appointmentsTable.locationId, locationsTable.id))
       .where(eq(appointmentsTable.confirmationToken, confirmationToken))
       .limit(1);
 
-    const appointment = appointments[0];
-    console.log('🔍 Found appointment:', appointment ? { id: appointment.id, status: appointment.status } : null);
+    const result = appointmentsWithDetails[0];
+    console.log('🔍 Found appointment:', result?.appointment ? { id: result.appointment.id, status: result.appointment.status } : null);
 
-    if (!appointment) {
+    if (!result || !result.appointment) {
       console.log('❌ Appointment not found for token:', confirmationToken);
       return {
         statusCode: 404,
@@ -95,6 +85,24 @@ const handler: Handler = async (event: HandlerEvent) => {
         headers: HEADERS.json,
       };
     }
+
+    const appointment = result.appointment;
+    const doctor = result.doctor;
+    const patient = result.patient;
+    const location = result.location;
+
+    console.log('📋 Appointment details:', {
+      appointmentId: appointment.id,
+      guestName: appointment.guestName,
+      patientId: appointment.patientId,
+      hasPatient: !!patient,
+      patient: patient ? {
+        id: patient.id,
+        nombres: patient.nombres,
+        apellidos: patient.apellidos,
+        fullName: `${patient.nombres} ${patient.apellidos}`
+      } : null
+    });
 
     // Verificar si la cita ya está confirmada
     if (appointment.status === 'confirmed') {
@@ -157,6 +165,55 @@ const handler: Handler = async (event: HandlerEvent) => {
       .returning();
 
     console.log('✅ Appointment confirmed successfully:', updatedAppointment.id);
+
+    // Enviar notificación al doctor
+    if (doctor && doctor.email) {
+      try {
+        const notificationService = new NotificationService();
+
+        // Obtener nombre del paciente (puede ser invitado o registrado)
+        let patientName = 'Paciente';
+
+        if (appointment.guestName) {
+          // Paciente invitado
+          patientName = appointment.guestName;
+        } else if (patient) {
+          // Paciente registrado
+          if (patient.nombres && patient.apellidos) {
+            patientName = `${patient.nombres} ${patient.apellidos}`;
+          } else if (patient.nombres) {
+            patientName = patient.nombres;
+          } else if (patient.apellidos) {
+            patientName = patient.apellidos;
+          }
+        }
+
+        const doctorName = `${doctor.name || ''} ${doctor.lastName || ''}`.trim() || 'Doctor';
+
+        console.log('📧 Sending confirmation notification:', {
+          patientName,
+          doctorName,
+          doctorEmail: doctor.email,
+          appointmentGuestName: appointment.guestName,
+          hasPatient: !!patient
+        });
+
+        await notificationService.notifyDoctorAboutConfirmation({
+          appointmentId: appointment.id,
+          patientName: patientName,
+          doctorName: doctorName,
+          doctorEmail: doctor.email,
+          appointmentDate: new Date(appointment.appointmentDate),
+          service: appointment.title,
+          location: location?.name
+        });
+
+        console.log('✅ Doctor notification sent successfully');
+      } catch (notificationError) {
+        console.error('⚠️ Failed to send doctor notification:', notificationError);
+        // No fallar la confirmación si falla la notificación
+      }
+    }
 
     return {
       statusCode: 200,

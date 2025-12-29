@@ -1,4 +1,4 @@
-// netlify/functions/cancel.ts - EXTRAER TOKEN DEL PATH
+// netlify/functions/cancel-appointment.ts - TIPOS CORREGIDOS
 import { Handler, HandlerEvent } from "@netlify/functions";
 import { HEADERS } from "../config/utils";
 import { db } from "../data/db";
@@ -10,9 +10,10 @@ import { eq } from "drizzle-orm";
 import { NotificationService } from "../services/notification.service";
 
 const handler: Handler = async (event: HandlerEvent) => {
-  console.log('🔍 Cancel function called:', {
+  console.log('🔍 Cancel appointment function called:', {
     httpMethod: event.httpMethod,
     path: event.path,
+    headers: event.headers,
     queryStringParameters: event.queryStringParameters
   });
 
@@ -28,6 +29,7 @@ const handler: Handler = async (event: HandlerEvent) => {
 
   // Solo permitir GET
   if (httpMethod !== "GET") {
+    console.log('❌ Method not allowed:', httpMethod);
     return {
       statusCode: 405,
       body: JSON.stringify({
@@ -38,36 +40,12 @@ const handler: Handler = async (event: HandlerEvent) => {
   }
 
   try {
-    // ✅ CORREGIDO - Extraer token del path O del query parameter
-    let token: string | null = null;
-    
-    // Método 1: Query parameter (si la redirección funciona)
-    if (event.queryStringParameters?.token) {
-      token = event.queryStringParameters.token;
-      console.log('✅ Token found in query:', token);
-    }
-    // Método 2: Del path (si viene directo)
-    else {
-      const pathParts = path.split('/');
-      console.log('🔍 Path parts:', pathParts);
-      
-      // Buscar después de 'cancel-appointment' o como último segmento
-      const cancelIndex = pathParts.findIndex(part => part === 'cancel-appointment');
-      if (cancelIndex !== -1 && pathParts[cancelIndex + 1]) {
-        token = pathParts[cancelIndex + 1];
-        console.log('✅ Token found in path after cancel-appointment:', token);
-      } else {
-        // Último segmento válido
-        const lastSegment = pathParts[pathParts.length - 1];
-        if (lastSegment && lastSegment.length > 10) {
-          token = lastSegment;
-          console.log('✅ Token found as last path segment:', token);
-        }
-      }
-    }
-    
-    if (!token) {
-      console.log('❌ No token found in path or query:', { path, queryStringParameters: event.queryStringParameters });
+    // Extraer token del query parameter
+    const confirmationToken = event.queryStringParameters?.token;
+    console.log('🔍 Extracting token from query:', confirmationToken);
+
+    if (!confirmationToken) {
+      console.log('❌ No token found in query parameters');
       return {
         statusCode: 400,
         body: JSON.stringify({
@@ -77,20 +55,28 @@ const handler: Handler = async (event: HandlerEvent) => {
       };
     }
 
-    console.log('🔍 Cancelling appointment with token:', token);
+    console.log('🔍 Cancelling appointment with token:', confirmationToken);
 
-    // Buscar la cita por token
-    const appointments = await db
-      .select()
+    // Buscar la cita por token con JOIN para obtener datos del doctor, paciente y ubicación
+    const appointmentsWithDetails = await db
+      .select({
+        appointment: appointmentsTable,
+        doctor: usersTable,
+        patient: patientsTable,
+        location: locationsTable
+      })
       .from(appointmentsTable)
-      .where(eq(appointmentsTable.confirmationToken, token))
+      .leftJoin(usersTable, eq(appointmentsTable.doctorId, usersTable.id))
+      .leftJoin(patientsTable, eq(appointmentsTable.patientId, patientsTable.id))
+      .leftJoin(locationsTable, eq(appointmentsTable.locationId, locationsTable.id))
+      .where(eq(appointmentsTable.confirmationToken, confirmationToken))
       .limit(1);
 
-    const appointment = appointments[0];
-    console.log('🔍 Found appointment:', appointment ? { id: appointment.id, status: appointment.status } : null);
-    
-    if (!appointment) {
-      console.log('❌ No appointment found for token:', token);
+    const result = appointmentsWithDetails[0];
+    console.log('🔍 Found appointment:', result?.appointment ? { id: result.appointment.id, status: result.appointment.status } : null);
+
+    if (!result || !result.appointment) {
+      console.log('❌ Appointment not found for token:', confirmationToken);
       return {
         statusCode: 404,
         body: JSON.stringify({
@@ -100,7 +86,25 @@ const handler: Handler = async (event: HandlerEvent) => {
       };
     }
 
-    // Verificar si ya está cancelada
+    const appointment = result.appointment;
+    const doctor = result.doctor;
+    const patient = result.patient;
+    const location = result.location;
+
+    console.log('📋 Appointment details:', {
+      appointmentId: appointment.id,
+      guestName: appointment.guestName,
+      patientId: appointment.patientId,
+      hasPatient: !!patient,
+      patient: patient ? {
+        id: patient.id,
+        nombres: patient.nombres,
+        apellidos: patient.apellidos,
+        fullName: `${patient.nombres} ${patient.apellidos}`
+      } : null
+    });
+
+    // Verificar si la cita ya está cancelada
     if (appointment.status === 'cancelled') {
       console.log('⚠️ Appointment already cancelled:', appointment.id);
       return {
@@ -119,7 +123,7 @@ const handler: Handler = async (event: HandlerEvent) => {
       };
     }
 
-    // Verificar que no haya pasado
+    // Verificar que la cita no haya pasado
     const appointmentDate = new Date(appointment.appointmentDate);
     const now = new Date();
     
@@ -138,7 +142,7 @@ const handler: Handler = async (event: HandlerEvent) => {
       };
     }
 
-    // Verificar que no sea completada
+    // Verificar que no sea una cita completada
     if (appointment.status === 'completed') {
       console.log('❌ Cannot cancel completed appointment:', appointment.id);
       return {
@@ -163,62 +167,54 @@ const handler: Handler = async (event: HandlerEvent) => {
 
     console.log('✅ Appointment cancelled successfully:', updatedAppointment.id);
 
-    // Obtener datos del doctor, paciente y ubicación para notificar
-    try {
-      const [doctor] = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.id, appointment.user_id))
-        .limit(1);
-
-      if (doctor && doctor.email) {
+    // Enviar notificación al doctor
+    if (doctor && doctor.email) {
+      try {
         const notificationService = new NotificationService();
 
-        // Obtener nombre del paciente (puede ser guest o paciente registrado)
-        let patientName = appointment.guestName || 'Paciente';
-        if (appointment.patient_id) {
-          const [patient] = await db
-            .select()
-            .from(patientsTable)
-            .where(eq(patientsTable.id, appointment.patient_id))
-            .limit(1);
+        // Obtener nombre del paciente (puede ser invitado o registrado)
+        let patientName = 'Paciente';
 
-          if (patient) {
-            patientName = `${patient.name} ${patient.lastName}`;
+        if (appointment.guestName) {
+          // Paciente invitado
+          patientName = appointment.guestName;
+        } else if (patient) {
+          // Paciente registrado
+          if (patient.nombres && patient.apellidos) {
+            patientName = `${patient.nombres} ${patient.apellidos}`;
+          } else if (patient.nombres) {
+            patientName = patient.nombres;
+          } else if (patient.apellidos) {
+            patientName = patient.apellidos;
           }
         }
 
-        // Obtener ubicación si existe
-        let locationName: string | undefined;
-        if (appointment.location_id) {
-          const [location] = await db
-            .select()
-            .from(locationsTable)
-            .where(eq(locationsTable.id, appointment.location_id))
-            .limit(1);
+        const doctorName = `${doctor.name || ''} ${doctor.lastName || ''}`.trim() || 'Doctor';
 
-          if (location) {
-            locationName = `${location.name} - ${location.address}, ${location.city}`;
-          }
-        }
-
-        // Enviar notificación al doctor
-        await notificationService.notifyDoctorAboutCancellation({
-          appointmentId: updatedAppointment.id,
+        console.log('📧 Sending cancellation notification:', {
           patientName,
-          doctorName: `${doctor.name} ${doctor.lastName}`,
+          doctorName,
           doctorEmail: doctor.email,
-          appointmentDate: new Date(updatedAppointment.appointmentDate),
-          service: updatedAppointment.title,
-          location: locationName,
-          cancellationReason: updatedAppointment.cancellationReason || undefined
+          appointmentGuestName: appointment.guestName,
+          hasPatient: !!patient
+        });
+
+        await notificationService.notifyDoctorAboutCancellation({
+          appointmentId: appointment.id,
+          patientName: patientName,
+          doctorName: doctorName,
+          doctorEmail: doctor.email,
+          appointmentDate: new Date(appointment.appointmentDate),
+          service: appointment.title,
+          location: location?.name,
+          cancellationReason: 'Cancelado por el paciente desde email'
         });
 
         console.log('✅ Doctor cancellation notification sent successfully');
+      } catch (notificationError) {
+        console.error('⚠️ Failed to send doctor cancellation notification:', notificationError);
+        // No fallar la cancelación si falla la notificación
       }
-    } catch (notificationError) {
-      console.error('⚠️ Error sending doctor cancellation notification (non-critical):', notificationError);
-      // No fallar la cancelación si falla la notificación
     }
 
     return {
@@ -238,7 +234,7 @@ const handler: Handler = async (event: HandlerEvent) => {
 
   } catch (error: any) {
     console.error("❌ Error cancelling appointment:", error);
-    console.error("❌ Stack:", error.stack);
+    console.error("❌ Error stack:", error.stack);
     return {
       statusCode: 500,
       body: JSON.stringify({
