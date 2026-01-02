@@ -18,6 +18,7 @@ interface BudgetModalProps {
     patient: Patient;
     budget?: Budget | null; // Para editar un presupuesto existente
     mode?: 'create' | 'edit' | 'view';
+    inline?: boolean; // Si es true, renderiza sin overlay (dentro de la página)
 }
 
 const BudgetModal: React.FC<BudgetModalProps> = ({
@@ -25,7 +26,8 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
     onClose,
     patient,
     budget = null,
-    mode = 'create'
+    mode = 'create',
+    inline = false
 }) => {
     // Estados principales
     const [selectedBudget, setSelectedBudget] = useState<Budget | null>(budget);
@@ -289,18 +291,9 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
 
     const canEdit = mode !== 'view' && (!selectedBudget || BudgetUtils.canModify(selectedBudget));
 
-    return (
-        <>
-            {/* Overlay */}
-            <div 
-                className="fixed inset-0 bg-black bg-opacity-50 z-40"
-                onClick={handleClose}
-            />
-
-            {/* Modal */}
-            <div className="fixed inset-0 z-50 overflow-y-auto">
-                <div className="flex min-h-full items-center justify-center p-4">
-                    <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md sm:max-w-4xl">
+    // Si inline=true, renderizar sin overlay ni posicionamiento fixed
+    const modalContent = (
+        <div className={inline ? "relative bg-white rounded-xl shadow-sm border border-slate-200 w-full" : "relative bg-white rounded-xl shadow-2xl w-full max-w-md sm:max-w-4xl"}>
 
                         {/* Header del modal */}
                         <div className="bg-gradient-to-r from-cyan-500 to-blue-500 px-4 sm:px-6 py-3 sm:py-4 text-white rounded-t-xl">
@@ -419,6 +412,44 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
                             </div>
                         </div>
                     </div>
+    );
+
+    // Si es inline, solo retornar el contenido
+    if (inline) {
+        return (
+            <>
+                {modalContent}
+
+                {/* Modal de confirmación */}
+                <ConfirmationModal
+                    isOpen={confirmation.isOpen}
+                    title={confirmation.title}
+                    message={confirmation.message}
+                    details={confirmation.details}
+                    confirmText={confirmation.confirmText}
+                    cancelText={confirmation.cancelText}
+                    variant={confirmation.variant}
+                    isLoading={confirmation.isLoading}
+                    onConfirm={confirmation.onConfirm}
+                    onCancel={confirmation.onCancel}
+                />
+            </>
+        );
+    }
+
+    // Si NO es inline, retornar con overlay y posicionamiento fixed
+    return (
+        <>
+            {/* Overlay */}
+            <div
+                className="fixed inset-0 bg-black bg-opacity-50 z-40"
+                onClick={handleClose}
+            />
+
+            {/* Modal */}
+            <div className="fixed inset-0 z-50 overflow-y-auto">
+                <div className="flex min-h-full items-center justify-center p-4">
+                    {modalContent}
                 </div>
             </div>
 

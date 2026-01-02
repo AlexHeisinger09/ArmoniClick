@@ -184,14 +184,6 @@ const CancelAppointment: React.FC = () => {
             </p>
           </div>
 
-          <div className="mt-8 text-center">
-            <button
-              onClick={() => window.location.href = '/'}
-              className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium transition-colors shadow-sm"
-            >
-              Volver al inicio
-            </button>
-          </div>
         </div>
       </div>
     );
@@ -229,14 +221,6 @@ const CancelAppointment: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-8 text-center">
-            <button
-              onClick={() => window.location.href = '/'}
-              className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-medium transition-colors shadow-sm"
-            >
-              Volver al inicio
-            </button>
-          </div>
         </div>
       </div>
     );

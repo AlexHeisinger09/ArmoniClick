@@ -100,9 +100,9 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
           </div>
         </div>
 
-        {/* Información médica adicional */}
+        {/* Antecedentes médicos */}
         <div className="mt-6 pt-6 border-t border-cyan-200">
-          <h4 className="font-semibold text-slate-700 mb-4">Información Médica Adicional</h4>
+          <h4 className="font-semibold text-slate-700 mb-4">Antecedentes médicos</h4>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {patient.alergias && (

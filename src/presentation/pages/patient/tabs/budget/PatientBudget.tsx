@@ -1,16 +1,18 @@
-// src/presentation/pages/patient/tabs/budget/PatientBudget.tsx - ACTUALIZADO CON MODAL
+// src/presentation/pages/patient/tabs/budget/PatientBudget.tsx - CON VISTAS EN LA MISMA PÁGINA
 import React, { useState } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { Patient } from "@/core/use-cases/patients";
-import { Budget } from "@/core/use-cases/budgets";
+import { Budget, BudgetItem, BUDGET_TYPE, BudgetUtils } from "@/core/use-cases/budgets";
 import { useMultipleBudgetOperations } from "@/presentation/hooks/budgets/useBudgets";
 
 // Componentes
 import { BudgetsList } from './components/BudgetList';
-import { BudgetModal } from './components/BudgetModal';
+import { BudgetEditor } from './components/BudgetEditor';
 import { ConfirmationModal } from '@/presentation/components/ui/ConfirmationModal';
 import { PDFGenerator } from './utils/pdfGenerator';
 import { useNotification } from '@/presentation/hooks/notifications/useNotification';
 import { useConfirmation } from '@/presentation/hooks/useConfirmation';
+import { BudgetFormData, BudgetFormUtils } from './types/budget.types';
 
 // Hooks para datos del doctor
 import { useLoginMutation, useProfile } from "@/presentation/hooks";
@@ -20,6 +22,26 @@ interface PatientBudgetProps {
 }
 
 const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
+    // Estado de vista actual
+    const [currentView, setCurrentView] = useState<'list' | 'create' | 'edit' | 'view'>('list');
+    const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
+
+    // Estados del formulario del editor
+    const [items, setItems] = useState<BudgetItem[]>([]);
+    const [budgetType, setBudgetType] = useState<string>(BUDGET_TYPE.ODONTOLOGICO);
+    const [newItem, setNewItem] = useState<BudgetFormData>({
+        pieza: '',
+        accion: '',
+        valor: ''
+    });
+    const [isEditing, setIsEditing] = useState<string | null>(null);
+    const [editingItem, setEditingItem] = useState<BudgetFormData>({
+        pieza: '',
+        accion: '',
+        valor: ''
+    });
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
     // Hooks para presupuestos
     const {
         sortedBudgets,
@@ -28,26 +50,17 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         completeBudget,
         revertBudget,
         deleteBudget,
+        saveBudget,
         isLoadingActivate,
         isLoadingComplete,
         isLoadingRevert,
         isLoadingDelete,
+        isLoadingSave,
     } = useMultipleBudgetOperations(patient.id);
 
     // Hook para datos del doctor (para PDF)
     const { token } = useLoginMutation();
     const { queryProfile } = useProfile(token || '');
-
-    // Estados del modal
-    const [modalState, setModalState] = useState<{
-        isOpen: boolean;
-        budget: Budget | null;
-        mode: 'create' | 'edit' | 'view';
-    }>({
-        isOpen: false,
-        budget: null,
-        mode: 'create'
-    });
 
     // Notification y confirmation hooks
     const notification = useNotification();
@@ -78,42 +91,242 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         return errorMessage;
     };
 
-    // ✅ FUNCIONES DEL MODAL
+    // ✅ FUNCIONES DE NAVEGACIÓN
     const handleCreateNewBudget = () => {
-        setModalState({
-            isOpen: true,
-            budget: null,
-            mode: 'create'
-        });
+        setSelectedBudget(null);
+        setItems([]);
+        setBudgetType(BUDGET_TYPE.ODONTOLOGICO);
+        setHasUnsavedChanges(false);
+        setCurrentView('create');
     };
 
     const handleEditBudget = (budget: Budget) => {
-        setModalState({
-            isOpen: true,
-            budget: budget,
-            mode: 'edit'
-        });
+        setSelectedBudget(budget);
+        setItems(budget.items.map(item => ({
+            ...item,
+            valor: parseFloat(item.valor.toString())
+        })));
+        setBudgetType(budget.budget_type);
+        setHasUnsavedChanges(false);
+        setCurrentView('edit');
     };
 
     const handleViewBudget = (budget: Budget) => {
-        setModalState({
-            isOpen: true,
-            budget: budget,
-            mode: 'view'
+        setSelectedBudget(budget);
+        setItems(budget.items.map(item => ({
+            ...item,
+            valor: parseFloat(item.valor.toString())
+        })));
+        setBudgetType(budget.budget_type);
+        setCurrentView('view');
+    };
+
+    const handleBackToList = async () => {
+        if (hasUnsavedChanges) {
+            const confirmed = await confirmation.confirm({
+                title: 'Cambios sin guardar',
+                message: '¿Estás seguro de que quieres volver? Los cambios no guardados se perderán.',
+                confirmText: 'Volver',
+                cancelText: 'Continuar editando',
+                variant: 'warning'
+            });
+
+            if (!confirmed) {
+                confirmation.close();
+                return;
+            }
+            confirmation.close();
+        }
+
+        setCurrentView('list');
+        setSelectedBudget(null);
+        setItems([]);
+        setHasUnsavedChanges(false);
+        setIsEditing(null);
+        setEditingItem({ pieza: '', accion: '', valor: '' });
+        setNewItem({ pieza: '', accion: '', valor: '' });
+    };
+
+    // ✅ FUNCIONES DEL EDITOR
+    const markAsChanged = () => setHasUnsavedChanges(true);
+
+    const handleAddItem = () => {
+        const validation = BudgetFormUtils.validateItem(newItem);
+        if (validation) {
+            notification.error(validation);
+            return;
+        }
+
+        const valor = BudgetFormUtils.parseValue(newItem.valor);
+        const item: BudgetItem = {
+            pieza: newItem.pieza,
+            accion: newItem.accion,
+            valor: valor,
+            orden: items.length
+        };
+
+        setItems([...items, item]);
+        setNewItem({ pieza: '', accion: '', valor: '' });
+        markAsChanged();
+        notification.success('Tratamiento agregado exitosamente');
+    };
+
+    const handleDeleteItem = (index: number) => {
+        const newItems = items.filter((_, i) => i !== index);
+        setItems(newItems);
+        markAsChanged();
+        notification.success('Tratamiento eliminado');
+    };
+
+    const handleStartEditing = (index: number) => {
+        const item = items[index];
+        setIsEditing(index.toString());
+        setEditingItem({
+            pieza: item.pieza || '',
+            accion: item.accion,
+            valor: item.valor.toString()
         });
     };
 
-    const handleCloseModal = () => {
-        setModalState({
-            isOpen: false,
-            budget: null,
-            mode: 'create'
-        });
+    const handleCancelEditing = () => {
+        setIsEditing(null);
+        setEditingItem({ pieza: '', accion: '', valor: '' });
     };
 
-    // ✅ OPERACIONES DE PRESUPUESTO (mantienen la misma lógica)
+    const handleSaveEditing = () => {
+        const validation = BudgetFormUtils.validateItem(editingItem);
+        if (validation) {
+            notification.error(validation);
+            return;
+        }
+
+        const index = parseInt(isEditing!);
+        const valor = BudgetFormUtils.parseValue(editingItem.valor);
+
+        setItems(items.map((item, i) =>
+            i === index
+                ? {
+                    ...item,
+                    pieza: editingItem.pieza,
+                    accion: editingItem.accion,
+                    valor: valor
+                }
+                : item
+        ));
+
+        setIsEditing(null);
+        setEditingItem({ pieza: '', accion: '', valor: '' });
+        markAsChanged();
+        notification.success('Tratamiento actualizado');
+    };
+
+    const handleBudgetTypeChange = (type: string) => {
+        setBudgetType(type);
+        markAsChanged();
+    };
+
+    const handleNewItemChange = (field: keyof BudgetFormData, value: string) => {
+        if (field === 'valor') {
+            value = BudgetFormUtils.formatValueInput(value);
+        }
+        setNewItem(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleEditingItemChange = (field: keyof BudgetFormData, value: string) => {
+        if (field === 'valor') {
+            value = BudgetFormUtils.formatValueInput(value);
+        }
+        setEditingItem(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleSaveBudget = async () => {
+        if (!items || items.length === 0) {
+            notification.error('Agrega al menos un tratamiento antes de guardar');
+            return;
+        }
+
+        try {
+            const formattedItems = items.map((item, index) => {
+                const formattedItem: any = {
+                    pieza: item.pieza || '',
+                    accion: item.accion || '',
+                    valor: Number(item.valor) || 0,
+                    orden: index
+                };
+
+                if (item.id && typeof item.id === 'number' && item.id > 0) {
+                    formattedItem.id = item.id;
+                }
+
+                return formattedItem;
+            });
+
+            const budgetData = {
+                patientId: patient.id,
+                budgetType,
+                items: formattedItems
+            };
+
+            await saveBudget(budgetData);
+            setHasUnsavedChanges(false);
+            notification.success('Presupuesto guardado exitosamente');
+
+            // Volver a la lista después de guardar
+            setTimeout(() => {
+                setCurrentView('list');
+                setSelectedBudget(null);
+                setItems([]);
+            }, 1500);
+        } catch (error: any) {
+            const errorMessage = error?.response?.data?.message || error.message || 'Error desconocido al guardar';
+            notification.error(`Error al guardar: ${errorMessage}`);
+        }
+    };
+
+    const handleExportPDFFromEditor = async () => {
+        if (items.length === 0) {
+            notification.error('No hay tratamientos para exportar');
+            return;
+        }
+
+        try {
+            const doctorData = queryProfile.data ? {
+                name: queryProfile.data.name,
+                lastName: queryProfile.data.lastName,
+                rut: queryProfile.data.rut,
+                signature: queryProfile.data.signature,
+                logo: queryProfile.data.logo,
+                profession: queryProfile.data.profession,
+                specialty: queryProfile.data.specialty
+            } : undefined;
+
+            // Crear objeto temporal del presupuesto para PDF
+            const tempBudget: Budget = selectedBudget || {
+                id: 0,
+                patient_id: patient.id,
+                user_id: 0,
+                total_amount: BudgetFormUtils.calculateTotal(items).toString(),
+                status: 'borrador',
+                budget_type: budgetType,
+                created_at: new Date().toISOString(),
+                updated_at: null,
+                items: items.map(item => ({
+                    ...item,
+                    valor: typeof item.valor === 'string' ? parseFloat(item.valor) : item.valor
+                }))
+            };
+
+            await PDFGenerator.generateBudgetPDF(tempBudget, patient, doctorData);
+            notification.success('PDF generado exitosamente');
+
+        } catch (error: any) {
+            const errorMessage = error.message || 'Error al generar PDF';
+            notification.error(errorMessage);
+        }
+    };
+
+    // ✅ OPERACIONES DE PRESUPUESTO
     const handleActivateBudget = async (budget: Budget) => {
-        // Preparar detalles de los tratamientos que se crearán
         const treatmentDetails = budget.items.map((item: any) =>
             `${item.pieza ? `${item.pieza}: ` : ''}${item.accion} ($${parseFloat(item.valor).toLocaleString('es-CL')})`
         );
@@ -144,7 +357,6 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
     };
 
     const handleCompleteBudget = async (budget: Budget) => {
-        // Advertencia sobre tratamientos incompletos
         const details = [
             'Asegúrate de completar todos los tratamientos antes de marcar el presupuesto como completado.',
             'Se marcará el presupuesto como completado'
@@ -213,7 +425,7 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
 
     const handleExportPDF = async (budget: Budget) => {
         setIsGeneratingPDF(true);
-        
+
         try {
             const doctorData = queryProfile.data ? {
                 name: queryProfile.data.name,
@@ -236,9 +448,87 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         }
     };
 
+    const showEditor = currentView !== 'list';
+    const canEdit = currentView !== 'view' && (!selectedBudget || BudgetUtils.canModify(selectedBudget));
+
+    // Vista: Crear/Editar presupuesto
+    if (showEditor) {
+        return (
+            <div className="space-y-4">
+                {/* Botón de regreso */}
+                <button
+                    onClick={handleBackToList}
+                    className="flex items-center text-cyan-600 hover:text-cyan-700 transition-colors text-sm font-medium"
+                >
+                    <ChevronRight className="w-4 h-4 mr-1 rotate-180" />
+                    Volver a presupuestos
+                </button>
+
+                {/* Editor de presupuesto */}
+                <BudgetEditor
+                    patient={patient}
+                    budget={selectedBudget}
+                    items={items}
+                    budgetType={budgetType}
+                    newItem={newItem}
+                    editingItem={editingItem}
+                    isEditing={isEditing}
+                    hasUnsavedChanges={hasUnsavedChanges}
+                    isLoadingSave={isLoadingSave}
+                    onBack={handleBackToList}
+                    onSave={handleSaveBudget}
+                    onBudgetTypeChange={handleBudgetTypeChange}
+                    onAddItem={handleAddItem}
+                    onDeleteItem={handleDeleteItem}
+                    onStartEditing={handleStartEditing}
+                    onCancelEditing={handleCancelEditing}
+                    onSaveEditing={handleSaveEditing}
+                    onNewItemChange={handleNewItemChange}
+                    onEditingItemChange={handleEditingItemChange}
+                    onExportPDF={handleExportPDFFromEditor}
+                />
+
+                {/* Footer con botones de acción */}
+                {canEdit && (
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
+                        <div className="flex flex-col sm:flex-row justify-end gap-3">
+                            <button
+                                onClick={handleBackToList}
+                                className="w-full sm:w-auto px-6 py-2.5 text-slate-600 hover:text-slate-800 transition-colors text-sm font-medium"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleSaveBudget}
+                                disabled={isLoadingSave || !hasUnsavedChanges || items.length === 0}
+                                className="w-full sm:w-auto bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                            >
+                                {isLoadingSave ? 'Guardando...' : 'Guardar Presupuesto'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Modal de confirmación */}
+                <ConfirmationModal
+                    isOpen={confirmation.isOpen}
+                    title={confirmation.title}
+                    message={confirmation.message}
+                    details={confirmation.details}
+                    confirmText={confirmation.confirmText}
+                    cancelText={confirmation.cancelText}
+                    variant={confirmation.variant}
+                    isLoading={confirmation.isLoading}
+                    onConfirm={confirmation.onConfirm}
+                    onCancel={confirmation.onCancel}
+                />
+            </div>
+        );
+    }
+
+    // Vista: Lista de presupuestos (por defecto)
     return (
         <>
-            {/* Lista de presupuestos */}
             <BudgetsList
                 budgets={sortedBudgets}
                 loading={isLoadingAll}
@@ -255,16 +545,6 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                 isLoadingRevert={isLoadingRevert}
                 isLoadingDelete={isLoadingDelete}
             />
-
-            {/* Modal de presupuesto */}
-            <BudgetModal
-                isOpen={modalState.isOpen}
-                onClose={handleCloseModal}
-                patient={patient}
-                budget={modalState.budget}
-                mode={modalState.mode}
-            />
-
 
             {/* Indicador de generación de PDF */}
             {isGeneratingPDF && (

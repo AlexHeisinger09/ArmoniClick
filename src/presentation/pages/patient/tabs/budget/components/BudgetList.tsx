@@ -36,6 +36,10 @@ const BudgetsList: React.FC<BudgetsListProps> = ({
     isLoadingRevert = false,
     isLoadingDelete = false
 }) => {
+    // Categorizar presupuestos
+    const activeBudgets = budgets.filter(budget => budget.status === 'activo');
+    const otherBudgets = budgets.filter(budget => budget.status !== 'activo');
+
     if (loading) {
         return (
             <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-4 sm:p-6">
@@ -73,50 +77,80 @@ const BudgetsList: React.FC<BudgetsListProps> = ({
                     Nuevo Presupuesto
                 </button>
             </div>
-            
-            {/* Mensaje informativo responsivo */}
-            <div className="mb-4">
-                <p className="text-xs text-slate-600">
-                    💡 <strong>Info:</strong> Solo puede existir un presupuesto activo a la vez.
-                </p>
-            </div>
 
-            {/* Grid responsivo */}
-            <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
-                {budgets.map((budget) => (
-                    <BudgetCard
-                        key={budget.id}
-                        budget={budget}
-                        onView={onView}
-                        onEdit={onEdit}
-                        onActivate={onActivate}
-                        onComplete={onComplete}
-                        onRevert={onRevert}
-                        onDelete={onDelete}
-                        onExportPDF={onExportPDF}
-                        isLoadingActivate={isLoadingActivate}
-                        isLoadingComplete={isLoadingComplete}
-                        isLoadingRevert={isLoadingRevert}
-                        isLoadingDelete={isLoadingDelete}
-                    />
-                ))}
-
-                {budgets.length === 0 && (
-                    <div className="col-span-full text-center py-8">
-                        <div className="mb-4">
-                            <FileText className="w-16 h-16 mx-auto text-gray-300" />
-                        </div>
-                        <p className="text-slate-500 mb-4">No hay presupuestos registrados para este paciente</p>
-                        <button
-                            onClick={onNewBudget}
-                            className="w-full sm:w-auto flex items-center justify-center mx-auto bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
-                        >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Crear Primer Presupuesto
-                        </button>
+            {budgets.length === 0 ? (
+                <div className="text-center py-8">
+                    <div className="mb-4">
+                        <FileText className="w-16 h-16 mx-auto text-gray-300" />
                     </div>
-                )}
-            </div>
+                    <p className="text-slate-500 mb-4">No hay presupuestos registrados para este paciente</p>
+                    <button
+                        onClick={onNewBudget}
+                        className="w-full sm:w-auto flex items-center justify-center mx-auto bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
+                    >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Crear Primer Presupuesto
+                    </button>
+                </div>
+            ) : (
+                <div className="space-y-6">
+                    {/* Presupuestos Activos */}
+                    {activeBudgets.length > 0 && (
+                        <div>
+                            <h4 className="text-base font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
+                                Presupuestos Activos
+                            </h4>
+                            <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
+                                {activeBudgets.map((budget) => (
+                                    <BudgetCard
+                                        key={budget.id}
+                                        budget={budget}
+                                        onView={onView}
+                                        onEdit={onEdit}
+                                        onActivate={onActivate}
+                                        onComplete={onComplete}
+                                        onRevert={onRevert}
+                                        onDelete={onDelete}
+                                        onExportPDF={onExportPDF}
+                                        isLoadingActivate={isLoadingActivate}
+                                        isLoadingComplete={isLoadingComplete}
+                                        isLoadingRevert={isLoadingRevert}
+                                        isLoadingDelete={isLoadingDelete}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Otros Presupuestos */}
+                    {otherBudgets.length > 0 && (
+                        <div>
+                            <h4 className="text-base font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
+                                Otros Presupuestos
+                            </h4>
+                            <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
+                                {otherBudgets.map((budget) => (
+                                    <BudgetCard
+                                        key={budget.id}
+                                        budget={budget}
+                                        onView={onView}
+                                        onEdit={onEdit}
+                                        onActivate={onActivate}
+                                        onComplete={onComplete}
+                                        onRevert={onRevert}
+                                        onDelete={onDelete}
+                                        onExportPDF={onExportPDF}
+                                        isLoadingActivate={isLoadingActivate}
+                                        isLoadingComplete={isLoadingComplete}
+                                        isLoadingRevert={isLoadingRevert}
+                                        isLoadingDelete={isLoadingDelete}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 };

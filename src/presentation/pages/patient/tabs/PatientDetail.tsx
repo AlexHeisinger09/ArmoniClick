@@ -1,7 +1,7 @@
 // src/presentation/pages/patient/PatientDetail.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Calculator, Stethoscope, Clock, FileText, Brain, Settings, LogOut, Pill } from 'lucide-react';
+import { ArrowLeft, User, Calculator, Stethoscope, FileText, Brain, Settings, LogOut, Pill, Calendar, FileCheck } from 'lucide-react';
 import { Patient } from "@/core/use-cases/patients";
 import { useLoginMutation } from '@/presentation/hooks';
 
@@ -9,16 +9,30 @@ import { useLoginMutation } from '@/presentation/hooks';
 import { PatientInformation } from './information/PatientInformation';
 import { PatientBudget } from './budget/PatientBudget';
 import { PatientTreatments } from './treatments/PatientTreatments';
-import { PatientAppointments } from './appointments/PatientAppointments';
 import { PatientMedicalHistory } from './medicalHistory/PatientMedicalHistory';
 import { PatientPrescriptions } from './prescriptions/PatientPrescriptions';
+import { PatientConsents } from './consents/PatientConsents';
 import { ClinicalSummaryModal } from '@/presentation/components/ai-analysis';
+import { PatientAppointmentModal } from './appointments/PatientAppointmentModal';
+import { useCalendarAppointments } from '@/presentation/hooks/appointments/useCalendarAppointments';
+import { useScheduleBlocksForCalendar } from '@/presentation/pages/calendar/hooks/useScheduleBlocksForCalendar';
+import { useCreateAppointment } from '@/presentation/hooks/appointments/useCreateAppointment';
+import { AppointmentMapper } from '@/infrastructure/mappers/appointment.mapper';
 
 interface PatientDetailProps {
   patient: Patient;
   onBack: () => void;
   onEdit: (patient: Patient) => void;
   onDelete: (patientId: number) => void;
+}
+
+interface PatientAppointmentForm {
+  date: Date;
+  time: string;
+  service: string;
+  description: string;
+  duration: number;
+  locationId?: number;
 }
 
 const PatientDetail: React.FC<PatientDetailProps> = ({
@@ -33,8 +47,14 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
   const tabFromUrl = searchParams.get('tab') || 'informacion';
   const [activeTab, setActiveTab] = useState(tabFromUrl);
   const [showAISummaryModal, setShowAISummaryModal] = useState(false);
+  const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
   const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
   const floatingMenuRef = useRef<HTMLDivElement>(null);
+
+  // Hooks para el modal de citas
+  const { appointments: calendarAppointments } = useCalendarAppointments(new Date(), 'month');
+  const { blocks: scheduleBlocks } = useScheduleBlocksForCalendar();
+  const createAppointmentMutation = useCreateAppointment();
 
   // Effect para actualizar el tab si cambia el parámetro de la URL
   useEffect(() => {
@@ -66,12 +86,36 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
     setIsFloatingMenuOpen(false);
   };
 
-  // Configuración de pestañas
+  const handleCreateAppointment = async (appointmentData: PatientAppointmentForm) => {
+    try {
+      const backendData = AppointmentMapper.fromCalendarFormToBackendRequest({
+        patient: `${patient.nombres} ${patient.apellidos}`,
+        patientId: patient.id,
+        locationId: appointmentData.locationId,
+        service: appointmentData.service,
+        description: appointmentData.description,
+        time: appointmentData.time,
+        duration: appointmentData.duration,
+        date: appointmentData.date,
+        guestName: undefined,
+        guestEmail: undefined,
+        guestPhone: undefined,
+        guestRut: undefined
+      });
+
+      await createAppointmentMutation.mutateAsync(backendData);
+      setShowNewAppointmentModal(false);
+    } catch (error) {
+      console.error('Error creating patient appointment:', error);
+    }
+  };
+
+  // Configuración de pestañas (sin la pestaña de Citas Agendadas)
   const tabs = [
     { id: 'informacion', label: 'Información', shortLabel: 'Info', icon: User },
-    { id: 'presupuesto', label: 'Presupuesto', shortLabel: 'Presup', icon: Calculator },
-    { id: 'tratamientos', label: 'Tratamientos', shortLabel: 'Trat', icon: Stethoscope },
-    { id: 'citas', label: 'Citas Agendadas', shortLabel: 'Citas', icon: Clock },
+    { id: 'presupuesto', label: 'Presupuestos', shortLabel: 'Presup', icon: Calculator },
+    { id: 'tratamientos', label: 'Planes de Tratamientos', shortLabel: 'Planes', icon: Stethoscope },
+    { id: 'consentimientos', label: 'Consentimientos', shortLabel: 'Consent', icon: FileCheck },
     { id: 'recetas', label: 'Recetas Médicas', shortLabel: 'Recetas', icon: Pill },
     { id: 'historial', label: 'Historial Médico', shortLabel: 'Hist', icon: FileText },
   ];
@@ -90,8 +134,8 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
         return <PatientBudget patient={patient} />;
       case 'tratamientos':
         return <PatientTreatments patient={patient} />;
-      case 'citas':
-        return <PatientAppointments patient={patient} />;
+      case 'consentimientos':
+        return <PatientConsents patient={patient} />;
       case 'recetas':
         return <PatientPrescriptions patient={patient} />;
       case 'historial':
@@ -103,7 +147,7 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Encabezado con botón de regreso y botón de IA */}
+      {/* Encabezado con botón de regreso y botones de acción */}
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
@@ -113,14 +157,24 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
           Volver a la lista
         </button>
 
-        <button
-          onClick={() => setShowAISummaryModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
-        >
-          <Brain className="w-5 h-5" />
-          <span className="hidden sm:inline">Análisis de IA</span>
-          <span className="sm:hidden">IA</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowNewAppointmentModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors text-sm"
+          >
+            <Calendar className="w-4 h-4" />
+            <span className="hidden sm:inline">Agendar</span>
+          </button>
+
+          <button
+            onClick={() => setShowAISummaryModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
+          >
+            <Brain className="w-5 h-5" />
+            <span className="hidden sm:inline">Análisis de IA</span>
+            <span className="sm:hidden">IA</span>
+          </button>
+        </div>
       </div>
 
       {/* Botón flotante de configuración - Solo visible en mobile cuando está en detalle */}
@@ -163,6 +217,17 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
         onClose={() => setShowAISummaryModal(false)}
         patientId={patient.id}
         patientName={`${patient.nombres} ${patient.apellidos}`}
+      />
+
+      {/* Modal de nueva cita */}
+      <PatientAppointmentModal
+        isOpen={showNewAppointmentModal}
+        patient={patient}
+        appointments={calendarAppointments}
+        onClose={() => setShowNewAppointmentModal(false)}
+        onSubmit={handleCreateAppointment}
+        isCreating={createAppointmentMutation.isPending}
+        scheduleBlocks={scheduleBlocks}
       />
 
       {/* Pestañas de navegación RESPONSIVE */}
