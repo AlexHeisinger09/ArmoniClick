@@ -94,18 +94,20 @@ const TreatmentCard: React.FC<TreatmentCardProps> = ({
 
         {/* Botones de acción - responsive compactos */}
         <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
-          {/* Botón editar - Amarillo suave (mismo que revertir) */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(treatment);
-            }}
-            className="flex items-center gap-0.5 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 text-xs font-medium rounded px-2 py-1 border border-yellow-200 transition-colors whitespace-nowrap"
-            title="Editar tratamiento"
-          >
-            <Edit className="w-3 h-3" />
-            <span className="hidden sm:inline">Editar</span>
-          </button>
+          {/* Botón editar - Amarillo suave (solo si NO está completado) */}
+          {treatment.status !== 'completed' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(treatment);
+              }}
+              className="flex items-center gap-0.5 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 text-xs font-medium rounded px-2 py-1 border border-yellow-200 transition-colors whitespace-nowrap"
+              title="Editar tratamiento"
+            >
+              <Edit className="w-3 h-3" />
+              <span className="hidden sm:inline">Editar</span>
+            </button>
+          )}
 
           {/* Botón completar - Azul suave (solo si está pendiente) */}
           {canComplete && treatment.status === 'pending' && (
@@ -127,23 +129,25 @@ const TreatmentCard: React.FC<TreatmentCardProps> = ({
             </button>
           )}
 
-          {/* Botón eliminar - Rojo suave */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(treatment.id_tratamiento);
-            }}
-            className="flex items-center gap-0.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium rounded px-2 py-1 border border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-            title="Eliminar tratamiento"
-            disabled={isLoadingDelete}
-          >
-            {isLoadingDelete ? (
-              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-700"></div>
-            ) : (
-              <Trash2 className="w-3 h-3" />
-            )}
-            <span className="hidden sm:inline">Eliminar</span>
-          </button>
+          {/* Botón eliminar - Rojo suave (solo si NO está completado) */}
+          {treatment.status !== 'completed' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(treatment.id_tratamiento);
+              }}
+              className="flex items-center gap-0.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium rounded px-2 py-1 border border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              title="Eliminar tratamiento"
+              disabled={isLoadingDelete}
+            >
+              {isLoadingDelete ? (
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-700"></div>
+              ) : (
+                <Trash2 className="w-3 h-3" />
+              )}
+              <span className="hidden sm:inline">Eliminar</span>
+            </button>
+          )}
         </div>
       </div>
 

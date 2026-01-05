@@ -118,6 +118,7 @@ const TreatmentsGroupedList: React.FC<TreatmentsGroupedListProps> = ({
               isLoadingDeleteItem={isLoadingDeleteItem}
               isLoadingComplete={isLoadingComplete}
               isLoadingCompleteItem={isLoadingCompleteItem}
+              budgetStatus={selectedBudget?.status}
             />
           ))}
 

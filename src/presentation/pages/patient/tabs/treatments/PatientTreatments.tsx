@@ -536,6 +536,7 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
             onBudgetChange={handleBudgetChange}
             loading={isLoadingBudgets}
             treatments={treatments}
+            budgetItems={budgetItems}
           />
         </div>
 

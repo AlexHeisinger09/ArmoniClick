@@ -33,6 +33,7 @@ interface TreatmentGroupCardProps {
   isLoadingDeleteItem?: boolean;
   isLoadingComplete?: boolean;
   isLoadingCompleteItem?: boolean;
+  budgetStatus?: string; // ✅ NUEVO: Estado del presupuesto para deshabilitar acciones
 }
 
 const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
@@ -48,6 +49,7 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
   isLoadingDeleteItem = false,
   isLoadingComplete = false,
   isLoadingCompleteItem = false,
+  budgetStatus,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
@@ -212,24 +214,26 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
               </button>
             )}
 
-            {/* Botón eliminar budget_item (elimina todas las sesiones en cascada) */}
-            <button
-              onClick={() => {
-                if (group.budget_item_id) {
-                  onDeleteBudgetItem(group.budget_item_id);
-                }
-              }}
-              disabled={isLoadingDeleteItem || !group.budget_item_id}
-              className="flex items-center gap-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium rounded-lg px-2 py-1 border border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-              title="Eliminar item del presupuesto y todas sus sesiones"
-            >
-              {isLoadingDeleteItem ? (
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-700"></div>
-              ) : (
-                <Trash2 className="w-3 h-3" />
-              )}
-              <span className="hidden sm:inline">Eliminar</span>
-            </button>
+            {/* Botón eliminar budget_item (solo si el presupuesto NO está completado) */}
+            {budgetStatus !== 'completed' && (
+              <button
+                onClick={() => {
+                  if (group.budget_item_id) {
+                    onDeleteBudgetItem(group.budget_item_id);
+                  }
+                }}
+                disabled={isLoadingDeleteItem || !group.budget_item_id}
+                className="flex items-center gap-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium rounded-lg px-2 py-1 border border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                title="Eliminar item del presupuesto y todas sus sesiones"
+              >
+                {isLoadingDeleteItem ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-700"></div>
+                ) : (
+                  <Trash2 className="w-3 h-3" />
+                )}
+                <span className="hidden sm:inline">Eliminar</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -304,13 +308,16 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
                         <Eye className="w-3 h-3" />
                       </button>
 
-                      <button
-                        onClick={() => onEdit(treatment.id_tratamiento)}
-                        className="flex items-center gap-1 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 text-xs font-medium rounded px-2 py-1 border border-yellow-200 transition-colors"
-                        title="Editar sesión"
-                      >
-                        <Edit className="w-3 h-3" />
-                      </button>
+                      {/* Solo mostrar botón editar si el tratamiento NO está completado */}
+                      {treatment.status !== 'completed' && (
+                        <button
+                          onClick={() => onEdit(treatment.id_tratamiento)}
+                          className="flex items-center gap-1 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 text-xs font-medium rounded px-2 py-1 border border-yellow-200 transition-colors"
+                          title="Editar sesión"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

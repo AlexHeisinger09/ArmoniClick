@@ -36,9 +36,12 @@ const BudgetsList: React.FC<BudgetsListProps> = ({
     isLoadingRevert = false,
     isLoadingDelete = false
 }) => {
-    // Categorizar presupuestos
+    // Categorizar presupuestos en 3 grupos
+    const pendingBudgets = budgets.filter(budget =>
+        budget.status === 'pendiente' || budget.status === 'borrador'
+    );
     const activeBudgets = budgets.filter(budget => budget.status === 'activo');
-    const otherBudgets = budgets.filter(budget => budget.status !== 'activo');
+    const completedBudgets = budgets.filter(budget => budget.status === 'completed');
 
     if (loading) {
         return (
@@ -94,13 +97,47 @@ const BudgetsList: React.FC<BudgetsListProps> = ({
                 </div>
             ) : (
                 <div className="space-y-6">
-                    {/* Presupuestos Activos */}
+                    {/* 1. Presupuestos Pendientes/Borradores */}
+                    {pendingBudgets.length > 0 && (
+                        <div>
+                            <h4 className="text-sm sm:text-base font-semibold text-orange-800 mb-2 sm:mb-4 pb-2 border-b-2 border-orange-200 flex items-center gap-2">
+                                <span className="bg-orange-100 text-orange-700 text-xs font-semibold px-2.5 py-1 rounded">
+                                    {pendingBudgets.length}
+                                </span>
+                                Presupuestos por Activar
+                            </h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
+                                {pendingBudgets.map((budget) => (
+                                    <BudgetCard
+                                        key={budget.id}
+                                        budget={budget}
+                                        onView={onView}
+                                        onEdit={onEdit}
+                                        onActivate={onActivate}
+                                        onComplete={onComplete}
+                                        onRevert={onRevert}
+                                        onDelete={onDelete}
+                                        onExportPDF={onExportPDF}
+                                        isLoadingActivate={isLoadingActivate}
+                                        isLoadingComplete={isLoadingComplete}
+                                        isLoadingRevert={isLoadingRevert}
+                                        isLoadingDelete={isLoadingDelete}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 2. Presupuestos Activos */}
                     {activeBudgets.length > 0 && (
                         <div>
-                            <h4 className="text-base font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
-                                Presupuestos Activos
+                            <h4 className="text-sm sm:text-base font-semibold text-green-800 mb-2 sm:mb-4 pb-2 border-b-2 border-green-200 flex items-center gap-2">
+                                <span className="bg-green-100 text-green-700 text-xs font-semibold px-2.5 py-1 rounded">
+                                    {activeBudgets.length}
+                                </span>
+                                Planes en Ejecución
                             </h4>
-                            <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
                                 {activeBudgets.map((budget) => (
                                     <BudgetCard
                                         key={budget.id}
@@ -122,14 +159,17 @@ const BudgetsList: React.FC<BudgetsListProps> = ({
                         </div>
                     )}
 
-                    {/* Otros Presupuestos */}
-                    {otherBudgets.length > 0 && (
+                    {/* 3. Presupuestos Completados */}
+                    {completedBudgets.length > 0 && (
                         <div>
-                            <h4 className="text-base font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
-                                Otros Presupuestos
+                            <h4 className="text-sm sm:text-base font-semibold text-blue-800 mb-2 sm:mb-4 pb-2 border-b-2 border-blue-200 flex items-center gap-2">
+                                <span className="bg-blue-100 text-blue-700 text-xs font-semibold px-2.5 py-1 rounded">
+                                    {completedBudgets.length}
+                                </span>
+                                Presupuestos Completados
                             </h4>
-                            <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
-                                {otherBudgets.map((budget) => (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
+                                {completedBudgets.map((budget) => (
                                     <BudgetCard
                                         key={budget.id}
                                         budget={budget}

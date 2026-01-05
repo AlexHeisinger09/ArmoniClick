@@ -1,7 +1,7 @@
 // src/presentation/pages/patient/tabs/treatments/components/BudgetSidebar.tsx - LIMPIO Y CORREGIDO
 import React, { useMemo } from 'react';
 import { FileText, CheckCircle, Clock, AlertCircle } from 'lucide-react';
-import { BudgetSummary, Treatment } from "@/core/use-cases/treatments";
+import { BudgetSummary, Treatment, BudgetItem } from "@/core/use-cases/treatments";
 
 interface BudgetSidebarProps {
     budgets: BudgetSummary[];
@@ -10,6 +10,7 @@ interface BudgetSidebarProps {
     onBudgetChange: (budgetId: number | null) => void;
     loading: boolean;
     treatments?: Treatment[];
+    budgetItems?: BudgetItem[];
 }
 
 const BudgetSidebar: React.FC<BudgetSidebarProps> = ({
@@ -18,7 +19,8 @@ const BudgetSidebar: React.FC<BudgetSidebarProps> = ({
     selectedBudgetId,
     onBudgetChange,
     loading,
-    treatments = []
+    treatments = [],
+    budgetItems = []
 }) => {
     const formatCurrency = (amount: string | number): string => {
         const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -74,46 +76,31 @@ const BudgetSidebar: React.FC<BudgetSidebarProps> = ({
         }
     };
 
-    // ✅ CÁLCULOS CORREGIDOS - SOLO TRATAMIENTOS ACTIVOS
+    // ✅ CÁLCULOS CORREGIDOS - CONTAR BUDGET_ITEMS EN LUGAR DE SESIONES
     const stats = useMemo(() => {
         if (!activeBudget) {
             return {
                 totalBudget: 0,
                 completed: 0,
                 pending: 0,
-                totalTreatments: 0,
-                completedTreatments: 0
+                totalBudgetItems: 0,
+                completedBudgetItems: 0
             };
         }
 
         const totalBudget = parseFloat(activeBudget.total_amount);
 
-        // ✅ FILTRAR EXPLÍCITAMENTE SOLO TRATAMIENTOS ACTIVOS (no eliminados)
-        const activeTreatments = treatments.filter(t => t.is_active !== false);
+        // ✅ CORRECCIÓN: Contar budget_items en lugar de sesiones de tratamiento
+        // Filtrar budget_items activos
+        const activeBudgetItems = budgetItems.filter(item => item.is_active !== false);
+        const totalBudgetItems = activeBudgetItems.length;
 
-        // ✅ DE LOS ACTIVOS, FILTRAR LOS COMPLETADOS
-        const completedActiveTreatments = activeTreatments.filter(t => t.status === 'completed');
+        // Contar budget_items completados
+        const completedItems = activeBudgetItems.filter(item => item.status === 'completado');
+        const completedBudgetItems = completedItems.length;
 
-        // ✅ FIX CRÍTICO: Agrupar por budget_item_id para evitar duplicar valores
-        // Si un budget_item tiene 4 sesiones, solo debe contar el valor UNA VEZ
-        const completedBudgetItemIds = new Set<number>();
-        const completed = completedActiveTreatments
-            .filter(t => {
-                // Solo considerar si tiene budget_item_id y valor válido
-                if (!t.budget_item_id || !t.budget_item_valor || parseFloat(t.budget_item_valor) <= 0) {
-                    return false;
-                }
-
-                // ✅ Si ya contamos este budget_item, saltarlo
-                if (completedBudgetItemIds.has(t.budget_item_id)) {
-                    return false;
-                }
-
-                // ✅ Marcar como contado y procesar
-                completedBudgetItemIds.add(t.budget_item_id);
-                return true;
-            })
-            .reduce((sum, t) => sum + parseFloat(t.budget_item_valor || '0'), 0);
+        // Calcular el valor total completado (suma de valores de items completados)
+        const completed = completedItems.reduce((sum, item) => sum + parseFloat(item.valor || '0'), 0);
 
         const pending = Math.max(0, totalBudget - completed);
 
@@ -121,10 +108,10 @@ const BudgetSidebar: React.FC<BudgetSidebarProps> = ({
             totalBudget,
             completed,
             pending,
-            totalTreatments: activeTreatments.length,
-            completedTreatments: completedActiveTreatments.length
+            totalBudgetItems,
+            completedBudgetItems
         };
-    }, [activeBudget, treatments]);
+    }, [activeBudget, budgetItems]);
 
     // ✅ PROGRESO CALCULADO CORRECTAMENTE
     const progressPercentage = useMemo(() => {
@@ -191,7 +178,7 @@ const BudgetSidebar: React.FC<BudgetSidebarProps> = ({
                                     </div>
                                 </div>
 
-                                {/* ✅ ESTADÍSTICAS CORREGIDAS - SOLO TRATAMIENTOS ACTIVOS */}
+                                {/* ✅ ESTADÍSTICAS CORREGIDAS - CONTAR BUDGET_ITEMS */}
                                 <div className="grid grid-cols-2 gap-3 mb-4">
                                     <div className="text-center p-2 bg-slate-50 rounded-lg">
                                         <div className="text-xs text-slate-500">Realizado</div>
@@ -199,7 +186,7 @@ const BudgetSidebar: React.FC<BudgetSidebarProps> = ({
                                             ${formatCurrency(stats.completed)}
                                         </div>
                                         <div className="text-xs text-slate-400 mt-1">
-                                            {stats.completedTreatments} de {stats.totalTreatments} tratamientos
+                                            {stats.completedBudgetItems} de {stats.totalBudgetItems}
                                         </div>
                                     </div>
                                     <div className="text-center p-2 bg-slate-50 rounded-lg">
@@ -208,7 +195,7 @@ const BudgetSidebar: React.FC<BudgetSidebarProps> = ({
                                             ${formatCurrency(stats.pending)}
                                         </div>
                                         <div className="text-xs text-slate-400 mt-1">
-                                            {stats.totalTreatments - stats.completedTreatments} pendientes
+                                            {stats.totalBudgetItems - stats.completedBudgetItems} pendientes
                                         </div>
                                     </div>
                                 </div>

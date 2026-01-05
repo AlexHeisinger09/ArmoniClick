@@ -65,7 +65,7 @@ export class CompleteBudgetItem {
       if (allCompleted) {
         await db
           .update(budgetsTable)
-          .set({ status: 'completado', updated_at: new Date() })
+          .set({ status: 'completed', updated_at: new Date() })
           .where(eq(budgetsTable.id, budgetItem.budget_id));
       }
 

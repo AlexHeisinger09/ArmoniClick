@@ -1,7 +1,7 @@
 // src/presentation/pages/patient/tabs/treatments/components/BudgetCarousel.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, FileText, CheckCircle, Clock, AlertCircle } from 'lucide-react';
-import { BudgetSummary, Treatment } from "@/core/use-cases/treatments";
+import { BudgetSummary, Treatment, BudgetItem } from "@/core/use-cases/treatments";
 
 interface BudgetCarouselProps {
     budgets: BudgetSummary[];
@@ -9,6 +9,7 @@ interface BudgetCarouselProps {
     onBudgetChange: (budgetId: number | null) => void;
     loading: boolean;
     treatments?: Treatment[];
+    budgetItems?: BudgetItem[];
 }
 
 const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
@@ -16,10 +17,16 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
     selectedBudgetId,
     onBudgetChange,
     loading,
-    treatments = []
+    treatments = [],
+    budgetItems = []
 }) => {
-    // Filtrar solo presupuestos activos
-    const activeBudgets = budgets.filter(b => b.status === 'activo');
+    // ✅ NUEVO: Estado para alternar entre activos y completados
+    const [showCompleted, setShowCompleted] = useState(false);
+
+    // Filtrar presupuestos según el modo
+    const activeBudgets = budgets.filter(b =>
+        showCompleted ? b.status === 'completed' : b.status === 'activo'
+    );
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const carouselRef = useRef<HTMLDivElement>(null);
@@ -33,6 +40,14 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
             }
         }
     }, [selectedBudgetId, activeBudgets]);
+
+    // ✅ Resetear índice cuando cambia el modo (activos/completados)
+    useEffect(() => {
+        setCurrentIndex(0);
+        if (activeBudgets.length > 0) {
+            onBudgetChange(activeBudgets[0].id);
+        }
+    }, [showCompleted]);
 
     const formatCurrency = (amount: string | number): string => {
         const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -53,6 +68,8 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
                 return 'text-green-600 bg-green-50 border-green-200';
             case 'completed':
                 return 'text-blue-600 bg-blue-50 border-blue-200';
+            case 'completado':
+                return 'text-blue-600 bg-blue-50 border-blue-200';
             case 'pendiente':
                 return 'text-orange-600 bg-orange-50 border-orange-200';
             default:
@@ -66,6 +83,8 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
                 return <CheckCircle className="w-4 h-4 text-green-600" />;
             case 'completed':
                 return <CheckCircle className="w-4 h-4 text-blue-600" />;
+            case 'completado':
+                return <CheckCircle className="w-4 h-4 text-blue-600" />;
             case 'pendiente':
                 return <Clock className="w-4 h-4 text-orange-600" />;
             default:
@@ -78,6 +97,8 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
             case 'activo':
                 return 'Activo';
             case 'completed':
+                return 'Completado';
+            case 'completado':
                 return 'Completado';
             case 'pendiente':
                 return 'Pendiente';
@@ -119,22 +140,41 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
     if (activeBudgets.length === 0) {
         return (
             <div className="bg-white rounded-xl border border-cyan-200">
-                <div className="p-4 border-b border-cyan-200 bg-gradient-to-r from-cyan-50 to-blue-50">
-                    <div className="flex items-center space-x-3">
-                        <div className="bg-cyan-100 p-2 rounded-full">
-                            <FileText className="w-5 h-5 text-cyan-600" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-semibold text-slate-700">Presupuestos activos</h3>
-                            <p className="text-sm text-slate-500">0 presupuestos</p>
-                        </div>
-                    </div>
+                {/* Mini pestañas */}
+                <div className="flex border-b border-slate-200">
+                    <button
+                        onClick={() => setShowCompleted(false)}
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                            !showCompleted
+                                ? 'text-cyan-600 border-b-2 border-cyan-600 bg-cyan-50/50'
+                                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                        }`}
+                    >
+                        🟢 Activos
+                    </button>
+                    <button
+                        onClick={() => setShowCompleted(true)}
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                            showCompleted
+                                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
+                                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                        }`}
+                    >
+                        🔵 Completados
+                    </button>
                 </div>
+
+                {/* Estado vacío */}
                 <div className="p-6 text-center">
                     <AlertCircle className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                    <p className="text-slate-500 mb-2">No hay presupuestos activos</p>
+                    <p className="text-slate-500 mb-2">
+                        {showCompleted ? 'No hay presupuestos completados' : 'No hay presupuestos activos'}
+                    </p>
                     <p className="text-sm text-slate-400">
-                        Crea y activa un presupuesto para generar tratamientos
+                        {showCompleted
+                            ? 'Completa presupuestos para verlos aquí'
+                            : 'Crea y activa un presupuesto para generar tratamientos'
+                        }
                     </p>
                 </div>
             </div>
@@ -142,54 +182,64 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
     }
 
     const currentBudget = activeBudgets[currentIndex];
-    // ✅ Filtrar tratamientos que pertenecen a items del presupuesto actual
-    // Nota: Assumimos que si el tratamiento tiene budget_item_id, pertenece a este presupuesto
-    const budgetTreatments = treatments.filter(t => t.is_active !== false && t.budget_item_id);
-    const completedTreatments = budgetTreatments.filter(t => t.status === 'completed');
     const totalBudget = parseFloat(currentBudget.total_amount);
 
-    // ✅ FIX CRÍTICO: Agrupar por budget_item_id para evitar duplicar valores
-    // Si un budget_item tiene 4 sesiones, solo debe contar el valor UNA VEZ
-    const completedBudgetItemIds = new Set<number>();
-    const completed = completedTreatments
-        .filter(t => {
-            // Solo considerar si tiene budget_item_id y valor válido
-            if (!t.budget_item_id || !t.budget_item_valor || parseFloat(t.budget_item_valor) <= 0) {
-                return false;
-            }
+    // ✅ CORRECCIÓN: Contar budget_items en lugar de sesiones de tratamiento
+    // Filtrar budget_items activos
+    const activeBudgetItems = budgetItems.filter(item => item.is_active !== false);
+    const totalBudgetItems = activeBudgetItems.length;
 
-            // ✅ Si ya contamos este budget_item, saltarlo
-            if (completedBudgetItemIds.has(t.budget_item_id)) {
-                return false;
-            }
+    // Contar budget_items completados
+    const completedBudgetItems = activeBudgetItems.filter(item => item.status === 'completado');
+    const completedBudgetItemsCount = completedBudgetItems.length;
 
-            // ✅ Marcar como contado y procesar
-            completedBudgetItemIds.add(t.budget_item_id);
-            return true;
-        })
-        .reduce((sum, t) => sum + parseFloat(t.budget_item_valor || '0'), 0);
+    // Calcular el valor total completado (suma de valores de items completados)
+    const completed = completedBudgetItems.reduce((sum, item) => sum + parseFloat(item.valor || '0'), 0);
 
     const pending = Math.max(0, totalBudget - completed);
     const progressPercentage = totalBudget > 0 ? Math.min(100, Math.round((completed / totalBudget) * 100)) : 0;
 
     return (
         <div className="bg-white rounded-xl border border-cyan-200 overflow-hidden flex flex-col h-full">
-            {/* Header con contador */}
-            <div className="p-4 border-b border-cyan-200 bg-gradient-to-r from-cyan-50 to-blue-50">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                        <div className="bg-cyan-100 p-2 rounded-full">
-                            <FileText className="w-5 h-5 text-cyan-600" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-semibold text-slate-700">Presupuestos activos</h3>
-                            <p className="text-sm text-slate-500">{activeBudgets.length} presupuesto{activeBudgets.length !== 1 ? 's' : ''}</p>
-                        </div>
+            {/* Header con mini pestañas */}
+            <div className="border-b border-cyan-200">
+                {/* Mini pestañas */}
+                <div className="flex border-b border-slate-200">
+                    <button
+                        onClick={() => setShowCompleted(false)}
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                            !showCompleted
+                                ? 'text-cyan-600 border-b-2 border-cyan-600 bg-cyan-50/50'
+                                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                        }`}
+                    >
+                        🟢 Activos
+                    </button>
+                    <button
+                        onClick={() => setShowCompleted(true)}
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                            showCompleted
+                                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
+                                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                        }`}
+                    >
+                        🔵 Completados
+                    </button>
+                </div>
+
+                {/* Contador e info */}
+                <div className="p-3 bg-gradient-to-r from-cyan-50 to-blue-50 flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                        <FileText className="w-4 h-4 text-cyan-600" />
+                        <span className="text-sm text-slate-600">
+                            {activeBudgets.length} presupuesto{activeBudgets.length !== 1 ? 's' : ''}
+                        </span>
                     </div>
-                    {/* Badge del índice actual */}
-                    <div className="bg-cyan-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                        {currentIndex + 1}/{activeBudgets.length}
-                    </div>
+                    {activeBudgets.length > 0 && (
+                        <div className="bg-cyan-600 text-white px-2 py-0.5 rounded-full text-xs font-medium">
+                            {currentIndex + 1}/{activeBudgets.length}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -226,7 +276,7 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
                                     ${formatCurrency(completed)}
                                 </div>
                                 <div className="text-xs text-slate-400 mt-1">
-                                    {completedTreatments.length} de {budgetTreatments.length}
+                                    {completedBudgetItemsCount} de {totalBudgetItems}
                                 </div>
                             </div>
                             <div className="text-center p-2 bg-slate-50 rounded-lg">
@@ -235,7 +285,7 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
                                     ${formatCurrency(pending)}
                                 </div>
                                 <div className="text-xs text-slate-400 mt-1">
-                                    {budgetTreatments.length - completedTreatments.length} pendientes
+                                    {totalBudgetItems - completedBudgetItemsCount} pendientes
                                 </div>
                             </div>
                         </div>

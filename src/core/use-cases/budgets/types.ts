@@ -194,13 +194,21 @@ export const BudgetUtils = {
   },
 
   sortBudgetsByPriority: (budgets: Budget[]): Budget[] => {
-    // Orden: Activo primero, luego pendientes, luego borradores por fecha, luego completados
+    // ✅ NUEVO ORDEN: Borradores/Pendientes primero (más frecuentes), luego activos, luego completados
     return budgets.sort((a, b) => {
-      // Activos primero
+      // Prioridad 1: Borradores o Pendientes primero (están siendo editados)
+      const aIsDraft = [BUDGET_STATUS.BORRADOR, BUDGET_STATUS.PENDIENTE].includes(a.status as any);
+      const bIsDraft = [BUDGET_STATUS.BORRADOR, BUDGET_STATUS.PENDIENTE].includes(b.status as any);
+
+      if (aIsDraft && !bIsDraft) return -1;
+      if (bIsDraft && !aIsDraft) return 1;
+
+      // Prioridad 2: Activos segundo
       if (a.status === BUDGET_STATUS.ACTIVO && b.status !== BUDGET_STATUS.ACTIVO) return -1;
       if (b.status === BUDGET_STATUS.ACTIVO && a.status !== BUDGET_STATUS.ACTIVO) return 1;
-      
-      // Si ambos son activos o ambos no son activos, ordenar por fecha (más reciente primero)
+
+      // Prioridad 3: Completados al final
+      // Si ambos tienen el mismo estado, ordenar por fecha (más reciente primero)
       const dateA = new Date(a.updated_at || a.created_at);
       const dateB = new Date(b.updated_at || b.created_at);
       return dateB.getTime() - dateA.getTime();
