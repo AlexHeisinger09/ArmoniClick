@@ -86,13 +86,21 @@ const TreatmentsGroupedList: React.FC<TreatmentsGroupedListProps> = ({
 
   return (
     <div className="bg-white h-full rounded-xl border border-cyan-200 flex flex-col">
-      {/* Header con botón */}
-      <div className="p-4 flex justify-end">
+      {/* Header con botón y mensaje informativo */}
+      <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        {/* Mensaje informativo */}
+        <div className="flex items-start gap-2 text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+          <span className="text-base">💡</span>
+          <p className="flex-1">
+            Al completar todos los tratamientos, el plan se marcará automáticamente como finalizado
+          </p>
+        </div>
+
         {/* Solo mostrar botón de nuevo tratamiento si hay presupuesto seleccionado y está activo */}
         {selectedBudget && selectedBudget.status === 'activo' && (
           <button
             onClick={onNewTreatment}
-            className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors shadow-sm"
+            className="flex items-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors shadow-sm whitespace-nowrap"
           >
             <Plus className="w-4 h-4 mr-2" />
             Nuevo Tratamiento

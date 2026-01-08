@@ -173,6 +173,25 @@ timeout = 25  # 25 segundos para dar tiempo a la API de DeepSeek
   status = 200
   methods = ["GET", "POST", "DELETE", "OPTIONS"]
 
+# NOTIFICATIONS ROUTES (doctor notifications for appointment confirmations/cancellations)
+[[redirects]]
+  from = "/notifications/mark-read"
+  to = "/.netlify/functions/notifications/notifications"
+  status = 200
+  methods = ["PUT", "OPTIONS"]
+
+[[redirects]]
+  from = "/notifications/*"
+  to = "/.netlify/functions/notifications/notifications"
+  status = 200
+  methods = ["GET", "PUT", "DELETE", "OPTIONS"]
+
+[[redirects]]
+  from = "/notifications"
+  to = "/.netlify/functions/notifications/notifications"
+  status = 200
+  methods = ["GET", "OPTIONS"]
+
 # BUDGETS ROUTES (existing, just moved after documents)
 [[redirects]]
   from = "/budgets/revenue-treatments"

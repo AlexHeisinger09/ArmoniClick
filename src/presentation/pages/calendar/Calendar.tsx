@@ -150,12 +150,44 @@ const Calendar: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
+        {/* Selector de vista flotante - Entre header principal y calendario */}
+        <div className="flex justify-start mb-3">
+          <div className="inline-flex bg-white rounded-lg p-0.5 shadow-sm border border-slate-200">
+            <button
+              onClick={() => setViewMode('day')}
+              className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm rounded-md transition-all duration-200 font-medium ${viewMode === 'day'
+                ? 'bg-cyan-500 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
+                }`}
+            >
+              Día
+            </button>
+            <button
+              onClick={() => setViewMode('week')}
+              className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm rounded-md transition-all duration-200 font-medium ${viewMode === 'week'
+                ? 'bg-cyan-500 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
+                }`}
+            >
+              Semana
+            </button>
+            <button
+              onClick={() => setViewMode('month')}
+              className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm rounded-md transition-all duration-200 font-medium ${viewMode === 'month'
+                ? 'bg-cyan-500 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
+                }`}
+            >
+              Mes
+            </button>
+          </div>
+        </div>
+
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden relative">
           {/* Header del calendario */}
           <CalendarHeader
             currentDate={currentDate}
             viewMode={viewMode}
-            onViewModeChange={setViewMode}
             onNavigate={navigateDate}
             onToday={goToToday}
             onDateSelect={handleDateSelect}

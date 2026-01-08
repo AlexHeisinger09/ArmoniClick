@@ -85,6 +85,13 @@
       "when": 1766514648769,
       "tag": "0011_curvy_mulholland_black",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1767881257542,
+      "tag": "0012_broad_genesis",
+      "breakpoints": true
     }
   ]
 }

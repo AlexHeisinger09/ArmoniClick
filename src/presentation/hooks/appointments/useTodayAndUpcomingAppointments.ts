@@ -87,7 +87,7 @@ export const useTodayAndUpcomingAppointments = () => {
       date: dateDisplay,
       patient: patientName,
       treatment: appointment.title || 'Cita',
-      status: appointment.status as 'confirmed' | 'pending' | 'completed' | 'cancelled',
+      status: appointment.status as 'confirmed' | 'pending' | 'completed' | 'cancelled' | 'no-show',
       patientId: appointment.patientId,
       appointmentDate: appointmentDate,
       duration: appointment.duration,

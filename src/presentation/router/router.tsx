@@ -13,6 +13,7 @@ import { Patient } from "../pages/patient/Patient";
 import { Configuration } from "../pages/configuration/Configuration";
 import BudgetPage from "../pages/budgets/BudgetPage";
 import DocumentsPage from "../pages/documents/DocumentsPage";
+import { NotificationsPage } from "../pages/notifications/NotificationsPage";
 
 // ✅ NUEVAS IMPORTACIONES para confirmación/cancelación de citas
 import  ConfirmAppointment  from "../pages/appointment/ConfirmAppointment";
@@ -99,6 +100,10 @@ export const router = createBrowserRouter([
       {
         path: "documentos",
         element: <DocumentsPage />,
+      },
+      {
+        path: "notificaciones",
+        element: <NotificationsPage />,
       },
       {
         path: "configuracion",

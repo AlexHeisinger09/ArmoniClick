@@ -244,11 +244,11 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
             </div>
 
             {/* Carrusel */}
-            <div className="flex-1 overflow-hidden flex flex-col justify-between p-4">
-                {/* Card del presupuesto actual */}
-                <div className="relative mb-4">
+            <div className="p-4 flex flex-col">
+                {/* Card del presupuesto actual - Altura fija */}
+                <div className="relative mb-4 h-[350px] overflow-y-auto">
                     <div className="absolute inset-0 bg-gradient-to-r from-cyan-100/50 to-blue-100/50 rounded-xl"></div>
-                    <div className="relative p-4 border-2 border-cyan-300 rounded-xl bg-white/80 backdrop-blur-sm">
+                    <div className="relative p-4 border-2 border-cyan-300 rounded-xl bg-white/80 backdrop-blur-sm min-h-full">
                         {/* ID y fecha */}
                         <div className="flex justify-between items-start mb-3">
                             <div>
@@ -345,11 +345,6 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
                                     aria-label={`Ir al presupuesto ${index + 1}`}
                                 />
                             ))}
-                        </div>
-
-                        {/* Instrucción visual */}
-                        <div className="text-xs text-slate-500 text-center">
-                            💡 Desliza o usa los puntos para cambiar de presupuesto
                         </div>
                     </div>
                 )}

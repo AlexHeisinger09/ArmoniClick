@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLoginMutation, useProfile } from '@/presentation/hooks';
 import { useUpdatePasswordMutation } from '@/presentation/hooks/user/useUpdateProfile';
 import { Spinner } from '@/presentation/components/ui/spinner';
+import { NotificationBell } from '@/presentation/components/NotificationBell';
 
 interface HeaderProps {
   isMinimized?: boolean;
@@ -181,6 +182,9 @@ const Header: React.FC<HeaderProps> = ({ isMinimized = false }) => {
                 isMinimized ? 'w-2.5 h-2.5' : 'w-3 h-3 sm:w-4 sm:h-4'
               }`}></div>
             </div>
+
+            {/* Campana de notificaciones */}
+            <NotificationBell isMinimized={isMinimized} />
 
             {/* Menú de configuración */}
             <div className="relative" ref={menuRef}>

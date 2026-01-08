@@ -166,7 +166,8 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         };
 
         setItems([...items, item]);
-        setNewItem({ pieza: '', accion: '', valor: '' });
+        // ✅ Solo limpiar pieza, mantener servicio y valor seleccionados para facilitar agregar mismo tratamiento a varias piezas
+        setNewItem({ pieza: '', accion: newItem.accion, valor: newItem.valor });
         markAsChanged();
         notification.success('Tratamiento agregado exitosamente');
     };

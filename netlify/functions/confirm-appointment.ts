@@ -6,6 +6,7 @@ import { appointmentsTable } from "../data/schemas/appointment.schema";
 import { usersTable } from "../data/schemas/user.schema";
 import { patientsTable } from "../data/schemas/patient.schema";
 import { locationsTable } from "../data/schemas/location.schema";
+import { notificationsTable } from "../data/schemas/notification.schema";
 import { eq } from "drizzle-orm";
 import { NotificationService } from "../services/notification.service";
 
@@ -166,28 +167,43 @@ const handler: Handler = async (event: HandlerEvent) => {
 
     console.log('✅ Appointment confirmed successfully:', updatedAppointment.id);
 
-    // Enviar notificación al doctor
+    // Obtener nombre del paciente para notificaciones
+    let patientName = 'Paciente';
+    if (appointment.guestName) {
+      patientName = appointment.guestName;
+    } else if (patient) {
+      if (patient.nombres && patient.apellidos) {
+        patientName = `${patient.nombres} ${patient.apellidos}`;
+      } else if (patient.nombres) {
+        patientName = patient.nombres;
+      } else if (patient.apellidos) {
+        patientName = patient.apellidos;
+      }
+    }
+
+    // Guardar notificación en la base de datos
+    if (doctor) {
+      try {
+        await db.insert(notificationsTable).values({
+          type: 'appointment_confirmed',
+          doctorId: doctor.id,
+          appointmentId: appointment.id,
+          title: 'Cita Confirmada',
+          message: `${patientName} ha confirmado su cita para ${appointment.title}`,
+          patientName: patientName,
+          appointmentDate: new Date(appointment.appointmentDate),
+          isRead: false
+        });
+        console.log('✅ Notification saved to database');
+      } catch (dbError) {
+        console.error('⚠️ Failed to save notification to database:', dbError);
+      }
+    }
+
+    // Enviar notificación al doctor por email
     if (doctor && doctor.email) {
       try {
         const notificationService = new NotificationService();
-
-        // Obtener nombre del paciente (puede ser invitado o registrado)
-        let patientName = 'Paciente';
-
-        if (appointment.guestName) {
-          // Paciente invitado
-          patientName = appointment.guestName;
-        } else if (patient) {
-          // Paciente registrado
-          if (patient.nombres && patient.apellidos) {
-            patientName = `${patient.nombres} ${patient.apellidos}`;
-          } else if (patient.nombres) {
-            patientName = patient.nombres;
-          } else if (patient.apellidos) {
-            patientName = patient.apellidos;
-          }
-        }
-
         const doctorName = `${doctor.name || ''} ${doctor.lastName || ''}`.trim() || 'Doctor';
 
         console.log('📧 Sending confirmation notification:', {

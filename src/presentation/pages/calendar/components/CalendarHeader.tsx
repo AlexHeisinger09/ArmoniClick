@@ -8,7 +8,6 @@ import { StatusLegend } from './StatusLegend';
 interface CalendarHeaderProps {
   currentDate: Date;
   viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
   onNavigate: (direction: number) => void;
   onToday: () => void;
   onDateSelect?: (date: Date) => void;
@@ -17,7 +16,6 @@ interface CalendarHeaderProps {
 export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   currentDate,
   viewMode,
-  onViewModeChange,
   onNavigate,
   onToday,
   onDateSelect
@@ -130,83 +128,46 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
 
   return (
     <div className="bg-white border-b border-slate-200">
-      {/* Selector de vista responsive con diseño moderno */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-100">
-        <div className="flex bg-slate-100 rounded-xl p-1 shadow-sm">
+      {/* Mes/Año y Navegación centrados */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-5 border-b border-slate-100">
+        {/* Navegación izquierda */}
+        {(viewMode === 'month' || viewMode === 'week') && (
           <button
-            onClick={() => onViewModeChange('day')}
-            className={`px-4 sm:px-5 py-2 text-sm sm:text-base rounded-lg transition-all duration-200 font-semibold ${viewMode === 'day'
-              ? 'bg-white text-slate-800 shadow-sm scale-105'
-              : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
-              }`}
+            onClick={() => onNavigate(-1)}
+            className="p-2 sm:p-2.5 hover:bg-slate-100 rounded-full transition-all duration-200 hover:scale-105"
           >
-            Día
+            <ChevronLeft className="w-5 h-5 text-slate-600" />
           </button>
-          <button
-            onClick={() => onViewModeChange('week')}
-            className={`px-4 sm:px-5 py-2 text-sm sm:text-base rounded-lg transition-all duration-200 font-semibold ${viewMode === 'week'
-              ? 'bg-white text-slate-800 shadow-sm scale-105'
-              : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
-              }`}
-          >
-            Semana
-          </button>
-          <button
-            onClick={() => onViewModeChange('month')}
-            className={`px-4 sm:px-5 py-2 text-sm sm:text-base rounded-lg transition-all duration-200 font-semibold ${viewMode === 'month'
-              ? 'bg-white text-slate-800 shadow-sm scale-105'
-              : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
-              }`}
-          >
-            Mes
-          </button>
+        )}
+        {viewMode === 'day' && <div className="w-10"></div>}
+
+        {/* Mes y Año centrados */}
+        <div className="flex flex-col items-center flex-1">
+          <div className="text-xs sm:text-sm font-medium text-slate-500 uppercase tracking-widest">
+            {currentDate.getFullYear()}
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-light text-slate-800 tracking-wide">
+            {monthNames[currentDate.getMonth()]}
+          </h1>
+          <div className="w-16 h-0.5 bg-gradient-to-r from-cyan-400 to-cyan-600 rounded-full mt-1"></div>
         </div>
 
-        <button
-          onClick={onToday}
-          className="px-4 sm:px-5 py-2 text-sm sm:text-base font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200 hover:border-slate-300"
-        >
-          Hoy
-        </button>
-      </div>
+        {/* Botón Hoy y Navegación derecha */}
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={onToday}
+            className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200 hover:border-slate-300"
+          >
+            Hoy
+          </button>
 
-      {/* Header unificado con Mes y Año - Diseño elegante */}
-      <div className="px-4 sm:px-6 py-6 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
-        <div className="flex items-center justify-between">
-          {/* Mes y Año centrados con diseño elegante */}
-          <div className="flex-1 flex justify-center">
-            <div className="flex flex-col items-center space-y-2">
-              {/* Año con estilo sutil */}
-              <div className="text-sm font-medium text-slate-500 uppercase tracking-widest">
-                {currentDate.getFullYear()}
-              </div>
-              
-              {/* Mes destacado */}
-              <h1 className="text-3xl sm:text-4xl font-light text-slate-800 tracking-wide">
-                {monthNames[currentDate.getMonth()]}
-              </h1>
-              
-              {/* Línea decorativa */}
-              <div className="w-16 h-0.5 bg-gradient-to-r from-cyan-400 to-cyan-600 rounded-full"></div>
-            </div>
-          </div>
-
-          {/* Navegación lateral para mes y semana */}
           {(viewMode === 'month' || viewMode === 'week') && (
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => onNavigate(-1)}
-                className="p-3 hover:bg-slate-100 rounded-full transition-all duration-200 hover:scale-105 shadow-sm"
-              >
-                <ChevronLeft className="w-5 h-5 text-slate-600" />
-              </button>
-              <button
-                onClick={() => onNavigate(1)}
-                className="p-3 hover:bg-slate-100 rounded-full transition-all duration-200 hover:scale-105 shadow-sm"
-              >
-                <ChevronRight className="w-5 h-5 text-slate-600" />
-              </button>
-            </div>
+            <button
+              onClick={() => onNavigate(1)}
+              className="p-2 sm:p-2.5 hover:bg-slate-100 rounded-full transition-all duration-200 hover:scale-105"
+            >
+              <ChevronRight className="w-5 h-5 text-slate-600" />
+            </button>
           )}
         </div>
       </div>

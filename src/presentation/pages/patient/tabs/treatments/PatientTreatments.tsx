@@ -529,7 +529,7 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
       {/* Layout responsivo: Carrusel + Main Content */}
       <div className="flex flex-col lg:flex-row h-full gap-4 lg:gap-6 treatments-layout">
         {/* Carrusel de presupuestos activos */}
-        <div className="w-full lg:w-96 flex-shrink-0 budget-carousel">
+        <div className="w-full lg:w-96 flex-shrink-0 budget-carousel" style={{ maxHeight: '600px' }}>
           <BudgetCarousel
             budgets={budgets}
             selectedBudgetId={selectedBudgetId}

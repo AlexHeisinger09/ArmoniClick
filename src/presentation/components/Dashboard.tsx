@@ -75,7 +75,20 @@ const Dashboard = () => {
       case 'confirmed': return 'bg-clinic-500 text-white';
       case 'pending': return 'bg-amber-400 text-white';
       case 'completed': return 'bg-blue-500 text-white';
+      case 'no-show': return 'bg-orange-500 text-white';
+      case 'cancelled': return 'bg-red-500 text-white';
       default: return 'bg-gray-400 text-white';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'confirmed': return 'Confirmada';
+      case 'pending': return 'Pendiente';
+      case 'completed': return 'Completada';
+      case 'no-show': return 'No asistió';
+      case 'cancelled': return 'Cancelada';
+      default: return status;
     }
   };
 
@@ -181,7 +194,7 @@ const Dashboard = () => {
                         </div>
                       </div>
                       <Badge className={getStatusColor(appointment.status)}>
-                        {appointment.status === 'confirmed' ? 'Confirmada' : appointment.status === 'pending' ? 'Pendiente' : 'Completada'}
+                        {getStatusLabel(appointment.status)}
                       </Badge>
                     </div>
                   ))

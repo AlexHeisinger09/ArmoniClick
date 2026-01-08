@@ -77,22 +77,22 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
     switch (status) {
       case 'completado':
         return {
-          icon: <CheckCircle className="w-4 h-4 text-green-600" />,
+          icon: <CheckCircle className="w-4 h-4 text-green-700" />,
           label: 'Completado',
-          color: 'text-green-600 bg-green-50 border-green-200'
+          color: 'text-green-700 bg-green-50 border-green-300'
         };
       case 'en_proceso':
         return {
-          icon: <Activity className="w-4 h-4 text-blue-600" />,
+          icon: <Activity className="w-4 h-4 text-blue-700" />,
           label: 'En Proceso',
-          color: 'text-blue-600 bg-blue-50 border-blue-200'
+          color: 'text-blue-700 bg-blue-50 border-blue-300'
         };
       case 'planificado':
       default:
         return {
           icon: <AlertCircle className="w-4 h-4 text-orange-600" />,
           label: 'Planificado',
-          color: 'text-orange-600 bg-orange-50 border-orange-200'
+          color: 'text-orange-600 bg-orange-50 border-orange-300'
         };
     }
   };
@@ -102,23 +102,22 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
   const canComplete = status !== 'completado' && hasTreatments;
 
   return (
-    <div className={`rounded-xl border-2 transition-all duration-200 ${
+    <div className={`rounded-xl border transition-all duration-200 ${
       status === 'completado'
-        ? 'border-green-200 bg-gradient-to-r from-green-50/50 to-blue-50/50'
-        : status === 'en_proceso'
-        ? 'border-blue-200 bg-white'
-        : 'border-cyan-200 bg-white'
+        ? 'border-slate-300 bg-slate-50'
+        : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
     }`}>
       {/* ✅ ENCABEZADO: Budget Item (NO editable/eliminable) */}
       <div className="p-4">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
+        {/* Nueva estructura: información principal siempre visible arriba */}
+        <div className="mb-3">
+          <div className="flex items-start justify-between gap-3 mb-2">
+            <div className="flex items-start gap-2 flex-1 min-w-0">
               {/* Botón expandir/colapsar si hay sesiones */}
               {totalTreatments > 0 && (
                 <button
                   onClick={() => setIsExpanded(!isExpanded)}
-                  className="text-slate-600 hover:text-cyan-600 transition-colors flex-shrink-0"
+                  className="text-slate-600 hover:text-slate-800 transition-colors flex-shrink-0 mt-1"
                   title={isExpanded ? 'Ocultar sesiones' : 'Ver sesiones'}
                 >
                   {isExpanded ? (
@@ -130,111 +129,109 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
               )}
 
               <div className="flex-1 min-w-0">
-                {/* ✅ Título del budget_item con Pieza y Valor inline */}
-                <h4 className="font-semibold text-slate-800 text-base truncate">
-                  {mainTreatment.nombre_servicio.replace(/ - Sesión \d+$/, '')}
-                  {budget_item_pieza && (
-                    <span className="text-slate-600 font-normal"> - Pieza {budget_item_pieza}</span>
-                  )}
-                  {budget_item_valor && (
-                    <span className="text-slate-600 font-normal"> - Valor ${parseFloat(budget_item_valor).toLocaleString('es-CL')}</span>
-                  )}
-                </h4>
-
-                {/* Info debajo del título */}
-                <div className="flex flex-wrap items-center gap-2 mt-1">
-
-                  {/* Badge de estado */}
-                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border whitespace-nowrap ${statusInfo.color}`}>
+                {/* ✅ Nombre del tratamiento con badge de estado al lado */}
+                <div className="flex items-start gap-2 flex-wrap mb-2">
+                  <h4 className="font-semibold text-slate-800 text-base leading-snug break-words flex-1">
+                    {mainTreatment.nombre_servicio.replace(/ - Sesión \d+$/, '')}
+                  </h4>
+                  {/* Badge de estado destacado al lado del nombre */}
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold border-2 whitespace-nowrap ${statusInfo.color}`}>
                     {statusInfo.icon}
                     {statusInfo.label}
                   </span>
-
-                  {/* Indicador de sesiones */}
-                  {totalTreatments > 0 && (
-                    <span className="inline-flex items-center text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full border border-slate-200 whitespace-nowrap">
-                      {totalTreatments} {totalTreatments === 1 ? 'sesión' : 'sesiones'}
-                    </span>
-                  )}
                 </div>
+
+                {/* Indicador de sesiones */}
+                {totalTreatments > 0 && (
+                  <span className="inline-flex items-center text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full border border-slate-200 whitespace-nowrap">
+                    {totalTreatments} {totalTreatments === 1 ? 'sesión' : 'sesiones'}
+                  </span>
+                )}
               </div>
             </div>
-          </div>
 
-          {/* ✅ BOTONES: Agregar Sesión, Ver Fotos y Completar */}
-          <div className="flex items-center gap-1">
-            {/* Botón ver fotos (solo si tiene sesiones con fotos) */}
-            {hasTreatments && allTreatments.some(t => t.foto1 || t.foto2) && (
-              <button
-                onClick={() => setShowPhotoModal(true)}
-                className="flex items-center gap-1 bg-cyan-50 hover:bg-cyan-100 text-cyan-700 text-xs font-medium rounded-lg px-2 py-1 border border-cyan-200 transition-colors whitespace-nowrap"
-                title="Ver todas las fotos de las sesiones"
-              >
-                <Images className="w-3 h-3" />
-                <span className="hidden sm:inline">Ver Fotos</span>
-              </button>
-            )}
-
-            {/* Botón agregar sesión */}
-            {canAddSession && group.budget_item_id && (
-              <button
-                onClick={() => onAddSession(group.budget_item_id!)}
-                className={`flex items-center gap-1 ${
-                  isPlanned
-                    ? 'bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 shadow-sm'
-                    : 'bg-purple-50 hover:bg-purple-100 text-purple-700 px-2 py-1 border border-purple-200'
-                } text-xs font-medium rounded-lg transition-colors whitespace-nowrap`}
-                title={isPlanned ? "Registrar primera sesión" : "Agregar nueva sesión"}
-              >
-                <Plus className={isPlanned ? 'w-4 h-4' : 'w-3 h-3'} />
-                <span className={isPlanned ? '' : 'hidden sm:inline'}>
-                  {isPlanned ? 'Registrar Primera Sesión' : 'Sesión'}
-                </span>
-              </button>
-            )}
-
-            {/* Botón completar todo (solo si tiene sesiones) */}
-            {canComplete && (
-              <button
-                onClick={() => {
-                  if (group.budget_item_id) {
-                    onCompleteBudgetItem(group.budget_item_id);
-                  }
-                }}
-                disabled={isLoadingCompleteItem}
-                className="flex items-center gap-1 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-medium rounded-lg px-2 py-1 border border-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                title="Marcar todas las sesiones como completadas"
-              >
-                {isLoadingCompleteItem ? (
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-700"></div>
-                ) : (
-                  <CheckCircle className="w-3 h-3" />
-                )}
-                <span className="hidden sm:inline">Completar Todo</span>
-              </button>
-            )}
-
-            {/* Botón eliminar budget_item (solo si el presupuesto NO está completado) */}
-            {budgetStatus !== 'completed' && (
-              <button
-                onClick={() => {
-                  if (group.budget_item_id) {
-                    onDeleteBudgetItem(group.budget_item_id);
-                  }
-                }}
-                disabled={isLoadingDeleteItem || !group.budget_item_id}
-                className="flex items-center gap-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium rounded-lg px-2 py-1 border border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                title="Eliminar item del presupuesto y todas sus sesiones"
-              >
-                {isLoadingDeleteItem ? (
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-700"></div>
-                ) : (
-                  <Trash2 className="w-3 h-3" />
-                )}
-                <span className="hidden sm:inline">Eliminar</span>
-              </button>
+            {/* ✅ Valor en la esquina superior derecha */}
+            {budget_item_valor && (
+              <div className="flex-shrink-0 text-right">
+                <p className="text-lg font-bold text-slate-800">
+                  ${parseFloat(budget_item_valor).toLocaleString('es-CL')}
+                </p>
+              </div>
             )}
           </div>
+        </div>
+
+        {/* ✅ BOTONES: Ahora en su propia fila, sin competir por espacio */}
+        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-200">
+          {/* Botón ver fotos (solo si tiene sesiones con fotos) */}
+          {hasTreatments && allTreatments.some(t => t.foto1 || t.foto2) && (
+            <button
+              onClick={() => setShowPhotoModal(true)}
+              className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium rounded-lg px-3 py-2 border border-slate-300 transition-colors whitespace-nowrap"
+              title="Ver todas las fotos de las sesiones"
+            >
+              <Images className="w-4 h-4" />
+              <span>Ver Fotos</span>
+            </button>
+          )}
+
+          {/* Botón agregar sesión */}
+          {canAddSession && group.budget_item_id && (
+            <button
+              onClick={() => onAddSession(group.budget_item_id!)}
+              className={`flex items-center gap-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
+                isPlanned
+                  ? 'bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 shadow-sm'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 border border-slate-300'
+              }`}
+              title={isPlanned ? "Registrar primera sesión" : "Agregar nueva sesión"}
+            >
+              <Plus className="w-4 h-4" />
+              <span>{isPlanned ? 'Registrar Primera Sesión' : 'Nueva Sesión'}</span>
+            </button>
+          )}
+
+          {/* Botón marcar como realizado */}
+          {canComplete && (
+            <button
+              onClick={() => {
+                if (group.budget_item_id) {
+                  onCompleteBudgetItem(group.budget_item_id);
+                }
+              }}
+              disabled={isLoadingCompleteItem}
+              className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium rounded-lg px-3 py-2 border border-slate-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              title="Marcar como realizado"
+            >
+              {isLoadingCompleteItem ? (
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-slate-700"></div>
+              ) : (
+                <CheckCircle className="w-4 h-4" />
+              )}
+              <span>Realizado</span>
+            </button>
+          )}
+
+          {/* Botón eliminar budget_item (solo si el presupuesto NO está completado) */}
+          {budgetStatus !== 'completed' && (
+            <button
+              onClick={() => {
+                if (group.budget_item_id) {
+                  onDeleteBudgetItem(group.budget_item_id);
+                }
+              }}
+              disabled={isLoadingDeleteItem || !group.budget_item_id}
+              className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium rounded-lg px-3 py-2 border border-slate-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              title="Eliminar item del presupuesto y todas sus sesiones"
+            >
+              {isLoadingDeleteItem ? (
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-slate-700"></div>
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+              <span>Eliminar</span>
+            </button>
+          )}
         </div>
 
         {/* ✅ Mensaje para budget_items planificados */}
@@ -302,20 +299,22 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => onView(treatment.id_tratamiento)}
-                        className="flex items-center gap-1 bg-cyan-50 hover:bg-cyan-100 text-cyan-700 text-xs font-medium rounded px-2 py-1 border border-cyan-200 transition-colors"
-                        title="Ver detalles"
+                        className="flex items-center gap-1 bg-white hover:bg-slate-50 text-slate-600 text-xs font-medium rounded px-2 py-1 border border-slate-300 transition-colors whitespace-nowrap"
+                        title="Ver detalles de la sesión"
                       >
                         <Eye className="w-3 h-3" />
+                        <span>Ver</span>
                       </button>
 
                       {/* Solo mostrar botón editar si el tratamiento NO está completado */}
                       {treatment.status !== 'completed' && (
                         <button
                           onClick={() => onEdit(treatment.id_tratamiento)}
-                          className="flex items-center gap-1 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 text-xs font-medium rounded px-2 py-1 border border-yellow-200 transition-colors"
+                          className="flex items-center gap-1 bg-white hover:bg-slate-50 text-slate-600 text-xs font-medium rounded px-2 py-1 border border-slate-300 transition-colors whitespace-nowrap"
                           title="Editar sesión"
                         >
                           <Edit className="w-3 h-3" />
+                          <span>Editar</span>
                         </button>
                       )}
                     </div>

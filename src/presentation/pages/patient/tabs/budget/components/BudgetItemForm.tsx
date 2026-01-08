@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { BUDGET_TYPE } from "@/core/use-cases/budgets";
 import { BudgetFormData, BudgetFormUtils } from '../types/budget.types';
@@ -22,12 +22,20 @@ const BudgetItemForm: React.FC<BudgetItemFormProps> = ({
     // ✅ OBTENER SERVICIOS DE LA BASE DE DATOS
     const { services, isLoading } = useServices();
 
+    // ✅ Estado local para controlar el select
+    const [selectedServiceId, setSelectedServiceId] = useState('');
+
+    // ✅ NO resetear el select - solo se limpia la pieza para agregar el mismo tratamiento varias veces
+    // El doctor puede seleccionar el mismo servicio para diferentes piezas sin tener que buscarlo de nuevo
+
     // ✅ FILTRAR SERVICIOS POR TIPO
     const filteredServices = services.filter(
         service => service.tipo === budgetType
     );
 
     const handleServiceSelect = (serviceId: string) => {
+        setSelectedServiceId(serviceId);
+
         if (!serviceId) {
             onItemChange('accion', '');
             onItemChange('valor', '');
@@ -81,6 +89,7 @@ const BudgetItemForm: React.FC<BudgetItemFormProps> = ({
                         <>
                             {/* Select con servicios de la base de datos */}
                             <select
+                                value={selectedServiceId}
                                 onChange={(e) => handleServiceSelect(e.target.value)}
                                 className="w-full px-3 py-2 border border-cyan-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-slate-700"
                             >

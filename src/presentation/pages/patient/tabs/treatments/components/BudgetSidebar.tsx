@@ -166,9 +166,9 @@ const BudgetSidebar: React.FC<BudgetSidebarProps> = ({
                     </div>
                 ) : (
                     <div className="p-4">
-                        <div className="relative">
+                        <div className="relative max-h-[400px]">
                             <div className="absolute inset-0 bg-gradient-to-r from-cyan-100/50 to-blue-100/50 rounded-xl"></div>
-                            <div className="relative p-4 border-2 border-cyan-300 rounded-xl bg-white/80 backdrop-blur-sm">
+                            <div className="relative p-4 border-2 border-cyan-300 rounded-xl bg-white/80 backdrop-blur-sm max-h-[400px] overflow-y-auto">
 
                                 {/* Presupuesto total */}
                                 <div className="mb-4">

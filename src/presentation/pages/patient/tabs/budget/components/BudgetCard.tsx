@@ -108,19 +108,24 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
                 </div>
             </div>
 
-            {/* Preview de tratamientos ultra compacto - solo en desktop */}
-            <div className="hidden sm:block flex-1 px-2 py-1.5 bg-slate-50/50">
-                <div className="space-y-1">
-                    {budget.items.slice(0, 2).map((item, index) => (
-                        <div key={index} className="text-[10px] leading-tight">
-                            <p className="font-medium text-slate-700 truncate">
-                                {item.pieza && <span className="text-cyan-600">#{item.pieza}</span>} {item.accion}
+            {/* Preview de tratamientos - SIEMPRE VISIBLE, información crítica */}
+            <div className="flex-1 px-2 py-2 bg-slate-50/50 min-h-[80px] overflow-y-auto">
+                <div className="space-y-1.5">
+                    {budget.items.slice(0, 3).map((item, index) => (
+                        <div key={index} className="text-xs leading-snug">
+                            <p className="font-semibold text-slate-700">
+                                {item.pieza && (
+                                    <span className="inline-block bg-cyan-100 text-cyan-700 px-1.5 py-0.5 rounded text-[10px] font-bold mr-1">
+                                        #{item.pieza}
+                                    </span>
+                                )}
+                                <span className="break-words">{item.accion}</span>
                             </p>
                         </div>
                     ))}
-                    {budget.items.length > 2 && (
-                        <p className="text-[10px] text-slate-400 italic">
-                            +{budget.items.length - 2} más
+                    {budget.items.length > 3 && (
+                        <p className="text-[10px] text-slate-500 font-medium pt-1 border-t border-slate-200">
+                            +{budget.items.length - 3} tratamiento{budget.items.length - 3 > 1 ? 's' : ''} más
                         </p>
                     )}
                 </div>
