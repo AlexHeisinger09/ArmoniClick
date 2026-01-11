@@ -1,5 +1,7 @@
 // src/presentation/pages/patient/tabs/treatments/PatientTreatments.tsx - ACTUALIZADO CON SISTEMA DE EVOLUCIONES
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Patient } from "@/core/use-cases/patients";
 import { Treatment, CreateTreatmentData, UpdateTreatmentData, BudgetSummary, AddSessionData } from "@/core/use-cases/treatments";
 import {
@@ -30,6 +32,9 @@ interface PatientTreatmentsProps {
 }
 
 const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryClient = useQueryClient();
+
   // Estados para modales
   const [showNewTreatmentModal, setShowNewTreatmentModal] = useState(false);
   const [showAddBudgetItemModal, setShowAddBudgetItemModal] = useState(false);
@@ -42,7 +47,21 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   const [sessionServiceName, setSessionServiceName] = useState<string>('');
 
   // Estados para presupuestos
-  const [selectedBudgetId, setSelectedBudgetId] = useState<number | null>(null);
+  const [selectedBudgetId, setSelectedBudgetId] = useState<number | null>(() => {
+    // ✅ INICIALIZACIÓN: Verificar si hay budgetId en URL al montar
+    const budgetIdFromUrl = searchParams.get('budgetId');
+    if (budgetIdFromUrl) {
+      const budgetId = parseInt(budgetIdFromUrl, 10);
+      console.log(`🎯 Inicializando con presupuesto desde URL: ${budgetId}`);
+      return budgetId;
+    }
+    return null;
+  });
+
+  const [budgetSetFromUrl, setBudgetSetFromUrl] = useState<boolean>(() => {
+    // ✅ Si hay budgetId en URL al inicio, marcar como establecido desde URL
+    return !!searchParams.get('budgetId');
+  });
 
   // Notification y confirmation hooks
   const notification = useNotification();
@@ -77,13 +96,26 @@ const PatientTreatments: React.FC<PatientTreatmentsProps> = ({ patient }) => {
   const { completeTreatmentMutation, isLoadingComplete } = useCompleteTreatment(patient.id);
   const { addSessionMutation, isLoadingAddSession } = useAddTreatmentSession(patient.id);
 
-  // ✅ SELECCIONAR PRESUPUESTO ACTIVO POR DEFECTO
+  // ✅ LIMPIAR URL DESPUÉS DE LEER budgetId (solo una vez)
   useEffect(() => {
-    if (activeBudget && !selectedBudgetId) {
+    const budgetIdFromUrl = searchParams.get('budgetId');
+    if (budgetIdFromUrl) {
+      // Limpiar el parámetro de la URL
+      setTimeout(() => {
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('budgetId');
+        setSearchParams(newSearchParams, { replace: true });
+      }, 100);
+    }
+  }, []); // Solo ejecutar al montar
+
+  // ✅ SELECCIONAR PRESUPUESTO ACTIVO POR DEFECTO (solo si no hay ninguno seleccionado Y no se estableció desde URL)
+  useEffect(() => {
+    if (activeBudget && !selectedBudgetId && !budgetSetFromUrl) {
       console.log(`🎯 Seleccionando presupuesto activo automáticamente: ${activeBudget.id}`);
       setSelectedBudgetId(activeBudget.id);
     }
-  }, [activeBudget, selectedBudgetId]);
+  }, [activeBudget, selectedBudgetId, budgetSetFromUrl]);
 
   // Función para procesar errores de API
   const processApiError = (error: any): string => {

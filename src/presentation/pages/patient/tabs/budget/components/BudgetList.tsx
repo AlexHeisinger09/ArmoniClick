@@ -14,6 +14,7 @@ interface BudgetsListProps {
     onDelete: (budget: Budget) => void;
     onExportPDF: (budget: Budget) => void;
     onNewBudget: () => void;
+    onCardClick?: (budget: Budget) => void; // Callback para click en card de presupuestos activos/completados
     isLoadingActivate?: boolean;
     isLoadingComplete?: boolean;
     isLoadingRevert?: boolean;
@@ -31,6 +32,7 @@ const BudgetsList: React.FC<BudgetsListProps> = ({
     onDelete,
     onExportPDF,
     onNewBudget,
+    onCardClick,
     isLoadingActivate = false,
     isLoadingComplete = false,
     isLoadingRevert = false,
@@ -149,6 +151,7 @@ const BudgetsList: React.FC<BudgetsListProps> = ({
                                         onRevert={onRevert}
                                         onDelete={onDelete}
                                         onExportPDF={onExportPDF}
+                                        onCardClick={onCardClick}
                                         isLoadingActivate={isLoadingActivate}
                                         isLoadingComplete={isLoadingComplete}
                                         isLoadingRevert={isLoadingRevert}
@@ -180,6 +183,7 @@ const BudgetsList: React.FC<BudgetsListProps> = ({
                                         onRevert={onRevert}
                                         onDelete={onDelete}
                                         onExportPDF={onExportPDF}
+                                        onCardClick={onCardClick}
                                         isLoadingActivate={isLoadingActivate}
                                         isLoadingComplete={isLoadingComplete}
                                         isLoadingRevert={isLoadingRevert}

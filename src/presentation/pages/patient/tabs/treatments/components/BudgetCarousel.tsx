@@ -31,23 +31,32 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
     const [currentIndex, setCurrentIndex] = useState(0);
     const carouselRef = useRef<HTMLDivElement>(null);
 
-    // Cuando cambia la selección, sincronizar el índice
+    // ✅ Sincronizar índice cuando cambia el presupuesto seleccionado externamente
     useEffect(() => {
         if (selectedBudgetId && activeBudgets.length > 0) {
             const index = activeBudgets.findIndex(b => b.id === selectedBudgetId);
-            if (index !== -1) {
+            if (index !== -1 && index !== currentIndex) {
+                console.log(`📍 Sincronizando índice para presupuesto ${selectedBudgetId}: índice ${index}`);
                 setCurrentIndex(index);
             }
         }
-    }, [selectedBudgetId, activeBudgets]);
+    }, [selectedBudgetId, activeBudgets.length]);
 
-    // ✅ Resetear índice cuando cambia el modo (activos/completados)
+    // ✅ Detectar automáticamente el modo según el presupuesto seleccionado (solo si no coincide)
     useEffect(() => {
-        setCurrentIndex(0);
-        if (activeBudgets.length > 0) {
-            onBudgetChange(activeBudgets[0].id);
+        if (selectedBudgetId && budgets.length > 0) {
+            const selectedBudget = budgets.find(b => b.id === selectedBudgetId);
+            if (selectedBudget) {
+                const isCompleted = selectedBudget.status === 'completed';
+                // Solo cambiar el toggle si el presupuesto NO está en la lista actual
+                const isInCurrentList = activeBudgets.some(b => b.id === selectedBudgetId);
+                if (!isInCurrentList && isCompleted !== showCompleted) {
+                    console.log(`🔄 Presupuesto ${selectedBudgetId} no está en lista ${showCompleted ? 'completados' : 'activos'}, cambiando a ${isCompleted ? 'completados' : 'activos'}`);
+                    setShowCompleted(isCompleted);
+                }
+            }
         }
-    }, [showCompleted]);
+    }, [selectedBudgetId, budgets.length]);
 
     const formatCurrency = (amount: string | number): string => {
         const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -126,6 +135,25 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
         onBudgetChange(activeBudgets[index].id);
     };
 
+    // ✅ Manejar cambio de pestaña (activos/completados)
+    const handleToggleChange = (completed: boolean) => {
+        console.log(`🔄 Usuario cambió a ${completed ? 'completados' : 'activos'}`);
+        setShowCompleted(completed);
+
+        // Calcular la nueva lista de presupuestos según el modo
+        const newActiveBudgets = budgets.filter(b =>
+            completed ? b.status === 'completed' : b.status === 'activo'
+        );
+
+        // Seleccionar el primer presupuesto de la nueva lista
+        if (newActiveBudgets.length > 0) {
+            setCurrentIndex(0);
+            onBudgetChange(newActiveBudgets[0].id);
+        } else {
+            onBudgetChange(null);
+        }
+    };
+
     if (loading) {
         return (
             <div className="bg-white rounded-xl border border-cyan-200 p-6">
@@ -143,7 +171,7 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
                 {/* Mini pestañas */}
                 <div className="flex border-b border-slate-200">
                     <button
-                        onClick={() => setShowCompleted(false)}
+                        onClick={() => handleToggleChange(false)}
                         className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
                             !showCompleted
                                 ? 'text-cyan-600 border-b-2 border-cyan-600 bg-cyan-50/50'
@@ -153,7 +181,7 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
                         🟢 Activos
                     </button>
                     <button
-                        onClick={() => setShowCompleted(true)}
+                        onClick={() => handleToggleChange(true)}
                         className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
                             showCompleted
                                 ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
@@ -182,6 +210,17 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
     }
 
     const currentBudget = activeBudgets[currentIndex];
+
+    // ✅ VALIDACIÓN: Si no hay presupuesto actual, no renderizar
+    if (!currentBudget) {
+        return (
+            <div className="bg-white rounded-xl border border-cyan-200 p-6 text-center">
+                <AlertCircle className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-slate-500">No se pudo cargar el presupuesto</p>
+            </div>
+        );
+    }
+
     const totalBudget = parseFloat(currentBudget.total_amount);
 
     // ✅ CORRECCIÓN: Contar budget_items en lugar de sesiones de tratamiento
@@ -206,7 +245,7 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
                 {/* Mini pestañas */}
                 <div className="flex border-b border-slate-200">
                     <button
-                        onClick={() => setShowCompleted(false)}
+                        onClick={() => handleToggleChange(false)}
                         className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
                             !showCompleted
                                 ? 'text-cyan-600 border-b-2 border-cyan-600 bg-cyan-50/50'
@@ -216,7 +255,7 @@ const BudgetCarousel: React.FC<BudgetCarouselProps> = ({
                         🟢 Activos
                     </button>
                     <button
-                        onClick={() => setShowCompleted(true)}
+                        onClick={() => handleToggleChange(true)}
                         className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
                             showCompleted
                                 ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'

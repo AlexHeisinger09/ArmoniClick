@@ -138,7 +138,7 @@ export class PatientService {
   // ✅ MÉTODO ACTUALIZADO: Verificar si existe un RUT para un doctor específico
   async findByRut(rut: string, doctorId: number, excludeId?: number) {
     let conditions = [
-      eq(patientsTable.rut, rut),
+      ilike(patientsTable.rut, rut), // Comparación case-insensitive
       eq(patientsTable.id_doctor, doctorId), // ✅ Solo buscar en los pacientes del doctor
       eq(patientsTable.isActive, true)
     ];

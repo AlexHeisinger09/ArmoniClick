@@ -1,5 +1,6 @@
 // src/presentation/pages/patient/tabs/budget/PatientBudget.tsx - CON VISTAS EN LA MISMA PÁGINA
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { Patient } from "@/core/use-cases/patients";
 import { Budget, BudgetItem, BUDGET_TYPE, BudgetUtils } from "@/core/use-cases/budgets";
@@ -22,6 +23,8 @@ interface PatientBudgetProps {
 }
 
 const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
+    const [searchParams, setSearchParams] = useSearchParams();
+
     // Estado de vista actual
     const [currentView, setCurrentView] = useState<'list' | 'create' | 'edit' | 'view'>('list');
     const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
@@ -449,6 +452,14 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         }
     };
 
+    // ✅ NUEVO: Callback para navegar a la pestaña de tratamientos con el presupuesto seleccionado
+    const handleNavigateToTreatments = (budget: Budget) => {
+        // Cambiar a la pestaña de tratamientos y pasar el budgetId en la URL
+        searchParams.set('tab', 'tratamientos');
+        searchParams.set('budgetId', budget.id.toString());
+        setSearchParams(searchParams);
+    };
+
     const showEditor = currentView !== 'list';
     const canEdit = currentView !== 'view' && (!selectedBudget || BudgetUtils.canModify(selectedBudget));
 
@@ -541,6 +552,7 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
                 onDelete={handleDeleteBudget}
                 onExportPDF={handleExportPDF}
                 onNewBudget={handleCreateNewBudget}
+                onCardClick={handleNavigateToTreatments}
                 isLoadingActivate={isLoadingActivate}
                 isLoadingComplete={isLoadingComplete}
                 isLoadingRevert={isLoadingRevert}

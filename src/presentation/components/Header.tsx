@@ -5,6 +5,7 @@ import { useLoginMutation, useProfile } from '@/presentation/hooks';
 import { useUpdatePasswordMutation } from '@/presentation/hooks/user/useUpdateProfile';
 import { Spinner } from '@/presentation/components/ui/spinner';
 import { NotificationBell } from '@/presentation/components/NotificationBell';
+import PatientSearch from '@/presentation/components/PatientSearch';
 
 interface HeaderProps {
   isMinimized?: boolean;
@@ -123,7 +124,7 @@ const Header: React.FC<HeaderProps> = ({ isMinimized = false }) => {
         bg-white rounded-xl shadow-lg border border-cyan-200 transition-all duration-300
         ${isMinimized ? 'px-3 py-2' : 'px-4 sm:px-6 py-3 sm:py-4'}
       `}>
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center gap-4">
           {/* Logo y mensaje de bienvenida */}
           <div className="flex items-center space-x-4 flex-shrink-0">
             {/* Logo con tamaño responsivo */}
@@ -136,6 +137,11 @@ const Header: React.FC<HeaderProps> = ({ isMinimized = false }) => {
                 }`}
               />
             </div>
+          </div>
+
+          {/* Buscador de pacientes - oculto en móvil pequeño */}
+          <div className="hidden sm:block flex-1">
+            <PatientSearch isMinimized={isMinimized} />
           </div>
 
           {/* Perfil del usuario y menú de opciones */}

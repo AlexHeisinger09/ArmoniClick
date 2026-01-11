@@ -369,11 +369,11 @@ const AddSessionModal: React.FC<AddSessionModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Observaciones */}
+                  {/* Evolución */}
                   <div>
                     <h4 className="text-base sm:text-lg font-semibold text-slate-700 mb-4 pb-2 border-b border-slate-200 flex items-center">
                       <FileText className="w-5 h-5 mr-2" />
-                      Observaciones/Descripción
+                      Evolución del Tratamiento
                     </h4>
                     <textarea
                       name="descripcion"

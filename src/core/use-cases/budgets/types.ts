@@ -6,6 +6,7 @@ export interface BudgetItem {
   accion: string;
   valor: number;
   orden?: number;
+  status?: string; // planificado, en_proceso, completado
   created_at?: string;
 }
 
@@ -168,7 +169,12 @@ export const BudgetUtils = {
   },
 
   canRevert: (budget: Budget): boolean => {
-    return budget.status === BUDGET_STATUS.ACTIVO;
+    // Solo se puede revertir si está activo Y no tiene budget_items completados
+    if (budget.status !== BUDGET_STATUS.ACTIVO) return false;
+
+    // Verificar si hay algún budget_item completado
+    const hasCompletedItems = budget.items.some(item => item.status === 'completado');
+    return !hasCompletedItems;
   },
 
   canDelete: (budget: Budget): boolean => {

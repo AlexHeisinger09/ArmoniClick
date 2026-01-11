@@ -5,6 +5,7 @@ import {
   User,
   X,
 } from "lucide-react";
+import { formatRut } from "@/config/helpers";
 
 // Interfaces
 interface PatientFormData {
@@ -57,11 +58,15 @@ const NewPatientModal: React.FC<NewPatientModalProps> = ({ isOpen, onClose, onSu
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+
+    // Si el campo es RUT, formatear automáticamente
+    const finalValue = name === 'rut' ? formatRut(value) : value;
+
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: finalValue
     }));
-    
+
     if (formErrors[name]) {
       setFormErrors(prev => ({
         ...prev,
@@ -190,6 +195,7 @@ const NewPatientModal: React.FC<NewPatientModalProps> = ({ isOpen, onClose, onSu
                     value={formData.rut}
                     onChange={handleInputChange}
                     placeholder="12345678-9"
+                    maxLength={10}
                     className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm text-slate-700 transition-all ${
                       formErrors.rut ? 'border-red-400 bg-red-50' : 'border-slate-300 hover:border-slate-400'
                     }`}

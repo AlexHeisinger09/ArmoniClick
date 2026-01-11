@@ -73,6 +73,10 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   const [selectedPatient, setSelectedPatient] = useState<PatientType | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const PATIENTS_PER_PAGE = 10;
+
   // Estados para modales
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
   const [showEditPatientModal, setShowEditPatientModal] = useState(false);
@@ -123,26 +127,52 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
     }
   }, [searchParams, allPatients, notification]);
 
-  // FILTRADO LOCAL
+  // Función para normalizar texto (remover tildes/acentos)
+  const normalizeText = (text: string): string => {
+    return text
+      .toLowerCase()
+      .normalize('NFD') // Descomponer caracteres con tildes
+      .replace(/[\u0300-\u036f]/g, ''); // Remover diacríticos (tildes)
+  };
+
+  // FILTRADO Y PAGINACIÓN LOCAL
   const filteredPatients = useMemo(() => {
+    // Ordenar por ID descendente (últimos pacientes primero)
+    const sortedPatients = [...allPatients].sort((a, b) => b.id - a.id);
+
     if (!searchTerm.trim()) {
-      return allPatients;
+      return sortedPatients;
     }
 
-    const lowercaseSearch = searchTerm.toLowerCase().trim();
-    
-    return allPatients.filter(patient => {
-      const fullName = `${patient.nombres} ${patient.apellidos}`.toLowerCase();
-      const nombres = patient.nombres.toLowerCase();
-      const apellidos = patient.apellidos.toLowerCase();
-      
+    const normalizedSearch = normalizeText(searchTerm.trim());
+
+    return sortedPatients.filter(patient => {
+      const fullName = normalizeText(`${patient.nombres} ${patient.apellidos}`);
+      const nombres = normalizeText(patient.nombres);
+      const apellidos = normalizeText(patient.apellidos);
+      const rut = patient.rut.toLowerCase();
+      const email = normalizeText(patient.email);
+
       return (
-        fullName.includes(lowercaseSearch) ||
-        nombres.includes(lowercaseSearch) ||
-        apellidos.includes(lowercaseSearch)
+        fullName.includes(normalizedSearch) ||
+        nombres.includes(normalizedSearch) ||
+        apellidos.includes(normalizedSearch) ||
+        rut.includes(normalizedSearch) ||
+        email.includes(normalizedSearch)
       );
     });
   }, [allPatients, searchTerm]);
+
+  // Calcular paginación
+  const totalPages = Math.ceil(filteredPatients.length / PATIENTS_PER_PAGE);
+  const startIndex = (currentPage - 1) * PATIENTS_PER_PAGE;
+  const endIndex = startIndex + PATIENTS_PER_PAGE;
+  const paginatedPatients = filteredPatients.slice(startIndex, endIndex);
+
+  // Resetear a página 1 cuando se filtra
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
 
   // Calcular edad
@@ -351,7 +381,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                   </span>
                 ) : (
                   <span>
-                    Mostrando {filteredPatients.length} de {allPatients.length} pacientes
+                    Mostrando {paginatedPatients.length} de {filteredPatients.length} pacientes
                   </span>
                 )}
               </div>
@@ -473,7 +503,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-cyan-100">
-                      {filteredPatients.length === 0 ? (
+                      {paginatedPatients.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="px-6 py-12 text-center">
                             <div className="flex flex-col items-center justify-center">
@@ -485,7 +515,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                           </td>
                         </tr>
                       ) : (
-                        filteredPatients.map((patient) => (
+                        paginatedPatients.map((patient) => (
                           <tr
                             key={patient.id}
                             onClick={() => handlePatientClick(patient)}
@@ -520,7 +550,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
               </div>
 
               <div className="md:hidden">
-                {filteredPatients.length === 0 ? (
+                {paginatedPatients.length === 0 ? (
                   <div className="px-6 py-12 text-center">
                     <User className="w-12 h-12 text-slate-400 mb-4 mx-auto" />
                     <p className="text-slate-700 text-lg">
@@ -529,7 +559,7 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                   </div>
                 ) : (
                   <div className="divide-y divide-cyan-100">
-                    {filteredPatients.map((patient) => (
+                    {paginatedPatients.map((patient) => (
                       <div
                         key={patient.id}
                         onClick={() => handlePatientClick(patient)}
@@ -554,15 +584,30 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
 
               {filteredPatients.length > 0 && (
                 <div className="px-6 py-4 border-t border-cyan-200 bg-slate-50">
-                  <div className="flex justify-between items-center">
-                    <div className="text-sm text-slate-500">
-                      {filteredPatients.length} paciente(s)
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div className="text-sm text-slate-600">
+                      Mostrando <span className="font-semibold">{startIndex + 1}</span> a{' '}
+                      <span className="font-semibold">{Math.min(endIndex, filteredPatients.length)}</span> de{' '}
+                      <span className="font-semibold">{filteredPatients.length}</span> paciente(s)
                     </div>
-                    <div className="flex space-x-2">
-                      <button className="px-4 py-2 text-sm bg-cyan-500 text-white rounded-lg disabled:opacity-50" disabled>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        className="px-4 py-2 text-sm bg-cyan-500 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-cyan-600 transition-colors flex items-center gap-2"
+                      >
                         <ChevronLeft className="w-4 h-4" />
+                        <span className="hidden sm:inline">Anterior</span>
                       </button>
-                      <button className="px-4 py-2 text-sm bg-cyan-500 text-white rounded-lg disabled:opacity-50" disabled>
+                      <div className="text-sm text-slate-600 px-3">
+                        Página <span className="font-semibold">{currentPage}</span> de <span className="font-semibold">{totalPages}</span>
+                      </div>
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-4 py-2 text-sm bg-cyan-500 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-cyan-600 transition-colors flex items-center gap-2"
+                      >
+                        <span className="hidden sm:inline">Siguiente</span>
                         <ChevronRight className="w-4 h-4" />
                       </button>
                     </div>

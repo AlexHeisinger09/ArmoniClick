@@ -498,9 +498,9 @@ const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
                 </p>
               </div>
 
-              {/* Descripción */}
+              {/* Evolución */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Observaciones/Descripción</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Evolución del Tratamiento</label>
                 <textarea
                   name="descripcion"
                   value={formData.descripcion || ''}

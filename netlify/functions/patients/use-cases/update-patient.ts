@@ -32,7 +32,11 @@ export class UpdatePatient implements UpdatePatientUseCase {
       }
 
       // Si se está actualizando el RUT, verificar que no exista otro paciente con ese RUT
-      if (dto.rut && dto.rut !== existingPatient.rut) {
+      // Normalizar ambos RUTs a minúsculas para comparación case-insensitive
+      const normalizedDtoRut = dto.rut?.toLowerCase();
+      const normalizedExistingRut = existingPatient.rut?.toLowerCase();
+
+      if (dto.rut && normalizedDtoRut !== normalizedExistingRut) {
         const patientWithRut = await this.patientService.findByRut(dto.rut, doctorId, patientId);
 
         if (patientWithRut) {

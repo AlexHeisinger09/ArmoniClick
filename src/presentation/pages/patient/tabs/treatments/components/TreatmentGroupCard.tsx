@@ -208,7 +208,7 @@ const TreatmentGroupCard: React.FC<TreatmentGroupCardProps> = ({
               ) : (
                 <CheckCircle className="w-4 h-4" />
               )}
-              <span>Realizado</span>
+              <span>Realizar</span>
             </button>
           )}
 

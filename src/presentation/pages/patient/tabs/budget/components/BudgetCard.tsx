@@ -27,6 +27,7 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
     onRevert,
     onDelete,
     onExportPDF,
+    onCardClick,
     isLoadingActivate = false,
     isLoadingComplete = false,
     isLoadingRevert = false,
@@ -51,6 +52,17 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
         action();
     };
 
+    // Determinar qué hacer al hacer click en el card
+    const handleCardClick = () => {
+        // Para presupuestos activos o completados, usar callback personalizado si existe
+        if ((budget.status === 'activo' || budget.status === 'completed') && onCardClick) {
+            onCardClick(budget);
+        } else {
+            // Para borradores/pendientes, comportamiento por defecto: ver el presupuesto
+            onView(budget);
+        }
+    };
+
     return (
         <div
             className={`flex flex-col rounded-lg border-2 transition-all duration-200 cursor-pointer group hover:shadow-lg ${
@@ -60,7 +72,7 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
                     ? 'border-green-200 bg-gradient-to-b from-green-50 to-white hover:from-green-100'
                     : 'border-orange-200 bg-gradient-to-b from-orange-50 to-white hover:from-orange-100'
             }`}
-            onClick={() => onView(budget)}
+            onClick={handleCardClick}
         >
             {/* Header compacto */}
             <div className="p-2 border-b border-slate-200">
@@ -133,77 +145,36 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
 
             {/* Acciones súper compactas */}
             <div className="p-1.5 bg-white border-t border-slate-200">
-                {/* Acciones principales en una sola fila */}
-                <div className="flex gap-0.5 mb-1">
-                    <button
-                        onClick={(e) => handleActionClick(e, () => onView(budget))}
-                        className="flex-1 flex items-center justify-center p-1 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors"
-                        title="Ver"
-                    >
-                        <Eye className="w-3 h-3" />
-                    </button>
+                {/* Para presupuestos ACTIVOS: Solo botones Ver y Exportar con texto */}
+                {budget.status === 'activo' ? (
+                    <>
+                        <div className="flex gap-1 mb-1">
+                            <button
+                                onClick={(e) => handleActionClick(e, () => onView(budget))}
+                                className="flex-1 flex items-center justify-center gap-1 p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition-colors text-[11px] font-medium"
+                                title="Ver presupuesto"
+                            >
+                                <Eye className="w-3 h-3" />
+                                <span>Ver</span>
+                            </button>
 
-                    {BudgetUtils.canModify(budget) && (
-                        <button
-                            onClick={(e) => handleActionClick(e, () => onEdit(budget))}
-                            className="flex-1 flex items-center justify-center p-1 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors"
-                            title="Editar"
-                        >
-                            <Edit className="w-3 h-3" />
-                        </button>
-                    )}
+                            <button
+                                onClick={(e) => handleActionClick(e, () => onExportPDF(budget))}
+                                className="flex-1 flex items-center justify-center gap-1 p-1.5 bg-cyan-100 hover:bg-cyan-200 text-cyan-700 rounded transition-colors text-[11px] font-medium"
+                                title="Exportar PDF"
+                            >
+                                <Download className="w-3 h-3" />
+                                <span>Exportar</span>
+                            </button>
+                        </div>
 
-                    <button
-                        onClick={(e) => handleActionClick(e, () => onExportPDF(budget))}
-                        className="flex-1 flex items-center justify-center p-1 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors"
-                        title="PDF"
-                    >
-                        <Download className="w-3 h-3" />
-                    </button>
-                </div>
-
-                {/* Botón de acción principal compacto */}
-                {BudgetUtils.canActivate(budget) && (
-                    <button
-                        onClick={(e) => handleActionClick(e, () => onActivate(budget))}
-                        disabled={isLoadingActivate}
-                        className="w-full flex items-center justify-center gap-1 bg-green-500 hover:bg-green-600 text-white text-[11px] font-semibold rounded py-1.5 transition-colors disabled:opacity-50"
-                        title="Activar"
-                    >
-                        {isLoadingActivate ? (
-                            <div className="animate-spin rounded-full h-2.5 w-2.5 border-b-2 border-white"></div>
-                        ) : (
-                            <Play className="w-2.5 h-2.5" />
-                        )}
-                        <span>Activar</span>
-                    </button>
-                )}
-
-                {BudgetUtils.canComplete(budget) && (
-                    <button
-                        onClick={(e) => handleActionClick(e, () => onComplete(budget))}
-                        disabled={isLoadingComplete}
-                        className="w-full flex items-center justify-center gap-1 bg-blue-500 hover:bg-blue-600 text-white text-[11px] font-semibold rounded py-1.5 transition-colors disabled:opacity-50"
-                        title="Completar"
-                    >
-                        {isLoadingComplete ? (
-                            <div className="animate-spin rounded-full h-2.5 w-2.5 border-b-2 border-white"></div>
-                        ) : (
-                            <CheckCircle className="w-2.5 h-2.5" />
-                        )}
-                        <span>Completar</span>
-                    </button>
-                )}
-
-                {/* Acciones secundarias en fila */}
-                {(BudgetUtils.canRevert(budget) || BudgetUtils.canDelete(budget)) && (
-                    <div className="flex gap-0.5 mt-1">
+                        {/* Botón Revertir (solo si no tiene items completados) */}
                         {BudgetUtils.canRevert(budget) && (
                             <button
                                 onClick={(e) => handleActionClick(e, () => onRevert(budget))}
                                 disabled={isLoadingRevert}
-                                className="flex-1 flex items-center justify-center gap-0.5 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-[10px] font-medium rounded py-1 transition-colors disabled:opacity-50"
-                                title="Revertir"
+                                className="w-full flex items-center justify-center gap-0.5 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-[10px] font-medium rounded py-1 transition-colors disabled:opacity-50"
+                                title="Revertir a borrador"
                             >
                                 {isLoadingRevert ? (
                                     <div className="animate-spin rounded-full h-2 w-2 border-b border-yellow-800"></div>
@@ -213,13 +184,77 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
                                 <span>Revertir</span>
                             </button>
                         )}
+                    </>
+                ) : budget.status === 'completed' ? (
+                    <>
+                        {/* Para presupuestos COMPLETADOS: Solo botones Ver y Exportar con texto */}
+                        <div className="flex gap-1 mb-1">
+                            <button
+                                onClick={(e) => handleActionClick(e, () => onView(budget))}
+                                className="flex-1 flex items-center justify-center gap-1 p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition-colors text-[11px] font-medium"
+                                title="Ver presupuesto"
+                            >
+                                <Eye className="w-3 h-3" />
+                                <span>Ver</span>
+                            </button>
 
+                            <button
+                                onClick={(e) => handleActionClick(e, () => onExportPDF(budget))}
+                                className="flex-1 flex items-center justify-center gap-1 p-1.5 bg-cyan-100 hover:bg-cyan-200 text-cyan-700 rounded transition-colors text-[11px] font-medium"
+                                title="Exportar PDF"
+                            >
+                                <Download className="w-3 h-3" />
+                                <span>Exportar</span>
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        {/* Para presupuestos en BORRADOR/PENDIENTE: Solo Editar y Exportar con texto */}
+                        <div className="flex gap-1 mb-1">
+                            <button
+                                onClick={(e) => handleActionClick(e, () => onEdit(budget))}
+                                className="flex-1 flex items-center justify-center gap-1 p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition-colors text-[11px] font-medium"
+                                title="Editar presupuesto"
+                            >
+                                <Edit className="w-3 h-3" />
+                                <span>Editar</span>
+                            </button>
+
+                            <button
+                                onClick={(e) => handleActionClick(e, () => onExportPDF(budget))}
+                                className="flex-1 flex items-center justify-center gap-1 p-1.5 bg-cyan-100 hover:bg-cyan-200 text-cyan-700 rounded transition-colors text-[11px] font-medium"
+                                title="Exportar PDF"
+                            >
+                                <Download className="w-3 h-3" />
+                                <span>Exportar</span>
+                            </button>
+                        </div>
+
+                        {/* Botón de acción principal: Activar */}
+                        {BudgetUtils.canActivate(budget) && (
+                            <button
+                                onClick={(e) => handleActionClick(e, () => onActivate(budget))}
+                                disabled={isLoadingActivate}
+                                className="w-full flex items-center justify-center gap-1 bg-green-500 hover:bg-green-600 text-white text-[11px] font-semibold rounded py-1.5 transition-colors disabled:opacity-50 mb-1"
+                                title="Activar presupuesto"
+                            >
+                                {isLoadingActivate ? (
+                                    <div className="animate-spin rounded-full h-2.5 w-2.5 border-b-2 border-white"></div>
+                                ) : (
+                                    <Play className="w-2.5 h-2.5" />
+                                )}
+                                <span>Activar</span>
+                            </button>
+                        )}
+
+                        {/* Botón de eliminar */}
                         {BudgetUtils.canDelete(budget) && (
                             <button
                                 onClick={(e) => handleActionClick(e, () => onDelete(budget))}
                                 disabled={isLoadingDelete}
-                                className="flex-1 flex items-center justify-center gap-0.5 bg-red-100 hover:bg-red-200 text-red-800 text-[10px] font-medium rounded py-1 transition-colors disabled:opacity-50"
-                                title="Eliminar"
+                                className="w-full flex items-center justify-center gap-0.5 bg-red-100 hover:bg-red-200 text-red-800 text-[10px] font-medium rounded py-1 transition-colors disabled:opacity-50"
+                                title="Eliminar presupuesto"
                             >
                                 {isLoadingDelete ? (
                                     <div className="animate-spin rounded-full h-2 w-2 border-b border-red-800"></div>
@@ -229,7 +264,7 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
                                 <span>Eliminar</span>
                             </button>
                         )}
-                    </div>
+                    </>
                 )}
             </div>
         </div>

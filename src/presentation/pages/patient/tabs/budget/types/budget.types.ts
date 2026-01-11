@@ -67,6 +67,7 @@ export interface BudgetCardProps {
     onRevert: (budget: Budget) => void;
     onDelete: (budget: Budget) => void;
     onExportPDF: (budget: Budget) => void;
+    onCardClick?: (budget: Budget) => void; // Callback para click en el card (opcional)
     isLoadingActivate?: boolean;
     isLoadingComplete?: boolean;
     isLoadingRevert?: boolean;
