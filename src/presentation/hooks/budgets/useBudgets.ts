@@ -24,13 +24,14 @@ export const useAllBudgets = (patientId: number) => {
     queryKey: ['budgets', 'patient', patientId, 'all'],
     queryFn: () => getAllBudgetsByPatientUseCase(apiFetcher, patientId),
     enabled: !!patientId,
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 30 * 1000, // ⚡ OPTIMIZADO: 30 segundos (era 5 minutos)
+    gcTime: 5 * 60 * 1000, // Mantener en cache 5 minutos
   });
 
   return {
     queryAllBudgets,
     budgets: queryAllBudgets.data?.budgets || [],
-    sortedBudgets: queryAllBudgets.data?.budgets 
+    sortedBudgets: queryAllBudgets.data?.budgets
       ? BudgetUtils.sortBudgetsByPriority(queryAllBudgets.data.budgets)
       : [],
     total: queryAllBudgets.data?.total || 0,
@@ -45,7 +46,8 @@ export const useActiveBudget = (patientId: number) => {
     queryKey: ['budgets', 'patient', patientId, 'active'],
     queryFn: () => getActiveBudgetByPatientUseCase(apiFetcher, patientId),
     enabled: !!patientId,
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 30 * 1000, // ⚡ OPTIMIZADO: 30 segundos (era 5 minutos)
+    gcTime: 5 * 60 * 1000, // Mantener en cache 5 minutos
   });
 
   return {
@@ -267,12 +269,13 @@ export const useCompleteBudgetItem = () => {
   };
 };
 
-// Hook para estadísticas de presupuestos (sin cambios)
+// Hook para estadísticas de presupuestos
 export const useBudgetStats = () => {
   const queryStats = useQuery({
     queryKey: ['budget', 'stats'],
     queryFn: () => getBudgetStatsUseCase(apiFetcher),
-    staleTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: 2 * 60 * 1000, // ⚡ OPTIMIZADO: 2 minutos (era 10 minutos)
+    gcTime: 10 * 60 * 1000, // Mantener en cache 10 minutos
   });
 
   return {

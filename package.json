@@ -16,6 +16,8 @@
     "drizzle:introspect": "npx drizzle-kit introspect",
     "drizzle:studio": "npx drizzle-kit studio",
     "migrate:multi-tenant": "npx tsx scripts/apply-migrations.ts",
+    "migrate:budget-indexes": "npx tsx scripts/apply-budget-indexes.ts",
+    "migrate:all-indexes": "npx tsx scripts/apply-all-indexes.ts",
     "check:rls": "npx tsx scripts/check-rls-status.ts",
     "create:rls-policies": "npx tsx scripts/create-rls-policies.ts",
     "test:tenant-context": "npx tsx scripts/test-tenant-context.ts"

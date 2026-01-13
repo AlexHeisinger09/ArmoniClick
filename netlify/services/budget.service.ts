@@ -153,11 +153,13 @@ export class BudgetService {
 
         return newItem.id;
     }
-    // ✅ OBTENER TODOS los presupuestos de un paciente
+    // ⚡ OPTIMIZADO: OBTENER TODOS los presupuestos de un paciente (sin N+1 query)
     async findAllByPatientId(patientId: number, userId: number): Promise<BudgetWithItems[]> {
-        const budgets = await db
+        // ✅ UNA SOLA QUERY con LEFT JOIN para evitar N+1 problem
+        const result = await db
             .select({
-                id: budgetsTable.id,
+                // Budget fields
+                budget_id: budgetsTable.id,
                 patient_id: budgetsTable.patient_id,
                 user_id: budgetsTable.user_id,
                 total_amount: budgetsTable.total_amount,
@@ -165,50 +167,83 @@ export class BudgetService {
                 budget_type: budgetsTable.budget_type,
                 created_at: budgetsTable.created_at,
                 updated_at: budgetsTable.updated_at,
-                // ✅ AGREGAR: Datos del doctor que creó el presupuesto
                 doctor_name: usersTable.name,
                 doctor_lastName: usersTable.lastName,
+                // Budget item fields (pueden ser null si no hay items)
+                item_id: budgetItemsTable.id,
+                item_pieza: budgetItemsTable.pieza,
+                item_accion: budgetItemsTable.accion,
+                item_valor: budgetItemsTable.valor,
+                item_orden: budgetItemsTable.orden,
+                item_created_at: budgetItemsTable.created_at,
             })
             .from(budgetsTable)
             .innerJoin(usersTable, eq(budgetsTable.user_id, usersTable.id))
+            .leftJoin(
+                budgetItemsTable,
+                and(
+                    eq(budgetItemsTable.budget_id, budgetsTable.id),
+                    eq(budgetItemsTable.is_active, true) // ✅ Filtro en el JOIN
+                )
+            )
             .where(
                 and(
                     eq(budgetsTable.patient_id, patientId),
                     eq(budgetsTable.user_id, userId)
                 )
             )
-            .orderBy(desc(budgetsTable.updated_at), desc(budgetsTable.created_at));
+            .orderBy(
+                desc(budgetsTable.updated_at),
+                desc(budgetsTable.created_at),
+                budgetItemsTable.orden,
+                budgetItemsTable.created_at
+            );
 
-        const budgetsWithItems: BudgetWithItems[] = [];
+        // ⚡ Agrupar resultados en memoria (más rápido que N queries a DB)
+        const budgetsMap = new Map<number, BudgetWithItems>();
 
-        for (const budget of budgets) {
-            // ✅ SOLO ITEMS ACTIVOS
-            const items = await db
-                .select()
-                .from(budgetItemsTable)
-                .where(
-                    and(
-                        eq(budgetItemsTable.budget_id, budget.id),
-                        eq(budgetItemsTable.is_active, true) // ✅ FILTRO CRÍTICO
-                    )
-                )
-                .orderBy(budgetItemsTable.orden, budgetItemsTable.created_at);
+        for (const row of result) {
+            // Si el presupuesto no existe en el map, agregarlo
+            if (!budgetsMap.has(row.budget_id)) {
+                budgetsMap.set(row.budget_id, {
+                    id: row.budget_id,
+                    patient_id: row.patient_id,
+                    user_id: row.user_id,
+                    total_amount: row.total_amount,
+                    status: row.status ?? '',
+                    budget_type: row.budget_type,
+                    created_at: row.created_at,
+                    updated_at: row.updated_at,
+                    doctor_name: row.doctor_name,
+                    doctor_lastName: row.doctor_lastName,
+                    items: [],
+                });
+            }
 
-            budgetsWithItems.push({
-                ...budget,
-                status: budget.status ?? '',
-                items: items
-            });
+            // Agregar item si existe (LEFT JOIN puede retornar nulls)
+            if (row.item_id) {
+                budgetsMap.get(row.budget_id)!.items.push({
+                    id: row.item_id,
+                    budget_id: row.budget_id,
+                    pieza: row.item_pieza,
+                    accion: row.item_accion,
+                    valor: row.item_valor,
+                    orden: row.item_orden,
+                    created_at: row.item_created_at,
+                });
+            }
         }
 
-        return budgetsWithItems;
+        return Array.from(budgetsMap.values());
     }
 
-    // ✅ OBTENER solo el presupuesto ACTIVO de un paciente
+    // ⚡ OPTIMIZADO: OBTENER solo el presupuesto ACTIVO de un paciente (sin N+1 query)
     async findActiveByPatientId(patientId: number, userId: number): Promise<BudgetWithItems | null> {
-        const budget = await db
+        // ✅ UNA SOLA QUERY con LEFT JOIN
+        const result = await db
             .select({
-                id: budgetsTable.id,
+                // Budget fields
+                budget_id: budgetsTable.id,
                 patient_id: budgetsTable.patient_id,
                 user_id: budgetsTable.user_id,
                 total_amount: budgetsTable.total_amount,
@@ -216,39 +251,71 @@ export class BudgetService {
                 budget_type: budgetsTable.budget_type,
                 created_at: budgetsTable.created_at,
                 updated_at: budgetsTable.updated_at,
-                // ✅ AGREGAR: Datos del doctor que creó el presupuesto
                 doctor_name: usersTable.name,
                 doctor_lastName: usersTable.lastName,
+                // Budget item fields
+                item_id: budgetItemsTable.id,
+                item_pieza: budgetItemsTable.pieza,
+                item_accion: budgetItemsTable.accion,
+                item_valor: budgetItemsTable.valor,
+                item_orden: budgetItemsTable.orden,
+                item_created_at: budgetItemsTable.created_at,
             })
             .from(budgetsTable)
             .innerJoin(usersTable, eq(budgetsTable.user_id, usersTable.id))
+            .leftJoin(
+                budgetItemsTable,
+                and(
+                    eq(budgetItemsTable.budget_id, budgetsTable.id),
+                    eq(budgetItemsTable.is_active, true)
+                )
+            )
             .where(
                 and(
                     eq(budgetsTable.patient_id, patientId),
                     eq(budgetsTable.user_id, userId),
                     eq(budgetsTable.status, BUDGET_STATUS.ACTIVO)
                 )
+            )
+            .orderBy(
+                budgetItemsTable.orden,
+                budgetItemsTable.created_at
             );
 
-        if (!budget[0]) return null;
+        if (result.length === 0) return null;
 
-        // ✅ SOLO ITEMS ACTIVOS
-        const items = await db
-            .select()
-            .from(budgetItemsTable)
-            .where(
-                and(
-                    eq(budgetItemsTable.budget_id, budget[0].id),
-                    eq(budgetItemsTable.is_active, true) // ✅ FILTRO CRÍTICO
-                )
-            )
-            .orderBy(budgetItemsTable.orden, budgetItemsTable.created_at);
-
-        return {
-            ...budget[0],
-            status: budget[0].status ?? '',
-            items: items
+        // ⚡ Construir presupuesto con items
+        const firstRow = result[0];
+        const budget: BudgetWithItems = {
+            id: firstRow.budget_id,
+            patient_id: firstRow.patient_id,
+            user_id: firstRow.user_id,
+            total_amount: firstRow.total_amount,
+            status: firstRow.status ?? '',
+            budget_type: firstRow.budget_type,
+            created_at: firstRow.created_at,
+            updated_at: firstRow.updated_at,
+            doctor_name: firstRow.doctor_name,
+            doctor_lastName: firstRow.doctor_lastName,
+            items: [],
         };
+
+        // Agregar todos los items
+        for (const row of result) {
+            if (row.item_id) {
+                budget.items.push({
+                    id: row.item_id,
+                    budget_id: row.budget_id,
+                    pieza: row.item_pieza,
+                    accion: row.item_accion,
+                    valor: row.item_valor,
+                    orden: row.item_orden,
+                    created_at: row.item_created_at,
+                });
+            }
+        }
+
+        return budget;
     }
 
     // ✅ CREAR nuevo presupuesto (siempre en borrador)

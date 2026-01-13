@@ -28,7 +28,8 @@ export const useTreatments = (patientId: number, enabled = true) => {
     queryKey: ['treatments', patientId],
     queryFn: () => getTreatmentsUseCase(apiFetcher, patientId),
     enabled: enabled && !!patientId,
-    staleTime: 2 * 60 * 1000, // ✅ REDUCIDO: 2 minutos para más frescura
+    staleTime: 1 * 60 * 1000, // ⚡ OPTIMIZADO: 1 minuto (era 2 minutos)
+    gcTime: 5 * 60 * 1000, // Mantener en cache 5 minutos
   });
 
   return {
@@ -42,7 +43,8 @@ export const useBudgetsByPatient = (patientId: number, enabled = true) => {
     queryKey: ['treatments', 'budgets', patientId],
     queryFn: () => getBudgetsByPatientUseCase(apiFetcher, patientId),
     enabled: enabled && !!patientId,
-    staleTime: 1 * 60 * 1000, // ✅ REDUCIDO: 1 minuto para presupuestos
+    staleTime: 30 * 1000, // ⚡ OPTIMIZADO: 30 segundos (era 1 minuto)
+    gcTime: 5 * 60 * 1000, // Mantener en cache 5 minutos
   });
 
   return {
@@ -60,7 +62,8 @@ export const useTreatmentsByBudget = (budgetId: number, enabled = true) => {
     queryKey: ['treatments', 'budget', budgetId],
     queryFn: () => getTreatmentsByBudgetUseCase(apiFetcher, budgetId),
     enabled: enabled && !!budgetId,
-    staleTime: 2 * 60 * 1000, // ✅ REDUCIDO: 2 minutos
+    staleTime: 1 * 60 * 1000, // ⚡ OPTIMIZADO: 1 minuto (era 2 minutos)
+    gcTime: 5 * 60 * 1000, // Mantener en cache 5 minutos
   });
 
   return {

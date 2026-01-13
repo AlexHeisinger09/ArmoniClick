@@ -84,17 +84,15 @@ const BudgetsList: React.FC<BudgetsListProps> = ({
             </div>
 
             {budgets.length === 0 ? (
-                <div className="text-center py-8">
-                    <div className="mb-4">
-                        <FileText className="w-16 h-16 mx-auto text-gray-300" />
-                    </div>
-                    <p className="text-slate-500 mb-4">No hay presupuestos registrados para este paciente</p>
+                <div className="text-center py-12">
+                    <FileText className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                    <p className="text-slate-600 mb-4">No hay presupuestos generados</p>
                     <button
                         onClick={onNewBudget}
-                        className="w-full sm:w-auto flex items-center justify-center mx-auto bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-sm px-4 py-2 transition-colors"
+                        className="inline-flex items-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-3 rounded-lg transition-colors font-medium"
                     >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Crear Primer Presupuesto
+                        <Plus className="w-5 h-5" />
+                        Generar Primer Presupuesto
                     </button>
                 </div>
             ) : (
