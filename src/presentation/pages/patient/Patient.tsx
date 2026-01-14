@@ -10,14 +10,21 @@ import {
   X,
   AlertCircle,
   Info,
+  Calendar,
+  Phone,
 } from "lucide-react";
 
 import { NewPatientModal, PatientFormData } from "./NewPatientModal";
 import { EditPatientModal, PatientFormData as EditPatientFormData } from "./EditPatientModal";
 import { PatientDetail } from "./tabs/PatientDetail";
 import { ConfirmationModal } from "@/presentation/components/ui/ConfirmationModal";
+import { PatientAppointmentModal } from "./tabs/appointments/PatientAppointmentModal";
 import { useNotification } from "@/presentation/hooks/notifications/useNotification";
 import { useConfirmation } from "@/presentation/hooks/useConfirmation";
+import { useCreateAppointment } from "@/presentation/hooks/appointments/useCreateAppointment";
+import { useCalendarAppointments } from "@/presentation/hooks/appointments/useCalendarAppointments";
+import { useScheduleBlocksForCalendar } from "@/presentation/pages/calendar/hooks/useScheduleBlocksForCalendar";
+import { AppointmentMapper } from "@/infrastructure/mappers/appointment.mapper";
 
 import {
   usePatients,
@@ -27,6 +34,15 @@ import {
 } from "@/presentation/hooks/patients/usePatients";
 
 import { Patient as PatientType } from "@/core/use-cases/patients";
+
+interface PatientAppointmentForm {
+  date: Date;
+  time: string;
+  service: string;
+  description: string;
+  duration: number;
+  locationId?: number;
+}
 
 interface PatientProps {
   doctorId?: number;
@@ -81,10 +97,17 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
   const [showEditPatientModal, setShowEditPatientModal] = useState(false);
   const [patientToEdit, setPatientToEdit] = useState<PatientType | null>(null);
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [patientForAppointment, setPatientForAppointment] = useState<PatientType | null>(null);
 
   // Notification y confirmation hooks
   const notification = useNotification();
   const confirmation = useConfirmation();
+
+  // Hooks para citas
+  const createAppointmentMutation = useCreateAppointment();
+  const { appointments: calendarAppointments } = useCalendarAppointments(new Date(), 'month');
+  const { blocks: scheduleBlocks } = useScheduleBlocksForCalendar();
 
   // Cargar todos los pacientes
   const { queryPatients } = usePatients();
@@ -190,6 +213,56 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
     }
 
     return age;
+  };
+
+  // Calcular tiempo relativo desde una fecha (para última cita)
+  const getTimeAgo = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return 'Hoy';
+    } else if (diffDays === 1) {
+      return 'Hace 1 día';
+    } else if (diffDays < 30) {
+      return `Hace ${diffDays} días`;
+    } else if (diffDays < 60) {
+      return 'Hace 1 mes';
+    } else if (diffDays < 365) {
+      const months = Math.floor(diffDays / 30);
+      return `Hace ${months} meses`;
+    } else {
+      const years = Math.floor(diffDays / 365);
+      return years === 1 ? 'Hace 1 año' : `Hace ${years} años`;
+    }
+  };
+
+  // Calcular tiempo hasta una fecha (para próxima cita)
+  const getTimeUntil = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = date.getTime() - now.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return 'Hoy';
+    } else if (diffDays === 1) {
+      return 'En 1 día';
+    } else if (diffDays < 7) {
+      return `En ${diffDays} días`;
+    } else if (diffDays < 14) {
+      return 'En 1 semana';
+    } else if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7);
+      return `En ${weeks} semanas`;
+    } else if (diffDays < 60) {
+      return 'En 1 mes';
+    } else {
+      const months = Math.floor(diffDays / 30);
+      return `En ${months} meses`;
+    }
   };
 
   // Manejadores de eventos
@@ -320,6 +393,43 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
       const errorMessage = processApiError(error);
       notification.error(errorMessage, { description: 'Error al eliminar paciente' });
       confirmation.close();
+    }
+  };
+
+  const handleScheduleAppointment = (patient: PatientType) => {
+    setPatientForAppointment(patient);
+    setShowAppointmentModal(true);
+  };
+
+  const handleCreateAppointment = async (appointmentData: PatientAppointmentForm) => {
+    if (!patientForAppointment) return;
+
+    try {
+      const backendData = AppointmentMapper.fromCalendarFormToBackendRequest({
+        patient: `${patientForAppointment.nombres} ${patientForAppointment.apellidos}`,
+        patientId: patientForAppointment.id,
+        locationId: appointmentData.locationId,
+        service: appointmentData.service,
+        description: appointmentData.description,
+        time: appointmentData.time,
+        duration: appointmentData.duration,
+        date: appointmentData.date,
+        guestName: undefined,
+        guestEmail: undefined,
+        guestPhone: undefined,
+        guestRut: undefined
+      });
+
+      await createAppointmentMutation.mutateAsync(backendData);
+      setShowAppointmentModal(false);
+      setPatientForAppointment(null);
+      notification.success('Cita agendada exitosamente');
+
+      // Refrescar la lista de pacientes para actualizar las próximas citas
+      queryPatients.refetch();
+    } catch (error: any) {
+      const errorMessage = processApiError(error);
+      notification.error(errorMessage, { description: 'Error al agendar cita' });
     }
   };
 
@@ -492,20 +602,19 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
               <div className="hidden md:block">
                 <div className="overflow-x-auto">
                   <table className="min-w-full table-auto">
-                    <thead className="bg-slate-50 border-b border-cyan-200">
+                    <thead className="bg-gradient-to-r from-cyan-500 to-cyan-600">
                       <tr>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Nombre Completo</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">RUT</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Edad</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Correo</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Teléfono</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Ciudad</th>
+                        <th className="pl-4 pr-3 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Paciente</th>
+                        <th className="px-1.5 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Edad</th>
+                        <th className="px-1.5 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Última Cita</th>
+                        <th className="px-1.5 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Próxima Cita</th>
+                        <th className="px-1.5 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Presupuesto</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-cyan-100">
                       {paginatedPatients.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-6 py-12 text-center">
+                          <td colSpan={5} className="px-6 py-12 text-center">
                             <div className="flex flex-col items-center justify-center">
                               <User className="w-12 h-12 text-slate-400 mb-4" />
                               <p className="text-slate-700 text-lg mb-2">
@@ -515,39 +624,115 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                           </td>
                         </tr>
                       ) : (
-                        paginatedPatients.map((patient) => (
-                          <tr
-                            key={patient.id}
-                            onClick={() => handlePatientClick(patient)}
-                            className="hover:bg-cyan-50 transition-colors cursor-pointer"
-                          >
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-medium text-slate-700">
-                                {patient.nombres} {patient.apellidos}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm text-slate-700">{patient.rut}</span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm text-slate-700">{calculateAge(patient.fecha_nacimiento)} años</span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm text-slate-700">{patient.email}</span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm text-slate-700">{patient.telefono}</span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm text-slate-700">{patient.ciudad}</span>
-                            </td>
-                          </tr>
-                        ))
+                        paginatedPatients.map((patient) => {
+                          const age = calculateAge(patient.fecha_nacimiento);
+                          const budget = patient.activeBudget;
+                          const totalAmount = budget ? parseFloat(budget.total_amount) : 0;
+                          const paidAmount = budget?.paid_amount || 0;
+                          const progressPercentage = budget ? (paidAmount / parseFloat(budget.total_amount)) * 100 : 0;
+
+                          return (
+                            <tr
+                              key={patient.id}
+                              onClick={() => handlePatientClick(patient)}
+                              className="hover:bg-cyan-50 transition-colors cursor-pointer"
+                            >
+                              {/* Columna 1: Nombre + Avatar + Info */}
+                              <td className="pl-4 pr-3 py-3">
+                                <div className="flex items-center space-x-3">
+                                  <div className="bg-cyan-100 w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center">
+                                    <span className="text-cyan-700 font-bold text-sm">
+                                      {patient.nombres?.[0]?.toUpperCase() || ''}{patient.apellidos?.[0]?.toUpperCase() || ''}
+                                    </span>
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="text-sm font-semibold text-slate-700 truncate">
+                                      {patient.nombres} {patient.apellidos}
+                                    </div>
+                                    <div className="text-xs text-slate-500 truncate">{patient.email}</div>
+                                    <div className="text-xs text-slate-500 truncate">{patient.rut}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              {/* Columna 2: Edad */}
+                              <td className="px-1.5 py-3 whitespace-nowrap">
+                                <span className="text-sm text-slate-700">{age} años</span>
+                              </td>
+                              {/* Columna 3: Última Cita */}
+                              <td className="px-1.5 py-3 whitespace-nowrap">
+                                {patient.lastAppointment ? (
+                                  <div className="text-sm">
+                                    <div className="text-slate-700 font-medium">
+                                      {getTimeAgo(patient.lastAppointment.appointmentDate)}
+                                    </div>
+                                    <div className="text-slate-500 text-xs">
+                                      {new Date(patient.lastAppointment.appointmentDate).toLocaleDateString('es-CL')}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-sm text-slate-400">Sin citas</span>
+                                )}
+                              </td>
+                              {/* Columna 4: Próxima Cita */}
+                              <td className="px-1.5 py-3 whitespace-nowrap">
+                                {patient.nextAppointment ? (
+                                  <div className="text-sm">
+                                    <div className="text-cyan-600 font-medium">
+                                      {getTimeUntil(patient.nextAppointment.appointmentDate)}
+                                    </div>
+                                    <div className="text-slate-500 text-xs">
+                                      {new Date(patient.nextAppointment.appointmentDate).toLocaleDateString('es-CL')}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleScheduleAppointment(patient);
+                                    }}
+                                    className="text-sm text-cyan-600 hover:text-cyan-700 font-medium flex items-center gap-1 hover:underline"
+                                  >
+                                    <Calendar className="w-4 h-4" />
+                                    Agendar
+                                  </button>
+                                )}
+                              </td>
+                              {/* Columna 5: Presupuesto */}
+                              <td className="px-1.5 py-3">
+                                {patient.activeBudget ? (
+                                  <div className="min-w-[180px]">
+                                    <div className="flex justify-between text-sm mb-1">
+                                      <span className="text-slate-700 font-medium">
+                                        ${patient.activeBudget.paid_amount.toLocaleString('es-CL')}
+                                      </span>
+                                      <span className="text-slate-500">
+                                        / ${parseFloat(patient.activeBudget.total_amount).toLocaleString('es-CL')}
+                                      </span>
+                                    </div>
+                                    <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                                      <div
+                                        className="bg-cyan-500 h-full rounded-full transition-all duration-300"
+                                        style={{
+                                          width: `${Math.min(100, progressPercentage)}%`
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="text-xs text-slate-500 mt-1">
+                                      {Math.round(progressPercentage)}% completado
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-sm text-slate-400">Sin presupuesto</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })
                       )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
 
               <div className="md:hidden">
                 {paginatedPatients.length === 0 ? (
@@ -558,26 +743,72 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
                     </p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-cyan-100">
-                    {paginatedPatients.map((patient) => (
-                      <div
-                        key={patient.id}
-                        onClick={() => handlePatientClick(patient)}
-                        className="p-4 hover:bg-cyan-50 transition-colors cursor-pointer"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="text-base font-semibold text-slate-700">
-                              {patient.nombres} {patient.apellidos}
-                            </h3>
-                            <p className="text-sm text-slate-500">
-                              {calculateAge(patient.fecha_nacimiento)} años • {patient.rut}
-                            </p>
+                  <div className="divide-y divide-slate-200">
+                    {paginatedPatients.map((patient) => {
+                      const age = calculateAge(patient.fecha_nacimiento);
+                      const budget = patient.activeBudget;
+                      const paidAmount = budget?.paid_amount || 0;
+                      const progressPercentage = budget ? (paidAmount / parseFloat(budget.total_amount)) * 100 : 0;
+
+                      return (
+                        <div
+                          key={patient.id}
+                          onClick={() => handlePatientClick(patient)}
+                          className="p-4 hover:bg-cyan-50 transition-colors cursor-pointer active:bg-cyan-100"
+                        >
+                          {/* Header con Avatar y Nombre */}
+                          <div className="flex items-start space-x-3 mb-3">
+                            <div className="bg-cyan-100 w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center">
+                              <span className="text-cyan-700 font-bold text-base">
+                                {patient.nombres?.[0]?.toUpperCase() || ''}{patient.apellidos?.[0]?.toUpperCase() || ''}
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-base font-semibold text-slate-800 truncate">
+                                {patient.nombres} {patient.apellidos}
+                              </h3>
+                              <p className="text-xs text-slate-500 truncate">{patient.email}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-xs text-slate-600">{age} años</span>
+                                <span className="text-slate-400">•</span>
+                                <span className="text-xs text-slate-500">{patient.rut}</span>
+                              </div>
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1" />
                           </div>
-                          <ChevronRight className="w-5 h-5 text-slate-400" />
+
+                          {/* Presupuesto */}
+                          {patient.activeBudget ? (
+                            <div className="bg-gradient-to-r from-emerald-50 to-cyan-50 rounded-lg p-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-medium text-slate-700">Presupuesto activo</span>
+                                <span className="text-sm font-bold text-emerald-700">
+                                  {Math.round(progressPercentage)}%
+                                </span>
+                              </div>
+                              <div className="w-full bg-white rounded-full h-2 mb-2 overflow-hidden">
+                                <div
+                                  className="bg-gradient-to-r from-emerald-500 to-cyan-500 h-full rounded-full transition-all duration-300"
+                                  style={{ width: `${Math.min(100, progressPercentage)}%` }}
+                                />
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-slate-700">
+                                  ${patient.activeBudget.paid_amount.toLocaleString('es-CL')}
+                                </span>
+                                <span className="text-xs text-slate-500">
+                                  de ${parseFloat(patient.activeBudget.total_amount).toLocaleString('es-CL')}
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="bg-slate-50 rounded-lg p-3 text-center">
+                              <span className="text-xs text-slate-400">Sin presupuesto activo</span>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -653,6 +884,22 @@ const Patient: React.FC<PatientProps> = ({ doctorId = 1 }) => {
           onConfirm={confirmation.onConfirm}
           onCancel={confirmation.onCancel}
         />
+
+        {/* Modal de agendar cita */}
+        {patientForAppointment && (
+          <PatientAppointmentModal
+            isOpen={showAppointmentModal}
+            patient={patientForAppointment}
+            appointments={calendarAppointments}
+            onClose={() => {
+              setShowAppointmentModal(false);
+              setPatientForAppointment(null);
+            }}
+            onSubmit={handleCreateAppointment}
+            isCreating={createAppointmentMutation.isPending}
+            scheduleBlocks={scheduleBlocks}
+          />
+        )}
       </div>
     </div>
   );

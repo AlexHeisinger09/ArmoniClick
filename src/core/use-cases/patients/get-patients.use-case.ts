@@ -1,5 +1,19 @@
 import { HttpAdapter } from "@/config/adapters/http/http.adapter";
 
+export interface PatientAppointment {
+  id: number;
+  appointmentDate: string;
+  title: string;
+  status: string;
+}
+
+export interface PatientBudget {
+  id: number;
+  total_amount: string;
+  status: string;
+  paid_amount: number;
+}
+
 export interface Patient {
   id: number;
   rut: string;
@@ -24,6 +38,10 @@ export interface Patient {
   // Datos del doctor que registró al paciente
   doctor_name?: string;
   doctor_lastName?: string;
+  // Información adicional de citas y presupuestos
+  lastAppointment?: PatientAppointment | null;
+  nextAppointment?: PatientAppointment | null;
+  activeBudget?: PatientBudget | null;
 }
 
 export interface GetPatientsResponse {
