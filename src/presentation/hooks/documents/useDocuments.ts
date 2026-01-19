@@ -3,6 +3,7 @@ import { apiFetcher } from '@/config/adapters/api.adapter';
 import { getDocumentsUseCase } from '@/core/use-cases/documents/getDocumentsUseCase';
 import { getAllDocumentsUseCase } from '@/core/use-cases/documents/getAllDocumentsUseCase';
 import { createDocumentUseCase, CreateDocumentRequest } from '@/core/use-cases/documents/createDocumentUseCase';
+import { updateDocumentUseCase, UpdateDocumentRequest } from '@/core/use-cases/documents/updateDocumentUseCase';
 import { signDocumentUseCase, SignDocumentRequest } from '@/core/use-cases/documents/signDocumentUseCase';
 import { sendDocumentEmailUseCase, SendDocumentEmailRequest } from '@/core/use-cases/documents/sendDocumentEmailUseCase';
 import { deleteDocumentUseCase } from '@/core/use-cases/documents/deleteDocumentUseCase';
@@ -43,6 +44,20 @@ export const useDocuments = (patientId?: number) => {
     onSuccess: () => {
       if (patientId) {
         queryClient.invalidateQueries({ queryKey: ['documents', patientId] });
+      }
+    },
+  });
+
+  // Mutation para actualizar documento
+  const updateDocumentMutation = useMutation({
+    mutationFn: async (data: UpdateDocumentRequest) => {
+      return updateDocumentUseCase(apiFetcher, data);
+    },
+    onSuccess: () => {
+      if (patientId) {
+        queryClient.invalidateQueries({ queryKey: ['documents', patientId] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['documents', 'all'] });
       }
     },
   });
@@ -96,12 +111,14 @@ export const useDocuments = (patientId?: number) => {
 
     // Mutations
     createDocumentMutation,
+    updateDocumentMutation,
     signDocumentMutation,
     sendDocumentEmailMutation,
     deleteDocumentMutation,
 
     // Loading states
     isLoadingCreate: createDocumentMutation.isPending,
+    isLoadingUpdate: updateDocumentMutation.isPending,
     isLoadingSign: signDocumentMutation.isPending,
     isLoadingSendEmail: sendDocumentEmailMutation.isPending,
     isLoadingDelete: deleteDocumentMutation.isPending,
@@ -110,6 +127,7 @@ export const useDocuments = (patientId?: number) => {
 
     // Error states
     errorCreate: createDocumentMutation.error,
+    errorUpdate: updateDocumentMutation.error,
     errorSign: signDocumentMutation.error,
     errorSendEmail: sendDocumentEmailMutation.error,
     errorDelete: deleteDocumentMutation.error,

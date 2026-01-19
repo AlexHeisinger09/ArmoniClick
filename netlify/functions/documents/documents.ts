@@ -372,6 +372,87 @@ const handler: Handler = async (event: HandlerEvent) => {
       }
     }
 
+    // PUT /documents/:documentId - Actualizar contenido de documento pendiente
+    if (httpMethod === "PUT" && documentId && !action) {
+      const body = event.body ? fromBodyToObject(event.body) : {};
+
+      if (!body.content) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ error: 'Content is required' }),
+          headers: HEADERS.json,
+        };
+      }
+
+      try {
+        // Obtener documento actual
+        const [document] = await db
+          .select()
+          .from(documentsTable)
+          .where(eq(documentsTable.id, documentId));
+
+        if (!document) {
+          return {
+            statusCode: 404,
+            body: JSON.stringify({ error: 'Document not found' }),
+            headers: HEADERS.json,
+          };
+        }
+
+        // Solo permitir edición de documentos pendientes
+        if (document.status !== 'pendiente') {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({ error: 'Only pending documents can be edited' }),
+            headers: HEADERS.json,
+          };
+        }
+
+        // Actualizar documento
+        const [updatedDocument] = await db
+          .update(documentsTable)
+          .set({
+            content: body.content,
+            title: body.title || document.title,
+            updatedAt: new Date(),
+          })
+          .where(eq(documentsTable.id, documentId))
+          .returning();
+
+        // 📝 Registrar en auditoría (edición de documento)
+        const auditService = new AuditService(db);
+        await auditService.logChange({
+          patientId: document.id_patient,
+          entityType: AUDIT_ENTITY_TYPES.DOCUMENTO,
+          entityId: documentId,
+          action: AUDIT_ACTIONS.UPDATED,
+          oldValues: {
+            title: document.title,
+            content: document.content,
+          },
+          newValues: {
+            title: updatedDocument.title,
+            content: updatedDocument.content,
+          },
+          changedBy: doctorId,
+          notes: `Documento "${updatedDocument.title}" editado`,
+        });
+
+        return {
+          statusCode: 200,
+          body: JSON.stringify(updatedDocument),
+          headers: HEADERS.json,
+        };
+      } catch (error: any) {
+        console.error('Error updating document:', error);
+        return {
+          statusCode: 500,
+          body: JSON.stringify({ error: 'Internal server error' }),
+          headers: HEADERS.json,
+        };
+      }
+    }
+
     // DELETE /documents/:documentId - Eliminar documento
     if (httpMethod === "DELETE" && documentId && !action) {
       try {

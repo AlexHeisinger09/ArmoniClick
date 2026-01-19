@@ -13,8 +13,7 @@ import {
   X,
   ChevronRight,
   Check,
-  RotateCcw,
-  Save
+  RotateCcw
 } from 'lucide-react';
 import { Patient } from '@/core/use-cases/patients';
 import { useDocuments } from '@/presentation/hooks/documents/useDocuments';
@@ -165,7 +164,7 @@ const SignatureCanvas: React.FC<SignatureCanvasProps> = ({ onSignatureChange, si
 };
 
 const PatientConsents: React.FC<PatientConsentsProps> = ({ patient }) => {
-  const [currentView, setCurrentView] = useState<'list' | 'generate' | 'sign' | 'view'>('list');
+  const [currentView, setCurrentView] = useState<'list' | 'generate' | 'preview' | 'sign' | 'view'>('list');
   const [sendingEmailDocId, setSendingEmailDocId] = useState<number | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
@@ -179,6 +178,8 @@ const PatientConsents: React.FC<PatientConsentsProps> = ({ patient }) => {
   const [parentRelation, setParentRelation] = useState('Padre');
   const [patientAge, setPatientAge] = useState('');
   const [signedDate, setSignedDate] = useState(new Date().toLocaleDateString('es-CL'));
+  const [editedContent, setEditedContent] = useState('');
+  const [isEditingContent, setIsEditingContent] = useState(false);
   const signatureRef = useRef<SignatureCanvasRef | null>(null);
 
   const [notification, setNotification] = useState<{
@@ -192,6 +193,7 @@ const PatientConsents: React.FC<PatientConsentsProps> = ({ patient }) => {
   const {
     queryDocuments,
     createDocumentMutation,
+    updateDocumentMutation,
     signDocumentMutation,
     sendDocumentEmailMutation,
     deleteDocumentMutation,
@@ -261,7 +263,7 @@ const PatientConsents: React.FC<PatientConsentsProps> = ({ patient }) => {
     return result;
   };
 
-  const handleGenerateDocument = async () => {
+  const handlePreviewDocument = () => {
     if (!selectedDocumentType) {
       showNotification('error', 'Selecciona un tipo de documento');
       return;
@@ -302,12 +304,26 @@ const PatientConsents: React.FC<PatientConsentsProps> = ({ patient }) => {
       signedDate || undefined
     );
 
+    // Guardar contenido interpolado y tipo de documento para crear después
+    setEditedContent(interpolatedContent);
+    setCurrentView('preview');
+  };
+
+  const handleCreateDocument = async () => {
+    const docType = documentTypesList.find(d => d.id === selectedDocumentType);
+    if (!docType) {
+      showNotification('error', 'Tipo de documento no encontrado');
+      return;
+    }
+
+    const patientFullName = `${patient.nombres} ${patient.apellidos}`;
+
     try {
       const createdDoc = await createDocumentMutation.mutateAsync({
         id_patient: patient.id,
         document_type: selectedDocumentType,
         title: docType.name,
-        content: interpolatedContent,
+        content: editedContent, // Usar el contenido editado
         patient_name: patientFullName,
         patient_rut: patient.rut,
       });
@@ -327,6 +343,18 @@ const PatientConsents: React.FC<PatientConsentsProps> = ({ patient }) => {
     }
 
     try {
+      // Primero actualizar el contenido si fue editado
+      if (editedContent && editedContent !== selectedDocument.content) {
+        await updateDocumentMutation.mutateAsync({
+          documentId: selectedDocument.id,
+          content: editedContent,
+          title: selectedDocument.title,
+        });
+
+        // Actualizar el documento seleccionado con el nuevo contenido
+        selectedDocument.content = editedContent;
+      }
+
       await signDocumentMutation.mutateAsync({
         documentId: selectedDocument.id,
         signatureData: signature,
@@ -337,6 +365,7 @@ const PatientConsents: React.FC<PatientConsentsProps> = ({ patient }) => {
       try {
         await generateDocumentPDF({
           ...selectedDocument,
+          content: editedContent || selectedDocument.content,
           signature_data: signature
         });
         showNotification('success', 'PDF descargado correctamente');
@@ -351,6 +380,8 @@ const PatientConsents: React.FC<PatientConsentsProps> = ({ patient }) => {
         setCurrentView('list');
         setSelectedDocument(null);
         setSignature('');
+        setEditedContent('');
+        setIsEditingContent(false);
         setParentName('');
         setParentRut('');
         setParentPhone('');
@@ -558,14 +589,99 @@ const PatientConsents: React.FC<PatientConsentsProps> = ({ patient }) => {
               Cancelar
             </button>
             <button
-              onClick={handleGenerateDocument}
-              disabled={!selectedDocumentType || isLoadingCreate}
+              onClick={handlePreviewDocument}
+              disabled={!selectedDocumentType}
               className="w-full sm:w-auto bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-2.5 rounded-lg transition-colors disabled:opacity-50 text-sm font-medium flex items-center justify-center gap-2"
             >
-              {isLoadingCreate && <Loader className="w-4 h-4 animate-spin" />}
-              Generar Documento
+              <Eye className="w-4 h-4" />
+              Vista Previa
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Vista: Vista previa antes de crear documento
+  if (currentView === 'preview') {
+    const docType = documentTypesList.find(d => d.id === selectedDocumentType);
+
+    return (
+      <div className="space-y-4">
+        {notification && (
+          <div className={`fixed top-4 right-4 z-50 max-w-md w-full mx-4 p-4 rounded-xl border shadow-lg ${
+            notification.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
+            notification.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
+            'bg-blue-50 border-blue-200 text-blue-800'
+          }`}>
+            <div className="flex items-start">
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium">{notification.message}</p>
+              </div>
+              <button onClick={() => setNotification(null)} className="ml-4 flex-shrink-0">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={() => {
+            setCurrentView('generate');
+            setEditedContent('');
+            setIsEditingContent(false);
+          }}
+          className="flex items-center text-cyan-600 hover:text-cyan-700 transition-colors text-sm"
+        >
+          <ChevronRight className="w-4 h-4 mr-1 rotate-180" />
+          Volver a configuración
+        </button>
+
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Vista Previa del Documento</h2>
+            <p className="text-sm text-slate-600">{docType?.name}</p>
+            <p className="text-xs text-cyan-600 mt-2">Puedes editar el contenido antes de crear el documento</p>
+          </div>
+
+          <textarea
+            value={editedContent}
+            onChange={(e) => {
+              setEditedContent(e.target.value);
+              setIsEditingContent(true);
+            }}
+            className="w-full min-h-[500px] p-4 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-sm leading-relaxed text-gray-700 font-sans resize-y"
+            placeholder="Contenido del documento..."
+          />
+
+          {isEditingContent && (
+            <p className="mt-2 text-xs text-cyan-600 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              Has editado el contenido. Los cambios se guardarán al crear el documento.
+            </p>
+          )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row justify-end gap-3">
+          <button
+            onClick={() => {
+              setCurrentView('generate');
+              setEditedContent('');
+              setIsEditingContent(false);
+            }}
+            className="w-full sm:w-auto px-6 py-2.5 text-slate-600 hover:text-slate-800 transition-colors text-sm font-medium"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleCreateDocument}
+            disabled={!editedContent || isLoadingCreate}
+            className="w-full sm:w-auto bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-2.5 rounded-lg transition-colors disabled:opacity-50 text-sm font-medium flex items-center justify-center gap-2"
+          >
+            {isLoadingCreate && <Loader className="w-4 h-4 animate-spin" />}
+            <Check className="w-4 h-4" />
+            Crear y Continuar a Firma
+          </button>
         </div>
       </div>
     );
@@ -601,9 +717,25 @@ const PatientConsents: React.FC<PatientConsentsProps> = ({ patient }) => {
         </button>
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-8">
-          <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
-            {selectedDocument.content}
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-slate-900">Contenido del Documento</h3>
+            <p className="text-xs text-slate-500">Puedes editar el contenido antes de firmar</p>
           </div>
+          <textarea
+            value={editedContent || selectedDocument.content}
+            onChange={(e) => {
+              setEditedContent(e.target.value);
+              setIsEditingContent(true);
+            }}
+            className="w-full min-h-[400px] p-4 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-sm leading-relaxed text-gray-700 font-sans resize-y"
+            placeholder="Contenido del documento..."
+          />
+          {isEditingContent && (
+            <p className="mt-2 text-xs text-cyan-600 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              Has editado el contenido. Los cambios se guardarán al firmar.
+            </p>
+          )}
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 space-y-4">

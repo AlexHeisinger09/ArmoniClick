@@ -276,7 +276,7 @@ const DeleteConfirmDialog: React.FC<{
 
 // Componente principal
 const DocumentsPage: React.FC = () => {
-  const [currentView, setCurrentView] = useState<'list' | 'generate' | 'sign' | 'view'>('list');
+  const [currentView, setCurrentView] = useState<'list' | 'generate' | 'preview' | 'sign' | 'view'>('list');
   const [selectedPatientId, setSelectedPatientId] = useState<number | undefined>();
   const [selectedDocumentType, setSelectedDocumentType] = useState('consentimiento-estetica');
   const [notification, setNotification] = useState<{
@@ -302,6 +302,8 @@ const DocumentsPage: React.FC = () => {
   const [deletingDocId, setDeletingDocId] = useState<number | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
+  const [editedContent, setEditedContent] = useState<string>('');
+  const [isEditingContent, setIsEditingContent] = useState(false);
   const signatureRef = useRef<SignatureCanvasRef | null>(null);
 
   // Use hooks
@@ -311,6 +313,7 @@ const DocumentsPage: React.FC = () => {
     queryPatients,
     queryDocuments,
     createDocumentMutation,
+    updateDocumentMutation,
     signDocumentMutation,
     sendDocumentEmailMutation,
     deleteDocumentMutation,
@@ -408,7 +411,7 @@ const DocumentsPage: React.FC = () => {
     ? (queryDocuments.data || []).filter(doc => doc.id_patient === filterPatientId)
     : (queryDocuments.data || []);
 
-  const handleGenerateDocument = async () => {
+  const handlePreviewDocument = () => {
     if (!selectedPatientId || !selectedDocumentType) {
       showNotification('error', 'Selecciona un paciente y un tipo de documento');
       return;
@@ -454,12 +457,37 @@ const DocumentsPage: React.FC = () => {
       signedDate || undefined
     );
 
+    // Guardar contenido interpolado para la vista previa
+    setEditedContent(interpolatedContent);
+    setCurrentView('preview');
+  };
+
+  const handleCreateDocument = async () => {
+    if (!selectedPatientId) {
+      showNotification('error', 'Selecciona un paciente');
+      return;
+    }
+
+    const patient = queryPatients.data?.find(p => p.id === selectedPatientId);
+    if (!patient) {
+      showNotification('error', 'Paciente no encontrado');
+      return;
+    }
+
+    const docType = documentTypesList.find(d => d.id === selectedDocumentType);
+    if (!docType) {
+      showNotification('error', 'Tipo de documento no encontrado');
+      return;
+    }
+
+    const patientFullName = `${patient.nombres} ${patient.apellidos}`;
+
     try {
       const createdDoc = await createDocumentMutation.mutateAsync({
         id_patient: selectedPatientId,
         document_type: selectedDocumentType,
         title: docType.name,
-        content: interpolatedContent,
+        content: editedContent, // Usar contenido editado
         patient_name: patientFullName,
         patient_rut: patient.rut,
       });
@@ -481,6 +509,18 @@ const DocumentsPage: React.FC = () => {
     }
 
     try {
+      // Primero actualizar el contenido si fue editado
+      if (editedContent && editedContent !== selectedDocument.content) {
+        await updateDocumentMutation.mutateAsync({
+          documentId: selectedDocument.id,
+          content: editedContent,
+          title: selectedDocument.title,
+        });
+
+        // Actualizar el documento seleccionado con el nuevo contenido
+        selectedDocument.content = editedContent;
+      }
+
       const patientEmail = queryPatients.data?.find(p => p.id === selectedDocument.id_patient)?.email;
 
       console.log('🖊️ Firmando documento con estos datos:');
@@ -503,6 +543,7 @@ const DocumentsPage: React.FC = () => {
       try {
         await generateDocumentPDF({
           ...selectedDocument,
+          content: editedContent || selectedDocument.content,
           signature_data: signature
         });
         showNotification('success', 'PDF descargado correctamente');
@@ -518,6 +559,8 @@ const DocumentsPage: React.FC = () => {
         setCurrentView('list');
         setSelectedDocument(null);
         setSignature('');
+        setEditedContent('');
+        setIsEditingContent(false);
         setFilterPatientId(undefined);
         setParentName('');
         setParentRut('');
@@ -1119,12 +1162,21 @@ const DocumentsPage: React.FC = () => {
               </label>
               <input
                 type="date"
-                value={signedDate.split('/').reverse().join('-')}
+                value={(() => {
+                  // Convertir de formato chileno dd/mm/yyyy a ISO yyyy-mm-dd
+                  const parts = signedDate.split('/');
+                  if (parts.length === 3) {
+                    const [day, month, year] = parts;
+                    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                  }
+                  return new Date().toISOString().split('T')[0];
+                })()}
                 onChange={(e) => {
-                  const date = new Date(e.target.value);
-                  setSignedDate(date.toLocaleDateString('es-CL'));
+                  // Convertir de ISO yyyy-mm-dd a formato chileno dd/mm/yyyy
+                  const [year, month, day] = e.target.value.split('-');
+                  setSignedDate(`${day}/${month}/${year}`);
                 }}
-                className="w-full px-4 py-2.5 border border-cyan-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
+                className="w-full sm:w-64 px-4 py-2.5 border border-cyan-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm cursor-pointer"
               />
             </div>
 
@@ -1137,14 +1189,92 @@ const DocumentsPage: React.FC = () => {
                 Cancelar
               </button>
               <button
-                onClick={handleGenerateDocument}
-                disabled={!selectedPatientId || !selectedDocumentType || isLoadingCreate}
+                onClick={handlePreviewDocument}
+                disabled={!selectedPatientId || !selectedDocumentType}
                 className="w-full sm:w-auto bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center justify-center gap-2"
               >
-                {isLoadingCreate && <Loader className="w-4 h-4 animate-spin" />}
-                Generar Documento
+                <Eye className="w-4 h-4" />
+                Vista Previa
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Vista: Vista previa antes de crear documento
+  if (currentView === 'preview') {
+    const docType = documentTypesList.find(d => d.id === selectedDocumentType);
+
+    return (
+      <div className="min-h-screen bg-gray-50 p-3 sm:p-6">
+        {notification && (
+          <Notification
+            type={notification.type}
+            message={notification.message}
+            onClose={() => setNotification(null)}
+          />
+        )}
+
+        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
+          <button
+            onClick={() => {
+              setCurrentView('generate');
+              setEditedContent('');
+              setIsEditingContent(false);
+            }}
+            className="flex items-center text-cyan-600 hover:text-cyan-700 transition-colors text-sm sm:text-base"
+          >
+            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 mr-1 rotate-180" />
+            Volver a configuración
+          </button>
+
+          <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-4 sm:p-6 space-y-4">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">Vista Previa del Documento</h2>
+              <p className="text-sm sm:text-base text-slate-600">{docType?.name}</p>
+              <p className="text-xs sm:text-sm text-cyan-600 mt-2">Puedes editar el contenido antes de crear el documento</p>
+            </div>
+
+            <textarea
+              value={editedContent}
+              onChange={(e) => {
+                setEditedContent(e.target.value);
+                setIsEditingContent(true);
+              }}
+              className="w-full min-h-[500px] p-4 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-sm leading-relaxed text-gray-700 font-sans resize-y"
+              placeholder="Contenido del documento..."
+            />
+
+            {isEditingContent && (
+              <p className="text-xs sm:text-sm text-cyan-600 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                Has editado el contenido. Los cambios se guardarán al crear el documento.
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row justify-end gap-3">
+            <button
+              onClick={() => {
+                setCurrentView('generate');
+                setEditedContent('');
+                setIsEditingContent(false);
+              }}
+              className="w-full sm:w-auto px-6 py-2.5 text-slate-600 hover:text-slate-800 transition-colors text-sm font-medium"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleCreateDocument}
+              disabled={!editedContent || isLoadingCreate}
+              className="w-full sm:w-auto bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center justify-center gap-2"
+            >
+              {isLoadingCreate && <Loader className="w-4 h-4 animate-spin" />}
+              <Check className="w-4 h-4" />
+              Crear y Continuar a Firma
+            </button>
           </div>
         </div>
       </div>
@@ -1172,11 +1302,27 @@ const DocumentsPage: React.FC = () => {
             Volver a documentos
           </button>
 
-          {/* Documento preview */}
+          {/* Documento preview - Editable */}
           <div className="bg-white rounded-xl shadow-sm border border-cyan-200 p-4 sm:p-8">
-            <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
-              {selectedDocument.content}
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Contenido del Documento</h3>
+              <p className="text-xs text-slate-500">Puedes editar el contenido antes de firmar</p>
             </div>
+            <textarea
+              value={editedContent || selectedDocument.content}
+              onChange={(e) => {
+                setEditedContent(e.target.value);
+                setIsEditingContent(true);
+              }}
+              className="w-full min-h-[400px] p-4 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-sm leading-relaxed text-gray-700 font-sans resize-y"
+              placeholder="Contenido del documento..."
+            />
+            {isEditingContent && (
+              <p className="mt-2 text-xs sm:text-sm text-cyan-600 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                Has editado el contenido. Los cambios se guardarán al firmar.
+              </p>
+            )}
           </div>
 
           {/* Firma */}
