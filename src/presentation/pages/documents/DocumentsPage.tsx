@@ -541,11 +541,20 @@ const DocumentsPage: React.FC = () => {
 
       // Generate and download PDF
       try {
+        const doctorData = queryProfile.data ? {
+          name: queryProfile.data.name,
+          lastName: queryProfile.data.lastName || '',
+          rut: queryProfile.data.rut,
+          logo: queryProfile.data.logo,
+          profession: queryProfile.data.profession,
+          specialty: queryProfile.data.specialty,
+        } : undefined;
+
         await generateDocumentPDF({
           ...selectedDocument,
           content: editedContent || selectedDocument.content,
           signature_data: signature
-        });
+        }, signature, doctorData);
         showNotification('success', 'PDF descargado correctamente');
       } catch (pdfError) {
         console.error('Error al generar PDF:', pdfError);
@@ -793,7 +802,16 @@ const DocumentsPage: React.FC = () => {
                                   <button
                                     onClick={() => {
                                       try {
-                                        generateDocumentPDF(doc);
+                                        const doctorData = queryProfile.data ? {
+                                          name: queryProfile.data.name,
+                                          lastName: queryProfile.data.lastName || '',
+                                          rut: queryProfile.data.rut,
+                                          logo: queryProfile.data.logo,
+                                          profession: queryProfile.data.profession,
+                                          specialty: queryProfile.data.specialty,
+                                        } : undefined;
+
+                                        generateDocumentPDF(doc, undefined, doctorData);
                                       } catch (error) {
                                         showNotification('error', 'Error al descargar PDF');
                                       }
@@ -933,7 +951,16 @@ const DocumentsPage: React.FC = () => {
                             <button
                               onClick={() => {
                                 try {
-                                  generateDocumentPDF(doc);
+                                  const doctorData = queryProfile.data ? {
+                                    name: queryProfile.data.name,
+                                    lastName: queryProfile.data.lastName || '',
+                                    rut: queryProfile.data.rut,
+                                    logo: queryProfile.data.logo,
+                                    profession: queryProfile.data.profession,
+                                    specialty: queryProfile.data.specialty,
+                                  } : undefined;
+
+                                  generateDocumentPDF(doc, undefined, doctorData);
                                 } catch (error) {
                                   showNotification('error', 'Error al descargar PDF');
                                 }
@@ -1429,7 +1456,16 @@ const DocumentsPage: React.FC = () => {
             <button
               onClick={() => {
                 try {
-                  generateDocumentPDF(selectedDocument);
+                  const doctorData = queryProfile.data ? {
+                    name: queryProfile.data.name,
+                    lastName: queryProfile.data.lastName || '',
+                    rut: queryProfile.data.rut,
+                    logo: queryProfile.data.logo,
+                    profession: queryProfile.data.profession,
+                    specialty: queryProfile.data.specialty,
+                  } : undefined;
+
+                  generateDocumentPDF(selectedDocument, undefined, doctorData);
                   showNotification('success', 'PDF descargado correctamente');
                 } catch (error) {
                   showNotification('error', 'Error al descargar el PDF');
