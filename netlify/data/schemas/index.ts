@@ -9,3 +9,4 @@ export * from './audit.schema';
 export * from './schedule-block.schema';
 export * from './location.schema';
 export * from './prescription.schema';
+export * from './aesthetic.schema';

@@ -68,6 +68,12 @@ timeout = 25  # 25 segundos para dar tiempo a la API de DeepSeek
   methods = ["GET", "OPTIONS"]
 
 [[redirects]]
+  from = "/aesthetic/*"
+  to = "/.netlify/functions/aesthetic/aesthetic"
+  status = 200
+  methods = ["GET", "POST", "OPTIONS"]
+
+[[redirects]]
   from = "/api/patients/*"
   to = "/.netlify/functions/patients/patients"
   status = 200

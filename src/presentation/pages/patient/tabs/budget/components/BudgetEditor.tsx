@@ -1,11 +1,12 @@
 // src/presentation/pages/patient/tabs/budget/components/BudgetEditor.tsx
 import React from 'react';
 import { X, FileText, AlertCircle, Calculator } from 'lucide-react';
-import { BudgetUtils } from "@/core/use-cases/budgets";
+import { BudgetUtils, BUDGET_TYPE } from "@/core/use-cases/budgets";
 import { BudgetEditorProps } from '../types/budget.types';
 import { BudgetTypeSelector } from './BudgetTypeSelector';
 import { BudgetItemForm } from './BudgetItemForm';
 import { BudgetItemsTable } from './BudgetItemsTable';
+import FacialAesthetic from '@/presentation/components/facial-aesthetic/FacialAesthetic';
 
 const BudgetEditor: React.FC<BudgetEditorProps> = ({
     patient,
@@ -49,6 +50,16 @@ const BudgetEditor: React.FC<BudgetEditorProps> = ({
                 onAddItem={onAddItem}
                 canEdit={canEdit}
             />
+
+            {/* Ficha Estética - Solo mostrar si es presupuesto de estética */}
+            {budgetType === BUDGET_TYPE.ESTETICA && canEdit && (
+                <div className="mt-6 mb-6">
+                    <h3 className="text-lg font-semibold text-slate-700 mb-4">
+                        Ficha Estética Facial
+                    </h3>
+                    <FacialAesthetic />
+                </div>
+            )}
 
             {/* Tabla de tratamientos */}
             {items.length > 0 ? (
