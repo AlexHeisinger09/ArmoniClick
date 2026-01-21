@@ -73,6 +73,17 @@ const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <h3 className="text-base sm:text-lg font-semibold text-slate-700">Tratamientos</h3>
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                        {/* Botón Guardar - Solo mostrar si puede editar Y hay cambios sin guardar */}
+                        {canEdit && hasUnsavedChanges && (
+                            <button
+                                onClick={onSave}
+                                disabled={isLoadingSave}
+                                className="flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg text-xs sm:text-sm px-3 sm:px-4 py-2 transition-colors shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                                <span>{isLoadingSave ? 'Guardando...' : 'Guardar Presupuesto'}</span>
+                            </button>
+                        )}
                         <button
                             onClick={onExportPDF}
                             className="flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg text-xs sm:text-sm px-3 sm:px-4 py-2 transition-colors shadow-sm whitespace-nowrap"

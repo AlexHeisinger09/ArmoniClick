@@ -125,7 +125,7 @@ const BudgetItemForm: React.FC<BudgetItemFormProps> = ({
                 </div>
 
                 <button
-                    onClick={onAddItem}
+                    onClick={() => onAddItem()}
                     className="w-full flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-xl text-sm px-4 py-2.5 transition-colors shadow-sm h-[42px]"
                 >
                     <Plus className="w-4 h-4 mr-2" />

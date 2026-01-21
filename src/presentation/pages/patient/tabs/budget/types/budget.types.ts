@@ -48,7 +48,7 @@ export interface BudgetEditorProps {
     onBack: () => void;
     onSave: () => void;
     onBudgetTypeChange: (type: string) => void;
-    onAddItem: () => void;
+    onAddItem: (customData?: { pieza?: string; accion?: string; valor?: string }) => void;
     onDeleteItem: (index: number) => void;
     onStartEditing: (index: number) => void;
     onCancelEditing: () => void;
@@ -117,8 +117,20 @@ export const BudgetFormUtils = {
     },
 
     validateItem: (item: BudgetFormData): string | null => {
-        if (!item.pieza || !item.accion || !item.valor) {
-            return 'Por favor completa todos los campos';
+        const missingFields: string[] = [];
+
+        if (!item.pieza || item.pieza.trim() === '') {
+            missingFields.push('Pieza/Zona');
+        }
+        if (!item.accion || item.accion.trim() === '') {
+            missingFields.push('Tratamiento');
+        }
+        if (!item.valor || item.valor.trim() === '') {
+            missingFields.push('Valor');
+        }
+
+        if (missingFields.length > 0) {
+            return `Por favor completa: ${missingFields.join(', ')}`;
         }
 
         const valor = BudgetFormUtils.parseValue(item.valor);

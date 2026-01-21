@@ -7,6 +7,7 @@ import { BudgetTypeSelector } from './BudgetTypeSelector';
 import { BudgetItemForm } from './BudgetItemForm';
 import { BudgetItemsTable } from './BudgetItemsTable';
 import FacialAesthetic from '@/presentation/components/facial-aesthetic/FacialAesthetic';
+import { useServices } from '@/presentation/hooks/services/useServices';
 
 const BudgetEditor: React.FC<BudgetEditorProps> = ({
     patient,
@@ -32,6 +33,23 @@ const BudgetEditor: React.FC<BudgetEditorProps> = ({
 }) => {
     const canEdit = budget ? BudgetUtils.canModify(budget) : true;
 
+    // Obtener servicios y filtrar por tipo de presupuesto
+    const { services } = useServices();
+    const filteredServices = services.filter(service => service.tipo === budgetType);
+
+    // Handler para agregar tratamiento desde FacialAesthetic
+    const handleAddItemFromAesthetic = (zone: string, treatment: string, value: string) => {
+        // Formatear el valor con puntos de miles (igual que en odontológico)
+        const formattedValue = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+        // Llamar a onAddItem con los datos personalizados
+        onAddItem({
+            pieza: zone,
+            accion: treatment,
+            valor: formattedValue
+        });
+    };
+
     return (
         <>
             
@@ -42,14 +60,16 @@ const BudgetEditor: React.FC<BudgetEditorProps> = ({
                 canEdit={canEdit}
             />
 
-            {/* Formulario para agregar tratamientos */}
-            <BudgetItemForm
-                budgetType={budgetType}
-                newItem={newItem}
-                onItemChange={onNewItemChange}
-                onAddItem={onAddItem}
-                canEdit={canEdit}
-            />
+            {/* Formulario para agregar tratamientos - Solo mostrar si NO es estética */}
+            {budgetType !== BUDGET_TYPE.ESTETICA && (
+                <BudgetItemForm
+                    budgetType={budgetType}
+                    newItem={newItem}
+                    onItemChange={onNewItemChange}
+                    onAddItem={onAddItem}
+                    canEdit={canEdit}
+                />
+            )}
 
             {/* Ficha Estética - Solo mostrar si es presupuesto de estética */}
             {budgetType === BUDGET_TYPE.ESTETICA && canEdit && (
@@ -57,7 +77,10 @@ const BudgetEditor: React.FC<BudgetEditorProps> = ({
                     <h3 className="text-lg font-semibold text-slate-700 mb-4">
                         Ficha Estética Facial
                     </h3>
-                    <FacialAesthetic />
+                    <FacialAesthetic
+                        onAddItem={handleAddItemFromAesthetic}
+                        services={filteredServices}
+                    />
                 </div>
             )}
 

@@ -153,24 +153,38 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
     // ✅ FUNCIONES DEL EDITOR
     const markAsChanged = () => setHasUnsavedChanges(true);
 
-    const handleAddItem = () => {
-        const validation = BudgetFormUtils.validateItem(newItem);
+    const handleAddItem = (customData?: { pieza?: string; accion?: string; valor?: string }) => {
+        // Usar datos personalizados si se proveen, sino usar newItem del estado
+        const itemToValidate = customData || newItem;
+
+        // Debug: Mostrar datos antes de validar
+        console.log('Datos a validar:', itemToValidate);
+        console.log('Custom data:', customData);
+        console.log('newItem state:', newItem);
+
+        const validation = BudgetFormUtils.validateItem(itemToValidate);
         if (validation) {
+            console.error('Error de validación:', validation);
             notification.error(validation);
             return;
         }
 
-        const valor = BudgetFormUtils.parseValue(newItem.valor);
+        const valor = BudgetFormUtils.parseValue(itemToValidate.valor);
         const item: BudgetItem = {
-            pieza: newItem.pieza,
-            accion: newItem.accion,
+            pieza: itemToValidate.pieza,
+            accion: itemToValidate.accion,
             valor: valor,
             orden: items.length
         };
 
         setItems([...items, item]);
-        // ✅ Solo limpiar pieza, mantener servicio y valor seleccionados para facilitar agregar mismo tratamiento a varias piezas
-        setNewItem({ pieza: '', accion: newItem.accion, valor: newItem.valor });
+
+        // Si se usaron datos personalizados (desde FacialAesthetic), no actualizar newItem
+        // Si se usó newItem del estado (odontológico), limpiar pieza pero mantener servicio y valor
+        if (!customData) {
+            setNewItem({ pieza: '', accion: newItem.accion, valor: newItem.valor });
+        }
+
         markAsChanged();
         notification.success('Tratamiento agregado exitosamente');
     };
@@ -233,7 +247,12 @@ const PatientBudget: React.FC<PatientBudgetProps> = ({ patient }) => {
         if (field === 'valor') {
             value = BudgetFormUtils.formatValueInput(value);
         }
-        setNewItem(prev => ({ ...prev, [field]: value }));
+        console.log(`Cambiando ${field} a:`, value);
+        setNewItem(prev => {
+            const updated = { ...prev, [field]: value };
+            console.log('newItem actualizado:', updated);
+            return updated;
+        });
     };
 
     const handleEditingItemChange = (field: keyof BudgetFormData, value: string) => {

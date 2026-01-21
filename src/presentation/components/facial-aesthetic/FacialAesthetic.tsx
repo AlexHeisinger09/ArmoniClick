@@ -1,10 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card } from "@/presentation/components/ui/card/card";
-import { Button } from "@/presentation/components/ui/button/button";
+import { Button } from "@/presentation/components/ui/button";
 import type { FacialAestheticState, FacialZone, DrawingTool, DrawingState, Point } from './types';
 import { FACIAL_ZONE_LABELS as ZONE_LABELS } from './types';
 
-const FacialAesthetic: React.FC = () => {
+interface FacialAestheticProps {
+  onAddItem?: (zone: string, treatment: string, value: string) => void;
+  services?: Array<{ id: number; nombre: string; valor: string }>;
+}
+
+const FacialAesthetic: React.FC<FacialAestheticProps> = ({ onAddItem, services = [] }) => {
+  // Estados para el formulario de tratamiento
+  const [selectedTreatment, setSelectedTreatment] = useState('');
+  const [customTreatment, setCustomTreatment] = useState('');
+  const [treatmentValue, setTreatmentValue] = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
   const [facialState, setFacialState] = useState<FacialAestheticState>({});
   const [selectedZone, setSelectedZone] = useState<FacialZone | null>(null);
   const [svgLoaded, setSvgLoaded] = useState(false);
@@ -28,9 +37,42 @@ const FacialAesthetic: React.FC = () => {
   // Ref to track selected zones for hover events
   const facialStateRef = useRef(facialState);
 
+  // Ref to track iframe dimensions
+  const [iframeDimensions, setIframeDimensions] = useState({ width: 0, height: 0 });
+
   useEffect(() => {
     facialStateRef.current = facialState;
   }, [facialState]);
+
+  // Sync SVG overlay dimensions with iframe
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe || !svgLoaded) return;
+
+    const updateDimensions = () => {
+      // Wait for next frame to ensure iframe is fully rendered
+      requestAnimationFrame(() => {
+        const rect = iframe.getBoundingClientRect();
+        console.log('Iframe dimensions:', rect);
+        setIframeDimensions({ width: rect.width, height: rect.height });
+
+        // Also update SVG overlay to match exactly
+        if (svgOverlayRef.current) {
+          svgOverlayRef.current.style.width = `${rect.width}px`;
+          svgOverlayRef.current.style.height = `${rect.height}px`;
+          console.log('SVG overlay dimensions updated to:', rect.width, 'x', rect.height);
+        }
+      });
+    };
+
+    // Initial update with delay
+    setTimeout(updateDimensions, 100);
+    window.addEventListener('resize', updateDimensions);
+
+    return () => {
+      window.removeEventListener('resize', updateDimensions);
+    };
+  }, [svgLoaded]);
 
   const handleZoneClick = (zoneId: string) => {
     console.log('Zone clicked:', zoneId);
@@ -65,7 +107,6 @@ const FacialAesthetic: React.FC = () => {
     const svg = svgOverlayRef.current;
     if (!svg) return null;
 
-    const rect = svg.getBoundingClientRect();
     let clientX: number;
     let clientY: number;
 
@@ -85,24 +126,41 @@ const FacialAesthetic: React.FC = () => {
       return null;
     }
 
-    // Get viewBox dimensions
-    const viewBoxParts = svgViewBox.split(' ');
-    const viewBoxWidth = parseFloat(viewBoxParts[2]) || 100;
-    const viewBoxHeight = parseFloat(viewBoxParts[3]) || 100;
+    // Use SVG's built-in coordinate transformation
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
 
-    // Convert screen coordinates to SVG viewBox coordinates
-    const svgX = ((clientX - rect.left) / rect.width) * viewBoxWidth;
-    const svgY = ((clientY - rect.top) / rect.height) * viewBoxHeight;
+    // Get the inverse of the screen-to-viewBox transformation matrix
+    const svgMatrix = svg.getScreenCTM();
+    if (!svgMatrix) {
+      console.error('Could not get screen CTM');
+      return null;
+    }
+
+    const transformedPoint = pt.matrixTransform(svgMatrix.inverse());
+
+    console.log('Click coordinates:', {
+      client: { x: clientX, y: clientY },
+      svg: { x: transformedPoint.x, y: transformedPoint.y },
+      viewBox: svgViewBox
+    });
 
     return {
-      x: svgX,
-      y: svgY,
+      x: transformedPoint.x,
+      y: transformedPoint.y,
     };
   };
 
   // Drawing handlers
   const handleSvgMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
     if (currentTool === 'select') return;
+
+    // Check if click is on a button or interactive element
+    const target = e.target as Element;
+    if (target.closest('button') || target.closest('[role="button"]')) {
+      return;
+    }
 
     const point = getCoordinates(e);
     if (!point) return;
@@ -174,8 +232,15 @@ const FacialAesthetic: React.FC = () => {
 
   // Touch event handlers
   const handleSvgTouchStart = (e: React.TouchEvent<SVGSVGElement>) => {
-    e.preventDefault(); // Prevent scrolling while drawing
     if (currentTool === 'select') return;
+
+    // Check if touch is on a button or interactive element
+    const target = e.target as Element;
+    if (target.closest('button') || target.closest('[role="button"]')) {
+      return;
+    }
+
+    e.preventDefault(); // Prevent scrolling while drawing
 
     const point = getCoordinates(e);
     if (!point) return;
@@ -546,33 +611,30 @@ const FacialAesthetic: React.FC = () => {
 
   return (
     <div className="w-full h-full">
-      <Card className="p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold"></h2>
-          <div className="flex gap-2">
-            <Button
-              onClick={clearSelection}
-              variant="outline"
-              disabled={selectedZones.length === 0}
-            >
-              Limpiar Selección
-            </Button>
-          </div>
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <div className="flex justify-end items-center mb-3">
+          <Button
+            onClick={clearSelection}
+            size="sm"
+            disabled={selectedZones.length === 0}
+            className="bg-cyan-500 hover:bg-cyan-600 text-white disabled:bg-slate-300 disabled:text-slate-500 font-medium"
+          >
+            Limpiar Selección
+          </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* SVG Container */}
           <div className="lg:col-span-2">
-            <div className="border rounded-lg p-4 bg-white overflow-auto">
-              <div className="flex justify-center items-center min-h-[600px] relative" style={{ pointerEvents: 'none' }}>
+            <div className="border rounded-lg p-3 bg-gray-50 overflow-auto">
+              <div className="flex justify-center items-center min-h-[500px] relative" style={{ pointerEvents: 'none' }}>
                 {/* Floating Toolbar - Responsive: Top on mobile, Left on desktop */}
-                <div className="absolute top-2 left-1/2 -translate-x-1/2 md:left-2 md:top-1/2 md:-translate-y-1/2 md:translate-x-0 z-10 flex flex-row md:flex-col gap-1 md:gap-2 bg-white rounded-lg shadow-lg border border-slate-200 p-1.5 md:p-2" style={{ pointerEvents: 'auto' }}>
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 md:left-2 md:top-1/2 md:-translate-y-1/2 md:translate-x-0 flex flex-row md:flex-col gap-1 md:gap-2 bg-white rounded-lg shadow-lg border border-slate-200 p-1.5 md:p-2" style={{ pointerEvents: 'auto', zIndex: 50 }}>
                   {/* Select Tool */}
                   <Button
                     onClick={() => setCurrentTool('select')}
-                    variant={currentTool === 'select' ? 'default' : 'outline'}
                     size="icon"
-                    className={`w-9 h-9 md:w-12 md:h-12 transition-all ${currentTool === 'select' ? 'ring-2 ring-blue-500' : ''}`}
+                    className={`w-9 h-9 md:w-12 md:h-12 transition-all ${currentTool === 'select' ? 'bg-cyan-500 hover:bg-cyan-600 text-white ring-2 ring-cyan-500' : 'bg-slate-100 border-2 border-slate-300 text-slate-700 hover:bg-cyan-100 hover:border-cyan-400'}`}
                     title="Seleccionar zonas"
                   >
                     <span className="text-base md:text-xl">✋</span>
@@ -583,9 +645,8 @@ const FacialAesthetic: React.FC = () => {
                   {/* Line Tool */}
                   <Button
                     onClick={() => setCurrentTool('line')}
-                    variant={currentTool === 'line' ? 'default' : 'outline'}
                     size="icon"
-                    className={`w-9 h-9 md:w-12 md:h-12 transition-all ${currentTool === 'line' ? 'ring-2 ring-blue-500' : ''}`}
+                    className={`w-9 h-9 md:w-12 md:h-12 transition-all ${currentTool === 'line' ? 'bg-cyan-500 hover:bg-cyan-600 text-white ring-2 ring-cyan-500' : 'bg-slate-100 border-2 border-slate-300 text-slate-700 hover:bg-cyan-100 hover:border-cyan-400'}`}
                     title="Dibujar línea"
                   >
                     <span className="text-base md:text-xl">─</span>
@@ -594,9 +655,8 @@ const FacialAesthetic: React.FC = () => {
                   {/* Arrow Tool */}
                   <Button
                     onClick={() => setCurrentTool('arrow')}
-                    variant={currentTool === 'arrow' ? 'default' : 'outline'}
                     size="icon"
-                    className={`w-9 h-9 md:w-12 md:h-12 transition-all ${currentTool === 'arrow' ? 'ring-2 ring-blue-500' : ''}`}
+                    className={`w-9 h-9 md:w-12 md:h-12 transition-all ${currentTool === 'arrow' ? 'bg-cyan-500 hover:bg-cyan-600 text-white ring-2 ring-cyan-500' : 'bg-slate-100 border-2 border-slate-300 text-slate-700 hover:bg-cyan-100 hover:border-cyan-400'}`}
                     title="Dibujar flecha"
                   >
                     <span className="text-base md:text-xl">→</span>
@@ -605,9 +665,8 @@ const FacialAesthetic: React.FC = () => {
                   {/* Point Tool */}
                   <Button
                     onClick={() => setCurrentTool('point')}
-                    variant={currentTool === 'point' ? 'default' : 'outline'}
                     size="icon"
-                    className={`w-9 h-9 md:w-12 md:h-12 transition-all ${currentTool === 'point' ? 'ring-2 ring-blue-500' : ''}`}
+                    className={`w-9 h-9 md:w-12 md:h-12 transition-all ${currentTool === 'point' ? 'bg-cyan-500 hover:bg-cyan-600 text-white ring-2 ring-cyan-500' : 'bg-slate-100 border-2 border-slate-300 text-slate-700 hover:bg-cyan-100 hover:border-cyan-400'}`}
                     title="Agregar punto"
                   >
                     <span className="text-base md:text-xl">●</span>
@@ -621,7 +680,7 @@ const FacialAesthetic: React.FC = () => {
                       type="color"
                       value={currentColor}
                       onChange={(e) => setCurrentColor(e.target.value)}
-                      className="w-9 h-9 md:w-12 md:h-12 rounded cursor-pointer border-2 border-slate-300"
+                      className="w-9 h-9 md:w-12 md:h-12 rounded cursor-pointer border-2 border-slate-300 hover:border-cyan-400"
                       title="Seleccionar color"
                     />
                   </div>
@@ -631,11 +690,10 @@ const FacialAesthetic: React.FC = () => {
                   {/* Undo */}
                   <Button
                     onClick={deleteLastDrawing}
-                    variant="outline"
                     size="icon"
                     disabled={drawingState.lines.length === 0 && drawingState.arrows.length === 0 && drawingState.points.length === 0}
                     title="Deshacer último dibujo"
-                    className="w-9 h-9 md:w-12 md:h-12"
+                    className="w-9 h-9 md:w-12 md:h-12 bg-slate-100 border-2 border-slate-300 text-slate-700 hover:bg-cyan-100 hover:border-cyan-400 disabled:opacity-50 disabled:bg-slate-50 disabled:hover:bg-slate-50"
                   >
                     <span className="text-base md:text-xl">↶</span>
                   </Button>
@@ -643,11 +701,10 @@ const FacialAesthetic: React.FC = () => {
                   {/* Clear All */}
                   <Button
                     onClick={clearDrawings}
-                    variant="outline"
                     size="icon"
                     disabled={drawingState.lines.length === 0 && drawingState.arrows.length === 0 && drawingState.points.length === 0}
                     title="Borrar todos los dibujos"
-                    className="w-9 h-9 md:w-12 md:h-12"
+                    className="w-9 h-9 md:w-12 md:h-12 bg-red-100 border-2 border-red-300 text-red-700 hover:bg-red-200 hover:border-red-400 disabled:opacity-50 disabled:bg-slate-50 disabled:hover:bg-slate-50"
                   >
                     <span className="text-base md:text-xl">🗑️</span>
                   </Button>
@@ -657,9 +714,9 @@ const FacialAesthetic: React.FC = () => {
                   {/* Gender Toggle Button */}
                   <Button
                     onClick={() => setIsMale(!isMale)}
-                    variant="outline"
                     size="icon"
-                    className="absolute bottom-2 right-2 z-20 w-12 h-12 bg-white hover:bg-slate-100 shadow-lg border-2 border-slate-300"
+                    className="absolute bottom-2 right-2 w-12 h-12 bg-slate-100 hover:bg-cyan-100 text-slate-700 shadow-lg border-2 border-slate-300 hover:border-cyan-400"
+                    style={{ zIndex: 50, pointerEvents: 'auto' }}
                     title={isMale ? "Cambiar a ficha femenina" : "Cambiar a ficha masculina"}
                   >
                     <span className="text-2xl">{isMale ? '♀' : '♂'}</span>
@@ -669,26 +726,34 @@ const FacialAesthetic: React.FC = () => {
                     key={isMale ? 'male' : 'female'}
                     ref={iframeRef}
                     src={isMale ? "/Ficha_estetica_men.svg" : "/Ficha_estetica.svg"}
-                    className="w-full h-auto min-h-[600px] border-0"
+                    className="w-full border-0"
                     title="Ficha Estética Facial"
                     style={{
+                      height: iframeDimensions.height > 0 ? `${iframeDimensions.height}px` : 'auto',
+                      minHeight: '500px',
                       backgroundColor: 'transparent',
                       pointerEvents: 'auto',
                       visibility: svgLoaded ? 'visible' : 'hidden',
                       opacity: svgLoaded ? 1 : 0,
-                      transition: 'opacity 0.3s ease'
+                      transition: 'opacity 0.3s ease',
+                      display: 'block'
                     }}
                   />
                   {/* SVG Overlay for drawings */}
                   <svg
                     ref={svgOverlayRef}
-                    className="absolute top-0 left-0 w-full h-full"
+                    className="absolute top-0 left-0"
                     viewBox={svgViewBox}
                     preserveAspectRatio="xMidYMid meet"
                     style={{
+                      width: '100%',
+                      height: '100%',
                       cursor: currentTool === 'select' ? 'default' : 'crosshair',
                       pointerEvents: currentTool === 'select' ? 'none' : 'auto',
-                      touchAction: 'none' // Prevent default touch behaviors
+                      touchAction: 'none', // Prevent default touch behaviors
+                      zIndex: currentTool === 'select' ? 0 : 10,
+                      // Ensure buttons are not blocked
+                      maskImage: 'none'
                     }}
                     onMouseDown={handleSvgMouseDown}
                     onMouseMove={handleSvgMouseMove}
@@ -807,85 +872,127 @@ const FacialAesthetic: React.FC = () => {
           </div>
 
           {/* Information Panel */}
-          <div className="space-y-4">
-            {/* Selected Zones List */}
-            <Card className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-slate-700">Zonas Seleccionadas</h3>
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
-                  {selectedZones.length}
-                </span>
-              </div>
+          <div className="space-y-3">
+            {/* Zonas Input */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-3">
+              <label className="text-sm font-semibold mb-2 text-slate-700 block">Zonas</label>
+              <input
+                type="text"
+                className="w-full p-2 border rounded-md text-xs focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                placeholder="Selecciona zonas faciales..."
+                value={selectedZones.map(zone => ZONE_LABELS[zone]).join(', ')}
+                readOnly
+              />
+              <p className="text-xs text-slate-400 mt-1">
+                Activa "Modo Selección" y haz clic en las zonas del rostro
+              </p>
+            </div>
 
-              {selectedZones.length === 0 ? (
-                <div className="text-center py-6">
-                  <p className="text-sm text-slate-500 mb-2">
-                    No hay zonas seleccionadas
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    Activa "Modo Selección" y haz clic en las zonas del rostro
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {selectedZones.map((zone) => (
-                    <div
-                      key={zone}
-                      className={`flex items-center justify-between p-3 rounded-lg border transition-colors cursor-pointer ${
-                        selectedZone === zone
-                          ? 'bg-blue-50 border-blue-300'
-                          : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-                      }`}
-                      onClick={() => setSelectedZone(zone)}
-                    >
-                      <span className="text-sm font-medium">{ZONE_LABELS[zone]}</span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleZoneClick(zone);
-                        }}
-                        className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
-                      >
-                        ×
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+            {/* Treatment Section */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-3">
+              <label className="text-sm font-semibold mb-2 text-slate-700 block">Tratamiento</label>
+              <select
+                className="w-full p-2 border rounded-md text-xs focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                value={selectedTreatment}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSelectedTreatment(value);
+                  if (value === 'custom') {
+                    setShowCustomInput(true);
+                    setTreatmentValue('');
+                  } else if (value) {
+                    setShowCustomInput(false);
+                    const service = services.find(s => s.id.toString() === value);
+                    if (service) {
+                      setTreatmentValue(service.valor);
+                    }
+                  } else {
+                    setShowCustomInput(false);
+                    setTreatmentValue('');
+                  }
+                }}
+              >
+                <option value="">Seleccionar servicio...</option>
+                {services.map(service => (
+                  <option key={service.id} value={service.id}>
+                    {service.nombre}
+                  </option>
+                ))}
+                <option value="custom">✍️ Escribir tratamiento personalizado</option>
+              </select>
+
+              {showCustomInput && (
+                <input
+                  type="text"
+                  className="w-full p-2 border rounded-md text-xs focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 mt-2"
+                  placeholder="Escribe el nombre del tratamiento..."
+                  value={customTreatment}
+                  onChange={(e) => setCustomTreatment(e.target.value)}
+                />
               )}
-            </Card>
+            </div>
+
+            {/* Value Section */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-3">
+              <label className="text-sm font-semibold mb-2 text-slate-700 block">Valor</label>
+              <input
+                type="text"
+                className="w-full p-2 border rounded-md text-xs focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                placeholder="25.000"
+                value={treatmentValue}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  setTreatmentValue(value);
+                }}
+              />
+            </div>
 
             {/* Notes Section */}
-            <Card className="p-4">
-              <h3 className="font-semibold mb-3 text-slate-700">Notas</h3>
-              {selectedZone ? (
-                <textarea
-                  className="w-full min-h-[140px] p-3 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                  placeholder="Escribe observaciones o notas generales..."
-                  value={facialState[selectedZone]?.notes || ''}
-                  onChange={(e) => {
-                    setFacialState(prev => ({
-                      ...prev,
-                      [selectedZone]: {
-                        ...prev[selectedZone],
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-3">
+              <label className="text-sm font-semibold mb-2 text-slate-700 block">Notas</label>
+              <textarea
+                className="w-full min-h-[80px] p-2 border rounded-md text-xs focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 resize-none"
+                placeholder="Escribe observaciones o notas generales sobre las zonas seleccionadas..."
+                value={selectedZones.length > 0 ? (facialState[selectedZones[0]]?.notes || '') : ''}
+                onChange={(e) => {
+                  if (selectedZones.length > 0) {
+                    const updatedState = { ...facialState };
+                    selectedZones.forEach(zone => {
+                      updatedState[zone] = {
+                        ...updatedState[zone],
                         selected: true,
                         notes: e.target.value,
-                      }
-                    }));
-                  }}
-                />
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-sm text-slate-500 mb-1">
-                    Sin zona seleccionada
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    Selecciona una zona para agregar notas
-                  </p>
-                </div>
-              )}
-            </Card>
+                      };
+                    });
+                    setFacialState(updatedState);
+                  }
+                }}
+                disabled={selectedZones.length === 0}
+              />
+            </div>
+
+            {/* Add Button */}
+            <Button
+              onClick={() => {
+                if (onAddItem && selectedZones.length > 0 && (selectedTreatment || customTreatment) && treatmentValue) {
+                  const zones = selectedZones.map(zone => ZONE_LABELS[zone]).join(', ');
+                  const treatment = showCustomInput ? customTreatment :
+                    services.find(s => s.id.toString() === selectedTreatment)?.nombre || '';
+                  onAddItem(zones, treatment, treatmentValue);
+
+                  // Limpiar formulario
+                  setSelectedTreatment('');
+                  setCustomTreatment('');
+                  setTreatmentValue('');
+                  setShowCustomInput(false);
+                  clearSelection();
+                }
+              }}
+              disabled={selectedZones.length === 0 || (!selectedTreatment && !customTreatment) || !treatmentValue}
+              className="w-full bg-cyan-500 hover:bg-cyan-600 text-white disabled:bg-slate-300 disabled:cursor-not-allowed text-sm font-medium py-2.5 rounded-lg"
+            >
+              + Agregar Tratamiento
+            </Button>
 
             {/* Hidden fields for form submission */}
             <input
@@ -902,11 +1009,11 @@ const FacialAesthetic: React.FC = () => {
         </div>
 
         {!svgLoaded && (
-          <div className="text-center text-sm text-muted-foreground mt-4">
+          <div className="text-center text-xs text-slate-500 mt-3">
             Cargando ficha estética...
           </div>
         )}
-      </Card>
+      </div>
     </div>
   );
 };
